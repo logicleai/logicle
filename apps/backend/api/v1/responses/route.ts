@@ -219,6 +219,7 @@ export const POST = operation({
         saveMessage: saveAndAuditMessage,
         updateChatTitle,
         user: session.userId,
+        conversationId: conversation.id,
         userLanguage: acceptLanguageHeader ?? undefined,
       }
     )

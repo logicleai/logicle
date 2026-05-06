@@ -722,16 +722,17 @@ export class ChatAssistant {
     try {
       this.throwIfAborted()
       const args = toolCall.args
+      const conversationId = this.options.conversationId ?? chatState.conversationId
       logger.info(`Invoking tool '${toolCall.toolName}'`, { args })
       const result = await func.invoke({
         llmModel: this.llmModel,
         messages: chatState.chatHistory,
         assistantId: this.assistantParams.assistantId,
         userId: this.options.user,
-        conversationId: this.options.conversationId,
+        conversationId,
         rootOwner:
           this.options.rootOwner ??
-          (this.options.conversationId ? { type: 'CHAT', id: this.options.conversationId } : undefined),
+          (conversationId ? { type: 'CHAT', id: conversationId } : undefined),
         toolCallId: toolCall.toolCallId,
         toolName: toolCall.toolName,
         params: args,
@@ -1008,6 +1009,7 @@ export class ChatAssistant {
         if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
 
         if (implementation.auth) {
+          const conversationId = this.options.conversationId ?? chatState.conversationId
           const authRequest = await implementation.auth({
             llmModel: this.llmModel,
             messages: chatState.chatHistory,
@@ -1015,7 +1017,7 @@ export class ChatAssistant {
             userId: this.options.user,
             rootOwner:
               this.options.rootOwner ??
-              (this.options.conversationId ? { type: 'CHAT', id: this.options.conversationId } : undefined),
+              (conversationId ? { type: 'CHAT', id: conversationId } : undefined),
             toolCallId: toolCall.toolCallId,
             toolName: toolCall.toolName,
             params: toolCall.args,

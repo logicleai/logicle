@@ -1,22 +1,36 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { createHash } from 'node:crypto'
 
-const materializedByHash = new Map<string, { id: string; type: string; name: string; size: number }>()
+const materializedByHash = new Map<
+  string,
+  { id: string; type: string; name: string; size: number }
+>()
+const materializeCalls: Array<{
+  owner: { ownerType: string; ownerId: string }
+}> = []
 
 vi.mock('@/backend/lib/files/materialize', () => ({
-  materializeFile: vi.fn(async (params: { content: Buffer; name: string; mimeType: string }) => {
-    const hash = createHash('sha256').update(params.content).digest('hex')
-    const existing = materializedByHash.get(hash)
-    if (existing) return existing
-    const created = {
-      id: `file-${materializedByHash.size + 1}`,
-      type: params.mimeType,
-      name: params.name,
-      size: params.content.byteLength,
+  materializeFile: vi.fn(
+    async (params: {
+      content: Buffer
+      name: string
+      mimeType: string
+      owner: { ownerType: string; ownerId: string }
+    }) => {
+      materializeCalls.push({ owner: params.owner })
+      const hash = createHash('sha256').update(params.content).digest('hex')
+      const existing = materializedByHash.get(hash)
+      if (existing) return existing
+      const created = {
+        id: `file-${materializedByHash.size + 1}`,
+        type: params.mimeType,
+        name: params.name,
+        size: params.content.byteLength,
+      }
+      materializedByHash.set(hash, created)
+      return created
     }
-    materializedByHash.set(hash, created)
-    return created
-  }),
+  ),
 }))
 
 import {
@@ -27,6 +41,7 @@ import {
 describe('tool output normalization', () => {
   beforeEach(() => {
     materializedByHash.clear()
+    materializeCalls.length = 0
   })
 
   test('normalizes MCP image/resource file-like outputs into file content items', async () => {
@@ -66,6 +81,23 @@ describe('tool output normalization', () => {
       expect(persisted.value.name).toBe('report.pdf')
       expect(persisted.value.mimetype).toBe('application/pdf')
     }
+  })
+
+  test('file-like tool outputs in a chat are persisted with CHAT ownership', async () => {
+    const payload = Buffer.from('chat-owned-output').toString('base64')
+    const persisted = await persistFileLikePayload({
+      assistantId: 'a1',
+      userId: 'u1',
+      conversationId: 'c1',
+      rootOwner: { type: 'CHAT', id: 'c1' },
+      base64Data: payload,
+      mimeType: 'image/png',
+      source: 'MCP',
+    })
+
+    expect(persisted.kind).toBe('file')
+    expect(materializeCalls).toHaveLength(1)
+    expect(materializeCalls[0].owner).toEqual({ ownerType: 'CHAT', ownerId: 'c1' })
   })
 
   test('dedup regression: repeated identical payload resolves to same file id', async () => {

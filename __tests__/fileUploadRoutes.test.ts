@@ -64,6 +64,10 @@ async function migrateTestDb() {
 
 async function resetTables() {
   await db.deleteFrom('File').execute()
+  await db.deleteFrom('Conversation').execute()
+  await db.deleteFrom('AssistantVersion').execute()
+  await db.deleteFrom('Assistant').execute()
+  await db.deleteFrom('Backend').execute()
   await db.deleteFrom('Session').execute()
   await db.deleteFrom('User').execute()
 }
@@ -78,6 +82,41 @@ async function insertFile(params: {
     INSERT INTO "File" ("id", "name", "path", "type", "size", "uploaded", "createdAt", "encrypted", "fileBlobId", "ownerType", "ownerId")
     VALUES (${params.id}, ${'test.txt'}, ${params.path}, ${'text/plain'}, ${100}, ${0}, ${new Date().toISOString()}, ${0}, NULL, ${params.ownerType ?? 'USER'}, ${params.ownerId ?? testUserId})
   `.execute(db)
+}
+
+async function insertConversation(params: { id: string; ownerId: string }) {
+  await db
+    .insertInto('Backend')
+    .values({
+      id: 'backend-for-chat-upload',
+      name: 'Backend',
+      providerType: 'openai',
+      configuration: '{}',
+      provisioned: 0,
+    })
+    .execute()
+  await db
+    .insertInto('Assistant')
+    .values({
+      id: 'assistant-for-chat-upload',
+      draftVersionId: null,
+      publishedVersionId: null,
+      provisioned: 0,
+      deleted: 0,
+      hidden: 0,
+      owner: params.ownerId,
+    })
+    .execute()
+  await db
+    .insertInto('Conversation')
+    .values({
+      id: params.id,
+      name: 'Chat upload test',
+      assistantId: 'assistant-for-chat-upload',
+      ownerId: params.ownerId,
+      createdAt: new Date().toISOString(),
+    })
+    .execute()
 }
 
 // Consumes a readable stream so the piped TransformStream (and hash) runs.
@@ -274,6 +313,36 @@ describe('PUT /api/files/:fileId/content', () => {
 // ── POST /api/files ──────────────────────────────────────────────────────────
 
 describe('POST /api/files', () => {
+  test('creates chat upload metadata with CHAT ownership', async () => {
+    await insertConversation({ id: 'chat-1', ownerId: testUserId })
+
+    const response = await filesRoute.POST(
+      new Request('http://localhost/api/files', {
+        method: 'POST',
+        headers: {
+          cookie: sessionCookie,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'chat-upload.txt',
+          type: 'text/plain',
+          size: 12,
+          owner: { ownerType: 'CHAT', ownerId: 'chat-1' },
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(201)
+    const body = await response.json()
+    const file = await db
+      .selectFrom('File')
+      .select(['ownerType', 'ownerId'])
+      .where('id', '=', body.id)
+      .executeTakeFirstOrThrow()
+    expect(file).toEqual({ ownerType: 'CHAT', ownerId: 'chat-1' })
+  })
+
   test('returns 403 when creating metadata for an owner the user cannot access', async () => {
     const response = await filesRoute.POST(
       new Request('http://localhost/api/files', {
