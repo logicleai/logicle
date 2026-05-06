@@ -83,6 +83,7 @@ vi.mock('@/backend/lib/tools/knowledge/implementation', () => ({
 import { ChatAssistant, fillTemplate, ToolSetupError } from '@/backend/lib/chat'
 import type { ProviderConfig } from '@/types/provider'
 import { ChatState } from '@/backend/lib/chat/ChatState'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 
 // ---- Helpers ----
 
@@ -126,10 +127,15 @@ const makeChatAssistant = (overrides: Partial<InstanceType<typeof ChatAssistant>
 // Class-field arrow functions (computeSafeSummary, findReasonableSummarizationBackend) are
 // instance-initialised, so they aren't on the prototype. We need a real constructed instance.
 const makeRealAssistant = () => {
-  vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({ provider: 'openai.responses' } as any)
-  vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({} as any)
+  vi
+    .spyOn(ChatAssistant, 'createLanguageModel')
+    .mockReturnValue({ provider: 'openai.responses' } as unknown as LanguageModelV3)
+  vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
+    functions: {},
+    functionToolIdMap: new Map(),
+  })
   return new ChatAssistant(
-    { providerType: 'openai', apiKey: 'k', provisioned: false } as any,
+    { providerType: 'openai', apiKey: 'k', provisioned: false } as unknown as ProviderConfig,
     { assistantId: 'a1', model: 'gpt-4', systemPrompt: '', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
     makeFakeLlmModel(),
     [],
