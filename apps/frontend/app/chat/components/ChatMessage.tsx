@@ -139,11 +139,9 @@ export const ToolCall = ({
     ? (assistantTools?.find((tool) => tool.id === toolCall.toolId)?.name ?? undefined)
     : undefined
   const toolDisplayName = sourceToolName ?? toolCall.toolName
-  const toolDisplayId = toolCall.toolId ?? toolCall.toolName
-
   const triggerLabel = isSubAssistantCall
-    ? `${t('invocation_of_sub_assistant')} ${subAssistantLabel}${subAssistantId ? ` (${subAssistantId})` : ''}`
-    : `${t('invocation_of_tool')} ${toolDisplayName} (${toolDisplayId})`
+    ? `${t('invocation_of_sub_assistant')} ${subAssistantLabel}`
+    : `${t('invocation_of_tool')} ${toolDisplayName}${toolDisplayName !== toolCall.toolName ? ` (${toolCall.toolName})` : ''}`
 
   return (
     <Accordion type="single" collapsible>
