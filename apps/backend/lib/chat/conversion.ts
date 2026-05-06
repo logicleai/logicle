@@ -8,7 +8,6 @@ import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from '@/lib/chat/models'
 import { cachingExtractor } from '@/lib/textextraction/cache'
-import env from '@/lib/env'
 import {
   acceptableImageTypes,
   canSendAsNativeFile,
@@ -25,9 +24,6 @@ const toolResultAttachmentText = (fileEntry: FileDbRow) =>
   `The tool returned a file attachment "${fileEntry.name}" (${fileEntry.type}, id ${fileEntry.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`
 type ToolCallResultOutput = ai.ToolResultPart['output']
 
-const toolResultReadFileHint = (file: { id: string; name: string }) =>
-  `File content was not inlined to reduce context bloat. Use read_file with id "${file.id}" (${file.name}) for on-demand inspection.`
-
 const describeAttachedFiles = (
   files: Array<{ id: string; name: string; size: number; mimetype: string }>
 ) => ({
@@ -38,43 +34,6 @@ const describeAttachedFiles = (
     mimetype: f.mimetype,
   })),
 })
-
-type EagerFileRule = {
-  toolPattern: string
-  mimePattern: string
-}
-
-const parseEagerFileRules = (rawRules: string): EagerFileRule[] => {
-  return rawRules
-    .split(';')
-    .map((rule) => rule.trim())
-    .filter((rule) => rule.length > 0)
-    .flatMap((rule) => {
-      const [toolRaw, mimeRaw] = rule.split('=').map((s) => s?.trim() ?? '')
-      if (!toolRaw || !mimeRaw) return []
-      return mimeRaw
-        .split('|')
-        .map((mimePattern) => mimePattern.trim().toLowerCase())
-        .filter((mimePattern) => mimePattern.length > 0)
-        .map((mimePattern) => ({ toolPattern: toolRaw, mimePattern }))
-    })
-}
-
-const patternMatches = (value: string, pattern: string): boolean => {
-  if (pattern === '*') return true
-  if (pattern.endsWith('/*')) return value.startsWith(pattern.slice(0, -1))
-  return value === pattern
-}
-
-const shouldEagerInjectToolFile = (toolName: string, mimeType: string): boolean => {
-  if (env.chat.toolResults.eagerFileInjectionDefault) return true
-  const normalizedMime = mimeType.toLowerCase()
-  const rules = parseEagerFileRules(env.chat.toolResults.eagerFileInjectionRules)
-  return rules.some(
-    (rule) =>
-      patternMatches(toolName, rule.toolPattern) && patternMatches(normalizedMime, rule.mimePattern)
-  )
-}
 
 export const loadImagePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.ImagePart> => {
   let fileContent: Buffer
@@ -217,10 +176,7 @@ export const dtoMessageToLlmMessage = async (
   if (m.role === 'tool') {
     const results = m.parts.filter((m) => m.type === 'tool-result')
     if (results.length === 0) return undefined
-    const convertOutput = async (
-      output: dto.ToolCallResultOutput,
-      toolName: string
-    ): Promise<ToolCallResultOutput> => {
+    const convertOutput = async (output: dto.ToolCallResultOutput): Promise<ToolCallResultOutput> => {
       if ((output as dto.ToolCallResultOutput).type) {
         switch (output.type) {
           case 'text':
@@ -237,12 +193,6 @@ export const dtoMessageToLlmMessage = async (
                   case 'text':
                     return v
                   case 'file': {
-                    if (!shouldEagerInjectToolFile(toolName, v.mimetype)) {
-                      return {
-                        type: 'text' as const,
-                        text: toolResultReadFileHint(v),
-                      }
-                    }
                     const fileEntry = await getFileWithId(v.id)
                     if (!fileEntry) {
                       throw new Error(`Can't find entry for attachment ${v.id}`)
@@ -282,7 +232,7 @@ export const dtoMessageToLlmMessage = async (
           return {
             toolCallId: result.toolCallId,
             toolName: result.toolName,
-            output: await convertOutput(result.result, result.toolName),
+            output: await convertOutput(result.result),
             type: 'tool-result',
           }
         })

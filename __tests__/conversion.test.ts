@@ -168,12 +168,10 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    delete process.env.CHAT_TOOL_RESULT_EAGER_FILE_INJECTION
-    delete process.env.CHAT_TOOL_RESULT_EAGER_FILE_INJECTION_RULES
     getFileWithId.mockResolvedValue(pdfFile)
   })
 
-  test('keeps tool-result PDF files as descriptor-only by default', async () => {
+  test('eagerly injects tool-result PDF files by default', async () => {
     ensureFileAnalysis.mockResolvedValue({
       fileId: pdfFile.id,
       kind: 'pdf',
@@ -183,19 +181,20 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         kind: 'pdf',
         mimeType: 'application/pdf',
         sizeBytes: pdfFile.size,
-        pageCount: 101,
+        pageCount: 10,
         visionPageCount: 0,
-        textCharCount: 0,
-        hasExtractableText: false,
-        imagePageCount: 101,
-        contentMode: 'scanned',
-        extractedTextPath: null,
+        textCharCount: 50,
+        hasExtractableText: true,
+        imagePageCount: 0,
+        contentMode: 'text',
+        extractedTextPath: 'files/example.pdf.analysis-v1.txt',
       },
       error: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     } satisfies dto.FileAnalysis)
 
+    readBuffer.mockResolvedValue(Buffer.from('pdf-bytes'))
     const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
     const message = await dtoMessageToLlmMessage(
       {
@@ -252,22 +251,17 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
                   ],
                 }),
               },
-              {
-                type: 'text',
-                text: `File content was not inlined to reduce context bloat. Use read_file with id "${pdfFile.id}" (${pdfFile.name}) for on-demand inspection.`,
-              },
+              { type: 'file-data', data: Buffer.from('pdf-bytes').toString('base64'), mediaType: pdfFile.type },
             ],
           },
         },
       ],
     })
-    expect(getFileWithId).not.toHaveBeenCalled()
-    expect(readBuffer).not.toHaveBeenCalled()
-    expect(ensureFileAnalysis).not.toHaveBeenCalled()
+    expect(getFileWithId).toHaveBeenCalledWith(pdfFile.id)
+    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, false)
   })
 
-  test('supports eager file injection override by tool/mime rule', async () => {
-    process.env.CHAT_TOOL_RESULT_EAGER_FILE_INJECTION_RULES = 'fetch=application/pdf'
+  test('eagerly injects tool-result PDFs', async () => {
     ensureFileAnalysis.mockResolvedValue({
       fileId: pdfFile.id,
       kind: 'pdf',
@@ -361,7 +355,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
     expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, false)
   })
 
-  test('keeps tool-result file attachments as descriptor-only for litellm by default', async () => {
+  test('keeps tool-result file attachments as descriptor-only for litellm even when eager injection is on', async () => {
     ensureFileAnalysis.mockResolvedValue({
       fileId: pdfFile.id,
       kind: 'pdf',
@@ -442,19 +436,19 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
               },
               {
                 type: 'text',
-                text: `File content was not inlined to reduce context bloat. Use read_file with id "${pdfFile.id}" (${pdfFile.name}) for on-demand inspection.`,
+                text: `The tool returned a file attachment "${pdfFile.name}" (${pdfFile.type}, id ${pdfFile.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`,
               },
             ],
           },
         },
       ],
     })
-    expect(getFileWithId).not.toHaveBeenCalled()
+    expect(getFileWithId).toHaveBeenCalledWith(pdfFile.id)
     expect(readBuffer).not.toHaveBeenCalled()
     expect(ensureFileAnalysis).not.toHaveBeenCalled()
   })
 
-  test('does not eagerly extract text when the model has no native PDF support', async () => {
+  test('eagerly extracts text when the model has no native PDF support', async () => {
     extractFromFile.mockResolvedValue('fallback pdf text')
 
     const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
@@ -515,20 +509,20 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
               },
               {
                 type: 'text',
-                text: `File content was not inlined to reduce context bloat. Use read_file with id "${pdfFile.id}" (${pdfFile.name}) for on-demand inspection.`,
+                text: `Here is the text content of the file "${pdfFile.name}" with id ${pdfFile.id}\nfallback pdf text`,
               },
             ],
           },
         },
       ],
     })
-    expect(extractFromFile).not.toHaveBeenCalled()
-    expect(getFileWithId).not.toHaveBeenCalled()
+    expect(extractFromFile).toHaveBeenCalledWith(pdfFile)
+    expect(getFileWithId).toHaveBeenCalledWith(pdfFile.id)
     expect(readBuffer).not.toHaveBeenCalled()
     expect(ensureFileAnalysis).not.toHaveBeenCalled()
   })
 
-  test('keeps tool-result image attachments as descriptor-only for litellm by default', async () => {
+  test('keeps tool-result image attachments as descriptor-only for litellm even when eager injection is on', async () => {
     const imageFile = {
       ...pdfFile,
       id: 'img-1',
@@ -596,14 +590,14 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
               },
               {
                 type: 'text',
-                text: `File content was not inlined to reduce context bloat. Use read_file with id "${imageFile.id}" (${imageFile.name}) for on-demand inspection.`,
+                text: `The tool returned a file attachment "${imageFile.name}" (${imageFile.type}, id ${imageFile.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`,
               },
             ],
           },
         },
       ],
     })
-    expect(getFileWithId).not.toHaveBeenCalled()
+    expect(getFileWithId).toHaveBeenCalledWith(imageFile.id)
     expect(readBuffer).not.toHaveBeenCalled()
     expect(ensureFileAnalysis).not.toHaveBeenCalled()
   })
