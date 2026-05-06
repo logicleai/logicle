@@ -1,8 +1,10 @@
+import { UserRole } from './dto/user'
+
 export type SimpleSession = {
   sessionId: string
   userId: string
 }
 
 export type AuthenticatedSession = SimpleSession & {
-  userRole: string
+  userRole: UserRole
 }

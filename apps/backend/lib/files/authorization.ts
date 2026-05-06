@@ -2,19 +2,20 @@ import { db } from '@/db/database'
 import type * as schema from '@/db/schema'
 import { canUserAccessAssistant } from '@/models/assistant'
 import { getUserWorkspaceMemberships } from '@/models/user'
+import { UserRole } from '@/types/dto'
 
 type AccessUser = {
   userId: string
-  userRole?: string
+  userRole?: schema.UserRole
 }
 
-const isAdminUser = async (userId: string, userRoleHint?: string): Promise<boolean> => {
+const isAdminUser = async (userId: string, userRoleHint?: schema.UserRole): Promise<boolean> => {
   if (userRoleHint) {
-    return userRoleHint === 'ADMIN'
+    return userRoleHint === UserRole.ADMIN
   }
 
   const row = await db.selectFrom('User').select('role').where('id', '=', userId).executeTakeFirst()
-  return row?.role === 'ADMIN'
+  return row?.role === UserRole.ADMIN
 }
 
 export const canAccess = async (
