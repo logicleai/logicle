@@ -64,6 +64,7 @@ export type EstimationProjectionItem =
       kind: 'text'
       text: string
       source?: 'content' | 'metadata' | 'attachment_descriptor' | 'assistant_text' | 'assistant_reasoning'
+      reasoningSignature?: string
     }
   | {
       kind: 'attachment'
@@ -115,7 +116,12 @@ export const projectMessageForEstimation = (message: dto.Message): EstimationMes
       if (part.type === 'text') {
         items.push({ kind: 'text', text: part.text, source: 'assistant_text' })
       } else if (part.type === 'reasoning' && shouldIncludeAssistantReasoningPart(part)) {
-        items.push({ kind: 'text', text: part.reasoning, source: 'assistant_reasoning' })
+        items.push({
+          kind: 'text',
+          text: part.reasoning,
+          source: 'assistant_reasoning',
+          reasoningSignature: part.reasoning_signature,
+        })
       } else if (part.type === 'tool-call') {
         const payload = projectedAssistantToolCallPayload(part)
         items.push({
@@ -278,10 +284,10 @@ export const dtoMessageToLlmMessage = async (
   capabilities: LlmModelCapabilities,
   providerName: string
 ): Promise<ai.ModelMessage | undefined> => {
-  if (m.role === 'user-request') return undefined
-  if (m.role === 'user-response') return undefined
-  if (m.role === 'tool') {
-    const results = m.parts.filter((m) => m.type === 'tool-result')
+  const projected = projectMessageForEstimation(m)
+  if (projected.role === 'ignored') return undefined
+  if (projected.role === 'tool') {
+    const results = projected.items.filter((item) => item.kind === 'tool_result')
     if (results.length === 0) return undefined
     const convertOutput = async (output: dto.ToolCallResultOutput): Promise<ToolCallResultOutput> => {
       if ((output as dto.ToolCallResultOutput).type) {
@@ -339,40 +345,37 @@ export const dtoMessageToLlmMessage = async (
           return {
             toolCallId: result.toolCallId,
             toolName: result.toolName,
-            output: await convertOutput(result.result),
+            output: await convertOutput(result.output),
             type: 'tool-result',
           }
         })
       ),
     }
-  } else if (m.role === 'assistant') {
+  } else if (projected.role === 'assistant') {
     type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]
     const parts: ContentArrayElement[] = []
-    m.parts.forEach((part) => {
-      if (part.type === 'tool-call') {
-        const projected = projectedAssistantToolCallPayload(part)
+    projected.items.forEach((item) => {
+      if (item.kind === 'tool_call') {
         parts.push({
           type: 'tool-call',
-          toolCallId: projected.toolCallId,
-          toolName: projected.toolName,
-          input: projected.input,
+          toolCallId: item.toolCallId,
+          toolName: item.toolName,
+          input: item.payload.input,
         })
-      } else if (part.type === 'text') {
-        parts.push({
-          type: 'text',
-          text: part.text,
-        })
-      } else if (part.type === 'builtin-tool-result') {
-        // builtin tools are just... notifications
-      } else if (part.type === 'reasoning' && shouldIncludeAssistantReasoningPart(part)) {
+      } else if (item.kind === 'text' && item.source === 'assistant_reasoning' && item.reasoningSignature) {
         parts.push({
           type: 'reasoning',
-          text: part.reasoning,
+          text: item.text,
           providerOptions: {
             anthropic: {
-              signature: part.reasoning_signature,
+              signature: item.reasoningSignature,
             },
           },
+        })
+      } else if (item.kind === 'text') {
+        parts.push({
+          type: 'text',
+          text: item.text,
         })
       }
     })
@@ -381,57 +384,37 @@ export const dtoMessageToLlmMessage = async (
       content: parts,
     }
   }
-  const metadataText = m.role === 'user' ? userMessageMetadataText(m) : undefined
-  const attachmentDescriptorText = m.role === 'user' ? userAttachmentDescriptorText(m) : undefined
   const message: ai.ModelMessage = {
-    role: m.role,
-    content: m.content,
+    role: 'user',
+    content: '',
   }
-  if (m.attachments.length !== 0) {
+  const attachments = projected.items.filter((item) => item.kind === 'attachment')
+  if (attachments.length !== 0) {
     const messageParts: typeof message.content = []
-    if (metadataText) {
-      messageParts.push({
-        type: 'text',
-        text: metadataText,
-      })
+    for (const item of projected.items) {
+      if (item.kind !== 'text') continue
+      messageParts.push({ type: 'text', text: item.text })
     }
-    if (m.content.length !== 0)
-      messageParts.push({
-        type: 'text',
-        text: m.content,
-      })
     const fileParts = (
       await Promise.all(
-        m.attachments.map(async (a) => {
-          const fileEntry = await getFileWithId(a.id)
+        attachments.map(async (item) => {
+          const fileEntry = await getFileWithId(item.attachment.id)
           if (!fileEntry) {
-            logger.warn(`Can't find entry for attachment ${a.id}`)
+            logger.warn(`Can't find entry for attachment ${item.attachment.id}`)
             return undefined
           }
           return await dtoFileToLlmFilePart(fileEntry, capabilities)
         })
       )
     ).filter((a) => a !== undefined)
-    if (attachmentDescriptorText) {
-      messageParts.push({
-        type: 'text',
-        text: attachmentDescriptorText,
-      })
-    }
     message.content = [...messageParts, ...fileParts]
-  } else if (metadataText) {
+  } else {
+    const textItems = projected.items.filter((item) => item.kind === 'text')
     const messageParts: typeof message.content = []
-    messageParts.push({
-      type: 'text',
-      text: metadataText,
-    })
-    if (m.content.length !== 0) {
-      messageParts.push({
-        type: 'text',
-        text: m.content,
-      })
+    for (const item of textItems) {
+      messageParts.push({ type: 'text', text: item.text })
     }
-    message.content = messageParts
+    message.content = messageParts.length > 0 ? messageParts : ''
   }
   return message
 }
