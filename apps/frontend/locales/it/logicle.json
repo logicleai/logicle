@@ -236,8 +236,10 @@
   "docx": "DOCX",
   "dont-have-an-account": "Non hai un account?",
   "download": "Scarica",
+  "disable_word_wrap": "Disattiva a capo automatico",
   "download_as_csv": "Scarica in formato csv",
   "download_as_excel": "Scarica in formato excel",
+  "enable_word_wrap": "Attiva a capo automatico",
   "draft_not_saved": "Bozza non salvata",
   "drop_files_here_or_browse_for_file_upload": "Trascina qui file o <0>sfoglia</0> per upload file",
   "file_analysis_image_summary": "immagine {{width}} x {{height}}",
@@ -657,5 +659,7 @@
   "your-email": "La tua email",
   "your-name": "Il tuo nome",
   "edit_image": "Modifica immagine",
-  "edit_image_prompt_placeholder": "Descrivi cosa modificare…"
+  "edit_image_prompt_placeholder": "Descrivi cosa modificare…",
+  "word_wrap_off": "A capo disattivato",
+  "word_wrap_on": "A capo attivo"
 }

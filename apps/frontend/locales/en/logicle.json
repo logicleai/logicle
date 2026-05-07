@@ -236,8 +236,10 @@
   "docx": "DOCX",
   "dont-have-an-account": "Don't have an account?",
   "download": "Download",
+  "disable_word_wrap": "Disable word wrap",
   "download_as_csv": "Download as csv",
   "download_as_excel": "Download as excel file",
+  "enable_word_wrap": "Enable word wrap",
   "draft_not_saved": "Draft not saved",
   "drop_files_here_or_browse_for_file_upload": "Drop files here or <0>browse</0> for file upload",
   "file_analysis_image_summary": "{{width}} x {{height}} image",
@@ -657,5 +659,7 @@
   "your-email": "Your email",
   "your-name": "Your name",
   "edit_image": "Edit image",
-  "edit_image_prompt_placeholder": "Describe what to change…"
+  "edit_image_prompt_placeholder": "Describe what to change…",
+  "word_wrap_off": "Wrap off",
+  "word_wrap_on": "Wrap on"
 }

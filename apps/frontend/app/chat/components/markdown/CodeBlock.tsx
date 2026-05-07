@@ -1,11 +1,16 @@
-import { IconCheck, IconClipboard, IconDownload } from '@tabler/icons-react'
-import { FC, memo, useState } from 'react'
+import {
+  IconCheck,
+  IconClipboard,
+  IconDownload,
+  IconTextWrap,
+} from '@tabler/icons-react'
+import { FC, memo, useEffect, useState } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 
 import { useTranslation } from 'react-i18next'
 
-import { generateRandomString, fileExtensionsForLanguage } from '@/lib/codeblock'
+import { generateRandomString, fileExtensionsForLanguage, shouldWrapFence } from '@/lib/codeblock'
 
 interface Props {
   language?: string
@@ -26,6 +31,11 @@ const computeExtensionForLanguage = (language?: string) => {
 export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
   const { t } = useTranslation()
   const [isCopied, setIsCopied] = useState<boolean>(false)
+  const [wrapLongLines, setWrapLongLines] = useState<boolean>(() => shouldWrapFence(language))
+
+  useEffect(() => {
+    setWrapLongLines(shouldWrapFence(language))
+  }, [language])
 
   const copyToClipboard = async () => {
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
@@ -64,6 +74,21 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
           <div className="flex items-center">
             <button
               type="button"
+              title={wrapLongLines ? t('disable_word_wrap') : t('enable_word_wrap')}
+              className={`flex items-center rounded p-1 text-xs transition-colors ${
+                wrapLongLines
+                  ? 'bg-white/90 text-slate-900'
+                  : 'bg-transparent text-white/70 hover:text-white'
+              }`}
+              onClick={() => setWrapLongLines((prev) => !prev)}
+            >
+              <IconTextWrap
+                size={18}
+                className={wrapLongLines ? 'opacity-100' : 'opacity-50 hover:opacity-100'}
+              />
+            </button>
+            <button
+              type="button"
               title={t('copy_to_clipboard')}
               className="flex gap-1.5 items-center rounded bg-none p-1 text-xs text-white"
               onClick={copyToClipboard}
@@ -83,7 +108,17 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
         </div>
       )}
 
-      <SyntaxHighlighter language={language} style={oneDark} customStyle={{ margin: 0 }}>
+      <SyntaxHighlighter
+        language={language}
+        style={oneDark}
+        wrapLongLines={wrapLongLines}
+        customStyle={{
+          margin: 0,
+        }}
+        codeTagProps={{
+          style: {},
+        }}
+      >
         {value}
       </SyntaxHighlighter>
     </div>

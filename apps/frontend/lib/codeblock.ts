@@ -2,6 +2,10 @@ interface languageMap {
   [key: string]: string | undefined
 }
 
+interface fenceWrapMap {
+  [key: string]: boolean | undefined
+}
+
 export const fileExtensionsForLanguage: languageMap = {
   javascript: '.js',
   python: '.py',
@@ -29,6 +33,23 @@ export const fileExtensionsForLanguage: languageMap = {
   bash: '.sh',
   csv: '.csv',
   // add more file extensions here, make sure the key is same as language prop in CodeBlock.tsx component
+}
+
+// Centralized mapping so new fence types can be configured easily.
+export const wrapByFenceType: fenceWrapMap = {
+  markdown: true,
+  md: true,
+  text: true,
+  txt: true,
+}
+
+export const shouldWrapFence = (language?: string) => {
+  if (!language) {
+    return false
+  }
+
+  const normalizedLanguage = language.toLowerCase()
+  return wrapByFenceType[normalizedLanguage] ?? false
 }
 
 export const generateRandomString = (length: number, lowercase = false) => {
