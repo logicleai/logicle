@@ -11,6 +11,7 @@ import {
 import { getImageAsDataUri } from '@/models/images'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
+import { cloneFilesForOwner } from '@/models/file'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,12 +44,22 @@ export const POST = operation({
       return forbidden(`Assistant is not published`)
     }
 
+    const originalFiles = await assistantVersionFiles(assistantVersion.id)
+    const clonedFileIds = await cloneFilesForOwner({
+      fileIds: originalFiles.map((file) => file.id),
+      owner: { ownerType: 'USER', ownerId: session.userId },
+    })
+    const clonedFiles = originalFiles.map((file) => ({
+      ...file,
+      id: clonedFileIds.get(file.id) ?? file.id,
+    }))
+
     const assistantDraft: dto.InsertableAssistantDraft = {
       ...assistantVersion,
       name: `Copy of ${assistantVersion.name}`,
       iconUri: assistantVersion.imageId ? await getImageAsDataUri(assistantVersion.imageId) : null,
       tools: await assistantVersionEnabledTools(assistantVersion.id),
-      files: await assistantVersionFiles(assistantVersion.id),
+      files: clonedFiles,
       prompts: JSON.parse(assistantVersion.prompts),
       tags: JSON.parse(assistantVersion.tags),
       subAssistants: assistantVersion.subAssistants
