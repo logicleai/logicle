@@ -31,7 +31,7 @@ import {
   TokenCountCacheStats,
 } from './prompt-token-counter'
 import type * as ai from 'ai'
-import { buildPreambleSegments } from '@/backend/lib/chat/preamble'
+import { buildEstimatedPreambleSegments, preparePreamblePlan, PreamblePlan } from '@/backend/lib/chat/preamble'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
 
 // --- File token cache -----------------------------------------------------------
@@ -140,6 +140,19 @@ export type TokenEstimateResult = {
   estimate: TokenEstimateBreakdown
   cache: CacheStats
   detail?: dto.TokenEstimateDetail
+}
+
+export type HistoryMessageCost = {
+  index: number
+  messageId: string
+  role: dto.Message['role']
+  tokens: number
+}
+
+export type ConversationCostPlan = {
+  assistantTokens: number
+  historyMessageCosts: HistoryMessageCost[]
+  draftTokens: number
 }
 
 type TokenEstimateInput = {
@@ -404,24 +417,99 @@ const estimateDtoMessageTokens = async (
   return 0
 }
 
-export const estimateHistoryTokens = async (
+export const estimateHistoryMessageCosts = async (
   model: LlmModel,
   history: dto.Message[],
   stats?: CacheStats,
   collector?: TokenDetailCollector
-): Promise<number> => {
-  let historyTokenCount = 0
-  for (const message of history) {
-    historyTokenCount += await estimateDtoMessageTokens(
+): Promise<HistoryMessageCost[]> => {
+  const costs: HistoryMessageCost[] = []
+  for (let index = 0; index < history.length; index++) {
+    const message = history[index]!
+    const tokens = await estimateDtoMessageTokens(
       model,
       message,
       stats,
-      collector
-        ? (part) => collector.addHistoryPart(message.id, message.role, part)
-        : undefined
+      collector ? (part) => collector.addHistoryPart(message.id, message.role, part) : undefined
     )
+    costs.push({ index, messageId: message.id, role: message.role, tokens })
   }
-  return historyTokenCount
+  return costs
+}
+
+export const computeConversationPlanTotalCost = (plan: ConversationCostPlan): number =>
+  plan.assistantTokens + plan.draftTokens + plan.historyMessageCosts.reduce((sum, entry) => sum + entry.tokens, 0)
+
+export const computeConversationTotalCostFromStartIndex = (
+  plan: ConversationCostPlan,
+  startIndex: number
+): number =>
+  plan.assistantTokens +
+  plan.draftTokens +
+  plan.historyMessageCosts.reduce((sum, entry) => sum + (entry.index >= startIndex ? entry.tokens : 0), 0)
+
+export const selectOptimalHistoryStartIndex = (
+  history: dto.Message[],
+  historyMessageCosts: HistoryMessageCost[],
+  assistantTokens: number,
+  draftTokens: number,
+  tokenLimit: number
+): number => {
+  if (history.length === 0) return 0
+  const running: number[] = new Array(historyMessageCosts.length + 1).fill(0)
+  for (let i = historyMessageCosts.length - 1; i >= 0; i--) {
+    running[i] = running[i + 1]! + (historyMessageCosts[i]?.tokens ?? 0)
+  }
+  const userTurnStartIndexes = history.flatMap((message, index) =>
+    message.role === 'user' && index > 0 ? [index] : []
+  )
+  const candidateStartIndexes = [0, ...userTurnStartIndexes]
+  for (const startIndex of candidateStartIndexes) {
+    const total = assistantTokens + draftTokens + (running[startIndex] ?? 0)
+    if (total <= tokenLimit) return startIndex
+  }
+  for (let index = history.length - 1; index >= 0; index--) {
+    if (history[index]?.role === 'user') return index
+  }
+  return 0
+}
+
+export const prepareConversationCostPlan = async (
+  input: ConversationWindowEstimateInput,
+  collector?: TokenDetailCollector
+): Promise<{ plan: ConversationCostPlan; cache: CacheStats }> => {
+  const stats: CacheStats = createTokenCountCacheStats()
+  const { assistantParams, model, tools, parameters, knowledgeFiles, history, draft } = input
+  const preamblePlan = await preparePreamblePlan({
+    assistantParams,
+    llmModel: model,
+    tools,
+    parameters,
+    knowledge: knowledgeFiles,
+  })
+  const assistantTokens = await estimatePreambleTokensFromPlan({
+    plan: preamblePlan,
+    model,
+    stats,
+    collector,
+  })
+  const historyMessageCosts = await estimateHistoryMessageCosts(model, history, stats, collector)
+  const draftTokens = draft
+    ? await estimateDtoMessageTokens(
+        model,
+        draft,
+        stats,
+        collector ? (part) => collector.addDraftPart(part) : undefined
+      )
+    : 0
+  return {
+    plan: {
+      assistantTokens,
+      historyMessageCosts,
+      draftTokens,
+    },
+    cache: stats,
+  }
 }
 
 export const estimatePreambleTokens = async ({
@@ -441,13 +529,28 @@ export const estimatePreambleTokens = async ({
   stats?: CacheStats
   collector?: TokenDetailCollector
 }): Promise<number> => {
-  const preambleSegments = await buildPreambleSegments({
+  const preamblePlan = await preparePreamblePlan({
     assistantParams,
     llmModel: model,
     tools,
     parameters,
     knowledge: knowledgeFiles,
   })
+  return estimatePreambleTokensFromPlan({ plan: preamblePlan, model, stats, collector })
+}
+
+export const estimatePreambleTokensFromPlan = async ({
+  plan,
+  model,
+  stats,
+  collector,
+}: {
+  plan: PreamblePlan
+  model: LlmModel
+  stats?: CacheStats
+  collector?: TokenDetailCollector
+}): Promise<number> => {
+  const preambleSegments = buildEstimatedPreambleSegments(plan)
   if (preambleSegments.length === 0) return 0
 
   const algorithm = tokenizerForModel(model)
@@ -537,39 +640,18 @@ export const estimateConversationWindowTokens = async (
   input: ConversationWindowEstimateInput,
   collector?: TokenDetailCollector
 ): Promise<TokenEstimateResult> => {
-  const stats: CacheStats = createTokenCountCacheStats()
-  const { assistantParams, model, tools, parameters, knowledgeFiles, history, draft } = input
-
-  const preambleTokenCount = await estimatePreambleTokens({
-    assistantParams,
-    model,
-    tools,
-    parameters,
-    knowledgeFiles,
-    stats,
-    collector,
-  })
-
-  const historyTokenCount = await estimateHistoryTokens(model, history, stats, collector)
-  const draftTokenCount = draft
-    ? await estimateDtoMessageTokens(
-        model,
-        draft,
-        stats,
-        collector ? (part) => collector.addDraftPart(part) : undefined
-      )
-    : 0
-
-  const total = preambleTokenCount + historyTokenCount + draftTokenCount
+  const { plan, cache } = await prepareConversationCostPlan(input, collector)
+  const historyTokenCount = plan.historyMessageCosts.reduce((sum, entry) => sum + entry.tokens, 0)
+  const total = computeConversationPlanTotalCost(plan)
 
   return {
     estimate: {
-      assistant: preambleTokenCount,
+      assistant: plan.assistantTokens,
       history: historyTokenCount,
-      draft: draftTokenCount,
+      draft: plan.draftTokens,
       total,
     },
-    cache: stats,
+    cache,
     detail: collector?.build(),
   }
 }

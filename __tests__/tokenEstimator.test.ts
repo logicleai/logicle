@@ -64,7 +64,10 @@ const assistantParams = {
 
 const mockBuildPreambleSegments = async (segments: any[]) => {
   const preambleModule = await import('@/backend/lib/chat/preamble')
-  vi.spyOn(preambleModule, 'buildPreambleSegments').mockResolvedValue(segments as never)
+  vi.spyOn(preambleModule, 'preparePreamblePlan').mockResolvedValue({
+    systemPromptMessage: { role: 'system', content: '' },
+  })
+  vi.spyOn(preambleModule, 'buildEstimatedPreambleSegments').mockReturnValue(segments)
 }
 
 const makePdfFile = (id: string) => ({
@@ -1501,5 +1504,28 @@ describe('estimateInputTokens', () => {
       countTextForModel(gpt41MiniModel, 'system') +
         Math.ceil(estimateNativeImageTokensFromDimensions(gpt41MiniModel, 512, 512))
     )
+  })
+
+  test('estimatePreambleTokens uses plan + estimated segments without materialization', async () => {
+    const preambleModule = await import('@/backend/lib/chat/preamble')
+    const buildPlanSpy = vi.spyOn(preambleModule, 'preparePreamblePlan').mockResolvedValue({
+      systemPromptMessage: { role: 'system', content: 'system' },
+      knowledgeFileEntries: [{ fileId: 'k1', fileName: 'k1.png', partIndex: 0 }],
+    })
+    const buildEstimatedSpy = vi.spyOn(preambleModule, 'buildEstimatedPreambleSegments')
+    const renderSpy = vi.spyOn(preambleModule, 'renderPreamblePlan')
+
+    const { estimatePreambleTokens } = await import('@/backend/lib/chat/token-estimator')
+    await estimatePreambleTokens({
+      assistantParams: { ...assistantParams, model: gpt41MiniModel.id },
+      model: gpt41MiniModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [{ id: 'k1', name: 'k1.png', type: 'image/png', size: 1 }],
+    })
+
+    expect(buildPlanSpy).toHaveBeenCalledTimes(1)
+    expect(buildEstimatedSpy).toHaveBeenCalledTimes(1)
+    expect(renderSpy).not.toHaveBeenCalled()
   })
 })

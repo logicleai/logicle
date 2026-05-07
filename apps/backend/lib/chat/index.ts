@@ -25,7 +25,11 @@ import { llmModels } from '@/lib/models'
 import { z } from 'zod/v4'
 import { ParameterValueAndDescription } from '@/models/user'
 import { nanoid } from 'nanoid'
-import { estimateConversationWindowTokens } from '@/backend/lib/chat/token-estimator'
+import {
+  prepareConversationCostPlan,
+  selectOptimalHistoryStartIndex,
+  computeConversationTotalCostFromStartIndex,
+} from '@/backend/lib/chat/token-estimator'
 import {
   normalizeMcpToolResult,
   persistFileLikePayload,
@@ -481,47 +485,28 @@ export class ChatAssistant {
 
   async truncateChat(messages: dto.Message[]) {
     if (messages.length === 0) return messages
-
-    const userTurnStartIndexes = messages.flatMap((message, index) =>
-      message.role === 'user' && index > 0 ? [index] : []
+    const { plan } = await prepareConversationCostPlan({
+      assistantParams: this.assistantParams,
+      model: this.llmModel,
+      tools: this.tools,
+      parameters: this.parameters,
+      knowledgeFiles: this.knowledge,
+      history: messages,
+    })
+    const startIndex = selectOptimalHistoryStartIndex(
+      messages,
+      plan.historyMessageCosts,
+      plan.assistantTokens,
+      plan.draftTokens,
+      this.assistantParams.tokenLimit
     )
-    const candidateStartIndexes = [0, ...userTurnStartIndexes]
-
-    for (const startIndex of candidateStartIndexes) {
-      const candidateMessages = messages.slice(startIndex)
-      const { estimate } = await estimateConversationWindowTokens({
-        assistantParams: this.assistantParams,
-        model: this.llmModel,
-        tools: this.tools,
-        parameters: this.parameters,
-        knowledgeFiles: this.knowledge,
-        history: candidateMessages,
-      })
-      const totalTokens = estimate.total
-      if (totalTokens <= this.assistantParams.tokenLimit) {
-        if (startIndex > 0) {
-          logger.info(
-            `Truncating chat: estimated token count ${totalTokens} within limit of ${this.assistantParams.tokenLimit} after dropping ${startIndex} messages`
-          )
-        }
-        return candidateMessages
-      }
-    }
-
-    let lastUserIndex = -1
-    for (let index = messages.length - 1; index >= 0; index--) {
-      if (messages[index].role === 'user') {
-        lastUserIndex = index
-        break
-      }
-    }
-    if (lastUserIndex > 0) {
+    const totalTokens = computeConversationTotalCostFromStartIndex(plan, startIndex)
+    if (startIndex > 0) {
       logger.info(
-        `Truncating chat: latest user turn still exceeds limit of ${this.assistantParams.tokenLimit}`
+        `Truncating chat: estimated token count ${totalTokens} within limit of ${this.assistantParams.tokenLimit} after dropping ${startIndex} messages`
       )
-      return messages.slice(lastUserIndex)
     }
-    return messages
+    return messages.slice(startIndex)
   }
 
   async computeLlmMessages(messages: dto.Message[]): Promise<ai.ModelMessage[]> {

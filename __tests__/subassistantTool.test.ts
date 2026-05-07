@@ -34,13 +34,19 @@ vi.mock('@/backend/lib/chat/prompt-token-counter', () => ({
 }))
 
 vi.mock('@/backend/lib/chat/token-estimator', () => ({
-  estimateConversationWindowTokens: vi.fn().mockResolvedValue({
-    estimate: { assistant: 0, history: 0, draft: 0, total: 0 },
+  prepareConversationCostPlan: vi.fn().mockResolvedValue({
+    plan: {
+      assistantTokens: 0,
+      historyMessageCosts: [],
+      draftTokens: 0,
+    },
     cache: {
       textTokensCache: { hits: 0, misses: 0 },
       fileTokenCache: { hits: 0, misses: 0 },
     },
   }),
+  selectOptimalHistoryStartIndex: vi.fn().mockReturnValue(0),
+  computeConversationPlanTotalCost: vi.fn().mockReturnValue(0),
 }))
 
 vi.mock('db/database', () => ({
