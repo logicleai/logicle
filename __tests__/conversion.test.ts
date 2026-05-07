@@ -602,3 +602,116 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
     expect(ensureFileAnalysis).not.toHaveBeenCalled()
   })
 })
+
+describe('dtoMessageToLlmMessage contract', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+  })
+
+  test('simple user message remains plain string content', async () => {
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
+    const message = await dtoMessageToLlmMessage(
+      {
+        id: 'u-contract-1',
+        conversationId: 'c1',
+        parent: null,
+        sentAt: new Date().toISOString(),
+        citations: [],
+        role: 'user',
+        content: 'hello',
+        attachments: [],
+      },
+      { vision: false, function_calling: true, reasoning: false, supportedMedia: [] },
+      openaiLanguageModel.provider
+    )
+
+    expect(message).toEqual({ role: 'user', content: 'hello' })
+  })
+
+  test('user message with metadata/attachments materializes text parts + file parts', async () => {
+    const imageFile = {
+      ...pdfFile,
+      id: 'img-contract-1',
+      name: 'image.png',
+      path: 'files/image.png',
+      type: 'image/png',
+      size: 10,
+    }
+    getFileWithId.mockResolvedValue(imageFile)
+    readBuffer.mockResolvedValue(Buffer.from('img-bytes'))
+
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
+    const message = await dtoMessageToLlmMessage(
+      {
+        id: 'u-contract-2',
+        conversationId: 'c1',
+        parent: null,
+        sentAt: new Date().toISOString(),
+        citations: [],
+        role: 'user',
+        content: 'hello',
+        metadata: { locale: 'en-US' },
+        attachments: [{ id: imageFile.id, name: imageFile.name, mimetype: imageFile.type, size: imageFile.size }],
+      },
+      { vision: true, function_calling: true, reasoning: false, supportedMedia: ['image/png'] },
+      openaiLanguageModel.provider
+    )
+
+    expect(message).toEqual({
+      role: 'user',
+      content: [
+        { type: 'text', text: 'Message metadata (system-use): {"locale":"en-US"}' },
+        { type: 'text', text: 'hello' },
+        {
+          type: 'text',
+          text: `The user has attached the following files to this chat: \n${JSON.stringify([
+            { id: imageFile.id, name: imageFile.name, mimetype: imageFile.type, size: imageFile.size },
+          ])}`,
+        },
+        {
+          type: 'image',
+          image: `data:${imageFile.type};base64,${Buffer.from('img-bytes').toString('base64')}`,
+        },
+      ],
+    })
+  })
+
+  test('assistant reasoning is included only when reasoning_signature is present', async () => {
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
+    const message = await dtoMessageToLlmMessage(
+      {
+        id: 'a-contract-1',
+        conversationId: 'c1',
+        parent: null,
+        sentAt: new Date().toISOString(),
+        citations: [],
+        role: 'assistant',
+        parts: [
+          { type: 'reasoning', reasoning: 'drop-me' },
+          { type: 'reasoning', reasoning: 'keep-me', reasoning_signature: 'sig-1' },
+          { type: 'tool-call', toolCallId: 'call-1', toolName: 'search', args: { q: 'cats' } },
+        ],
+      },
+      { vision: false, function_calling: true, reasoning: true, supportedMedia: [] },
+      openaiLanguageModel.provider
+    )
+
+    expect(message).toEqual({
+      role: 'assistant',
+      content: [
+        {
+          type: 'reasoning',
+          text: 'keep-me',
+          providerOptions: { anthropic: { signature: 'sig-1' } },
+        },
+        {
+          type: 'tool-call',
+          toolCallId: 'call-1',
+          toolName: 'search',
+          input: { q: 'cats' },
+        },
+      ],
+    })
+  })
+})
