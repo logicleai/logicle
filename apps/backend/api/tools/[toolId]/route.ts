@@ -51,7 +51,7 @@ export const PATCH = operation({
   authentication: 'admin',
   requestBodySchema: updateableToolSchema,
   responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
-  implementation: async ({ params, body }) => {
+  implementation: async ({ params, body, session }) => {
     const data = body
     const existingTool = await getTool(params.toolId)
     if (!existingTool) {
@@ -77,7 +77,7 @@ export const PATCH = operation({
         }
       }
     }
-    await updateTool(params.toolId, data)
+    await updateTool(params.toolId, data, undefined, session.userId)
     return noBody()
   },
 })
