@@ -50,6 +50,7 @@ export const backendRouteModules = [
   { pathname: '/api/feedbacks', load: () => import('@/backend/api/feedbacks/route') },
   { pathname: '/api/files/[fileId]/analysis', load: () => import('@/backend/api/files/[fileId]/analysis/route') },
   { pathname: '/api/files/[fileId]/content', load: () => import('@/backend/api/files/[fileId]/content/route') },
+  { pathname: '/api/files/[fileId]', load: () => import('@/backend/api/files/[fileId]/route') },
   { pathname: '/api/files/images', load: () => import('@/backend/api/files/images/route') },
   { pathname: '/api/files', load: () => import('@/backend/api/files/route') },
   { pathname: '/api/health', load: () => import('@/backend/api/health/route') },

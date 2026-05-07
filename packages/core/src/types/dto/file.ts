@@ -16,6 +16,26 @@ export const fileSchema = z.object({
   encrypted: z.union([z.literal(0), z.literal(1)]),
 }).meta({ id: 'File' })
 
+export const fileDetailsSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  path: z.string(),
+  type: z.string(),
+  createdAt: iso8601UtcDateTimeSchema,
+  owner: fileOwnerSchema.extend({
+    ownerName: z.string().nullable(),
+  }),
+  blob: z
+    .object({
+      id: z.string(),
+      size: z.number(),
+      encrypted: z.union([z.literal(0), z.literal(1)]),
+      contentHash: z.string(),
+      createdAt: iso8601UtcDateTimeSchema,
+    })
+    .nullable(),
+}).meta({ id: 'FileDetails' })
+
 export const insertableFileSchema = fileSchema
   .omit({
     id: true,
@@ -30,4 +50,5 @@ export const insertableFileSchema = fileSchema
 
 export type FileOwner = z.infer<typeof fileOwnerSchema>
 export type File = z.infer<typeof fileSchema>
+export type FileDetails = z.infer<typeof fileDetailsSchema>
 export type InsertableFile = z.infer<typeof insertableFileSchema>
