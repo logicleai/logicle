@@ -4,13 +4,23 @@ import { GeneratedImagesResponse, ImageEditRequest, ImageGenerationRequest } fro
 
 const createGeminiClient = (apiKey: string) => new GoogleGenerativeAI(apiKey)
 
-const extractGeminiImage = (parts: Array<{ inlineData?: { data?: string } }> = []) => {
+type GeminiInlineImagePart = {
+  inlineData?: {
+    data?: string
+    mimeType?: string
+  }
+}
+
+const extractGeminiImage = (parts: GeminiInlineImagePart[] = []) => {
   for (const part of parts) {
     if (part.inlineData?.data) {
-      return part.inlineData.data
+      return {
+        data: part.inlineData.data,
+        mimeType: part.inlineData.mimeType,
+      }
     }
   }
-  return ''
+  return undefined
 }
 
 export const generateWithGemini = async ({
@@ -35,10 +45,10 @@ export const generateWithGemini = async ({
     } as never,
   } as never)
 
-  let image = ''
+  let image: { data: string; mimeType?: string } | undefined
   for await (const chunk of result.stream) {
     image = extractGeminiImage(
-      (chunk.candidates?.[0]?.content?.parts as Array<{ inlineData?: { data?: string } }>) ?? []
+      (chunk.candidates?.[0]?.content?.parts as GeminiInlineImagePart[]) ?? []
     )
     if (image) {
       break
@@ -52,7 +62,7 @@ export const generateWithGemini = async ({
   logger.info('Generated image directly via Gemini', { model })
   return {
     created: Math.floor(Date.now() / 1000),
-    data: [{ b64_json: image }],
+    data: [{ b64_json: image.data, mimeType: image.mimeType }],
   }
 }
 
@@ -90,8 +100,7 @@ export const editWithGemini = async ({
   } as never)
 
   const image = extractGeminiImage(
-    (result.response.candidates?.[0]?.content?.parts as Array<{ inlineData?: { data?: string } }>) ??
-      []
+    (result.response.candidates?.[0]?.content?.parts as GeminiInlineImagePart[]) ?? []
   )
   if (!image) {
     throw new Error('No image data received from Gemini')
@@ -100,6 +109,6 @@ export const editWithGemini = async ({
   logger.info('Edited image directly via Gemini', { model, imageCount: images.length })
   return {
     created: Math.floor(Date.now() / 1000),
-    data: [{ b64_json: image }],
+    data: [{ b64_json: image.data, mimeType: image.mimeType }],
   }
 }
