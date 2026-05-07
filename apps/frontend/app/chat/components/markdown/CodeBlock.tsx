@@ -5,7 +5,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 
 import { useTranslation } from 'react-i18next'
 
-import { generateRandomString, fileExtensionsForLanguage } from '@/lib/codeblock'
+import { generateRandomString, fileExtensionsForLanguage, shouldWrapFence } from '@/lib/codeblock'
 
 interface Props {
   language?: string
@@ -26,6 +26,7 @@ const computeExtensionForLanguage = (language?: string) => {
 export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
   const { t } = useTranslation()
   const [isCopied, setIsCopied] = useState<boolean>(false)
+  const wrapLongLines = shouldWrapFence(language)
 
   const copyToClipboard = async () => {
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
@@ -83,7 +84,12 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
         </div>
       )}
 
-      <SyntaxHighlighter language={language} style={oneDark} customStyle={{ margin: 0 }}>
+      <SyntaxHighlighter
+        language={language}
+        style={oneDark}
+        customStyle={{ margin: 0 }}
+        wrapLongLines={wrapLongLines}
+      >
         {value}
       </SyntaxHighlighter>
     </div>
