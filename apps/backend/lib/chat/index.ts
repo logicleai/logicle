@@ -28,7 +28,6 @@ import { nanoid } from 'nanoid'
 import {
   prepareConversationCostPlan,
   selectOptimalHistoryStartIndex,
-  computeConversationTotalCostFromStartIndex,
 } from '@/backend/lib/chat/token-estimator'
 import {
   normalizeMcpToolResult,
@@ -500,8 +499,11 @@ export class ChatAssistant {
       plan.draftTokens,
       this.assistantParams.tokenLimit
     )
-    const totalTokens = computeConversationTotalCostFromStartIndex(plan, startIndex)
     if (startIndex > 0) {
+      const totalTokens =
+        plan.assistantTokens +
+        plan.draftTokens +
+        plan.historyMessageCosts.slice(startIndex).reduce((s, e) => s + e.tokens, 0)
       logger.info(
         `Truncating chat: estimated token count ${totalTokens} within limit of ${this.assistantParams.tokenLimit} after dropping ${startIndex} messages`
       )

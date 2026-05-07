@@ -19,43 +19,13 @@ vi.mock('@/backend/lib/chat/conversion', () => ({
   sanitizeOrphanToolCalls: mockSanitizeOrphanToolCalls,
 }))
 
-vi.mock('@/backend/lib/chat/token-estimator', () => ({
-  prepareConversationCostPlan: mockPrepareConversationCostPlan,
-  selectOptimalHistoryStartIndex: (
-    history: dto.Message[],
-    historyMessageCosts: Array<{ index: number; tokens: number; role: dto.Message['role'] }>,
-    assistantTokens: number,
-    draftTokens: number,
-    tokenLimit: number
-  ) => {
-    const suffixTotals = new Array(historyMessageCosts.length + 1).fill(0)
-    for (let i = historyMessageCosts.length - 1; i >= 0; i--) {
-      suffixTotals[i] = suffixTotals[i + 1] + historyMessageCosts[i].tokens
-    }
-    const candidates = [0, ...history.flatMap((m, i) => (m.role === 'user' && i > 0 ? [i] : []))]
-    for (const startIndex of candidates) {
-      if (assistantTokens + draftTokens + suffixTotals[startIndex] <= tokenLimit) return startIndex
-    }
-    for (let i = history.length - 1; i >= 0; i--) if (history[i].role === 'user') return i
-    return 0
-  },
-  computeConversationPlanTotalCost: ({
-    assistantTokens,
-    draftTokens,
-    historyMessageCosts,
-  }: {
-    assistantTokens: number
-    draftTokens: number
-    historyMessageCosts: Array<{ tokens: number }>
-  }) => assistantTokens + draftTokens + historyMessageCosts.reduce((s, c) => s + c.tokens, 0),
-  computeConversationTotalCostFromStartIndex: (
-    plan: { assistantTokens: number; draftTokens: number; historyMessageCosts: Array<{ index: number; tokens: number }> },
-    startIndex: number
-  ) =>
-    plan.assistantTokens +
-    plan.draftTokens +
-    plan.historyMessageCosts.reduce((sum, entry) => sum + (entry.index >= startIndex ? entry.tokens : 0), 0),
-}))
+vi.mock('@/backend/lib/chat/token-estimator', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/lib/chat/token-estimator')>()
+  return {
+    ...actual,
+    prepareConversationCostPlan: mockPrepareConversationCostPlan,
+  }
+})
 
 vi.mock('@/db/database', () => ({ db: {} }))
 vi.mock('@/db/dialect', () => ({ createDialect: () => null }))
@@ -221,8 +191,7 @@ describe('truncateChat', () => {
         plan: {
           assistantTokens: 10,
           draftTokens: 0,
-          historyMessageCosts: history.map((m, i) => ({
-            index: i,
+          historyMessageCosts: history.map((m) => ({
             messageId: m.id,
             role: m.role,
             tokens: 10,

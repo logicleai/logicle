@@ -159,37 +159,38 @@ export async function preparePreamblePlan({
       ${JSON.stringify(knowledge)}
       When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
       `
+  const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
+  const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
+  if (!knowledgePlugin) {
+    return { systemPromptMessage, knowledgePrompt }
+  }
   const knowledgeFileEntries: KnowledgeFileEntry[] = knowledge.map((k, index) => ({
     fileId: k.id,
     fileName: k.name,
     partIndex: index,
   }))
-  const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
-  const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
   return {
     systemPromptMessage,
     knowledgePrompt,
     knowledgeFileEntries,
-    materializeKnowledgeSegment: knowledgePlugin
-      ? async () => {
-          // Limit concurrency to avoid saturating the libuv thread pool and
-          // the Node.js microtask queue when an assistant has many knowledge files.
-          // Unbounded Promise.all over hundreds of files causes multi-second
-          // health-check stalls and S3 socket pool exhaustion.
-          const parts = await mapWithConcurrency(
-            knowledge,
-            (k) => (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel),
-            8
-          )
-          const analysisFileIds = parts
-            .flatMap((part, index) => (part.type === 'file' ? [knowledge[index]?.id ?? ''] : []))
-            .filter((id) => id.length > 0)
-          return {
-            message: { role: 'user', content: parts },
-            analysisFileIds,
-          }
-        }
-      : undefined,
+    materializeKnowledgeSegment: async () => {
+      // Limit concurrency to avoid saturating the libuv thread pool and
+      // the Node.js microtask queue when an assistant has many knowledge files.
+      // Unbounded Promise.all over hundreds of files causes multi-second
+      // health-check stalls and S3 socket pool exhaustion.
+      const parts = await mapWithConcurrency(
+        knowledge,
+        (k) => (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel),
+        8
+      )
+      const analysisFileIds = parts
+        .flatMap((part, index) => (part.type === 'file' ? [knowledge[index]?.id ?? ''] : []))
+        .filter((id) => id.length > 0)
+      return {
+        message: { role: 'user', content: parts },
+        analysisFileIds,
+      }
+    },
   }
 }
 

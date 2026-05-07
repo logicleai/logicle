@@ -143,7 +143,6 @@ export type TokenEstimateResult = {
 }
 
 export type HistoryMessageCost = {
-  index: number
   messageId: string
   role: dto.Message['role']
   tokens: number
@@ -432,21 +431,13 @@ export const estimateHistoryMessageCosts = async (
       stats,
       collector ? (part) => collector.addHistoryPart(message.id, message.role, part) : undefined
     )
-    costs.push({ index, messageId: message.id, role: message.role, tokens })
+    costs.push({ messageId: message.id, role: message.role, tokens })
   }
   return costs
 }
 
 export const computeConversationPlanTotalCost = (plan: ConversationCostPlan): number =>
   plan.assistantTokens + plan.draftTokens + plan.historyMessageCosts.reduce((sum, entry) => sum + entry.tokens, 0)
-
-export const computeConversationTotalCostFromStartIndex = (
-  plan: ConversationCostPlan,
-  startIndex: number
-): number =>
-  plan.assistantTokens +
-  plan.draftTokens +
-  plan.historyMessageCosts.reduce((sum, entry) => sum + (entry.index >= startIndex ? entry.tokens : 0), 0)
 
 export const selectOptimalHistoryStartIndex = (
   history: dto.Message[],
