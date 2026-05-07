@@ -5,6 +5,7 @@ import { gpt35Model, gpt41Model, gpt41MiniModel } from '@/lib/chat/models/openai
 import { countTextForModel, countTextWithTokenizer } from '@/lib/chat/tokenizer'
 import { normalizeExtractedText } from '@/backend/lib/chat/pdf-token-estimator'
 import { estimateNativeImageTokensFromDimensions } from '@/backend/lib/chat/image-token-estimator'
+import { projectedToolResultAttachedFilesDescriptor } from '@/backend/lib/chat/message-projection'
 
 // Regression helpers — intentionally NOT delegating to the implementation so that bugs in
 // resolvePdfEstimatorModel() or predictPdfTokenCount() are caught by the tests.
@@ -91,6 +92,17 @@ const makeImageFile = (id: string) => ({
   createdAt: new Date().toISOString(),
   encrypted: 0 as const,
 })
+
+const countUserAttachmentDescriptorTokens = (model: Parameters<typeof countTextForModel>[0], attachments: dto.Attachment[]) =>
+  countTextForModel(
+    model,
+    `The user has attached the following files to this chat: \n${JSON.stringify(attachments)}`
+  )
+
+const countToolResultAttachedFilesDescriptorTokens = (
+  model: Parameters<typeof countTextForModel>[0],
+  files: Array<{ id: string; name: string; mimetype: string; size: number }>
+) => countTextForModel(model, JSON.stringify(projectedToolResultAttachedFilesDescriptor(files)))
 
 describe('estimateInputTokens', () => {
   beforeEach(async () => {
@@ -269,8 +281,12 @@ describe('estimateInputTokens', () => {
     expect(result.estimate).toEqual({
       assistant: 0,
       history: 0,
-      draft: 0,
-      total: 0,
+      draft: countUserAttachmentDescriptorTokens(claude35SonnetModel, [
+        { id: fileId, name: `${fileId}.pdf`, mimetype: 'application/pdf', size: 123 },
+      ]),
+      total: countUserAttachmentDescriptorTokens(claude35SonnetModel, [
+        { id: fileId, name: `${fileId}.pdf`, mimetype: 'application/pdf', size: 123 },
+      ]),
     })
     expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
     expect(readBuffer).not.toHaveBeenCalled()
@@ -320,8 +336,16 @@ describe('estimateInputTokens', () => {
     expect(result.estimate).toEqual({
       assistant: 0,
       history: 0,
-      draft: expectedImageTokens,
-      total: expectedImageTokens,
+      draft:
+        expectedImageTokens +
+        countUserAttachmentDescriptorTokens(gpt41MiniModel, [
+          { id: fileId, name: `${fileId}.png`, mimetype: 'image/png', size: 456 },
+        ]),
+      total:
+        expectedImageTokens +
+        countUserAttachmentDescriptorTokens(gpt41MiniModel, [
+          { id: fileId, name: `${fileId}.png`, mimetype: 'image/png', size: 456 },
+        ]),
     })
     expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
     expect(readBuffer).not.toHaveBeenCalled()
@@ -401,12 +425,18 @@ describe('estimateInputTokens', () => {
       JSON.stringify({ toolCallId: 'call_1', toolName: 'GenerateImage' })
     )
     const expectedDescription = countTextForModel(gpt41MiniModel, 'The tool displayed 1 images.')
+    const expectedAttachedFilesDescriptor = countToolResultAttachedFilesDescriptorTokens(
+      gpt41MiniModel,
+      [{ id: fileId, name: 'generated.png', mimetype: 'image/png', size: 456 }]
+    )
 
     expect(result.estimate).toEqual({
       assistant: 0,
-      history: expectedToolResultPrefix + expectedDescription + expectedImageTokens,
+      history:
+        expectedToolResultPrefix + expectedAttachedFilesDescriptor + expectedDescription + expectedImageTokens,
       draft: 0,
-      total: expectedToolResultPrefix + expectedDescription + expectedImageTokens,
+      total:
+        expectedToolResultPrefix + expectedAttachedFilesDescriptor + expectedDescription + expectedImageTokens,
     })
     expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
     expect(readBuffer).not.toHaveBeenCalled()
@@ -467,12 +497,15 @@ describe('estimateInputTokens', () => {
       gpt35Model,
       `Here is the text content of the file "${file.name}" with id ${file.id}\ntool pdf fallback text`
     )
+    const expectedAttachedFilesDescriptor = countToolResultAttachedFilesDescriptorTokens(gpt35Model, [
+      { id: fileId, name: file.name, mimetype: 'application/pdf', size: file.size },
+    ])
 
     expect(result.estimate).toEqual({
       assistant: 0,
-      history: expectedToolCallPrefix + expectedFallback,
+      history: expectedToolCallPrefix + expectedAttachedFilesDescriptor + expectedFallback,
       draft: 0,
-      total: expectedToolCallPrefix + expectedFallback,
+      total: expectedToolCallPrefix + expectedAttachedFilesDescriptor + expectedFallback,
     })
     expect(extractFromFile).toHaveBeenCalledWith(file)
     expect(ensureFileAnalysis).not.toHaveBeenCalled()
@@ -519,7 +552,12 @@ describe('estimateInputTokens', () => {
 
     const { getPdfAttachmentPageLimitText } = await import('@/backend/lib/chat/file-attachment-policy')
     const courtesyText = getPdfAttachmentPageLimitText(file, 101, claude35SonnetModel)!
-    expect(result.estimate.draft).toBe(countTextForModel(claude35SonnetModel, courtesyText))
+    expect(result.estimate.draft).toBe(
+      countTextForModel(claude35SonnetModel, courtesyText) +
+        countUserAttachmentDescriptorTokens(claude35SonnetModel, [
+          { id: fileId, name: file.name, mimetype: 'application/pdf', size: file.size },
+        ])
+    )
     expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
   })
 
@@ -568,7 +606,10 @@ describe('estimateInputTokens', () => {
         1,
         2,
         countTextForModel(claude35SonnetModel, normalizeExtractedText('hello world'))
-      )
+      ) +
+        countUserAttachmentDescriptorTokens(claude35SonnetModel, [
+          { id: fileId, name: file.name, mimetype: 'application/pdf', size: file.size },
+        ])
     )
   })
 
@@ -616,8 +657,16 @@ describe('estimateInputTokens', () => {
     expect(result.estimate).toEqual({
       assistant: 0,
       history: 0,
-      draft: expectedPdfTokens,
-      total: expectedPdfTokens,
+      draft:
+        expectedPdfTokens +
+        countUserAttachmentDescriptorTokens(gpt41MiniModel, [
+          { id: fileId, name: file.name, mimetype: 'application/pdf', size: file.size },
+        ]),
+      total:
+        expectedPdfTokens +
+        countUserAttachmentDescriptorTokens(gpt41MiniModel, [
+          { id: fileId, name: file.name, mimetype: 'application/pdf', size: file.size },
+        ]),
     })
   })
 
@@ -670,7 +719,11 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [fileId],
     })
 
-    expect(result.estimate.draft).toBe(0)
+    expect(result.estimate.draft).toBe(
+      countUserAttachmentDescriptorTokens(claude35SonnetModel, [
+        { id: fileId, name: file.name, mimetype: 'application/pdf', size: file.size },
+      ])
+    )
     vi.doUnmock('@/backend/lib/chat/file-attachment-policy')
   })
 
@@ -817,7 +870,12 @@ describe('estimateInputTokens', () => {
       attachmentFileIds: [],
     })
 
-    expect(result.estimate.history).toBe(0)
+    expect(result.estimate.history).toBe(
+      countUserAttachmentDescriptorTokens(claude35SonnetModel, [
+        { id: badTypeId, name: 'bad-type.pdf', mimetype: 'application/pdf', size: 123 },
+        { id: badPayloadId, name: 'bad-payload.pdf', mimetype: 'application/pdf', size: 123 },
+      ])
+    )
   })
 
   test('counts extracted-text fallback for PDF attachments when the model does not support native PDFs', async () => {
@@ -853,7 +911,10 @@ describe('estimateInputTokens', () => {
       countTextForModel(
         gpt35Model,
         `Here is the text content of the file "${file.name}" with id ${file.id}\nplain pdf text`
-      )
+      ) +
+        countUserAttachmentDescriptorTokens(gpt35Model, [
+          { id: 'plain-pdf', name: 'plain.pdf', mimetype: 'application/pdf', size: 10 },
+        ])
     )
     expect(getFileWithId).toHaveBeenCalledWith(file.id)
     expect(extractFromFile).toHaveBeenCalledWith(file)
@@ -890,7 +951,10 @@ describe('estimateInputTokens', () => {
       countTextForModel(
         claude35SonnetModel,
         JSON.stringify({ filename: file.name, mediaType: file.type })
-      )
+      ) +
+        countUserAttachmentDescriptorTokens(claude35SonnetModel, [
+          { id: fileId, name: file.name, mimetype: file.type, size: file.size },
+        ])
     )
   })
 
@@ -1111,7 +1175,10 @@ describe('estimateInputTokens', () => {
     })
 
     expect(result.estimate.draft).toBe(
-      openAiPdfTokens(8, 10, countTextForModel(gpt41Model, normalizeExtractedText('brief caption text')))
+      openAiPdfTokens(8, 10, countTextForModel(gpt41Model, normalizeExtractedText('brief caption text'))) +
+        countUserAttachmentDescriptorTokens(gpt41Model, [
+          { id: fileId, name: file.name, mimetype: file.type, size: file.size },
+        ])
     )
   })
 
@@ -1156,7 +1223,10 @@ describe('estimateInputTokens', () => {
     })
 
     expect(result.estimate.draft).toBe(
-      anthropicPdfTokens(8, 10, countTextForModel(claude46SonnetModel, normalizeExtractedText('brief caption text')))
+      anthropicPdfTokens(8, 10, countTextForModel(claude46SonnetModel, normalizeExtractedText('brief caption text'))) +
+        countUserAttachmentDescriptorTokens(claude46SonnetModel, [
+          { id: fileId, name: file.name, mimetype: file.type, size: file.size },
+        ])
     )
   })
 
@@ -1201,7 +1271,12 @@ describe('estimateInputTokens', () => {
     })
 
     // OpenAI has no native PDF page limit — full regression model applies regardless of length
-    expect(result.estimate.draft).toBe(openAiPdfTokens(180, 200, 0))
+    expect(result.estimate.draft).toBe(
+      openAiPdfTokens(180, 200, 0) +
+        countUserAttachmentDescriptorTokens(gpt41Model, [
+          { id: fileId, name: file.name, mimetype: file.type, size: file.size },
+        ])
+    )
   })
 
   test('estimates very long visual PDF cost as a draft attachment for Anthropic flagship (claude46Sonnet)', async () => {
@@ -1245,8 +1320,13 @@ describe('estimateInputTokens', () => {
 
     // 200 pages exceeds Anthropic's 100-page native limit → courtesy text, not regression
     const { getPdfAttachmentPageLimitText } = await import('@/backend/lib/chat/file-attachment-policy')
-    const courtesyText = getPdfAttachmentPageLimitText(file, 200, claude46SonnetModel)!
-    expect(result.estimate.draft).toBe(countTextForModel(claude46SonnetModel, courtesyText))
+    const courtesyText = getPdfAttachmentPageLimitText(file, 200, claude46SonnetModel)
+    expect(result.estimate.draft).toBe(
+      (courtesyText ? countTextForModel(claude46SonnetModel, courtesyText) : 0) +
+        countUserAttachmentDescriptorTokens(claude46SonnetModel, [
+          { id: fileId, name: file.name, mimetype: file.type, size: file.size },
+        ])
+    )
     expect(readExtractedTextFromAnalysis).not.toHaveBeenCalled()
   })
 
@@ -1292,7 +1372,10 @@ describe('estimateInputTokens', () => {
     })
 
     expect(result.estimate.draft).toBe(
-      openAiPdfTokens(0, 30, countTextForModel(gpt41Model, normalizeExtractedText(extractedText)))
+      openAiPdfTokens(0, 30, countTextForModel(gpt41Model, normalizeExtractedText(extractedText))) +
+        countUserAttachmentDescriptorTokens(gpt41Model, [
+          { id: fileId, name: file.name, mimetype: file.type, size: file.size },
+        ])
     )
   })
 
@@ -1338,7 +1421,10 @@ describe('estimateInputTokens', () => {
     })
 
     expect(result.estimate.draft).toBe(
-      anthropicPdfTokens(0, 30, countTextForModel(claude46SonnetModel, normalizeExtractedText(extractedText)))
+      anthropicPdfTokens(0, 30, countTextForModel(claude46SonnetModel, normalizeExtractedText(extractedText))) +
+        countUserAttachmentDescriptorTokens(claude46SonnetModel, [
+          { id: fileId, name: file.name, mimetype: file.type, size: file.size },
+        ])
     )
   })
 
@@ -1362,7 +1448,12 @@ describe('estimateInputTokens', () => {
     })
 
     const expectedText = `Here is the text content of the file "${file.name}" with id ${file.id}\nextracted pdf content`
-    expect(result.estimate.draft).toBe(countTextForModel(gpt35Model, expectedText))
+    expect(result.estimate.draft).toBe(
+      countTextForModel(gpt35Model, expectedText) +
+        countUserAttachmentDescriptorTokens(gpt35Model, [
+          { id: fileId, name: file.name, mimetype: file.type, size: file.size },
+        ])
+    )
     expect(ensureFileAnalysis).not.toHaveBeenCalled()
     expect(extractFromFile).toHaveBeenCalledWith(file)
   })
@@ -1387,7 +1478,12 @@ describe('estimateInputTokens', () => {
     })
 
     const expectedText = `Here is the text content of the file "${file.name}" with id ${file.id}\nextracted pdf content`
-    expect(result.estimate.draft).toBe(countTextForModel(claude3HaikuModel, expectedText))
+    expect(result.estimate.draft).toBe(
+      countTextForModel(claude3HaikuModel, expectedText) +
+        countUserAttachmentDescriptorTokens(claude3HaikuModel, [
+          { id: fileId, name: file.name, mimetype: file.type, size: file.size },
+        ])
+    )
     expect(ensureFileAnalysis).not.toHaveBeenCalled()
     expect(extractFromFile).toHaveBeenCalledWith(file)
   })

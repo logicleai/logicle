@@ -265,10 +265,13 @@ export const dtoMessageToLlmMessage = async (
       content: parts,
     }
   }
-  const message: ai.ModelMessage = {
-    role: 'user',
-    content: '',
+  if (m.role === 'user' && m.attachments.length === 0 && !m.metadata) {
+    return {
+      role: 'user',
+      content: m.content,
+    }
   }
+  const message: ai.ModelMessage = { role: 'user', content: '' }
   const attachments = projected.items.filter((item) => item.kind === 'attachment')
   if (attachments.length !== 0) {
     const messageParts: typeof message.content = []
