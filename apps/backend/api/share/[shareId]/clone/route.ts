@@ -6,6 +6,64 @@ import { nanoid } from 'nanoid'
 import { dtoMessageToDbMessage } from '@/models/message'
 import * as dto from '@/types/dto'
 import { getUserAssistants } from '@/models/assistant'
+import { cloneFilesForOwner } from '@/models/file'
+
+const collectFileIdsFromMessage = (message: dto.Message): string[] => {
+  const ids: string[] = []
+  if (message.role === 'user') {
+    ids.push(...message.attachments.map((attachment) => attachment.id))
+    return ids
+  }
+
+  if (message.role === 'tool') {
+    for (const part of message.parts) {
+      if (part.type !== 'tool-result') continue
+      if (part.result.type !== 'content') continue
+      for (const contentPart of part.result.value) {
+        if (contentPart.type === 'file') {
+          ids.push(contentPart.id)
+        }
+      }
+    }
+  }
+
+  return ids
+}
+
+const remapMessageFileIds = (message: dto.Message, fileIdMap: Map<string, string>): dto.Message => {
+  if (message.role === 'user') {
+    return {
+      ...message,
+      attachments: message.attachments.map((attachment) => ({
+        ...attachment,
+        id: fileIdMap.get(attachment.id) ?? attachment.id,
+      })),
+    }
+  }
+
+  if (message.role === 'tool') {
+    return {
+      ...message,
+      parts: message.parts.map((part) => {
+        if (part.type !== 'tool-result') return part
+        if (part.result.type !== 'content') return part
+        return {
+          ...part,
+          result: {
+            ...part.result,
+            value: part.result.value.map((contentPart) =>
+              contentPart.type === 'file'
+                ? { ...contentPart, id: fileIdMap.get(contentPart.id) ?? contentPart.id }
+                : contentPart
+            ),
+          },
+        }
+      }),
+    }
+  }
+
+  return message
+}
 
 export const POST = operation({
   name: 'Clone shared conversation',
@@ -57,8 +115,13 @@ export const POST = operation({
       messages,
       messages.find((m) => m.id === conversation.lastMessageId)!
     )
+    const clonedFileIds = await cloneFilesForOwner({
+      fileIds: linear.flatMap((message) => collectFileIdsFromMessage(message)),
+      owner: { ownerType: 'CHAT', ownerId: newConversation.id },
+    })
+    const linearWithClonedFiles = linear.map((message) => remapMessageFileIds(message, clonedFileIds))
     const idMap = new Map(linear.map((m) => [m.id, nanoid()]))
-    const newMessages = linear
+    const newMessages = linearWithClonedFiles
       .map((m) => {
         return {
           ...m,

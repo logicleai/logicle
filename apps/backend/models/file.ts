@@ -82,3 +82,61 @@ export const reassignUserOwnedFilesToConversation = async ({
     .where('ownerId', '=', userId)
     .execute()
 }
+
+export const cloneFilesForOwner = async ({
+  fileIds,
+  owner,
+}: {
+  fileIds: string[]
+  owner: dto.FileOwner
+}): Promise<Map<string, string>> => {
+  const uniqueIds = [...new Set(fileIds)]
+  if (uniqueIds.length === 0) {
+    return new Map()
+  }
+
+  const sourceRows = await db
+    .selectFrom('File')
+    .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
+    .select([
+      'File.id as id',
+      'File.name as name',
+      'File.path as path',
+      'File.type as type',
+      'File.createdAt as createdAt',
+      'File.fileBlobId as fileBlobId',
+      'FileBlob.size as blobSize',
+      'FileBlob.encrypted as blobEncrypted',
+    ])
+    .where('File.id', 'in', uniqueIds)
+    .execute()
+
+  const sourceById = new Map(sourceRows.map((row) => [row.id, row]))
+  const now = new Date().toISOString()
+  const idMap = new Map<string, string>()
+
+  for (const sourceId of uniqueIds) {
+    const source = sourceById.get(sourceId)
+    if (!source) continue
+    const clonedId = nanoid()
+    idMap.set(sourceId, clonedId)
+    await db
+      .insertInto('File')
+      .values({
+        id: clonedId,
+        name: source.name,
+        path: source.path,
+        type: source.type,
+        uploaded: source.fileBlobId ? 1 : 0,
+        createdAt: now,
+        encrypted: source.blobEncrypted ?? 0,
+        size: source.blobSize ?? 0,
+        fileBlobId: source.fileBlobId,
+        ownerType: owner.ownerType,
+        ownerId: owner.ownerId,
+      } as any)
+      .execute()
+  }
+
+  return idMap
+}
