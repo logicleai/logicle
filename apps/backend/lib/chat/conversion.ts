@@ -14,6 +14,11 @@ import {
   canSendAsNativeImage,
   resolvePdfNativeAttachmentDecision,
 } from './file-attachment-policy'
+import {
+  projectMessageForEstimation,
+  projectedToolResultAttachedFilesDescriptor,
+  projectedAssistantToolCallPayload,
+} from './message-projection'
 
 // LiteLLM does not support binary attachments inside tool results. Detect this by inspecting
 // the AI SDK provider string rather than storing the limitation in model capabilities.
@@ -23,17 +28,6 @@ const supportsToolResultAttachments = (providerName: string) =>
 const toolResultAttachmentText = (fileEntry: FileDbRow) =>
   `The tool returned a file attachment "${fileEntry.name}" (${fileEntry.type}, id ${fileEntry.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`
 type ToolCallResultOutput = ai.ToolResultPart['output']
-
-const describeAttachedFiles = (
-  files: Array<{ id: string; name: string; size: number; mimetype: string }>
-) => ({
-  attached_files: files.map((f) => ({
-    id: f.id,
-    name: f.name,
-    size: f.size,
-    mimetype: f.mimetype,
-  })),
-})
 
 export const loadImagePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.ImagePart> => {
   let fileContent: Buffer
@@ -171,10 +165,10 @@ export const dtoMessageToLlmMessage = async (
   capabilities: LlmModelCapabilities,
   providerName: string
 ): Promise<ai.ModelMessage | undefined> => {
-  if (m.role === 'user-request') return undefined
-  if (m.role === 'user-response') return undefined
-  if (m.role === 'tool') {
-    const results = m.parts.filter((m) => m.type === 'tool-result')
+  const projected = projectMessageForEstimation(m)
+  if (projected.role === 'ignored') return undefined
+  if (projected.role === 'tool') {
+    const results = projected.items.filter((item) => item.kind === 'tool_result')
     if (results.length === 0) return undefined
     const convertOutput = async (output: dto.ToolCallResultOutput): Promise<ToolCallResultOutput> => {
       if ((output as dto.ToolCallResultOutput).type) {
@@ -186,7 +180,7 @@ export const dtoMessageToLlmMessage = async (
             return output
           case 'content': {
             const files = output.value.filter((v) => v.type === 'file')
-            const description = describeAttachedFiles(files)
+            const description = projectedToolResultAttachedFilesDescriptor(files)
             const outputs = await Promise.all(
               output.value.map(async (v) => {
                 switch (v.type) {
@@ -232,39 +226,37 @@ export const dtoMessageToLlmMessage = async (
           return {
             toolCallId: result.toolCallId,
             toolName: result.toolName,
-            output: await convertOutput(result.result),
+            output: await convertOutput(result.output),
             type: 'tool-result',
           }
         })
       ),
     }
-  } else if (m.role === 'assistant') {
+  } else if (projected.role === 'assistant') {
     type ContentArrayElement = Extract<ai.AssistantContent, any[]>[number]
     const parts: ContentArrayElement[] = []
-    m.parts.forEach((part) => {
-      if (part.type === 'tool-call') {
+    projected.items.forEach((item) => {
+      if (item.kind === 'tool_call') {
         parts.push({
           type: 'tool-call',
-          toolCallId: part.toolCallId,
-          toolName: part.toolName,
-          input: part.args,
+          toolCallId: item.toolCallId,
+          toolName: item.toolName,
+          input: item.payload.input,
         })
-      } else if (part.type === 'text') {
-        parts.push({
-          type: 'text',
-          text: part.text,
-        })
-      } else if (part.type === 'builtin-tool-result') {
-        // builtin tools are just... notifications
-      } else if (part.type === 'reasoning' && part.reasoning_signature) {
+      } else if (item.kind === 'text' && item.source === 'assistant_reasoning' && item.reasoningSignature) {
         parts.push({
           type: 'reasoning',
-          text: part.reasoning,
+          text: item.text,
           providerOptions: {
             anthropic: {
-              signature: part.reasoning_signature,
+              signature: item.reasoningSignature,
             },
           },
+        })
+      } else if (item.kind === 'text') {
+        parts.push({
+          type: 'text',
+          text: item.text,
         })
       }
     })
@@ -273,61 +265,40 @@ export const dtoMessageToLlmMessage = async (
       content: parts,
     }
   }
-  const metadataText =
-    m.role === 'user' && m.metadata
-      ? `Message metadata (system-use): ${JSON.stringify(m.metadata)}`
-      : undefined
-  const message: ai.ModelMessage = {
-    role: m.role,
-    content: m.content,
-  }
-  if (m.attachments.length !== 0) {
-    const messageParts: typeof message.content = []
-    if (metadataText) {
-      messageParts.push({
-        type: 'text',
-        text: metadataText,
-      })
+  if (m.role === 'user' && m.attachments.length === 0 && !m.metadata) {
+    return {
+      role: 'user',
+      content: m.content,
     }
-    if (m.content.length !== 0)
-      messageParts.push({
-        type: 'text',
-        text: m.content,
-      })
+  }
+  const message: ai.ModelMessage = { role: 'user', content: '' }
+  const attachments = projected.items.filter((item) => item.kind === 'attachment')
+  if (attachments.length !== 0) {
+    const messageParts: typeof message.content = []
+    for (const item of projected.items) {
+      if (item.kind !== 'text') continue
+      messageParts.push({ type: 'text', text: item.text })
+    }
     const fileParts = (
       await Promise.all(
-        m.attachments.map(async (a) => {
-          const fileEntry = await getFileWithId(a.id)
+        attachments.map(async (item) => {
+          const fileEntry = await getFileWithId(item.attachment.id)
           if (!fileEntry) {
-            logger.warn(`Can't find entry for attachment ${a.id}`)
+            logger.warn(`Can't find entry for attachment ${item.attachment.id}`)
             return undefined
           }
           return await dtoFileToLlmFilePart(fileEntry, capabilities)
         })
       )
     ).filter((a) => a !== undefined)
-    if (m.attachments.length) {
-      messageParts.push({
-        type: 'text',
-        text: `The user has attached the following files to this chat: \n${JSON.stringify(
-          m.attachments
-        )}`,
-      })
-    }
     message.content = [...messageParts, ...fileParts]
-  } else if (metadataText) {
+  } else {
+    const textItems = projected.items.filter((item) => item.kind === 'text')
     const messageParts: typeof message.content = []
-    messageParts.push({
-      type: 'text',
-      text: metadataText,
-    })
-    if (m.content.length !== 0) {
-      messageParts.push({
-        type: 'text',
-        text: m.content,
-      })
+    for (const item of textItems) {
+      messageParts.push({ type: 'text', text: item.text })
     }
-    message.content = messageParts
+    message.content = messageParts.length > 0 ? messageParts : ''
   }
   return message
 }

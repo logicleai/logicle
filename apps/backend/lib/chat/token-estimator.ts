@@ -19,6 +19,8 @@ import {
 } from '@/backend/lib/chat/pdf-token-estimator'
 import {
   acceptableImageTypes,
+  canSendAsNativeFile,
+  canSendAsNativeImage,
   getPdfAttachmentPageLimitText,
 } from '@/backend/lib/chat/file-attachment-policy'
 import { estimateNativeImageTokensFromDimensions, nativeImageAlgorithmName } from '@/backend/lib/chat/image-token-estimator'
@@ -31,8 +33,10 @@ import {
   TokenCountCacheStats,
 } from './prompt-token-counter'
 import type * as ai from 'ai'
-import { buildPreambleSegments } from '@/backend/lib/chat/preamble'
+import { buildEstimatedPreambleSegments, preparePreamblePlan, PreamblePlan } from '@/backend/lib/chat/preamble'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
+import { projectMessageForEstimation } from '@/backend/lib/chat/message-projection'
+import { projectedToolResultAttachedFilesDescriptor } from '@/backend/lib/chat/message-projection'
 
 // --- File token cache -----------------------------------------------------------
 
@@ -142,6 +146,18 @@ export type TokenEstimateResult = {
   detail?: dto.TokenEstimateDetail
 }
 
+export type HistoryMessageCost = {
+  messageId: string
+  role: dto.Message['role']
+  tokens: number
+}
+
+export type ConversationCostPlan = {
+  assistantTokens: number
+  historyMessageCosts: HistoryMessageCost[]
+  draftTokens: number
+}
+
 type TokenEstimateInput = {
   assistantParams: AssistantParams
   model: LlmModel
@@ -231,6 +247,7 @@ const estimateTextFallbackAttachmentTokens = async (
 const estimateKnowledgeFileTokens = async (
   fileId: string,
   fileName: string,
+  mimetype: string,
   partIndex: number,
   messageParts: unknown[],
   model: LlmModel,
@@ -246,7 +263,20 @@ const estimateKnowledgeFileTokens = async (
         stats
       )
     : 0
-  return { tokens, algorithm: tokenizerForModel(model) }
+  if (part) return { tokens, algorithm: tokenizerForModel(model) }
+  if (mimetype === 'application/pdf') {
+    const pdfTokens = await estimateAttachmentTokens(
+      model,
+      { id: fileId, name: fileName, mimetype, size: 0 },
+      stats
+    )
+    return { tokens: pdfTokens, algorithm: tokenizerForModel(model) }
+  }
+  if (canSendAsNativeImage(mimetype, model.capabilities) || canSendAsNativeFile(mimetype, model.capabilities)) {
+    return { tokens: 0, algorithm: 'none' }
+  }
+  const fallbackTokens = await estimateTextFallbackAttachmentTokens(model, fileId, stats)
+  return { tokens: fallbackTokens, algorithm: 'text_fallback' }
 }
 
 const estimateToolResultOutputTokens = async (
@@ -263,6 +293,14 @@ const estimateToolResultOutputTokens = async (
       return countTextTokensCached(model, JSON.stringify(output.value), stats)
     case 'content': {
       let tokens = 0
+      const files = output.value.filter((item) => item.type === 'file')
+      if (files.length > 0) {
+        tokens += await countTextTokensCached(
+          model,
+          JSON.stringify(projectedToolResultAttachedFilesDescriptor(files)),
+          stats
+        )
+      }
       for (const item of output.value) {
         if (item.type === 'text') {
           tokens += await countTextTokensCached(model, item.text, stats)
@@ -337,91 +375,145 @@ const estimateDtoMessageTokens = async (
   onDetail?: (part: dto.TokenDetailPart) => void
 ): Promise<number> => {
   const algorithm = tokenizerForModel(model)
-  if (message.role === 'user') {
-    const textTokens = await countTextTokensCached(model, message.content, stats)
-    onDetail?.({ type: 'text', tokens: textTokens, algorithm })
-    let tokens = textTokens
-    for (const attachment of message.attachments) {
-      tokens += await estimateAttachmentTokens(model, attachment, stats, (aTokens, aAlgorithm, aParams) => {
+  const projected = projectMessageForEstimation(message)
+  if (projected.role === 'ignored') return 0
+  let tokens = 0
+  for (const item of projected.items) {
+    if (item.kind === 'text') {
+      const t = await countTextTokensCached(model, item.text, stats)
+      onDetail?.({
+        type: item.source === 'assistant_reasoning' ? 'reasoning' : 'text',
+        tokens: t,
+        algorithm,
+        params: item.source ? { source: item.source } : undefined,
+      })
+      tokens += t
+      continue
+    }
+    if (item.kind === 'attachment') {
+      tokens += await estimateAttachmentTokens(model, item.attachment, stats, (aTokens, aAlgorithm, aParams) => {
         onDetail?.({
           type: 'attachment',
-          id: attachment.id,
-          name: attachment.name,
-          mimetype: attachment.mimetype,
+          id: item.attachment.id,
+          name: item.attachment.name,
+          mimetype: item.attachment.mimetype,
           tokens: aTokens,
           algorithm: aAlgorithm,
           params: aParams,
         })
       })
+      continue
     }
-    return tokens
-  }
-  if (message.role === 'assistant') {
-    let tokens = 0
-    for (const part of message.parts) {
-      if (part.type === 'text') {
-        const t = await countTextTokensCached(model, part.text, stats)
-        onDetail?.({ type: 'text', tokens: t, algorithm })
-        tokens += t
-      } else if (part.type === 'reasoning') {
-        const t = await countTextTokensCached(model, part.reasoning, stats)
-        onDetail?.({ type: 'reasoning', tokens: t, algorithm })
-        tokens += t
-      } else if (part.type === 'tool-call') {
-        const t = await countTextTokensCached(
-          model,
-          JSON.stringify({ toolCallId: part.toolCallId, toolName: part.toolName, input: part.args }),
-          stats
-        )
-        onDetail?.({ type: 'tool_call', toolCallId: part.toolCallId, toolName: part.toolName, tokens: t, algorithm })
-        tokens += t
-      }
+    if (item.kind === 'tool_call') {
+      const t = await countTextTokensCached(model, JSON.stringify(item.payload), stats)
+      onDetail?.({ type: 'tool_call', toolCallId: item.toolCallId, toolName: item.toolName, tokens: t, algorithm })
+      tokens += t
+      continue
     }
-    return tokens
+    const metaTokens = await countTextTokensCached(
+      model,
+      JSON.stringify(item.metaPayload),
+      stats
+    )
+    const resultTokens = await estimateToolResultOutputTokens(model, item.output, stats)
+    const partTokens = metaTokens + resultTokens
+    onDetail?.({
+      type: 'tool_result',
+      toolCallId: item.toolCallId,
+      toolName: item.toolName,
+      tokens: partTokens,
+      algorithm,
+    })
+    tokens += partTokens
   }
-  if (message.role === 'tool') {
-    let tokens = 0
-    for (const part of message.parts) {
-      if (part.type !== 'tool-result') continue
-      const metaTokens = await countTextTokensCached(
-        model,
-        JSON.stringify({ toolCallId: part.toolCallId, toolName: part.toolName }),
-        stats
-      )
-      const resultTokens = await estimateToolResultOutputTokens(model, part.result, stats)
-      const partTokens = metaTokens + resultTokens
-      onDetail?.({
-        type: 'tool_result',
-        toolCallId: part.toolCallId,
-        toolName: part.toolName,
-        tokens: partTokens,
-        algorithm,
-      })
-      tokens += partTokens
-    }
-    return tokens
-  }
-  return 0
+  return tokens
 }
 
-export const estimateHistoryTokens = async (
+export const estimateHistoryMessageCosts = async (
   model: LlmModel,
   history: dto.Message[],
   stats?: CacheStats,
   collector?: TokenDetailCollector
-): Promise<number> => {
-  let historyTokenCount = 0
-  for (const message of history) {
-    historyTokenCount += await estimateDtoMessageTokens(
+): Promise<HistoryMessageCost[]> => {
+  const costs: HistoryMessageCost[] = []
+  for (let index = 0; index < history.length; index++) {
+    const message = history[index]!
+    const tokens = await estimateDtoMessageTokens(
       model,
       message,
       stats,
-      collector
-        ? (part) => collector.addHistoryPart(message.id, message.role, part)
-        : undefined
+      collector ? (part) => collector.addHistoryPart(message.id, message.role, part) : undefined
     )
+    costs.push({ messageId: message.id, role: message.role, tokens })
   }
-  return historyTokenCount
+  return costs
+}
+
+export const computeConversationPlanTotalCost = (plan: ConversationCostPlan): number =>
+  plan.assistantTokens + plan.draftTokens + plan.historyMessageCosts.reduce((sum, entry) => sum + entry.tokens, 0)
+
+export const selectOptimalHistoryStartIndex = (
+  history: dto.Message[],
+  historyMessageCosts: HistoryMessageCost[],
+  assistantTokens: number,
+  draftTokens: number,
+  tokenLimit: number
+): number => {
+  if (history.length === 0) return 0
+  const running: number[] = new Array(historyMessageCosts.length + 1).fill(0)
+  for (let i = historyMessageCosts.length - 1; i >= 0; i--) {
+    running[i] = running[i + 1]! + (historyMessageCosts[i]?.tokens ?? 0)
+  }
+  const userTurnStartIndexes = history.flatMap((message, index) =>
+    message.role === 'user' && index > 0 ? [index] : []
+  )
+  const candidateStartIndexes = [0, ...userTurnStartIndexes]
+  for (const startIndex of candidateStartIndexes) {
+    const total = assistantTokens + draftTokens + (running[startIndex] ?? 0)
+    if (total <= tokenLimit) return startIndex
+  }
+  for (let index = history.length - 1; index >= 0; index--) {
+    if (history[index]?.role === 'user') return index
+  }
+  return 0
+}
+
+export const prepareConversationCostPlan = async (
+  input: ConversationWindowEstimateInput,
+  collector?: TokenDetailCollector
+): Promise<{ plan: ConversationCostPlan; cache: CacheStats }> => {
+  const stats: CacheStats = createTokenCountCacheStats()
+  const { assistantParams, model, tools, parameters, knowledgeFiles, history, draft } = input
+  const preamblePlan = await preparePreamblePlan({
+    assistantParams,
+    llmModel: model,
+    tools,
+    parameters,
+    knowledge: knowledgeFiles,
+  })
+  const assistantTokens = await estimatePreambleTokensFromPlan({
+    plan: preamblePlan,
+    model,
+    stats,
+    collector,
+  })
+  const historyMessageCosts = await estimateHistoryMessageCosts(model, history, stats, collector)
+  const draftTokens = draft
+    ? await estimateDtoMessageTokens(
+        model,
+        draft,
+        stats,
+        collector ? (part) => collector.addDraftPart(part) : undefined
+      )
+    : 0
+  return {
+    plan: {
+      assistantTokens,
+      historyMessageCosts,
+      draftTokens,
+    },
+    cache: stats,
+  }
 }
 
 export const estimatePreambleTokens = async ({
@@ -441,13 +533,28 @@ export const estimatePreambleTokens = async ({
   stats?: CacheStats
   collector?: TokenDetailCollector
 }): Promise<number> => {
-  const preambleSegments = await buildPreambleSegments({
+  const preamblePlan = await preparePreamblePlan({
     assistantParams,
     llmModel: model,
     tools,
     parameters,
     knowledge: knowledgeFiles,
   })
+  return estimatePreambleTokensFromPlan({ plan: preamblePlan, model, stats, collector })
+}
+
+export const estimatePreambleTokensFromPlan = async ({
+  plan,
+  model,
+  stats,
+  collector,
+}: {
+  plan: PreamblePlan
+  model: LlmModel
+  stats?: CacheStats
+  collector?: TokenDetailCollector
+}): Promise<number> => {
+  const preambleSegments = buildEstimatedPreambleSegments(plan)
   if (preambleSegments.length === 0) return 0
 
   const algorithm = tokenizerForModel(model)
@@ -465,7 +572,7 @@ export const estimatePreambleTokens = async ({
       : []
     for (const entry of (knowledgeSegment.knowledgeFileEntries ?? [])) {
       const fileEntry = await estimateKnowledgeFileTokens(
-        entry.fileId, entry.fileName, entry.partIndex, messageParts, model, stats
+        entry.fileId, entry.fileName, entry.mimetype, entry.partIndex, messageParts, model, stats
       )
       knowledgeTokens += fileEntry.tokens
       collector?.addPreamblePart({
@@ -537,39 +644,18 @@ export const estimateConversationWindowTokens = async (
   input: ConversationWindowEstimateInput,
   collector?: TokenDetailCollector
 ): Promise<TokenEstimateResult> => {
-  const stats: CacheStats = createTokenCountCacheStats()
-  const { assistantParams, model, tools, parameters, knowledgeFiles, history, draft } = input
-
-  const preambleTokenCount = await estimatePreambleTokens({
-    assistantParams,
-    model,
-    tools,
-    parameters,
-    knowledgeFiles,
-    stats,
-    collector,
-  })
-
-  const historyTokenCount = await estimateHistoryTokens(model, history, stats, collector)
-  const draftTokenCount = draft
-    ? await estimateDtoMessageTokens(
-        model,
-        draft,
-        stats,
-        collector ? (part) => collector.addDraftPart(part) : undefined
-      )
-    : 0
-
-  const total = preambleTokenCount + historyTokenCount + draftTokenCount
+  const { plan, cache } = await prepareConversationCostPlan(input, collector)
+  const historyTokenCount = plan.historyMessageCosts.reduce((sum, entry) => sum + entry.tokens, 0)
+  const total = computeConversationPlanTotalCost(plan)
 
   return {
     estimate: {
-      assistant: preambleTokenCount,
+      assistant: plan.assistantTokens,
       history: historyTokenCount,
-      draft: draftTokenCount,
+      draft: plan.draftTokens,
       total,
     },
-    cache: stats,
+    cache,
     detail: collector?.build(),
   }
 }

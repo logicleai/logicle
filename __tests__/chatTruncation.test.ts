@@ -6,14 +6,14 @@ import * as ai from 'ai'
 const {
   mockDtoMessageToLlmMessage,
   mockSanitizeOrphanToolCalls,
-  mockCountPromptSegmentsTokens,
-  mockEstimateConversationWindowTokens,
+  mockPrepareConversationCostPlan,
+  mockLoggerInfo,
 } =
   vi.hoisted(() => ({
     mockDtoMessageToLlmMessage: vi.fn(),
     mockSanitizeOrphanToolCalls: vi.fn((msgs: ai.ModelMessage[]) => msgs),
-    mockCountPromptSegmentsTokens: vi.fn(),
-    mockEstimateConversationWindowTokens: vi.fn(),
+    mockPrepareConversationCostPlan: vi.fn(),
+    mockLoggerInfo: vi.fn(),
   }))
 
 vi.mock('@/backend/lib/chat/conversion', () => ({
@@ -21,18 +21,18 @@ vi.mock('@/backend/lib/chat/conversion', () => ({
   sanitizeOrphanToolCalls: mockSanitizeOrphanToolCalls,
 }))
 
-vi.mock('@/backend/lib/chat/prompt-token-counter', () => ({
-  countPromptSegmentsTokens: mockCountPromptSegmentsTokens,
-}))
-
-vi.mock('@/backend/lib/chat/token-estimator', () => ({
-  estimateConversationWindowTokens: mockEstimateConversationWindowTokens,
-}))
+vi.mock('@/backend/lib/chat/token-estimator', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/lib/chat/token-estimator')>()
+  return {
+    ...actual,
+    prepareConversationCostPlan: mockPrepareConversationCostPlan,
+  }
+})
 
 vi.mock('@/db/database', () => ({ db: {} }))
 vi.mock('@/db/dialect', () => ({ createDialect: () => null }))
 vi.mock('@/lib/logging', () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), log: vi.fn() },
+  logger: { info: mockLoggerInfo, warn: vi.fn(), error: vi.fn(), log: vi.fn() },
 }))
 vi.mock('@/lib/env', () => ({
   default: {
@@ -45,7 +45,7 @@ vi.mock('@/lib/env', () => ({
 vi.mock('@/lib/satellite', () => ({ satelliteHub: { connections: [] } }))
 vi.mock('@/backend/lib/tools/retrieve-file/implementation', () => ({}))
 
-import { ChatAssistant, PromptSegment } from '@/backend/lib/chat'
+import { ChatAssistant } from '@/backend/lib/chat'
 import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
 import type { LanguageModelV3 } from '@ai-sdk/provider'
@@ -188,32 +188,22 @@ const makeChatAssistant = (tokenLimit: number) => {
 describe('truncateChat', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.spyOn(ChatAssistant, 'buildPreambleSegments')
-    mockEstimateConversationWindowTokens.mockImplementation(async ({ history }: { history: dto.Message[] }) => {
-      const assistant = 10
-      const historyTokens = history.length * 10
+    mockPrepareConversationCostPlan.mockImplementation(async ({ history }: { history: dto.Message[] }) => {
       return {
-        estimate: {
-          assistant,
-          history: historyTokens,
-          draft: 0,
-          total: assistant + historyTokens,
+        plan: {
+          assistantTokens: 10,
+          draftTokens: 0,
+          historyMessageCosts: history.map((m) => ({
+            messageId: m.id,
+            role: m.role,
+            tokens: 10,
+          })),
         },
         cache: {
           textTokensCache: { hits: 0, misses: 0 },
           fileTokenCache: { hits: 0, misses: 0 },
         },
       }
-    })
-    mockCountPromptSegmentsTokens.mockImplementation(async (_model, segments: PromptSegment[]) => {
-      // Each segment counts as 10 tokens in its respective scope
-      const counts = { assistant: 0, history: 0, draft: 0 }
-      for (const s of segments) {
-        if (s.scope === 'prompt') counts.assistant += 10
-        else if (s.scope === 'history') counts.history += 10
-        else counts.draft += 10
-      }
-      return counts
     })
     mockDtoMessageToLlmMessage.mockImplementation(async (m: dto.Message) => makeLlmMessage(m.id))
   })
@@ -222,7 +212,7 @@ describe('truncateChat', () => {
     const assistant = makeChatAssistant(100)
     const result = await assistant.truncateChat([])
     expect(result).toEqual([])
-    expect(mockEstimateConversationWindowTokens).not.toHaveBeenCalled()
+    expect(mockPrepareConversationCostPlan).not.toHaveBeenCalled()
   })
 
   test('returns all messages when within token limit', async () => {
@@ -234,50 +224,62 @@ describe('truncateChat', () => {
     expect(result).toEqual(messages)
   })
 
-  test('buildPreambleSegments is called exactly once regardless of candidates tried', async () => {
-    // preamble = 10 tokens; each history message = 10 tokens
-    // limit = 25 → need to drop messages until only 1 or 2 history remain
+  test('cost plan is built exactly once', async () => {
     const assistant = makeChatAssistant(25)
     const messages = [
-      makeMessage('m1'), // user — candidate start
+      makeMessage('m1'),
       makeMessage('m2', 'assistant'),
-      makeMessage('m3'), // user — candidate start
+      makeMessage('m3'),
       makeMessage('m4', 'assistant'),
-      makeMessage('m5'), // user — candidate start
+      makeMessage('m5'),
     ]
 
     await assistant.truncateChat(messages)
 
-    expect(mockEstimateConversationWindowTokens).toHaveBeenCalledTimes(3)
+    expect(mockPrepareConversationCostPlan).toHaveBeenCalledTimes(1)
   })
 
   test('drops earliest messages when full history exceeds limit', async () => {
-    // preamble=10, limit=30 → fits preamble + 2 history messages (10+10+10=30)
     const assistant = makeChatAssistant(30)
     const messages = [
-      makeMessage('m1'), // user turn 1
+      makeMessage('m1'),
       makeMessage('m2', 'assistant'),
-      makeMessage('m3'), // user turn 2 — dropping m1+m2 gives 2 history msgs = 30 total ✓
+      makeMessage('m3'),
       makeMessage('m4', 'assistant'),
     ]
 
     const result = await assistant.truncateChat(messages)
 
-    expect(result).toEqual(messages.slice(2)) // [m3, m4]
+    expect(result).toEqual(messages.slice(2))
   })
 
   test('falls back to last user turn when even the shortest candidate exceeds limit', async () => {
-    // preamble=10, limit=15 → no candidate fits; fallback to last user turn
     const assistant = makeChatAssistant(15)
     const messages = [
-      makeMessage('m1'), // user
+      makeMessage('m1'),
       makeMessage('m2', 'assistant'),
-      makeMessage('m3'), // user — last user turn
+      makeMessage('m3'),
       makeMessage('m4', 'assistant'),
     ]
 
     const result = await assistant.truncateChat(messages)
 
-    expect(result).toEqual(messages.slice(2)) // [m3, m4]
+    expect(result).toEqual(messages.slice(2))
+  })
+
+  test('logs fallback accurately when latest user turn still exceeds the limit', async () => {
+    const assistant = makeChatAssistant(15)
+    const messages = [
+      makeMessage('m1'),
+      makeMessage('m2', 'assistant'),
+      makeMessage('m3'),
+      makeMessage('m4', 'assistant'),
+    ]
+
+    await assistant.truncateChat(messages)
+
+    expect(mockLoggerInfo).toHaveBeenCalledWith(
+      'Truncating chat: latest user turn still exceeds limit of 15'
+    )
   })
 })

@@ -31,6 +31,7 @@ type AssistantParamsLike = {
 export type KnowledgeFileEntry = {
   fileId: string
   fileName: string
+  mimetype: string
   partIndex: number
 }
 
@@ -39,6 +40,16 @@ export type PromptSegment = {
   message: ai.ModelMessage
   analysisFileIds?: string[]
   knowledgeFileEntries?: KnowledgeFileEntry[]
+}
+
+export type PreamblePlan = {
+  systemPromptMessage: ai.SystemModelMessage
+  knowledgePrompt?: string
+  knowledgeFileEntries?: KnowledgeFileEntry[]
+  materializeKnowledgeSegment?: () => Promise<{
+    message: ai.UserModelMessage
+    analysisFileIds: string[]
+  } | null>
 }
 
 export function fillTemplate(
@@ -120,28 +131,51 @@ export async function buildPreambleSegments({
   parameters: Record<string, ParameterValueAndDescription>
   knowledge: dto.AssistantFile[]
 }): Promise<PromptSegment[]> {
-  const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
+  const plan = await preparePreamblePlan({ assistantParams, llmModel, tools, parameters, knowledge })
+  return renderPreamblePlan(plan)
+}
+
+export async function preparePreamblePlan({
+  assistantParams,
+  llmModel,
+  tools,
+  parameters,
+  knowledge,
+}: {
+  assistantParams: AssistantParamsLike
+  llmModel: LlmModel
+  tools: ToolImplementation[]
+  parameters: Record<string, ParameterValueAndDescription>
+  knowledge: dto.AssistantFile[]
+}): Promise<PreamblePlan> {
   const resolvedTools = await withBuiltinTools(tools, llmModel)
   const systemPromptMessage = await computeSystemPrompt(assistantParams, resolvedTools, parameters)
-  const segments: PromptSegment[] = [{ scope: 'prompt', message: systemPromptMessage }]
-
-  if (knowledge.length > 0 && env.knowledge.sendInPrompt) {
-    const knowledgePrompt = `
+  if (knowledge.length === 0 || !env.knowledge.sendInPrompt) {
+    return { systemPromptMessage }
+  }
+  const knowledgePrompt = `
       More files are available as assistant knowledge.
       These files can be retrieved or processed by function calls referring to their id.
       Here is the assistant knowledge:
       ${JSON.stringify(knowledge)}
       When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
       `
-    segments[0] = {
-      scope: 'prompt',
-      message: {
-        ...systemPromptMessage,
-        content: `${systemPromptMessage.content}${knowledgePrompt}`,
-      },
-    }
-    const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
-    if (knowledgePlugin) {
+  const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
+  const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
+  if (!knowledgePlugin) {
+    return { systemPromptMessage, knowledgePrompt }
+  }
+  const knowledgeFileEntries: KnowledgeFileEntry[] = knowledge.map((k, index) => ({
+    fileId: k.id,
+    fileName: k.name,
+    mimetype: k.type,
+    partIndex: index,
+  }))
+  return {
+    systemPromptMessage,
+    knowledgePrompt,
+    knowledgeFileEntries,
+    materializeKnowledgeSegment: async () => {
       // Limit concurrency to avoid saturating the libuv thread pool and
       // the Node.js microtask queue when an assistant has many knowledge files.
       // Unbounded Promise.all over hundreds of files causes multi-second
@@ -151,23 +185,57 @@ export async function buildPreambleSegments({
         (k) => (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel),
         8
       )
-      const analysisFileIds = parts.flatMap((part, index) =>
-        part.type === 'file' ? [knowledge[index]?.id ?? ''] : []
-      ).filter((id) => id.length > 0)
-      const knowledgeFileEntries: KnowledgeFileEntry[] = knowledge.map((k, index) => ({
-        fileId: k.id,
-        fileName: k.name,
-        partIndex: index,
-      }))
-      segments.push({
-        scope: 'prompt',
+      const analysisFileIds = parts
+        .flatMap((part, index) => (part.type === 'file' ? [knowledge[index]?.id ?? ''] : []))
+        .filter((id) => id.length > 0)
+      return {
         message: { role: 'user', content: parts },
         analysisFileIds,
-        knowledgeFileEntries,
-      })
-    }
+      }
+    },
   }
+}
 
+export function buildEstimatedPreambleSegments(plan: PreamblePlan): PromptSegment[] {
+  const segments: PromptSegment[] = [
+    {
+      scope: 'prompt',
+      message: plan.knowledgePrompt
+        ? {
+            ...plan.systemPromptMessage,
+            content: `${plan.systemPromptMessage.content}${plan.knowledgePrompt}`,
+          }
+        : plan.systemPromptMessage,
+    },
+  ]
+  if (plan.knowledgeFileEntries) {
+    segments.push({
+      scope: 'prompt',
+      message: { role: 'user', content: [] },
+      knowledgeFileEntries: plan.knowledgeFileEntries,
+    })
+  }
+  return segments
+}
+
+export async function renderPreamblePlan(
+  plan: PreamblePlan
+): Promise<PromptSegment[]> {
+  const segments = buildEstimatedPreambleSegments(plan)
+  if (!plan.knowledgeFileEntries) {
+    return segments
+  }
+  if (!plan.materializeKnowledgeSegment) {
+    return segments
+  }
+  const renderedKnowledge = await plan.materializeKnowledgeSegment()
+  if (!renderedKnowledge) return segments
+  segments[1] = {
+    scope: 'prompt',
+    message: renderedKnowledge.message,
+    analysisFileIds: renderedKnowledge.analysisFileIds,
+    knowledgeFileEntries: plan.knowledgeFileEntries,
+  }
   return segments
 }
 
