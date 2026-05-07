@@ -7,6 +7,7 @@ export const generateWithImagen = async ({
   model,
   prompt,
   n,
+  aspectRatio,
 }: ImageGenerationRequest): Promise<GeneratedImagesResponse> => {
   const client = new GoogleGenAI({ apiKey })
   const response = await client.models.generateImages({
@@ -14,6 +15,7 @@ export const generateWithImagen = async ({
     prompt,
     config: {
       numberOfImages: n ?? 1,
+      ...(aspectRatio ? { aspectRatio } : {}),
     },
   })
 
