@@ -1,5 +1,5 @@
 import { IconCheck, IconClipboard, IconDownload } from '@tabler/icons-react'
-import { FC, memo, useState } from 'react'
+import { FC, memo, useEffect, useState } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 
@@ -26,7 +26,11 @@ const computeExtensionForLanguage = (language?: string) => {
 export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
   const { t } = useTranslation()
   const [isCopied, setIsCopied] = useState<boolean>(false)
-  const wrapLongLines = shouldWrapFence(language)
+  const [wrapLongLines, setWrapLongLines] = useState<boolean>(() => shouldWrapFence(language))
+
+  useEffect(() => {
+    setWrapLongLines(shouldWrapFence(language))
+  }, [language])
 
   const copyToClipboard = async () => {
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
@@ -63,6 +67,14 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
           <span className="text-xs lowercase text-white">{language}</span>
 
           <div className="flex items-center">
+            <button
+              type="button"
+              title={wrapLongLines ? t('disable_word_wrap') : t('enable_word_wrap')}
+              className="flex gap-1.5 items-center rounded bg-none p-1 text-xs text-white"
+              onClick={() => setWrapLongLines((prev) => !prev)}
+            >
+              {wrapLongLines ? t('word_wrap_on') : t('word_wrap_off')}
+            </button>
             <button
               type="button"
               title={t('copy_to_clipboard')}
