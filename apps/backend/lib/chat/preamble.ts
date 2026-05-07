@@ -31,6 +31,7 @@ type AssistantParamsLike = {
 export type KnowledgeFileEntry = {
   fileId: string
   fileName: string
+  mimetype: string
   partIndex: number
 }
 
@@ -167,6 +168,7 @@ export async function preparePreamblePlan({
   const knowledgeFileEntries: KnowledgeFileEntry[] = knowledge.map((k, index) => ({
     fileId: k.id,
     fileName: k.name,
+    mimetype: k.type,
     partIndex: index,
   }))
   return {

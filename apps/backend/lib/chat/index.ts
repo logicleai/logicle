@@ -504,9 +504,15 @@ export class ChatAssistant {
         plan.assistantTokens +
         plan.draftTokens +
         plan.historyMessageCosts.slice(startIndex).reduce((s, e) => s + e.tokens, 0)
-      logger.info(
-        `Truncating chat: estimated token count ${totalTokens} within limit of ${this.assistantParams.tokenLimit} after dropping ${startIndex} messages`
-      )
+      if (totalTokens <= this.assistantParams.tokenLimit) {
+        logger.info(
+          `Truncating chat: estimated token count ${totalTokens} within limit of ${this.assistantParams.tokenLimit} after dropping ${startIndex} messages`
+        )
+      } else {
+        logger.info(
+          `Truncating chat: latest user turn still exceeds limit of ${this.assistantParams.tokenLimit}`
+        )
+      }
     }
     return messages.slice(startIndex)
   }

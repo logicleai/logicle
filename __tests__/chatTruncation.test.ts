@@ -7,11 +7,13 @@ const {
   mockDtoMessageToLlmMessage,
   mockSanitizeOrphanToolCalls,
   mockPrepareConversationCostPlan,
+  mockLoggerInfo,
 } =
   vi.hoisted(() => ({
     mockDtoMessageToLlmMessage: vi.fn(),
     mockSanitizeOrphanToolCalls: vi.fn((msgs: ai.ModelMessage[]) => msgs),
     mockPrepareConversationCostPlan: vi.fn(),
+    mockLoggerInfo: vi.fn(),
   }))
 
 vi.mock('@/backend/lib/chat/conversion', () => ({
@@ -30,7 +32,7 @@ vi.mock('@/backend/lib/chat/token-estimator', async (importOriginal) => {
 vi.mock('@/db/database', () => ({ db: {} }))
 vi.mock('@/db/dialect', () => ({ createDialect: () => null }))
 vi.mock('@/lib/logging', () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), log: vi.fn() },
+  logger: { info: mockLoggerInfo, warn: vi.fn(), error: vi.fn(), log: vi.fn() },
 }))
 vi.mock('@/lib/env', () => ({
   default: {
@@ -263,5 +265,21 @@ describe('truncateChat', () => {
     const result = await assistant.truncateChat(messages)
 
     expect(result).toEqual(messages.slice(2))
+  })
+
+  test('logs fallback accurately when latest user turn still exceeds the limit', async () => {
+    const assistant = makeChatAssistant(15)
+    const messages = [
+      makeMessage('m1'),
+      makeMessage('m2', 'assistant'),
+      makeMessage('m3'),
+      makeMessage('m4', 'assistant'),
+    ]
+
+    await assistant.truncateChat(messages)
+
+    expect(mockLoggerInfo).toHaveBeenCalledWith(
+      'Truncating chat: latest user turn still exceeds limit of 15'
+    )
   })
 })

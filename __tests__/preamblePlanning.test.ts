@@ -51,7 +51,9 @@ describe('preamble planning and rendering', () => {
       knowledge: [{ id: 'k1', name: 'k1.png', type: 'image/png', size: 1 }],
     })
 
-    expect(plan.knowledgeFileEntries).toEqual([{ fileId: 'k1', fileName: 'k1.png', partIndex: 0 }])
+    expect(plan.knowledgeFileEntries).toEqual([
+      { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', partIndex: 0 },
+    ])
     expect(mockKnowledgeToInputPart).not.toHaveBeenCalled()
   })
 
@@ -69,7 +71,9 @@ describe('preamble planning and rendering', () => {
 
     expect(segments).toHaveLength(2)
     expect(segments[1]?.message).toEqual({ role: 'user', content: [] })
-    expect(segments[1]?.knowledgeFileEntries).toEqual([{ fileId: 'k1', fileName: 'k1.png', partIndex: 0 }])
+    expect(segments[1]?.knowledgeFileEntries).toEqual([
+      { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', partIndex: 0 },
+    ])
     expect(mockKnowledgeToInputPart).not.toHaveBeenCalled()
   })
 

@@ -1510,7 +1510,7 @@ describe('estimateInputTokens', () => {
     const preambleModule = await import('@/backend/lib/chat/preamble')
     const buildPlanSpy = vi.spyOn(preambleModule, 'preparePreamblePlan').mockResolvedValue({
       systemPromptMessage: { role: 'system', content: 'system' },
-      knowledgeFileEntries: [{ fileId: 'k1', fileName: 'k1.png', partIndex: 0 }],
+      knowledgeFileEntries: [{ fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', partIndex: 0 }],
     })
     const buildEstimatedSpy = vi.spyOn(preambleModule, 'buildEstimatedPreambleSegments')
     const renderSpy = vi.spyOn(preambleModule, 'renderPreamblePlan')
@@ -1527,5 +1527,47 @@ describe('estimateInputTokens', () => {
     expect(buildPlanSpy).toHaveBeenCalledTimes(1)
     expect(buildEstimatedSpy).toHaveBeenCalledTimes(1)
     expect(renderSpy).not.toHaveBeenCalled()
+  })
+
+  test('estimatePreambleTokens counts non-native knowledge fallback text without rendering the preamble', async () => {
+    const fileId = 'knowledge-text-fallback'
+    const file = {
+      ...makePdfFile(fileId),
+      name: `${fileId}.txt`,
+      type: 'text/plain',
+    }
+    getFileWithId.mockResolvedValue(file)
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'unknown',
+      status: 'failed',
+      analyzerVersion: 1,
+      payload: null,
+      error: 'unsupported',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as dto.FileAnalysis)
+    extractFromFile.mockResolvedValue('knowledge text fallback content')
+
+    const preambleModule = await import('@/backend/lib/chat/preamble')
+    vi.spyOn(preambleModule, 'preparePreamblePlan').mockResolvedValue({
+      systemPromptMessage: { role: 'system', content: 'system' },
+      knowledgeFileEntries: [{ fileId, fileName: file.name, mimetype: file.type, partIndex: 0 }],
+    })
+    vi.spyOn(preambleModule, 'renderPreamblePlan')
+
+    const { estimatePreambleTokens } = await import('@/backend/lib/chat/token-estimator')
+    const result = await estimatePreambleTokens({
+      assistantParams: { ...assistantParams, model: gpt35Model.id },
+      model: gpt35Model,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [{ id: fileId, name: file.name, type: file.type, size: file.size }],
+    })
+
+    const expectedText = `Here is the text content of the file "${file.name}" with id ${file.id}\nknowledge text fallback content`
+    expect(result).toBe(countTextForModel(gpt35Model, 'system') + countTextForModel(gpt35Model, expectedText))
+    expect(preambleModule.renderPreamblePlan).not.toHaveBeenCalled()
+    expect(readBuffer).not.toHaveBeenCalled()
   })
 })

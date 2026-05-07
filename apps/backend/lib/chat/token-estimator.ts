@@ -19,6 +19,8 @@ import {
 } from '@/backend/lib/chat/pdf-token-estimator'
 import {
   acceptableImageTypes,
+  canSendAsNativeFile,
+  canSendAsNativeImage,
   getPdfAttachmentPageLimitText,
 } from '@/backend/lib/chat/file-attachment-policy'
 import { estimateNativeImageTokensFromDimensions, nativeImageAlgorithmName } from '@/backend/lib/chat/image-token-estimator'
@@ -243,6 +245,7 @@ const estimateTextFallbackAttachmentTokens = async (
 const estimateKnowledgeFileTokens = async (
   fileId: string,
   fileName: string,
+  mimetype: string,
   partIndex: number,
   messageParts: unknown[],
   model: LlmModel,
@@ -258,7 +261,20 @@ const estimateKnowledgeFileTokens = async (
         stats
       )
     : 0
-  return { tokens, algorithm: tokenizerForModel(model) }
+  if (part) return { tokens, algorithm: tokenizerForModel(model) }
+  if (mimetype === 'application/pdf') {
+    const pdfTokens = await estimateAttachmentTokens(
+      model,
+      { id: fileId, name: fileName, mimetype, size: 0 },
+      stats
+    )
+    return { tokens: pdfTokens, algorithm: tokenizerForModel(model) }
+  }
+  if (canSendAsNativeImage(mimetype, model.capabilities) || canSendAsNativeFile(mimetype, model.capabilities)) {
+    return { tokens: 0, algorithm: 'none' }
+  }
+  const fallbackTokens = await estimateTextFallbackAttachmentTokens(model, fileId, stats)
+  return { tokens: fallbackTokens, algorithm: 'text_fallback' }
 }
 
 const estimateToolResultOutputTokens = async (
@@ -559,7 +575,7 @@ export const estimatePreambleTokensFromPlan = async ({
       : []
     for (const entry of (knowledgeSegment.knowledgeFileEntries ?? [])) {
       const fileEntry = await estimateKnowledgeFileTokens(
-        entry.fileId, entry.fileName, entry.partIndex, messageParts, model, stats
+        entry.fileId, entry.fileName, entry.mimetype, entry.partIndex, messageParts, model, stats
       )
       knowledgeTokens += fileEntry.tokens
       collector?.addPreamblePart({
