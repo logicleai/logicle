@@ -29,6 +29,8 @@ WORKDIR /app
 # Copy dependency manifests and patch files to use Docker layer caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches ./patches
+# Vendored local file dependency required by package.json ("xlsx": "file:vendor/xlsx")
+COPY vendor/xlsx ./vendor/xlsx
 
 # Install deps — mounting the pnpm store into a cache volume
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \

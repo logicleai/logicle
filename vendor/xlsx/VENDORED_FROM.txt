@@ -1,0 +1,4 @@
+Source: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
+Vendored on: 2026-05-07
+License: Apache-2.0 (see LICENSE in this directory)
+Notes: This package is consumed via package.json dependency "xlsx": "file:vendor/xlsx".
