@@ -9,7 +9,7 @@ import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { MessageAuditor } from '@/lib/MessageAuditor'
 import { assistantVersionFiles, getAssistant } from '@/models/assistant'
-import { getFileWithId } from '@/models/file'
+import { getFileWithId, reassignUserOwnedFilesToConversation } from '@/models/file'
 import { storage } from '@/lib/storage'
 import { getUserParameters } from '@/lib/parameters'
 import { error, forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
@@ -109,6 +109,16 @@ export const POST = operation({
       return error(500, 'No such conversation')
     }
     const { conversation, assistant, backend } = conversationWithBackendAssistant
+    if (conversation.ownerId !== session.userId) {
+      return forbidden('Trying to add a message to a non owned conversation')
+    }
+    if (userMessage.attachments && userMessage.attachments.length > 0) {
+      await reassignUserOwnedFilesToConversation({
+        fileIds: userMessage.attachments,
+        userId: session.userId,
+        conversationId: conversation.id,
+      })
+    }
     const dtoUserMessage = {
       content: userMessage.content,
       id: nanoid(),
@@ -118,9 +128,6 @@ export const POST = operation({
       attachments: [],
       role: 'user',
     } satisfies dto.UserMessage
-    if (conversation.ownerId !== session.userId) {
-      return forbidden('Trying to add a message to a non owned conversation')
-    }
     if (assistant.deleted) {
       return forbidden('This assistant has been deleted')
     }
