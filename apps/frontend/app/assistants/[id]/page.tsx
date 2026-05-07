@@ -36,14 +36,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 
 // Delay (ms) before auto-saving after last change
 const AUTO_SAVE_DELAY = 5000
@@ -53,12 +45,6 @@ interface LocalConfirmationDialogState {
   confirmMsg: string
   destructive?: boolean
 }
-interface VersionNameDialogState {
-  title: string
-  value: string
-  confirmMsg: string
-}
-
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
   const { t } = useTranslation()
@@ -83,8 +69,6 @@ const AssistantPage = () => {
   const [confirmationDialog, setConfirmationDialog] =
     useState<LocalConfirmationDialogState | null>(null)
   const confirmationResolver = useRef<((confirmed: boolean) => void) | null>(null)
-  const [versionNameDialog, setVersionNameDialog] = useState<VersionNameDialogState | null>(null)
-  const versionNameResolver = useRef<((value: string | null) => void) | null>(null)
   const saveController = useRef<AbortController | null>(null)
 
   const loadDraftAndPublishedBaseline = useCallback(
@@ -180,22 +164,6 @@ const AssistantPage = () => {
     confirmationResolver.current = null
     setConfirmationDialog(null)
   }, [])
-  const askVersionName = useCallback((initialValue: string): Promise<string | null> => {
-    setVersionNameDialog({
-      title: t('version_name_prompt'),
-      value: initialValue,
-      confirmMsg: t('save'),
-    })
-    return new Promise((resolve) => {
-      versionNameResolver.current = resolve
-    })
-  }, [t])
-
-  const resolveVersionName = useCallback((value: string | null) => {
-    versionNameResolver.current?.(value)
-    versionNameResolver.current = null
-    setVersionNameDialog(null)
-  }, [])
 
   useEffect(() => {
     return () => {
@@ -266,12 +234,8 @@ const AssistantPage = () => {
 
     const saved = await doSubmit(values)
     if (saved) {
-      const enteredVersionName = await askVersionName('')
-      if (enteredVersionName === null) {
-        return
-      }
       const response = await post(`${assistantUrl}/publish`, {
-        versionName: enteredVersionName.trim() === '' ? null : enteredVersionName.trim(),
+        versionName: null,
       })
       if (response.error) {
         toast.error(response.error.message)
@@ -287,7 +251,7 @@ const AssistantPage = () => {
         })
       }
     }
-  }, [assistant, assistantUrl, askConfirmation, askVersionName, refreshChangedFieldKeys, t])
+  }, [assistant, assistantUrl, askConfirmation, refreshChangedFieldKeys, t])
 
   async function onChronology() {
     abortPendingSave()
@@ -597,42 +561,6 @@ const AssistantPage = () => {
           </AlertDialogContent>
         </AlertDialog>
       )}
-      <Dialog
-        open={versionNameDialog !== null}
-        onOpenChange={(open) => {
-          if (!open) resolveVersionName(null)
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{versionNameDialog?.title}</DialogTitle>
-          </DialogHeader>
-          <Input
-            autoFocus
-            value={versionNameDialog?.value ?? ''}
-            placeholder={t('version_name_prompt')}
-            onChange={(event) =>
-              setVersionNameDialog((prev) =>
-                prev ? { ...prev, value: event.target.value } : prev
-              )
-            }
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                resolveVersionName(versionNameDialog?.value ?? '')
-              }
-            }}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => resolveVersionName(null)}>
-              {t('cancel')}
-            </Button>
-            <Button onClick={() => resolveVersionName(versionNameDialog?.value ?? '')}>
-              {versionNameDialog?.confirmMsg}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
