@@ -35,6 +35,13 @@ import {
 import type * as ai from 'ai'
 import { buildEstimatedPreambleSegments, preparePreamblePlan, PreamblePlan } from '@/backend/lib/chat/preamble'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
+import {
+  projectedAssistantToolCallPayload,
+  projectedToolResultMetaPayload,
+  shouldIncludeAssistantReasoningPart,
+  userAttachmentDescriptorText,
+  userMessageMetadataText,
+} from '@/backend/lib/chat/conversion'
 
 // --- File token cache -----------------------------------------------------------
 
@@ -366,9 +373,33 @@ const estimateDtoMessageTokens = async (
 ): Promise<number> => {
   const algorithm = tokenizerForModel(model)
   if (message.role === 'user') {
-    const textTokens = await countTextTokensCached(model, message.content, stats)
-    onDetail?.({ type: 'text', tokens: textTokens, algorithm })
-    let tokens = textTokens
+    let tokens = 0
+    const metadataText = userMessageMetadataText(message)
+    if (metadataText) {
+      const metadataTokens = await countTextTokensCached(model, metadataText, stats)
+      onDetail?.({ type: 'text', tokens: metadataTokens, algorithm, params: { source: 'metadata' } })
+      tokens += metadataTokens
+    }
+    if (message.content.length !== 0) {
+      const textTokens = await countTextTokensCached(model, message.content, stats)
+      onDetail?.({ type: 'text', tokens: textTokens, algorithm, params: { source: 'content' } })
+      tokens += textTokens
+    }
+    const attachmentDescriptorText = userAttachmentDescriptorText(message)
+    if (attachmentDescriptorText) {
+      const attachmentDescriptorTokens = await countTextTokensCached(
+        model,
+        attachmentDescriptorText,
+        stats
+      )
+      onDetail?.({
+        type: 'text',
+        tokens: attachmentDescriptorTokens,
+        algorithm,
+        params: { source: 'attachment_descriptor' },
+      })
+      tokens += attachmentDescriptorTokens
+    }
     for (const attachment of message.attachments) {
       tokens += await estimateAttachmentTokens(model, attachment, stats, (aTokens, aAlgorithm, aParams) => {
         onDetail?.({
@@ -391,14 +422,14 @@ const estimateDtoMessageTokens = async (
         const t = await countTextTokensCached(model, part.text, stats)
         onDetail?.({ type: 'text', tokens: t, algorithm })
         tokens += t
-      } else if (part.type === 'reasoning') {
+      } else if (part.type === 'reasoning' && shouldIncludeAssistantReasoningPart(part)) {
         const t = await countTextTokensCached(model, part.reasoning, stats)
         onDetail?.({ type: 'reasoning', tokens: t, algorithm })
         tokens += t
       } else if (part.type === 'tool-call') {
         const t = await countTextTokensCached(
           model,
-          JSON.stringify({ toolCallId: part.toolCallId, toolName: part.toolName, input: part.args }),
+          JSON.stringify(projectedAssistantToolCallPayload(part)),
           stats
         )
         onDetail?.({ type: 'tool_call', toolCallId: part.toolCallId, toolName: part.toolName, tokens: t, algorithm })
@@ -413,7 +444,7 @@ const estimateDtoMessageTokens = async (
       if (part.type !== 'tool-result') continue
       const metaTokens = await countTextTokensCached(
         model,
-        JSON.stringify({ toolCallId: part.toolCallId, toolName: part.toolName }),
+        JSON.stringify(projectedToolResultMetaPayload(part)),
         stats
       )
       const resultTokens = await estimateToolResultOutputTokens(model, part.result, stats)

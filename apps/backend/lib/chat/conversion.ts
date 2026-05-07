@@ -35,6 +35,30 @@ const describeAttachedFiles = (
   })),
 })
 
+export const userMessageMetadataText = (message: dto.UserMessage): string | undefined =>
+  message.metadata
+    ? `Message metadata (system-use): ${JSON.stringify(message.metadata)}`
+    : undefined
+
+export const userAttachmentDescriptorText = (message: dto.UserMessage): string | undefined =>
+  message.attachments.length === 0
+    ? undefined
+    : `The user has attached the following files to this chat: \n${JSON.stringify(message.attachments)}`
+
+export const shouldIncludeAssistantReasoningPart = (part: dto.ReasoningPart): boolean =>
+  Boolean(part.reasoning_signature)
+
+export const projectedAssistantToolCallPayload = (part: dto.ToolCallPart) => ({
+  toolCallId: part.toolCallId,
+  toolName: part.toolName,
+  input: part.args,
+})
+
+export const projectedToolResultMetaPayload = (part: dto.ToolCallResultPart) => ({
+  toolCallId: part.toolCallId,
+  toolName: part.toolName,
+})
+
 export const loadImagePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.ImagePart> => {
   let fileContent: Buffer
   try {
@@ -243,11 +267,12 @@ export const dtoMessageToLlmMessage = async (
     const parts: ContentArrayElement[] = []
     m.parts.forEach((part) => {
       if (part.type === 'tool-call') {
+        const projected = projectedAssistantToolCallPayload(part)
         parts.push({
           type: 'tool-call',
-          toolCallId: part.toolCallId,
-          toolName: part.toolName,
-          input: part.args,
+          toolCallId: projected.toolCallId,
+          toolName: projected.toolName,
+          input: projected.input,
         })
       } else if (part.type === 'text') {
         parts.push({
@@ -256,7 +281,7 @@ export const dtoMessageToLlmMessage = async (
         })
       } else if (part.type === 'builtin-tool-result') {
         // builtin tools are just... notifications
-      } else if (part.type === 'reasoning' && part.reasoning_signature) {
+      } else if (part.type === 'reasoning' && shouldIncludeAssistantReasoningPart(part)) {
         parts.push({
           type: 'reasoning',
           text: part.reasoning,
@@ -273,10 +298,8 @@ export const dtoMessageToLlmMessage = async (
       content: parts,
     }
   }
-  const metadataText =
-    m.role === 'user' && m.metadata
-      ? `Message metadata (system-use): ${JSON.stringify(m.metadata)}`
-      : undefined
+  const metadataText = m.role === 'user' ? userMessageMetadataText(m) : undefined
+  const attachmentDescriptorText = m.role === 'user' ? userAttachmentDescriptorText(m) : undefined
   const message: ai.ModelMessage = {
     role: m.role,
     content: m.content,
@@ -306,12 +329,10 @@ export const dtoMessageToLlmMessage = async (
         })
       )
     ).filter((a) => a !== undefined)
-    if (m.attachments.length) {
+    if (attachmentDescriptorText) {
       messageParts.push({
         type: 'text',
-        text: `The user has attached the following files to this chat: \n${JSON.stringify(
-          m.attachments
-        )}`,
+        text: attachmentDescriptorText,
       })
     }
     message.content = [...messageParts, ...fileParts]
