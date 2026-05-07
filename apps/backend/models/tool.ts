@@ -96,15 +96,19 @@ export const getTool = async (toolId: schema.Tool['id']): Promise<dto.Tool | und
   return (await toolsToDtos(list)).find((t) => t.id === toolId)
 }
 
-export const createTool = async (tool: dto.InsertableTool): Promise<dto.Tool> => {
-  return await createToolWithId(nanoid(), tool)
+export const createTool = async (
+  tool: dto.InsertableTool,
+  ownerUserId?: string
+): Promise<dto.Tool> => {
+  return await createToolWithId(nanoid(), tool, undefined, undefined, ownerUserId)
 }
 
 export const createToolWithId = async (
   id: string,
   tool: dto.InsertableTool,
   capability?: boolean,
-  provisioned?: boolean
+  provisioned?: boolean,
+  ownerUserId?: string
 ): Promise<dto.Tool> => {
   const { icon, ...toolWithoutIcon } = tool
   const dbTool: schema.Tool = {
@@ -122,11 +126,36 @@ export const createToolWithId = async (
 
   await db.insertInto('Tool').values(dbTool).executeTakeFirstOrThrow()
   await updateWorkspaceSharing(id, tool.sharing)
+  await transferFilesToToolOwner(id, tool.configuration, ownerUserId)
   const created = await getTool(id)
   if (!created) {
     throw new Error('Creation failed')
   }
   return created
+}
+
+const transferFilesToToolOwner = async (
+  toolId: string,
+  configuration: Record<string, unknown>,
+  ownerUserId?: string
+) => {
+  const rawFiles = configuration.files
+  if (!Array.isArray(rawFiles) || rawFiles.length === 0) return
+  const fileIds = rawFiles
+    .map((entry) => (entry && typeof entry === 'object' ? (entry as { id?: unknown }).id : undefined))
+    .filter((id): id is string => typeof id === 'string' && id.length > 0)
+  if (fileIds.length === 0) return
+
+  let query = db
+    .updateTable('File')
+    .set({ ownerType: 'TOOL', ownerId: toolId })
+    .where('id', 'in', [...new Set(fileIds)])
+
+  if (ownerUserId) {
+    query = query.where('ownerType', '=', 'USER').where('ownerId', '=', ownerUserId)
+  }
+
+  await query.execute()
 }
 
 const updateWorkspaceSharing = async (toolId: string, sharing: dto.Sharing2) => {
@@ -150,7 +179,8 @@ const updateWorkspaceSharing = async (toolId: string, sharing: dto.Sharing2) => 
 export const updateTool = async (
   toolId: string,
   data: dto.UpdateableTool,
-  capability?: boolean
+  capability?: boolean,
+  ownerUserId?: string
 ) => {
   const { icon, sharing, ...toolTableFields } = data
   const imageId = icon == null ? icon : await getOrCreateImageFromDataUri(icon)
@@ -165,6 +195,9 @@ export const updateTool = async (
     sharing: sharing?.type,
   }
   await db.updateTable('Tool').set(update).where('id', '=', toolId).execute()
+  if (data.configuration) {
+    await transferFilesToToolOwner(toolId, data.configuration, ownerUserId)
+  }
   if (data.sharing) {
     await updateWorkspaceSharing(toolId, data.sharing)
   }
