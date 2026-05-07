@@ -35,9 +35,7 @@ import {
 import type * as ai from 'ai'
 import { buildEstimatedPreambleSegments, preparePreamblePlan, PreamblePlan } from '@/backend/lib/chat/preamble'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
-import {
-  projectMessageForEstimation,
-} from '@/backend/lib/chat/conversion'
+import { projectMessageForEstimation } from '@/backend/lib/chat/message-projection'
 
 // --- File token cache -----------------------------------------------------------
 
