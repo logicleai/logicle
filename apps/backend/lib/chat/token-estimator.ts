@@ -36,11 +36,7 @@ import type * as ai from 'ai'
 import { buildEstimatedPreambleSegments, preparePreamblePlan, PreamblePlan } from '@/backend/lib/chat/preamble'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
 import {
-  projectedAssistantToolCallPayload,
-  projectedToolResultMetaPayload,
-  shouldIncludeAssistantReasoningPart,
-  userAttachmentDescriptorText,
-  userMessageMetadataText,
+  projectMessageForEstimation,
 } from '@/backend/lib/chat/conversion'
 
 // --- File token cache -----------------------------------------------------------
@@ -372,95 +368,58 @@ const estimateDtoMessageTokens = async (
   onDetail?: (part: dto.TokenDetailPart) => void
 ): Promise<number> => {
   const algorithm = tokenizerForModel(model)
-  if (message.role === 'user') {
-    let tokens = 0
-    const metadataText = userMessageMetadataText(message)
-    if (metadataText) {
-      const metadataTokens = await countTextTokensCached(model, metadataText, stats)
-      onDetail?.({ type: 'text', tokens: metadataTokens, algorithm, params: { source: 'metadata' } })
-      tokens += metadataTokens
-    }
-    if (message.content.length !== 0) {
-      const textTokens = await countTextTokensCached(model, message.content, stats)
-      onDetail?.({ type: 'text', tokens: textTokens, algorithm, params: { source: 'content' } })
-      tokens += textTokens
-    }
-    const attachmentDescriptorText = userAttachmentDescriptorText(message)
-    if (attachmentDescriptorText) {
-      const attachmentDescriptorTokens = await countTextTokensCached(
-        model,
-        attachmentDescriptorText,
-        stats
-      )
+  const projected = projectMessageForEstimation(message)
+  if (projected.role === 'ignored') return 0
+  let tokens = 0
+  for (const item of projected.items) {
+    if (item.kind === 'text') {
+      const t = await countTextTokensCached(model, item.text, stats)
       onDetail?.({
-        type: 'text',
-        tokens: attachmentDescriptorTokens,
+        type: item.source === 'assistant_reasoning' ? 'reasoning' : 'text',
+        tokens: t,
         algorithm,
-        params: { source: 'attachment_descriptor' },
+        params: item.source ? { source: item.source } : undefined,
       })
-      tokens += attachmentDescriptorTokens
+      tokens += t
+      continue
     }
-    for (const attachment of message.attachments) {
-      tokens += await estimateAttachmentTokens(model, attachment, stats, (aTokens, aAlgorithm, aParams) => {
+    if (item.kind === 'attachment') {
+      tokens += await estimateAttachmentTokens(model, item.attachment, stats, (aTokens, aAlgorithm, aParams) => {
         onDetail?.({
           type: 'attachment',
-          id: attachment.id,
-          name: attachment.name,
-          mimetype: attachment.mimetype,
+          id: item.attachment.id,
+          name: item.attachment.name,
+          mimetype: item.attachment.mimetype,
           tokens: aTokens,
           algorithm: aAlgorithm,
           params: aParams,
         })
       })
+      continue
     }
-    return tokens
-  }
-  if (message.role === 'assistant') {
-    let tokens = 0
-    for (const part of message.parts) {
-      if (part.type === 'text') {
-        const t = await countTextTokensCached(model, part.text, stats)
-        onDetail?.({ type: 'text', tokens: t, algorithm })
-        tokens += t
-      } else if (part.type === 'reasoning' && shouldIncludeAssistantReasoningPart(part)) {
-        const t = await countTextTokensCached(model, part.reasoning, stats)
-        onDetail?.({ type: 'reasoning', tokens: t, algorithm })
-        tokens += t
-      } else if (part.type === 'tool-call') {
-        const t = await countTextTokensCached(
-          model,
-          JSON.stringify(projectedAssistantToolCallPayload(part)),
-          stats
-        )
-        onDetail?.({ type: 'tool_call', toolCallId: part.toolCallId, toolName: part.toolName, tokens: t, algorithm })
-        tokens += t
-      }
+    if (item.kind === 'tool_call') {
+      const t = await countTextTokensCached(model, JSON.stringify(item.payload), stats)
+      onDetail?.({ type: 'tool_call', toolCallId: item.toolCallId, toolName: item.toolName, tokens: t, algorithm })
+      tokens += t
+      continue
     }
-    return tokens
+    const metaTokens = await countTextTokensCached(
+      model,
+      JSON.stringify(item.metaPayload),
+      stats
+    )
+    const resultTokens = await estimateToolResultOutputTokens(model, item.output, stats)
+    const partTokens = metaTokens + resultTokens
+    onDetail?.({
+      type: 'tool_result',
+      toolCallId: item.toolCallId,
+      toolName: item.toolName,
+      tokens: partTokens,
+      algorithm,
+    })
+    tokens += partTokens
   }
-  if (message.role === 'tool') {
-    let tokens = 0
-    for (const part of message.parts) {
-      if (part.type !== 'tool-result') continue
-      const metaTokens = await countTextTokensCached(
-        model,
-        JSON.stringify(projectedToolResultMetaPayload(part)),
-        stats
-      )
-      const resultTokens = await estimateToolResultOutputTokens(model, part.result, stats)
-      const partTokens = metaTokens + resultTokens
-      onDetail?.({
-        type: 'tool_result',
-        toolCallId: part.toolCallId,
-        toolName: part.toolName,
-        tokens: partTokens,
-        algorithm,
-      })
-      tokens += partTokens
-    }
-    return tokens
-  }
-  return 0
+  return tokens
 }
 
 export const estimateHistoryMessageCosts = async (
