@@ -4,7 +4,11 @@ import { stockModels } from '@/lib/chat/models'
 import { dtoMessageToLlmMessage } from '@/backend/lib/chat/conversion'
 import { projectMessageForEstimation } from '@/backend/lib/chat/message-projection'
 import { countModelMessageTokens } from '@/backend/lib/chat/prompt-token-counter'
-import { estimateConversationWindowTokens } from '@/backend/lib/chat/token-estimator'
+import {
+  estimateConversationWindowTokens,
+  prepareConversationCostPlan,
+  selectOptimalHistoryStartIndex,
+} from '@/backend/lib/chat/token-estimator'
 
 const ONE_BY_ONE_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/a7cAAAAASUVORK5CYII='
@@ -522,5 +526,70 @@ describe('token invariant for non-file history', () => {
     expect(llm?.role).toBe('user')
     const runtimeTokens = llm ? await countModelMessageTokens(parityMediaModel as any, llm) : 0
     expect(estimate.estimate.history).toBe(runtimeTokens)
+  })
+})
+
+describe('truncation correctness', () => {
+  const buildTurns = (turns: number): dto.Message[] => {
+    const messages: dto.Message[] = []
+    for (let i = 1; i <= turns; i++) {
+      messages.push({
+        ...base,
+        id: `u-turn-${i}`,
+        role: 'user',
+        content: `user turn ${i} question with some text`,
+        attachments: [],
+      })
+      messages.push({
+        ...base,
+        id: `a-turn-${i}`,
+        role: 'assistant',
+        parts: [{ type: 'text', text: `assistant turn ${i} answer with some text` }],
+      })
+    }
+    return messages
+  }
+
+  const buildBaseAssistantParams = (systemPrompt: string) => ({
+    assistantId: 'asst-truncate',
+    model: approxModel.id,
+    systemPrompt,
+    temperature: 0,
+    tokenLimit: 100000,
+    reasoning_effort: null,
+  })
+
+  const truncateLengthFor = async (systemPrompt: string, tokenLimit: number) => {
+    const history = buildTurns(10)
+    const planResult = await prepareConversationCostPlan({
+      assistantParams: {
+        ...buildBaseAssistantParams(systemPrompt),
+        tokenLimit,
+      },
+      model: approxModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history,
+      draft: null,
+    })
+    const startIndex = selectOptimalHistoryStartIndex(
+      history,
+      planResult.plan.historyMessageCosts,
+      planResult.plan.assistantTokens,
+      planResult.plan.draftTokens,
+      tokenLimit
+    )
+    return history.slice(startIndex).length
+  }
+
+  test('without extra preamble can keep 10/20 messages', async () => {
+    const kept = await truncateLengthFor('', 180)
+    expect(kept).toBe(10)
+  })
+
+  test('with huge preamble can keep 2/20 messages under same budget', async () => {
+    const kept = await truncateLengthFor('HUGE PROMPT '.repeat(5000), 180)
+    expect(kept).toBe(2)
   })
 })
