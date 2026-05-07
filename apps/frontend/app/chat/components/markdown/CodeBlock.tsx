@@ -1,4 +1,9 @@
-import { IconCheck, IconClipboard, IconDownload } from '@tabler/icons-react'
+import {
+  IconCheck,
+  IconClipboard,
+  IconDownload,
+  IconTextWrap,
+} from '@tabler/icons-react'
 import { FC, memo, useEffect, useState } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
@@ -70,10 +75,17 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
             <button
               type="button"
               title={wrapLongLines ? t('disable_word_wrap') : t('enable_word_wrap')}
-              className="flex gap-1.5 items-center rounded bg-none p-1 text-xs text-white"
+              className={`flex items-center rounded p-1 text-xs transition-colors ${
+                wrapLongLines
+                  ? 'bg-white/90 text-slate-900'
+                  : 'bg-transparent text-white/70 hover:text-white'
+              }`}
               onClick={() => setWrapLongLines((prev) => !prev)}
             >
-              {wrapLongLines ? t('word_wrap_on') : t('word_wrap_off')}
+              <IconTextWrap
+                size={18}
+                className={wrapLongLines ? 'opacity-100' : 'opacity-50 hover:opacity-100'}
+              />
             </button>
             <button
               type="button"
