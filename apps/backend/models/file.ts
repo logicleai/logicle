@@ -56,3 +56,29 @@ export const addFile = async (
   }
   return created
 }
+
+export const reassignUserOwnedFilesToConversation = async ({
+  fileIds,
+  userId,
+  conversationId,
+}: {
+  fileIds: string[]
+  userId: string
+  conversationId: string
+}) => {
+  if (fileIds.length === 0) {
+    return
+  }
+
+  const uniqueIds = [...new Set(fileIds)]
+  await db
+    .updateTable('File')
+    .set({
+      ownerType: 'CHAT',
+      ownerId: conversationId,
+    })
+    .where('id', 'in', uniqueIds)
+    .where('ownerType', '=', 'USER')
+    .where('ownerId', '=', userId)
+    .execute()
+}

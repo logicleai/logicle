@@ -14,6 +14,7 @@ import { setRootSpanAttrs } from '@/lib/tracing/root-registry'
 import { getUserParameters } from '@/lib/parameters'
 import { assistantVersionFiles } from '@/models/assistant'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
+import { reassignUserOwnedFilesToConversation } from '@/models/file'
 import { getMessages, saveMessage } from '@/models/message'
 import { getUserSecretValue } from '@/models/userSecrets'
 import { db } from 'db/database'
@@ -85,6 +86,14 @@ export const startServerChatRun = async ({
       status: 403,
       message: 'This assistant has been deleted',
     }
+  }
+
+  if (userMessage.role === 'user' && userMessage.attachments.length > 0) {
+    await reassignUserOwnedFilesToConversation({
+      fileIds: userMessage.attachments.map((attachment) => attachment.id),
+      userId: session.userId,
+      conversationId: conversation.id,
+    })
   }
 
   const created = createChatRun({

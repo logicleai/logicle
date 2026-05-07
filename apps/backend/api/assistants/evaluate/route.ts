@@ -57,6 +57,7 @@ export const POST = operation({
       {
         debug: true,
         user: session.userId,
+        conversationId,
       }
     )
 

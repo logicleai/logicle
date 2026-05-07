@@ -646,6 +646,24 @@ describe('ChatAssistant.invokeFunction', () => {
     )
   })
 
+  test('uses chat state conversation id for tool ownership when build options omit it', async () => {
+    const invokeResult: dto.ToolCallResultOutput = { type: 'content', value: [] }
+    const fn: ToolFunction = { description: 'Test', invoke: vi.fn().mockResolvedValue(invokeResult) }
+    const assistant = makeChatAssistant()
+    ;(assistant as any).options = { user: 'u1' }
+    const chatState = { chatHistory: [makeUserMsg()], conversationId: 'c1' } as any
+    const toolUILink = { attachments: [] } as any
+
+    await assistant.invokeFunction(makeToolCall(), fn, chatState, toolUILink)
+
+    expect(fn.invoke).toHaveBeenCalledWith(
+      expect.objectContaining({
+        conversationId: 'c1',
+        rootOwner: { type: 'CHAT', id: 'c1' },
+      })
+    )
+  })
+
   test('returns error-text when func.invoke throws', async () => {
     const fn: ToolFunction = { description: 'Test', invoke: vi.fn().mockRejectedValue(new Error('boom')) }
     const assistant = makeChatAssistant()
