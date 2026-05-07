@@ -14,6 +14,7 @@ export interface ImageGenerationRequest {
   prompt: string
   n?: number
   size?: string
+  aspectRatio?: string
   input?: Record<string, unknown>
 }
 

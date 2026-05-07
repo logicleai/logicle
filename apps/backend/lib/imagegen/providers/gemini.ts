@@ -17,6 +17,7 @@ export const generateWithGemini = async ({
   apiKey,
   model,
   prompt,
+  aspectRatio,
 }: ImageGenerationRequest): Promise<GeneratedImagesResponse> => {
   const client = createGeminiClient(apiKey)
   const geminiModel = client.getGenerativeModel({ model })
@@ -24,6 +25,13 @@ export const generateWithGemini = async ({
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
       responseModalities: ['IMAGE', 'TEXT'],
+      ...(aspectRatio
+        ? ({
+            imageConfig: {
+              aspectRatio,
+            },
+          } as const)
+        : {}),
     } as never,
   } as never)
 
@@ -53,6 +61,7 @@ export const editWithGemini = async ({
   model,
   prompt,
   images,
+  aspectRatio,
 }: ImageEditRequest): Promise<GeneratedImagesResponse> => {
   const client = createGeminiClient(apiKey)
   const geminiModel = client.getGenerativeModel({ model })
@@ -70,6 +79,13 @@ export const editWithGemini = async ({
     contents: [{ role: 'user', parts }],
     generationConfig: {
       responseModalities: ['IMAGE', 'TEXT'],
+      ...(aspectRatio
+        ? ({
+            imageConfig: {
+              aspectRatio,
+            },
+          } as const)
+        : {}),
     } as never,
   } as never)
 

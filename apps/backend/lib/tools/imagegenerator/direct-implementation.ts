@@ -46,6 +46,39 @@ import {
 
 const IMAGE_TOOL_TEXT =
   "The tool displayed generated images. The images are already plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user."
+const SUPPORTED_IMAGE_SIZES = ['auto', '1024x1024', '1024x1536', '1536x1024'] as const
+const SUPPORTED_IMAGE_ASPECT_RATIOS = [
+  '1:1',
+  '2:3',
+  '3:2',
+  '3:4',
+  '4:3',
+  '4:5',
+  '5:4',
+  '9:16',
+  '16:9',
+  '21:9',
+] as const
+
+type SupportedImageSize = (typeof SUPPORTED_IMAGE_SIZES)[number]
+type SupportedImageAspectRatio = (typeof SUPPORTED_IMAGE_ASPECT_RATIOS)[number]
+
+const normalizeRequestedSize = (value: unknown): SupportedImageSize => {
+  if (typeof value === 'string' && SUPPORTED_IMAGE_SIZES.includes(value as SupportedImageSize)) {
+    return value as SupportedImageSize
+  }
+  return '1024x1024'
+}
+
+const normalizeRequestedAspectRatio = (value: unknown): SupportedImageAspectRatio | undefined => {
+  if (
+    typeof value === 'string' &&
+    SUPPORTED_IMAGE_ASPECT_RATIOS.includes(value as SupportedImageAspectRatio)
+  ) {
+    return value as SupportedImageAspectRatio
+  }
+  return undefined
+}
 
 type DirectImageToolParams = {
   apiKey: string
@@ -74,6 +107,8 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
               type: 'string',
               description: 'textual description of the image(s) to generate',
             },
+            ...this.buildSizeProperty(),
+            ...this.buildAspectRatioProperty(),
           },
           additionalProperties: false,
           required: ['prompt'],
@@ -93,6 +128,8 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
               type: 'string',
               description: 'textual description of the modification to apport to the image(s)',
             },
+            ...this.buildSizeProperty(),
+            ...this.buildAspectRatioProperty(),
             fileId: {
               type: 'array',
               description: 'Array of image IDs to edit',
@@ -114,6 +151,8 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
   functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   protected abstract supportsModel(model: string): boolean
+  protected abstract supportsSizeControl(model: string): boolean
+  protected abstract supportsAspectRatioControl(model: string): boolean
   protected abstract providerName(): string
   protected abstract generateDirect(request: ImageGenerationRequest): Promise<GeneratedImagesResponse>
   protected abstract editDirect(request: ImageEditRequest): Promise<GeneratedImagesResponse>
@@ -121,6 +160,33 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
   private assertSupportedModel() {
     if (!this.supportsModel(this.model)) {
       throw new Error(`Model "${this.model}" is not supported by tool "${this.toolParams.name}"`)
+    }
+  }
+
+  private buildSizeProperty(): Record<string, unknown> {
+    if (!this.supportsSizeControl(this.model)) {
+      return {}
+    }
+    return {
+      size: {
+        type: 'string',
+        enum: [...SUPPORTED_IMAGE_SIZES],
+        description:
+          'Optional output size. Use portrait (`1024x1536`) or landscape (`1536x1024`) to control aspect ratio.',
+      },
+    }
+  }
+
+  private buildAspectRatioProperty(): Record<string, unknown> {
+    if (!this.supportsAspectRatioControl(this.model)) {
+      return {}
+    }
+    return {
+      aspectRatio: {
+        type: 'string',
+        enum: [...SUPPORTED_IMAGE_ASPECT_RATIOS],
+        description: 'Optional output aspect ratio.',
+      },
     }
   }
 
@@ -139,13 +205,20 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     rootOwner,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
+    const size = this.supportsSizeControl(this.model)
+      ? normalizeRequestedSize(invocationParams.size)
+      : undefined
+    const aspectRatio = this.supportsAspectRatioControl(this.model)
+      ? normalizeRequestedAspectRatio(invocationParams.aspectRatio)
+      : undefined
     const aiResponse = this.assertImageResponse(
       await this.generateDirect({
         apiKey,
         model: this.model,
         prompt: `${invocationParams.prompt}`,
         n: 1,
-        size: '1024x1024',
+        size,
+        aspectRatio,
       })
     )
     await recordImageGenerationEvent({
@@ -191,6 +264,12 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
       throw new Error(`Image editing is not supported for model: ${this.model}`)
     }
     const apiKey = await expandToolParameter(this.toolParams, this.params.apiKey)
+    const size = this.supportsSizeControl(this.model)
+      ? normalizeRequestedSize(invocationParams.size)
+      : undefined
+    const aspectRatio = this.supportsAspectRatioControl(this.model)
+      ? normalizeRequestedAspectRatio(invocationParams.aspectRatio)
+      : undefined
     const fileIds = invocationParams.fileId as string[]
     const files = await Promise.all(fileIds.map((fileId) => this.loadImage(fileId, userId)))
     const aiResponse = this.assertImageResponse(
@@ -200,7 +279,8 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
         prompt: `${invocationParams.prompt}`,
         images: files,
         n: 1,
-        size: '1024x1024',
+        size,
+        aspectRatio,
       })
     )
     await recordImageGenerationEvent({
@@ -281,6 +361,14 @@ export class OpenAiImageGeneratorPlugin extends DirectImageGeneratorPlugin {
     return isOpenAiImageModel(model)
   }
 
+  protected supportsSizeControl() {
+    return true
+  }
+
+  protected supportsAspectRatioControl() {
+    return false
+  }
+
   protected generateDirect(request: ImageGenerationRequest) {
     return generateWithOpenAI(request)
   }
@@ -305,6 +393,14 @@ export class GoogleImageGeneratorPlugin extends DirectImageGeneratorPlugin {
 
   protected supportsModel(model: string) {
     return isGeminiImageModel(model) || isImagenImageModel(model)
+  }
+
+  protected supportsSizeControl() {
+    return false
+  }
+
+  protected supportsAspectRatioControl() {
+    return true
   }
 
   protected generateDirect(request: ImageGenerationRequest) {
@@ -342,6 +438,14 @@ export class TogetherImageGeneratorPlugin extends DirectImageGeneratorPlugin {
     return isTogetherImageModel(model)
   }
 
+  protected supportsSizeControl() {
+    return true
+  }
+
+  protected supportsAspectRatioControl() {
+    return false
+  }
+
   protected generateDirect(request: ImageGenerationRequest) {
     return generateWithTogether(request)
   }
@@ -369,6 +473,14 @@ export class ReplicateImageGeneratorPlugin extends DirectImageGeneratorPlugin {
 
   protected supportsModel(_model: string) {
     return true
+  }
+
+  protected supportsSizeControl() {
+    return false
+  }
+
+  protected supportsAspectRatioControl() {
+    return false
   }
 
   protected generateDirect(request: ImageGenerationRequest) {
