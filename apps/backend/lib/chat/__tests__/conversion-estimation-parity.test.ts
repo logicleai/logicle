@@ -1,10 +1,22 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import * as dto from '@/types/dto'
 import { stockModels } from '@/lib/chat/models'
 import { dtoMessageToLlmMessage } from '@/backend/lib/chat/conversion'
 import { projectMessageForEstimation } from '@/backend/lib/chat/message-projection'
 import { countModelMessageTokens } from '@/backend/lib/chat/prompt-token-counter'
 import { estimateConversationWindowTokens } from '@/backend/lib/chat/token-estimator'
+
+vi.mock('@/models/file', () => ({
+  getFileWithId: async (id: string) => ({
+    id,
+    fileBlobId: `blob-${id}`,
+    name: `mock-${id}.txt`,
+    type: 'text/plain',
+    path: '/tmp/mock-file.txt',
+    encrypted: false,
+    size: 12,
+  }),
+}))
 
 const base = {
   conversationId: 'conv-1',
@@ -131,6 +143,63 @@ describe('message projection parity', () => {
         expect.objectContaining({ type: 'tool-result', toolCallId: 'tc-2', toolName: 'math' }),
       ])
     )
+  })
+
+  test('tool result content with files includes attached_files descriptor and remains estimable', async () => {
+    const toolMessage: dto.ToolMessage = {
+      ...base,
+      id: 't-3',
+      role: 'tool',
+      parts: [
+        {
+          type: 'tool-result',
+          toolCallId: 'tc-4',
+          toolName: 'knowledge',
+          result: {
+            type: 'content',
+            value: [
+              { type: 'text', text: 'summary' },
+              { type: 'file', id: 'file-1', mimetype: 'text/plain', name: 'doc.txt', size: 100 },
+            ],
+          },
+        },
+      ],
+    }
+
+    const projected = projectMessageForEstimation(toolMessage)
+    expect(projected.role).toBe('tool')
+    if (projected.role !== 'tool') return
+    expect(projected.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'tool_result',
+          toolCallId: 'tc-4',
+          toolName: 'knowledge',
+        }),
+      ])
+    )
+
+    const llm = await dtoMessageToLlmMessage(toolMessage, approxModel.capabilities, 'litellm')
+    expect(llm?.role).toBe('tool')
+    if (!llm || llm.role !== 'tool') return
+    const content = llm.content
+    expect(content[0]).toEqual(
+      expect.objectContaining({
+        type: 'tool-result',
+        toolCallId: 'tc-4',
+        toolName: 'knowledge',
+      })
+    )
+    const toolResultPart = content.find((part) => part.type === 'tool-result')
+    const output = toolResultPart?.output
+    expect(output && typeof output === 'object' ? (output as any).type : undefined).toBe('content')
+    const outputParts = output && typeof output === 'object' && 'value' in output ? (output as any).value : []
+    expect(outputParts[0]).toEqual(
+      expect.objectContaining({
+        type: 'text',
+      })
+    )
+    expect(String(outputParts[0]?.text ?? '')).toContain('"attached_files"')
   })
 })
 

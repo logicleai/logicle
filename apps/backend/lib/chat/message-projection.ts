@@ -1,5 +1,16 @@
 import * as dto from '@/types/dto'
 
+export const projectedToolResultAttachedFilesDescriptor = (
+  files: Array<{ id: string; name: string; size: number; mimetype: string }>
+) => ({
+  attached_files: files.map((f) => ({
+    id: f.id,
+    name: f.name,
+    size: f.size,
+    mimetype: f.mimetype,
+  })),
+})
+
 export const userMessageMetadataText = (message: dto.UserMessage): string | undefined =>
   message.metadata
     ? `Message metadata (system-use): ${JSON.stringify(message.metadata)}`
@@ -24,7 +35,7 @@ export const projectedToolResultMetaPayload = (part: dto.ToolCallResultPart) => 
   toolName: part.toolName,
 })
 
-export type EstimationProjectionItem =
+export type MessageProjectionItem =
   | {
       kind: 'text'
       text: string
@@ -49,16 +60,16 @@ export type EstimationProjectionItem =
       output: dto.ToolCallResultOutput
     }
 
-export type EstimationMessageProjection =
-  | { role: 'user' | 'assistant' | 'tool'; items: EstimationProjectionItem[] }
+export type ProjectedMessageForEstimation =
+  | { role: 'user' | 'assistant' | 'tool'; items: MessageProjectionItem[] }
   | { role: 'ignored'; items: [] }
 
-export const projectMessageForEstimation = (message: dto.Message): EstimationMessageProjection => {
+export const projectMessageForEstimation = (message: dto.Message): ProjectedMessageForEstimation => {
   if (message.role === 'user-request' || message.role === 'user-response') {
     return { role: 'ignored', items: [] }
   }
   if (message.role === 'user') {
-    const items: EstimationProjectionItem[] = []
+    const items: MessageProjectionItem[] = []
     const metadataText = userMessageMetadataText(message)
     if (metadataText) items.push({ kind: 'text', text: metadataText, source: 'metadata' })
     if (message.content.length !== 0) items.push({ kind: 'text', text: message.content, source: 'content' })
@@ -76,7 +87,7 @@ export const projectMessageForEstimation = (message: dto.Message): EstimationMes
     return { role: 'user', items }
   }
   if (message.role === 'assistant') {
-    const items: EstimationProjectionItem[] = []
+    const items: MessageProjectionItem[] = []
     for (const part of message.parts) {
       if (part.type === 'text') {
         items.push({ kind: 'text', text: part.text, source: 'assistant_text' })
@@ -99,7 +110,7 @@ export const projectMessageForEstimation = (message: dto.Message): EstimationMes
     }
     return { role: 'assistant', items }
   }
-  const items: EstimationProjectionItem[] = []
+  const items: MessageProjectionItem[] = []
   for (const part of message.parts) {
     if (part.type !== 'tool-result') continue
     items.push({

@@ -16,6 +16,7 @@ import {
 } from './file-attachment-policy'
 import {
   projectMessageForEstimation,
+  projectedToolResultAttachedFilesDescriptor,
   projectedAssistantToolCallPayload,
 } from './message-projection'
 
@@ -27,17 +28,6 @@ const supportsToolResultAttachments = (providerName: string) =>
 const toolResultAttachmentText = (fileEntry: FileDbRow) =>
   `The tool returned a file attachment "${fileEntry.name}" (${fileEntry.type}, id ${fileEntry.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`
 type ToolCallResultOutput = ai.ToolResultPart['output']
-
-const describeAttachedFiles = (
-  files: Array<{ id: string; name: string; size: number; mimetype: string }>
-) => ({
-  attached_files: files.map((f) => ({
-    id: f.id,
-    name: f.name,
-    size: f.size,
-    mimetype: f.mimetype,
-  })),
-})
 
 export const loadImagePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.ImagePart> => {
   let fileContent: Buffer
@@ -190,7 +180,7 @@ export const dtoMessageToLlmMessage = async (
             return output
           case 'content': {
             const files = output.value.filter((v) => v.type === 'file')
-            const description = describeAttachedFiles(files)
+            const description = projectedToolResultAttachedFilesDescriptor(files)
             const outputs = await Promise.all(
               output.value.map(async (v) => {
                 switch (v.type) {
