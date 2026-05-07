@@ -6,16 +6,130 @@ import { projectMessageForEstimation } from '@/backend/lib/chat/message-projecti
 import { countModelMessageTokens } from '@/backend/lib/chat/prompt-token-counter'
 import { estimateConversationWindowTokens } from '@/backend/lib/chat/token-estimator'
 
+const ONE_BY_ONE_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/a7cAAAAASUVORK5CYII='
+
 vi.mock('@/models/file', () => ({
-  getFileWithId: async (id: string) => ({
-    id,
-    fileBlobId: `blob-${id}`,
-    name: `mock-${id}.txt`,
-    type: 'text/plain',
-    path: '/tmp/mock-file.txt',
-    encrypted: false,
-    size: 12,
-  }),
+  getFileWithId: async (id: string) => {
+    const isPdf = id.includes('pdf')
+    const isImage = id.includes('img')
+    return {
+      id,
+      fileBlobId: `blob-${id}`,
+      name: isPdf ? `mock-${id}.pdf` : isImage ? `mock-${id}.png` : `mock-${id}.txt`,
+      type: isPdf ? 'application/pdf' : isImage ? 'image/png' : 'text/plain',
+      path: '/tmp/mock-file.txt',
+      encrypted: false,
+      size: 12,
+    }
+  },
+}))
+
+vi.mock('@/lib/storage', () => ({
+  storage: {
+    readBuffer: async () => Buffer.from(ONE_BY_ONE_PNG_BASE64, 'base64'),
+  },
+}))
+
+vi.mock('@/lib/file-analysis', () => ({
+  ensureFileAnalysis: async (file: { id: string; type: string }) => {
+    if (file.type === 'application/pdf') {
+      const pageCount = file.id.includes('over-limit') ? 10 : 2
+      return {
+        fileId: file.id,
+        kind: 'pdf',
+        status: 'ready',
+        analyzerVersion: 1,
+        payload: {
+          kind: 'pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 100,
+          pageCount,
+          visionPageCount: 1,
+          textCharCount: 20,
+          hasExtractableText: true,
+          imagePageCount: 0,
+          contentMode: 'text',
+          extractedTextPath: null,
+        },
+        warnings: [],
+        error: null,
+        createdAt: '2026-05-07T00:00:00.000Z',
+        updatedAt: '2026-05-07T00:00:00.000Z',
+      }
+    }
+    return {
+      fileId: file.id,
+      kind: 'image',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'image',
+        mimeType: file.type,
+        sizeBytes: 100,
+        width: 1,
+        height: 1,
+        frameCount: 1,
+        hasAlpha: false,
+        format: 'png',
+        extractedTextPath: null,
+      },
+      warnings: [],
+      error: null,
+      createdAt: '2026-05-07T00:00:00.000Z',
+      updatedAt: '2026-05-07T00:00:00.000Z',
+    }
+  },
+  ensureFileAnalysisForFile: async (file: { id: string; type: string }) => {
+    if (file.type === 'application/pdf') {
+      const pageCount = file.id.includes('over-limit') ? 10 : 2
+      return {
+        fileId: file.id,
+        kind: 'pdf',
+        status: 'ready',
+        analyzerVersion: 1,
+        payload: {
+          kind: 'pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 100,
+          pageCount,
+          visionPageCount: 1,
+          textCharCount: 20,
+          hasExtractableText: true,
+          imagePageCount: 0,
+          contentMode: 'text',
+          extractedTextPath: null,
+        },
+        warnings: [],
+        error: null,
+        createdAt: '2026-05-07T00:00:00.000Z',
+        updatedAt: '2026-05-07T00:00:00.000Z',
+      }
+    }
+    return {
+      fileId: file.id,
+      kind: 'image',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'image',
+        mimeType: file.type,
+        sizeBytes: 100,
+        width: 1,
+        height: 1,
+        frameCount: 1,
+        hasAlpha: false,
+        format: 'png',
+        extractedTextPath: null,
+      },
+      warnings: [],
+      error: null,
+      createdAt: '2026-05-07T00:00:00.000Z',
+      updatedAt: '2026-05-07T00:00:00.000Z',
+    }
+  },
+  isReadyFileAnalysis: (analysis: { status: string }) => analysis.status === 'ready',
+  readExtractedTextFromAnalysis: async () => 'mock pdf extracted text',
 }))
 
 const base = {
@@ -29,6 +143,18 @@ const approxModel =
 
 if (!approxModel) {
   throw new Error('No stock model available for tests')
+}
+
+const parityMediaModel = {
+  ...approxModel,
+  owned_by: 'openai',
+  tokenizer: 'approx_4chars',
+  capabilities: {
+    ...approxModel.capabilities,
+    vision: true,
+    supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 3,
+  },
 }
 
 describe('message projection parity', () => {
@@ -270,5 +396,131 @@ describe('token invariant for non-file history', () => {
     }
 
     expect(estimate.estimate.history).toBe(runtimeHistoryTokens)
+  })
+
+  test('ignored user-request/user-response messages contribute zero in both projection and estimate', async () => {
+    const history: dto.Message[] = [
+      {
+        ...base,
+        id: 'r-1',
+        role: 'user-request',
+        request: {
+          type: 'tool-call-authorization',
+          toolCallId: 'tc-9',
+          toolName: 'x',
+          args: {},
+        },
+      },
+      {
+        ...base,
+        id: 'r-2',
+        role: 'user-response',
+        allow: true,
+      },
+      {
+        ...base,
+        id: 'u-9',
+        role: 'user',
+        content: 'only this counts',
+        attachments: [],
+      },
+    ]
+    const estimate = await estimateConversationWindowTokens({
+      assistantParams: {
+        assistantId: 'asst-1',
+        model: approxModel.id,
+        systemPrompt: '',
+        temperature: 0,
+        tokenLimit: 100000,
+        reasoning_effort: null,
+      },
+      model: approxModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history,
+      draft: null,
+    })
+    const llmMessages = (
+      await Promise.all(
+        history.map((message) =>
+          dtoMessageToLlmMessage(message, approxModel.capabilities, approxModel.provider)
+        )
+      )
+    ).filter((m): m is NonNullable<typeof m> => Boolean(m))
+    expect(llmMessages).toHaveLength(1)
+    const runtimeTokens = await countModelMessageTokens(approxModel, llmMessages[0]!)
+    expect(estimate.estimate.history).toBe(runtimeTokens)
+  })
+
+  test('native image attachment path stays parity-aligned', async () => {
+    const history: dto.Message[] = [
+      {
+        ...base,
+        id: 'u-img',
+        role: 'user',
+        content: 'image',
+        attachments: [{ id: 'img-1', name: 'img.png', mimetype: 'image/png', size: 100 }],
+      },
+    ]
+    const estimate = await estimateConversationWindowTokens({
+      assistantParams: {
+        assistantId: 'asst-1',
+        model: parityMediaModel.id,
+        systemPrompt: '',
+        temperature: 0,
+        tokenLimit: 100000,
+        reasoning_effort: null,
+      },
+      model: parityMediaModel as any,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history,
+      draft: null,
+    })
+    const llm = await dtoMessageToLlmMessage(history[0]!, parityMediaModel.capabilities as any, 'openai')
+    expect(llm?.role).toBe('user')
+    const runtimeTokens = llm ? await countModelMessageTokens(parityMediaModel as any, llm) : 0
+    expect(estimate.estimate.history).toBe(runtimeTokens)
+  })
+
+  test('pdf over native page limit uses text notice parity path', async () => {
+    const history: dto.Message[] = [
+      {
+        ...base,
+        id: 'u-pdf',
+        role: 'user',
+        content: 'pdf',
+        attachments: [
+          {
+            id: 'pdf-over-limit-1',
+            name: 'mock-pdf-over-limit-1.pdf',
+            mimetype: 'application/pdf',
+            size: 100,
+          },
+        ],
+      },
+    ]
+    const estimate = await estimateConversationWindowTokens({
+      assistantParams: {
+        assistantId: 'asst-1',
+        model: parityMediaModel.id,
+        systemPrompt: '',
+        temperature: 0,
+        tokenLimit: 100000,
+        reasoning_effort: null,
+      },
+      model: parityMediaModel as any,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: [],
+      history,
+      draft: null,
+    })
+    const llm = await dtoMessageToLlmMessage(history[0]!, parityMediaModel.capabilities as any, 'openai')
+    expect(llm?.role).toBe('user')
+    const runtimeTokens = llm ? await countModelMessageTokens(parityMediaModel as any, llm) : 0
+    expect(estimate.estimate.history).toBe(runtimeTokens)
   })
 })
