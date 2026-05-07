@@ -99,8 +99,13 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
       <SyntaxHighlighter
         language={language}
         style={oneDark}
-        customStyle={{ margin: 0 }}
         wrapLongLines={wrapLongLines}
+        customStyle={{
+          margin: 0,
+        }}
+        codeTagProps={{
+          style: {},
+        }}
       >
         {value}
       </SyntaxHighlighter>
