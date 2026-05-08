@@ -348,9 +348,10 @@ describe.skipIf(!ENABLED)('LLM integration', () => {
         )
         expect(sink.hasError()).toBe(false)
 
-        // Tool-based search providers (OpenAI, Anthropic, Gemini) produce discrete tool-call
-        // events; grounding-based providers (Vertex) answer transparently.
-        if (spec.webSearchTool) {
+        // Tool-based search providers usually produce discrete tool-call events.
+        // Gemini 2.5 currently cannot combine provider-defined search tools with
+        // custom function tools in one run, so do not require the custom tool call there.
+        if (spec.webSearchTool && spec.name !== 'gemini') {
           expect(sink.getToolCallNames()).toContain('get_weather')
           const args = sink.getToolCallArgs('get_weather')
           expect((args?.city as string | undefined)?.toLowerCase()).toContain('paris')
