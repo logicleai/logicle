@@ -248,7 +248,6 @@ export class ChatAssistant {
   ): Promise<{
     functions: ToolFunctions
     functionToolIdMap: Map<string, string>
-    additionalProviderOptions: Record<string, unknown>
   }> {
     const functionToolIdMap = new Map<string, string>()
     const toolFunctionEntries = (
@@ -269,28 +268,6 @@ export class ChatAssistant {
     ).flatMap((toolFunctions) => Object.entries(toolFunctions))
     const functions_ = Object.fromEntries(toolFunctionEntries)
 
-    // Give each tool a chance to revise its contribution now that the full function map is
-    // known (e.g. falling back from a native provider tool to search grounding when regular
-    // function tools are also present).
-    const additionalProviderOptions: Record<string, unknown> = {}
-    for (const tool of tools) {
-      if (!tool.resolveForToolSet) continue
-      const resolved = tool.resolveForToolSet(functions_, llmModel)
-      // Remove this tool's previous entries, then add back what it resolved to.
-      for (const [fnName, toolId] of functionToolIdMap) {
-        if (toolId === tool.toolParams.id) {
-          delete functions_[fnName]
-          functionToolIdMap.delete(fnName)
-        }
-      }
-      for (const [fnName, fn] of Object.entries(resolved.functions)) {
-        functions_[fnName] = fn
-        functionToolIdMap.set(fnName, tool.toolParams.id)
-      }
-      if (resolved.providerOptions) {
-        Object.assign(additionalProviderOptions, resolved.providerOptions)
-      }
-    }
     const satelliteHub = await import('@/lib/satellite/hub')
     const { callSatelliteMethod } = satelliteHub
     const connections = satelliteHub.connections
@@ -369,7 +346,7 @@ export class ChatAssistant {
         functions_[tool.name] = toolFunction
       })
     })
-    return { functions: functions_, functionToolIdMap, additionalProviderOptions }
+    return { functions: functions_, functionToolIdMap }
   }
 
   static async build(

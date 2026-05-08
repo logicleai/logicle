@@ -69,7 +69,7 @@ describe('Google native search compatibility', () => {
       provisioned: false,
     })
 
-    const { functions, additionalProviderOptions } = await ChatAssistant.computeFunctions(
+    const { functions } = await ChatAssistant.computeFunctions(
       [regularTool, googleSearchTool],
       gemini3Model,
       { userId: 'u1', assistantId: 'a1' }
@@ -77,7 +77,6 @@ describe('Google native search compatibility', () => {
 
     expect(functions.regular_function).toBeDefined()
     expect(functions.google_search).toBeDefined()
-    expect(additionalProviderOptions).toEqual({})
   })
 
   test('via router: includes google_search alongside regular function tools on Gemini 3.0', async () => {
@@ -93,7 +92,7 @@ describe('Google native search compatibility', () => {
       [{ implementation: googleSearchTool }]
     )
 
-    const { functions, additionalProviderOptions } = await ChatAssistant.computeFunctions(
+    const { functions } = await ChatAssistant.computeFunctions(
       [regularTool, router],
       gemini3Model,
       { userId: 'u1', assistantId: 'a1' }
@@ -101,7 +100,6 @@ describe('Google native search compatibility', () => {
 
     expect(functions.regular_function).toBeDefined()
     expect(functions.google_search).toBeDefined()
-    expect(additionalProviderOptions).toEqual({})
   })
 
   test('isModelSupported returns false for Gemini 2.5 (no web_search capability)', () => {
