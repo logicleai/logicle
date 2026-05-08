@@ -90,10 +90,12 @@ export const Chat = ({
     const hash = window.location.hash
     if (!hash) return
     const el = document.getElementById(hash.slice(1))
-    if (!el) return
+    const container = chatContainerRef.current
+    if (!el || !container) return
     scrolledToFragmentRef.current = true
     setAutoScrollEnabled(false)
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const elTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
+    container.scrollTo({ top: elTop - (container.clientHeight - el.offsetHeight) / 2, behavior: 'smooth' })
   }, [selectedConversation?.messages])
 
   useEffect(() => {
