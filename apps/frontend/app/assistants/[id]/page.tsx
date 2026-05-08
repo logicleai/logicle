@@ -44,6 +44,7 @@ interface LocalConfirmationDialogState {
   message: string | JSX.Element
   confirmMsg: string
   destructive?: boolean
+  cancelHidden?: boolean
 }
 const AssistantPage = () => {
   const { id } = useParams() as { id: string }
@@ -195,7 +196,7 @@ const AssistantPage = () => {
     const changedLabels = changedKeys.map((field) => changedFieldLabel(field))
 
     if (changedKeys.length === 0) {
-      const discardConfirmed = await askConfirmation({
+      await askConfirmation({
         title: t('publish_no_effective_changes_title'),
         message: (
           <div className="space-y-2">
@@ -205,11 +206,9 @@ const AssistantPage = () => {
             </div>
           </div>
         ),
-        confirmMsg: t('discard_changes'),
+        confirmMsg: t('ok'),
+        cancelHidden: true,
       })
-      if (discardConfirmed) {
-        await discardCurrentDraft()
-      }
       return
     }
 
@@ -542,15 +541,21 @@ const AssistantPage = () => {
       )}
       {confirmationDialog && (
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent
+          onEscapeKeyDown={
+            confirmationDialog.cancelHidden ? () => resolveConfirmation(true) : undefined
+          }
+        >
             <AlertDialogHeader>
               <AlertDialogTitle>{confirmationDialog.title}</AlertDialogTitle>
             </AlertDialogHeader>
             <div className="text-center text-muted-foreground">{confirmationDialog.message}</div>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => resolveConfirmation(false)}>
-                {t('cancel')}
-              </AlertDialogCancel>
+              {!confirmationDialog.cancelHidden && (
+                <AlertDialogCancel onClick={() => resolveConfirmation(false)}>
+                  {t('cancel')}
+                </AlertDialogCancel>
+              )}
               <AlertDialogAction
                 variant={confirmationDialog.destructive ? 'destructive' : undefined}
                 onClick={() => resolveConfirmation(true)}
