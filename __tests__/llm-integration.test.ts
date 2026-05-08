@@ -46,6 +46,7 @@ import { setTokenizerCounter } from '@/backend/lib/chat/prompt-token-counter'
 import { countTextWithTokenizer } from '@/lib/chat/tokenizer'
 import { ChatAssistant, type AssistantParams } from '@/backend/lib/chat'
 import { AnthropicWebSearch } from '@/backend/lib/tools/anthropic.web_search/implementation'
+import { GoogleAiStudioWebSearch } from '@/backend/lib/tools/google_ai_studio.web_search/implementation'
 import { OpenaiWebSearch } from '@/backend/lib/tools/openai.web_search/implementation'
 import type { ClientSink } from '@/backend/lib/chat/ClientSink'
 import type { LlmModel } from '@/lib/chat/models'
@@ -248,12 +249,7 @@ const providerSpecs: ProviderSpec[] = [
       provisioned: false,
     }),
     model: () => makeModel(process.env.GEMINI_MODEL ?? 'gemini-2.5-flash', 'google-ai-studio', 'gemini'),
-    webSearchGrounding: {
-      toolParams: testToolParams,
-      supportedMedia: [],
-      functions: async () => ({}),
-      providerOptions: () => ({ google: { useSearchGrounding: true } }),
-    },
+    webSearchTool: new GoogleAiStudioWebSearch(testToolParams),
   },
   {
     name: 'vertex',
@@ -352,8 +348,8 @@ describe.skipIf(!ENABLED)('LLM integration', () => {
         )
         expect(sink.hasError()).toBe(false)
 
-        // Tool-based search providers (OpenAI, Anthropic) produce discrete tool-call
-        // events; grounding-based providers (Gemini, Vertex) answer transparently.
+        // Tool-based search providers (OpenAI, Anthropic, Gemini) produce discrete tool-call
+        // events; grounding-based providers (Vertex) answer transparently.
         if (spec.webSearchTool) {
           expect(sink.getToolCallNames()).toContain('get_weather')
           const args = sink.getToolCallArgs('get_weather')

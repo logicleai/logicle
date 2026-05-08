@@ -153,6 +153,7 @@ export class ChatAssistant {
   llmModelCapabilities: LlmModelCapabilities
   functions: Promise<ToolFunctions>
   functionToolIdMap: Promise<Map<string, string>>
+  groundingFallbackOptions: Promise<Record<string, unknown>>
 
   constructor(
     private providerConfig: ProviderConfig,
@@ -174,6 +175,7 @@ export class ChatAssistant {
     })
     this.functions = computed.then((r) => r.functions)
     this.functionToolIdMap = computed.then((r) => r.functionToolIdMap)
+    this.groundingFallbackOptions = computed.then((r) => r.additionalProviderOptions)
     this.llmModel = llmModel
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
@@ -245,7 +247,11 @@ export class ChatAssistant {
         id: string
       }
     }
-  ): Promise<{ functions: ToolFunctions; functionToolIdMap: Map<string, string> }> {
+  ): Promise<{
+    functions: ToolFunctions
+    functionToolIdMap: Map<string, string>
+    additionalProviderOptions: Record<string, unknown>
+  }> {
     const functionToolIdMap = new Map<string, string>()
     const toolFunctionEntries = (
       await Promise.all(
@@ -264,6 +270,29 @@ export class ChatAssistant {
       )
     ).flatMap((toolFunctions) => Object.entries(toolFunctions))
     const functions_ = Object.fromEntries(toolFunctionEntries)
+
+    // Give each tool a chance to revise its contribution now that the full function map is
+    // known (e.g. falling back from a native provider tool to search grounding when regular
+    // function tools are also present).
+    const additionalProviderOptions: Record<string, unknown> = {}
+    for (const tool of tools) {
+      if (!tool.resolveForToolSet) continue
+      const resolved = tool.resolveForToolSet(functions_, llmModel)
+      // Remove this tool's previous entries, then add back what it resolved to.
+      for (const [fnName, toolId] of functionToolIdMap) {
+        if (toolId === tool.toolParams.id) {
+          delete functions_[fnName]
+          functionToolIdMap.delete(fnName)
+        }
+      }
+      for (const [fnName, fn] of Object.entries(resolved.functions)) {
+        functions_[fnName] = fn
+        functionToolIdMap.set(fnName, tool.toolParams.id)
+      }
+      if (resolved.providerOptions) {
+        Object.assign(additionalProviderOptions, resolved.providerOptions)
+      }
+    }
     const satelliteHub = await import('@/lib/satellite/hub')
     const { callSatelliteMethod } = satelliteHub
     const connections = satelliteHub.connections
@@ -342,7 +371,7 @@ export class ChatAssistant {
         functions_[tool.name] = toolFunction
       })
     })
-    return { functions: functions_, functionToolIdMap }
+    return { functions: functions_, functionToolIdMap, additionalProviderOptions }
   }
 
   static async build(
@@ -422,7 +451,10 @@ export class ChatAssistant {
     )
   }
 
-  private providerOptions(_messages: ai.ModelMessage[]): Record<string, any> | undefined {
+  private providerOptions(
+    _messages: ai.ModelMessage[],
+    groundingFallback: Record<string, unknown>
+  ): Record<string, any> | undefined {
     const assistantParams = this.assistantParams
     const options = this.options
     const vercelProviderType = this.languageModel.provider
@@ -431,7 +463,9 @@ export class ChatAssistant {
         tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel)) : []
       )
     )
-    if (vercelProviderType === 'openai.responses') {
+    if (vercelProviderType === 'google.generative-ai') {
+      return Object.keys(groundingFallback).length > 0 ? groundingFallback : undefined
+    } else if (vercelProviderType === 'openai.responses') {
       return {
         openai: {
           store: false,
@@ -535,7 +569,8 @@ export class ChatAssistant {
     const truncatedChat = await this.truncateChat(messages)
     const llmMessages = await this.computeLlmMessages(truncatedChat)
     const tools = await this.createAiTools()
-    const providerOptions = this.providerOptions(llmMessages)
+    const groundingFallback = await this.groundingFallbackOptions
+    const providerOptions = this.providerOptions(llmMessages, groundingFallback)
     let maxOutputTokens = minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens)
     if (maxOutputTokens && this.languageModel.provider === 'anthropic.messages') {
       const anthropicProviderOptions = providerOptions?.anthropic as

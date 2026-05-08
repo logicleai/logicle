@@ -94,6 +94,17 @@ export interface ToolImplementation {
   getAuthRequest?: (context: ToolFunctionContext) => Promise<dto.UserRequest | null>
   isModelSupported?: (model: LlmModel) => boolean
   providerOptions?: (model: LlmModel) => SharedV2ProviderOptions
+  /**
+   * Called after all tools have resolved their functions. Receives the full merged function
+   * map so the tool can inspect what else is present and decide its final contribution.
+   * Return the functions this tool should contribute (replacing its initial contribution)
+   * and optional providerOptions to apply (e.g. switching from a native provider tool to
+   * search grounding when regular function tools are also present).
+   */
+  resolveForToolSet?: (
+    allFunctions: ToolFunctions,
+    model: LlmModel
+  ) => { functions: ToolFunctions; providerOptions?: SharedV2ProviderOptions }
 }
 
 export type ToolBuilder = (

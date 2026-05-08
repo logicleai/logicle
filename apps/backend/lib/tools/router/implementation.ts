@@ -17,6 +17,8 @@ interface ImplementationChoice {
 
 export class Router extends RouterInterface implements ToolImplementation {
   supportedMedia = []
+  private selectedChoice: ImplementationChoice | null = null
+  private selectedFunctions: ToolFunctions = {}
   constructor(
     public toolParams: ToolParams,
     private choices: ImplementationChoice[]
@@ -54,6 +56,7 @@ export class Router extends RouterInterface implements ToolImplementation {
   }
 
   providerOptions(model: LlmModel): SharedV2ProviderOptions {
+    this.selectedChoice = null
     for (const choice of this.choices) {
       if (
         choice.implementation.isModelSupported &&
@@ -69,12 +72,15 @@ export class Router extends RouterInterface implements ToolImplementation {
           }
         }
       }
+      this.selectedChoice = choice
       return choice.implementation.providerOptions?.(model) ?? {}
     }
     return {}
   }
 
   async functions(model: LlmModel, context: ToolFunctionContext): Promise<ToolFunctions> {
+    this.selectedChoice = null
+    this.selectedFunctions = {}
     for (const choice of this.choices) {
       if (
         choice.implementation.isModelSupported &&
@@ -90,8 +96,22 @@ export class Router extends RouterInterface implements ToolImplementation {
           }
         }
       }
-      return choice.implementation.functions(model, context)
+      this.selectedChoice = choice
+      this.selectedFunctions = await choice.implementation.functions(model, context)
+      return this.selectedFunctions
     }
     return {}
+  }
+
+  resolveForToolSet(allFunctions: ToolFunctions, model: LlmModel) {
+    if (!this.selectedChoice) {
+      return { functions: this.selectedFunctions }
+    }
+
+    const selected = this.selectedChoice.implementation
+    if (selected.resolveForToolSet) {
+      return selected.resolveForToolSet(allFunctions, model)
+    }
+    return { functions: this.selectedFunctions }
   }
 }
