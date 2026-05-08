@@ -11,7 +11,7 @@ export function MostActiveUsers({ className, items, colorMap }: Params) {
   const sorted = [...items].sort((a, b) => b.messages - a.messages)
   return (
     <ScrollArea className={`${className ?? ''} scroll-workaround`}>
-      <div className="space-y-8">
+      <div className="space-y-8 pr-4">
         {sorted.map((item) => {
           const color = colorMap.get(item.userId) ?? '#000000'
           return (
