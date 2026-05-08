@@ -15,7 +15,8 @@ import { McpPlugin } from './mcp/implementation'
 import { WebSearch } from './websearch/implementation'
 import { NativeTool } from './nativetool/implementation'
 import { AnthropicWebSearch } from './anthropic.web_search/implementation'
-import { GoogleWebSearch } from './google.web_search/implementation'
+import { LogicleCloudWebSearch } from './logicle.web_search/implementation'
+import { GoogleAiStudioWebSearch } from './google_ai_studio.web_search/implementation'
 import { OpenaiWebSearch } from './openai.web_search/implementation'
 import { Router } from './router/implementation'
 import { CodeInterpreter } from './code_interpreter/implementation'
@@ -44,7 +45,8 @@ const builders: Record<string, ToolBuilder> = {
   // Provider specific tools
   [AnthropicWebSearch.toolName]: AnthropicWebSearch.builder,
   [OpenaiWebSearch.toolName]: OpenaiWebSearch.builder,
-  [GoogleWebSearch.toolName]: GoogleWebSearch.builder,
+  [LogicleCloudWebSearch.toolName]: LogicleCloudWebSearch.builder,
+  [GoogleAiStudioWebSearch.toolName]: GoogleAiStudioWebSearch.builder,
   [CodeInterpreter.toolName]: CodeInterpreter.builder,
   [OpenaiImageGeneration.toolName]: OpenaiImageGeneration.builder,
 }

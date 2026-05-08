@@ -1,7 +1,9 @@
 import {
   AudioTranscriptionInterface,
   FileManagerPluginInterface,
+  GoogleAiStudioWebSearchInterface,
   GoogleImageGeneratorPluginInterface,
+  LogicleCloudWebSearchInterface,
   ImageGeneratorPluginInterface,
   OpenAiImageGeneratorPluginInterface,
   OpenApiInterface,
@@ -30,5 +32,7 @@ export const toolNames = [
   FileManagerPluginInterface.toolName,
   TimeOfDayInterface.toolName,
   WebSearchInterface.toolName,
+  LogicleCloudWebSearchInterface.toolName,
+  GoogleAiStudioWebSearchInterface.toolName,
 ]
 export type ToolType = (typeof toolNames)[number]

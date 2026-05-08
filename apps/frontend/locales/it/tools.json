@@ -4,6 +4,8 @@
   "dummy": "Solo prompt",
   "file-manager": "File",
   "imagegen.google": "Generazione immagini (Google)",
+  "logicle.web_search": "Ricerca web (Google LogicleCloud)",
+  "google_ai_studio.web_search": "Ricerca web (Google AI Studio)",
   "imagegen.openai": "Generazione immagini (OpenAI)",
   "imagegen.replicate": "Generazione immagini (Replicate)",
   "imagegen.together": "Generazione immagini (Together)",

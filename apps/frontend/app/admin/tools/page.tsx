@@ -29,6 +29,8 @@ import { ReplicateImageGeneratorPluginInterface } from '@/lib/tools/schemas'
 import { ToolType } from '@/lib/tools/tools'
 import { TogetherImageGeneratorPluginInterface } from '@/lib/tools/schemas'
 import { WebSearchInterface } from '@/lib/tools/schemas'
+import { LogicleCloudWebSearchInterface } from '@/lib/tools/schemas'
+import { GoogleAiStudioWebSearchInterface } from '@/lib/tools/schemas'
 import { Badge } from '@/components/ui/badge'
 import { McpInterface } from '@/lib/tools/schemas'
 import { DummyToolInterface } from '@/lib/tools/schemas'
@@ -44,6 +46,8 @@ const creatableTools: ToolType[] = [
   ReplicateImageGeneratorPluginInterface.toolName,
   TimeOfDayInterface.toolName,
   WebSearchInterface.toolName,
+  LogicleCloudWebSearchInterface.toolName,
+  GoogleAiStudioWebSearchInterface.toolName,
   McpInterface.toolName,
   DummyToolInterface.toolName,
 ]

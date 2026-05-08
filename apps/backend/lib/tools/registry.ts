@@ -11,8 +11,10 @@ import {
   FileManagerPluginInterface,
   FileManagerPluginSchema,
   GoogleImageGeneratorPluginInterface,
-  GoogleWebSearchInterface,
-  GoogleWebSearchSchema,
+  GoogleAiStudioWebSearchInterface,
+  GoogleAiStudioWebSearchSchema,
+  LogicleCloudWebSearchInterface,
+  LogicleCloudWebSearchSchema,
   DirectImageGeneratorSchema,
   ImageGeneratorPluginInterface,
   ImageGeneratorSchema,
@@ -108,9 +110,13 @@ export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
     toolName: OpenAiWebSearchInterface.toolName,
     schema: OpenAiWebSearchSchema,
   },
-  [GoogleWebSearchInterface.toolName]: {
-    toolName: GoogleWebSearchInterface.toolName,
-    schema: GoogleWebSearchSchema,
+  [LogicleCloudWebSearchInterface.toolName]: {
+    toolName: LogicleCloudWebSearchInterface.toolName,
+    schema: LogicleCloudWebSearchSchema,
+  },
+  [GoogleAiStudioWebSearchInterface.toolName]: {
+    toolName: GoogleAiStudioWebSearchInterface.toolName,
+    schema: GoogleAiStudioWebSearchSchema,
   },
   [CodeInterpreterInterface.toolName]: {
     toolName: CodeInterpreterInterface.toolName,
