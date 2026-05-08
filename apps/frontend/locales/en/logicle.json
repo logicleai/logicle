@@ -451,7 +451,7 @@
   "publish_changes_message": "The following changes will be published:",
   "publish_no_effective_changes_title": "No changes to publish",
   "publish_no_effective_changes_message": "This draft has no changes compared to the published version.",
-  "publish_no_effective_changes_hint": "You can discard this draft or go back and keep editing it.",
+  "publish_no_effective_changes_hint": "To discard this draft, use the options menu.",
   "reasoning": "Reasoning",
   "reasoning_effort": "Reasoning effort",
   "recover": "Recover",

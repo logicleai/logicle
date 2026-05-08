@@ -451,7 +451,7 @@
   "publish_changes_message": "Verranno pubblicate le seguenti modifiche:",
   "publish_no_effective_changes_title": "Nessuna modifica da pubblicare",
   "publish_no_effective_changes_message": "Questa bozza non contiene modifiche rispetto alla versione pubblicata.",
-  "publish_no_effective_changes_hint": "Puoi annullare questa bozza oppure tornare a modificarla.",
+  "publish_no_effective_changes_hint": "Per eliminare questa bozza, usa il menu delle opzioni.",
   "reasoning": "Ragionamento",
   "reasoning_effort": "Livello di ragionamento",
   "recover": "Recupera",
