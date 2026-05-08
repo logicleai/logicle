@@ -226,7 +226,7 @@ describe('apps/backend/lib/models', () => {
           id: 'valid-model',
           model: 'valid-model',
           name: 'Valid Model',
-          provider: 'gemini',
+          provider: 'google-ai-studio',
           owned_by: 'gemini',
           description: 'Still loads when another fragment is broken',
           context_length: 32000,

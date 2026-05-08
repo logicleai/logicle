@@ -242,12 +242,12 @@ const providerSpecs: ProviderSpec[] = [
     name: 'gemini',
     envKey: 'GEMINI_API_KEY',
     config: () => ({
-      providerType: 'gemini',
+      providerType: 'google-ai-studio',
       name: 'integration-gemini',
       apiKey: process.env.GEMINI_API_KEY!,
       provisioned: false,
     }),
-    model: () => makeModel(process.env.GEMINI_MODEL ?? 'gemini-2.5-flash', 'gemini', 'gemini'),
+    model: () => makeModel(process.env.GEMINI_MODEL ?? 'gemini-2.5-flash', 'google-ai-studio', 'gemini'),
     webSearchGrounding: {
       toolParams: testToolParams,
       supportedMedia: [],
