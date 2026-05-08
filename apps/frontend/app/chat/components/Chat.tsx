@@ -75,7 +75,7 @@ export const Chat = ({
   }
 
   const scrollDown = () => {
-    if (autoScrollEnabled) {
+    if (autoScrollEnabled && !scrolledToFragmentRef.current) {
       messagesEndRef.current?.scrollIntoView()
     }
   }
