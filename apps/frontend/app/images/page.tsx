@@ -1,15 +1,14 @@
 'use client'
-import { useContext } from 'react'
-import ChatPageContext from '@/app/chat/components/context'
+import { useRouter } from 'next/navigation'
 import { useSWRJson } from '@/hooks/swr'
 import { useTranslation } from 'react-i18next'
 import type { UserImage } from '@/services/files'
-import { IconCopy, IconDownload, IconEdit } from '@tabler/icons-react'
+import { IconCopy, IconDownload } from '@tabler/icons-react'
 import { copyImageUrlToClipboard } from '@/frontend/lib/clipboard'
 
 export default function ImagesPage() {
   const { t } = useTranslation()
-  const { openImageEditor } = useContext(ChatPageContext)
+  const router = useRouter()
   const { data: images } = useSWRJson<UserImage[]>(`/api/files/images`)
 
   return (
@@ -25,28 +24,11 @@ export default function ImagesPage() {
                 <img
                   alt={image.name}
                   src={`/api/files/${image.id}/content`}
-                  className="w-full h-full object-contain bg-foreground/5"
+                  className={`w-full h-full object-contain bg-foreground/5 ${image.conversationId ? 'cursor-pointer' : ''}`}
+                  onClick={() => image.conversationId && router.push(`/chat/${image.conversationId}#file-${image.id}`)}
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors pointer-events-none" />
                 <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover:visible">
-                  <button
-                    type="button"
-                    title={t('edit_image')}
-                    className="bg-black bg-opacity-30 rounded-md"
-                    onClick={() =>
-                      openImageEditor?.(
-                        {
-                          id: image.id,
-                          mimetype: image.type,
-                          name: image.name,
-                          size: image.size,
-                        },
-                        { startNewChat: true }
-                      )
-                    }
-                  >
-                    <IconEdit className="m-2" size={20} color="white" />
-                  </button>
                   <button
                     type="button"
                     title={t('copy_to_clipboard')}

@@ -24,6 +24,7 @@ export const Attachment = ({ file, className, conversationId }: AttachmentProps)
 
   return (
     <div
+      id={file.fileId ? `file-${file.fileId}` : undefined}
       className={cn(
         'border p-2 m-2 flex flex-row items-center relative shadow rounded relative group/attachment',
         className

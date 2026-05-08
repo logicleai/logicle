@@ -48,6 +48,7 @@ export const Chat = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
+  const scrolledToFragmentRef = useRef(false)
 
   useEffect(() => {
     setSideBarContent?.(undefined)
@@ -79,6 +80,21 @@ export const Chat = ({
     }
   }
   const throttledScrollDown = throttle(scrollDown, 250)
+
+  useEffect(() => {
+    scrolledToFragmentRef.current = false
+  }, [selectedConversation?.id])
+
+  useEffect(() => {
+    if (scrolledToFragmentRef.current) return
+    const hash = window.location.hash
+    if (!hash) return
+    const el = document.getElementById(hash.slice(1))
+    if (!el) return
+    scrolledToFragmentRef.current = true
+    setAutoScrollEnabled(false)
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [selectedConversation?.messages])
 
   useEffect(() => {
     throttledScrollDown()
