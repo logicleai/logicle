@@ -63,9 +63,7 @@ describe('Google native search compatibility', () => {
 
     expect(functions.regular_function).toBeDefined()
     expect(functions.google_search).toBeUndefined()
-    expect(additionalProviderOptions).toEqual({
-      google: { useSearchGrounding: true },
-    })
+    expect(additionalProviderOptions).toEqual({})
   })
 
   test('keeps regular functions when google native search is behind a router choice', async () => {
@@ -89,8 +87,24 @@ describe('Google native search compatibility', () => {
 
     expect(functions.regular_function).toBeDefined()
     expect(functions.google_search).toBeUndefined()
-    expect(additionalProviderOptions).toEqual({
-      google: { useSearchGrounding: true },
+    expect(additionalProviderOptions).toEqual({})
+  })
+
+  test('keeps native search tool on Gemini 3 even when regular function tools are present', async () => {
+    const googleSearchTool = new GoogleAiStudioWebSearch({
+      id: 'google-search-tool',
+      name: 'google-search-tool',
+      promptFragment: '',
+      provisioned: false,
     })
+
+    const gemini3Model = { ...model, model: 'gemini-3-pro-preview' } as LlmModel
+    const { functions } = await ChatAssistant.computeFunctions([regularTool, googleSearchTool], gemini3Model, {
+      userId: 'u1',
+      assistantId: 'a1',
+    })
+
+    expect(functions.regular_function).toBeDefined()
+    expect(functions.google_search).toBeDefined()
   })
 })

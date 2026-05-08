@@ -94,7 +94,6 @@ export const gemini25ProModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
-    web_search: true,
   },
 }
 
@@ -128,7 +127,6 @@ export const gemini25FlashModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
-    web_search: true,
   },
 }
 

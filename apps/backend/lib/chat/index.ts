@@ -153,7 +153,6 @@ export class ChatAssistant {
   llmModelCapabilities: LlmModelCapabilities
   functions: Promise<ToolFunctions>
   functionToolIdMap: Promise<Map<string, string>>
-  groundingFallbackOptions: Promise<Record<string, unknown>>
 
   constructor(
     private providerConfig: ProviderConfig,
@@ -175,7 +174,6 @@ export class ChatAssistant {
     })
     this.functions = computed.then((r) => r.functions)
     this.functionToolIdMap = computed.then((r) => r.functionToolIdMap)
-    this.groundingFallbackOptions = computed.then((r) => r.additionalProviderOptions)
     this.llmModel = llmModel
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
@@ -452,8 +450,7 @@ export class ChatAssistant {
   }
 
   private providerOptions(
-    _messages: ai.ModelMessage[],
-    groundingFallback: Record<string, unknown>
+    _messages: ai.ModelMessage[]
   ): Record<string, any> | undefined {
     const assistantParams = this.assistantParams
     const options = this.options
@@ -464,7 +461,7 @@ export class ChatAssistant {
       )
     )
     if (vercelProviderType === 'google.generative-ai') {
-      return Object.keys(groundingFallback).length > 0 ? groundingFallback : undefined
+      return Object.keys(providerOptions).length > 0 ? providerOptions : undefined
     } else if (vercelProviderType === 'openai.responses') {
       return {
         openai: {
@@ -569,8 +566,7 @@ export class ChatAssistant {
     const truncatedChat = await this.truncateChat(messages)
     const llmMessages = await this.computeLlmMessages(truncatedChat)
     const tools = await this.createAiTools()
-    const groundingFallback = await this.groundingFallbackOptions
-    const providerOptions = this.providerOptions(llmMessages, groundingFallback)
+    const providerOptions = this.providerOptions(llmMessages)
     let maxOutputTokens = minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens)
     if (maxOutputTokens && this.languageModel.provider === 'anthropic.messages') {
       const anthropicProviderOptions = providerOptions?.anthropic as
