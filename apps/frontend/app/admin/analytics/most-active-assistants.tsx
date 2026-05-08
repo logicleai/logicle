@@ -11,7 +11,7 @@ export function MostActiveAssistants({ className, items, colorMap }: Params) {
   const sorted = [...items].sort((a, b) => b.messages - a.messages)
   return (
     <ScrollArea className={`${className ?? ''} scroll-workaround`}>
-      <div className="space-y-8">
+      <div className="space-y-8 pr-4">
         {sorted.map((item) => {
           const id = item.assistantId ?? ''
           const color = colorMap.get(id) ?? '#000000'
