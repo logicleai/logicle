@@ -53,45 +53,26 @@ export class Router extends RouterInterface implements ToolImplementation {
     return new Router(toolParams, choices)
   }
 
-  providerOptions(model: LlmModel): SharedV2ProviderOptions {
+  private matchingChoice(model: LlmModel): ImplementationChoice | null {
     for (const choice of this.choices) {
       if (
         choice.implementation.isModelSupported &&
-        !choice.implementation.isModelSupported?.(model)
+        !choice.implementation.isModelSupported(model)
       )
         continue
-      const restrictions = choice.restrictions
-      if (restrictions) {
-        const models = restrictions.models
-        if (models) {
-          if (!models.includes(model.model)) {
-            continue
-          }
-        }
-      }
-      return choice.implementation.providerOptions?.(model) ?? {}
+      const models = choice.restrictions?.models
+      if (models && !models.includes(model.model)) continue
+      return choice
     }
-    return {}
+    return null
+  }
+
+  providerOptions(model: LlmModel): SharedV2ProviderOptions {
+    return this.matchingChoice(model)?.implementation.providerOptions?.(model) ?? {}
   }
 
   async functions(model: LlmModel, context: ToolFunctionContext): Promise<ToolFunctions> {
-    for (const choice of this.choices) {
-      if (
-        choice.implementation.isModelSupported &&
-        !choice.implementation.isModelSupported?.(model)
-      )
-        continue
-      const restrictions = choice.restrictions
-      if (restrictions) {
-        const models = restrictions.models
-        if (models) {
-          if (!models.includes(model.model)) {
-            continue
-          }
-        }
-      }
-      return choice.implementation.functions(model, context)
-    }
-    return {}
+    const choice = this.matchingChoice(model)
+    return choice ? choice.implementation.functions(model, context) : {}
   }
 }

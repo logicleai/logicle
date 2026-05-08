@@ -4,18 +4,18 @@ import { gemini25FlashModel, gemini25ProModel, gemini30ProModel, geminiProLatest
 export const geminiModels: LlmModel[] = [
   {
     ...gemini25FlashModel,
-    provider: 'gemini',
+    provider: 'google-ai-studio',
   },
   {
     ...gemini25ProModel,
-    provider: 'gemini',
+    provider: 'google-ai-studio',
   },
   {
     ...gemini30ProModel,
-    provider: 'gemini',
+    provider: 'google-ai-studio',
   },
   {
     ...geminiProLatest,
-    provider: 'gemini',
+    provider: 'google-ai-studio',
   },
 ]

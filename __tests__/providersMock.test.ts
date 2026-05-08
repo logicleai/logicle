@@ -57,7 +57,7 @@ describe('Mocked provider integration', () => {
   const providerFamilies = [
     'openai',
     'anthropic',
-    'gemini',
+    'google-ai-studio',
     'gcp-vertex',
     'perplexity',
     'logiclecloud',

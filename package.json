@@ -41,6 +41,7 @@
     "test:integration": "tsx apps/backend/scripts/integration-baseline.ts",
     "test:providers:live": "tsx apps/backend/scripts/providers-live.ts",
     "test:providers:mock": "vitest run __tests__/providersMock.test.ts",
+    "test:llm-integration": "RUN_LLM_INTEGRATION=1 vitest run __tests__/llm-integration.test.ts",
     "test:smoke": "tsx apps/backend/scripts/smoke.ts",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",

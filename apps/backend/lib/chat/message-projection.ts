@@ -51,6 +51,7 @@ export type MessageProjectionItem =
       toolCallId: string
       toolName: string
       payload: ReturnType<typeof projectedAssistantToolCallPayload>
+      thoughtSignature?: string
     }
   | {
       kind: 'tool_result'
@@ -105,6 +106,7 @@ export const projectMessageForEstimation = (message: dto.Message): ProjectedMess
           toolCallId: part.toolCallId,
           toolName: part.toolName,
           payload,
+          thoughtSignature: part.thoughtSignature,
         })
       }
     }

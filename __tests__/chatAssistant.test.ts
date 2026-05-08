@@ -133,6 +133,7 @@ const makeRealAssistant = () => {
   vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
     functions: {},
     functionToolIdMap: new Map(),
+    groundingFallbackOptions: {},
   })
   return new ChatAssistant(
     { providerType: 'openai', apiKey: 'k', provisioned: false } as unknown as ProviderConfig,
@@ -444,7 +445,7 @@ describe('ChatAssistant.createLanguageModelBasic', () => {
   })
 
   test('creates Gemini model', () => {
-    const config: ProviderConfig = { providerType: 'gemini', apiKey: 'key', provisioned: false } as any
+    const config: ProviderConfig = { providerType: 'google-ai-studio', apiKey: 'key', provisioned: false } as any
     ChatAssistant.createLanguageModelBasic(config, fakeModel)
     expect(mockCreateGoogleGenerativeAI).toHaveBeenCalled()
   })

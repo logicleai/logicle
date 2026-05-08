@@ -114,7 +114,7 @@ export const BackendsPage = () => {
                 <DropdownMenuButton onClick={() => onProviderSelect('logiclecloud')}>
                   {t('logiclecloud_backend')}
                 </DropdownMenuButton>
-                <DropdownMenuButton onClick={() => onProviderSelect('gemini')}>
+                <DropdownMenuButton onClick={() => onProviderSelect('google-ai-studio')}>
                   {t('gemini-backend')}
                 </DropdownMenuButton>
               </DropdownMenuContent>

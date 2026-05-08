@@ -242,6 +242,14 @@ export const dtoMessageToLlmMessage = async (
           toolCallId: item.toolCallId,
           toolName: item.toolName,
           input: item.payload.input,
+          ...(item.thoughtSignature
+            ? {
+                providerOptions: {
+                  google: { thoughtSignature: item.thoughtSignature },
+                  vertex: { thoughtSignature: item.thoughtSignature },
+                },
+              }
+            : {}),
         })
       } else if (item.kind === 'text' && item.source === 'assistant_reasoning' && item.reasoningSignature) {
         parts.push({

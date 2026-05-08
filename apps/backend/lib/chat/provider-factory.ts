@@ -66,7 +66,7 @@ export function createLanguageModelBasic(
         })
         .languageModel(model.model)
     }
-    case 'gemini':
+    case 'google-ai-studio':
       return google
         .createGoogleGenerativeAI({
           apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,

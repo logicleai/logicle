@@ -5,23 +5,22 @@ import {
   ToolImplementation,
   ToolParams,
 } from '@/lib/chat/tools'
-import { GoogleWebSearchInterface } from '@/lib/tools/schemas'
+import { LogicleCloudWebSearchInterface } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 import { SharedV2ProviderOptions } from '@ai-sdk/provider'
 
-export class GoogleWebSearch extends GoogleWebSearchInterface implements ToolImplementation {
-  static builder: ToolBuilder = (toolParams: ToolParams) => new GoogleWebSearch(toolParams)
+export class LogicleCloudWebSearch
+  extends LogicleCloudWebSearchInterface
+  implements ToolImplementation
+{
+  static builder: ToolBuilder = (toolParams: ToolParams) => new LogicleCloudWebSearch(toolParams)
   supportedMedia = []
   constructor(public toolParams: ToolParams) {
     super()
   }
 
   isModelSupported(model: LlmModel): boolean {
-    return (
-      model.provider === 'logiclecloud' &&
-      model.owned_by === 'google' &&
-      model.capabilities.web_search === true
-    )
+    return model.provider == 'logiclecloud' && model.capabilities.web_search === true
   }
 
   async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {
