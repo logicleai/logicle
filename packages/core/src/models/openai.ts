@@ -98,6 +98,7 @@ export const gpt41Model: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    web_search: true,
     supportedMedia: ['application/pdf'],
   },
 }
@@ -114,6 +115,7 @@ export const gpt41MiniModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    web_search: true,
     supportedMedia: ['application/pdf'],
   },
 }
@@ -130,6 +132,7 @@ export const gpt41NanoModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: false,
+    web_search: true,
     supportedMedia: ['application/pdf'],
   },
 }
@@ -235,6 +238,7 @@ export const o4MiniModel: LlmModel = {
     vision: true,
     function_calling: true,
     reasoning: true,
+    web_search: true,
     supportedMedia: ['application/pdf'],
   },
 }

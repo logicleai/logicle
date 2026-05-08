@@ -119,7 +119,7 @@ const providers = [
     keyEnv: 'LIVE_GEMINI_API_KEY',
     defaultModel: 'gemini-pro-latest',
     backendBody: (runId, key) => ({
-      providerType: 'gemini',
+      providerType: 'google-ai-studio',
       name: `Live Gemini ${runId}`,
       apiKey: key,
     }),

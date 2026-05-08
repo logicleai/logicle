@@ -169,8 +169,8 @@ export class ChatAssistant {
       rootOwner: options.rootOwner
         ? options.rootOwner
         : options.conversationId
-          ? { type: 'CHAT', id: options.conversationId }
-          : undefined,
+        ? { type: 'CHAT', id: options.conversationId }
+        : undefined,
     })
     this.functions = computed.then((r) => r.functions)
     this.functionToolIdMap = computed.then((r) => r.functionToolIdMap)
@@ -816,12 +816,18 @@ export class ChatAssistant {
           // do nothing
         } else if (chunk.type === 'tool-call') {
           const toolId = (await this.functionToolIdMap).get(chunk.toolName)
+          const googleMeta = chunk.providerMetadata?.google ?? chunk.providerMetadata?.vertex
+          const thoughtSignature =
+            typeof googleMeta?.thoughtSignature === 'string'
+              ? googleMeta.thoughtSignature
+              : undefined
           const toolCall: dto.ToolCallPart | dto.BuiltinToolCallPart = {
             type: chunk.providerExecuted ? 'builtin-tool-call' : 'tool-call',
             toolName: chunk.toolName,
             args: chunk.input,
             toolCallId: chunk.toolCallId,
             ...(toolId ? { toolId } : {}),
+            ...(thoughtSignature ? { thoughtSignature } : {}),
           }
           chatState.applyStreamPart({ type: 'part', part: toolCall })
           clientSink.enqueue({ type: 'part', part: toolCall })
@@ -909,6 +915,12 @@ export class ChatAssistant {
             totalTokens,
             inputTokens,
             outputTokens,
+          }
+          if (chunk.finishReason === 'error') {
+            throw new ai.AISDKError({
+              name: 'error_chunk',
+              message: chunk.rawFinishReason ?? 'LLM sent an error finish chunk',
+            })
           }
         } else if (chunk.type === 'error') {
           if (ai.AISDKError.isInstance(chunk.error)) {

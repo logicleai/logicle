@@ -105,6 +105,8 @@ export interface ToolCall {
   args: Record<string, any>
   /** ID of the tool (from UserAssistant.tools) that registered this function */
   toolId?: string
+  /** Gemini thinking-model thought signature; must be echoed back on subsequent turns */
+  thoughtSignature?: string
 }
 
 export type ToolCallResultOutput =

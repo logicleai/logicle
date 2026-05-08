@@ -15,7 +15,7 @@ const options = [
   }),
   z.object({ providerType: z.literal('gcp-vertex'), name: zodName, credentials: zodCredentials }),
   z.object({ providerType: z.literal('perplexity'), name: zodName, apiKey: zodApiKey }),
-  z.object({ providerType: z.literal('gemini'), name: zodName, apiKey: zodApiKey }),
+  z.object({ providerType: z.literal('google-ai-studio'), name: zodName, apiKey: zodApiKey }),
   z.object({ providerType: z.literal('mock'), name: zodName }),
 ] as const
 
@@ -57,7 +57,7 @@ const backendOptions = [
     provisioned: z.boolean(),
   }),
   z.object({
-    providerType: z.literal('gemini'),
+    providerType: z.literal('google-ai-studio'),
     name: zodName,
     apiKey: zodApiKey,
     id: z.string(),

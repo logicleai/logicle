@@ -58,7 +58,7 @@ export const defaultTokenizerByProvider = (provider: ProviderType): TokenizerStr
       return 'cl100k_base'
     case 'anthropic':
     case 'gcp-vertex':
-    case 'gemini':
+    case 'google-ai-studio':
     case 'mock':
       return 'approx_4chars'
   }

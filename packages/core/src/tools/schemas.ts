@@ -37,10 +37,16 @@ export class DummyToolInterface {
   static toolName = 'dummy'
 }
 
-export const GoogleWebSearchSchema = z.object({}).strict()
-export type GoogleWebSearchParams = z.infer<typeof GoogleWebSearchSchema>
-export class GoogleWebSearchInterface {
-  static toolName = 'google.web_search'
+export const LogicleCloudWebSearchSchema = z.object({}).strict()
+export type LogicleCloudWebSearchParams = z.infer<typeof LogicleCloudWebSearchSchema>
+export class LogicleCloudWebSearchInterface {
+  static toolName = 'logicle.web_search'
+}
+
+export const GoogleAiStudioWebSearchSchema = z.object({}).strict()
+export type GoogleAiStudioWebSearchParams = z.infer<typeof GoogleAiStudioWebSearchSchema>
+export class GoogleAiStudioWebSearchInterface {
+  static toolName = 'google_ai_studio.web_search'
 }
 
 export const ImageGeneratorSchema = z.object({

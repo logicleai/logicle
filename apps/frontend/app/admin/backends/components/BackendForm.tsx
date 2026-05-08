@@ -112,7 +112,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
     providerType === 'openai' ||
     providerType === 'anthropic' ||
     providerType === 'perplexity' ||
-    providerType === 'gemini' ||
+    providerType === 'google-ai-studio' ||
     providerType === 'logiclecloud'
   const handleSubmit = (values: BackendFormFields) => {
     const v = { ...values }
