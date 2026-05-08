@@ -13,7 +13,22 @@ vi.mock('@/backend/lib/tools/enumerate', () => ({
   buildTool: vi.fn(),
 }))
 
-const model = {
+const gemini3Model = {
+  id: 'gemini-30',
+  model: 'gemini-3-pro-preview',
+  name: 'Gemini 3.0 Pro',
+  provider: 'google-ai-studio',
+  owned_by: 'google',
+  context_length: 1_000_000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    web_search: true,
+  },
+} as unknown as LlmModel
+
+const gemini25Model = {
   id: 'gemini-25',
   model: 'gemini-2.5-pro',
   name: 'Gemini 2.5 Pro',
@@ -24,7 +39,6 @@ const model = {
     vision: true,
     function_calling: true,
     reasoning: true,
-    web_search: true,
   },
 } as unknown as LlmModel
 
@@ -47,7 +61,7 @@ const regularTool: ToolImplementation = {
 }
 
 describe('Google native search compatibility', () => {
-  test('does not remove regular function tools when google native search tool is added', async () => {
+  test('includes google_search alongside regular function tools on Gemini 3.0', async () => {
     const googleSearchTool = new GoogleAiStudioWebSearch({
       id: 'google-search-tool',
       name: 'google-search-tool',
@@ -57,16 +71,16 @@ describe('Google native search compatibility', () => {
 
     const { functions, additionalProviderOptions } = await ChatAssistant.computeFunctions(
       [regularTool, googleSearchTool],
-      model,
+      gemini3Model,
       { userId: 'u1', assistantId: 'a1' }
     )
 
     expect(functions.regular_function).toBeDefined()
-    expect(functions.google_search).toBeUndefined()
+    expect(functions.google_search).toBeDefined()
     expect(additionalProviderOptions).toEqual({})
   })
 
-  test('keeps regular functions when google native search is behind a router choice', async () => {
+  test('via router: includes google_search alongside regular function tools on Gemini 3.0', async () => {
     const googleSearchTool = new GoogleAiStudioWebSearch({
       id: 'google-search-tool',
       name: 'google-search-tool',
@@ -81,16 +95,16 @@ describe('Google native search compatibility', () => {
 
     const { functions, additionalProviderOptions } = await ChatAssistant.computeFunctions(
       [regularTool, router],
-      model,
+      gemini3Model,
       { userId: 'u1', assistantId: 'a1' }
     )
 
     expect(functions.regular_function).toBeDefined()
-    expect(functions.google_search).toBeUndefined()
+    expect(functions.google_search).toBeDefined()
     expect(additionalProviderOptions).toEqual({})
   })
 
-  test('keeps native search tool on Gemini 3 even when regular function tools are present', async () => {
+  test('isModelSupported returns false for Gemini 2.5 (no web_search capability)', () => {
     const googleSearchTool = new GoogleAiStudioWebSearch({
       id: 'google-search-tool',
       name: 'google-search-tool',
@@ -98,13 +112,7 @@ describe('Google native search compatibility', () => {
       provisioned: false,
     })
 
-    const gemini3Model = { ...model, model: 'gemini-3-pro-preview' } as LlmModel
-    const { functions } = await ChatAssistant.computeFunctions([regularTool, googleSearchTool], gemini3Model, {
-      userId: 'u1',
-      assistantId: 'a1',
-    })
-
-    expect(functions.regular_function).toBeDefined()
-    expect(functions.google_search).toBeDefined()
+    expect(googleSearchTool.isModelSupported(gemini25Model)).toBe(false)
+    expect(googleSearchTool.isModelSupported(gemini3Model)).toBe(true)
   })
 })
