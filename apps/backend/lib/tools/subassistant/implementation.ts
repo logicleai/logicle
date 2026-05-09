@@ -139,11 +139,30 @@ export class SubAssistantTool implements ToolImplementation {
             if (errorPart) {
               return { type: 'error-text', value: errorPart.error }
             }
-            const text = assistantMsg.parts
+            const textContent = assistantMsg.parts
               .filter((p): p is dto.TextPart => p.type === 'text')
               .map((p) => p.text)
               .join('')
-            return { type: 'text', value: text }
+            type ContentFile = { type: 'file'; id: string; mimetype: string; name: string; size: number }
+            const generatedFiles = chatState.chatHistory
+              .filter((m): m is dto.ToolMessage => m.role === 'tool')
+              .flatMap((m) => m.parts)
+              .filter((p): p is dto.ToolCallResultPart => p.type === 'tool-result')
+              .flatMap((p) =>
+                p.result.type === 'content'
+                  ? (p.result.value.filter((v) => v.type === 'file') as ContentFile[])
+                  : []
+              )
+            if (generatedFiles.length > 0) {
+              return {
+                type: 'content',
+                value: [
+                  ...(textContent ? [{ type: 'text' as const, text: textContent }] : []),
+                  ...generatedFiles,
+                ],
+              }
+            }
+            return { type: 'text', value: textContent }
           } catch (e) {
             logger.error(`SubAssistantTool: error invoking "${label}"`, e)
             return { type: 'error-text', value: (e as Error).message ?? 'Sub-assistant invocation failed' }
