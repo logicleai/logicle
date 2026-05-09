@@ -1644,12 +1644,17 @@ paths:
                       type: number
                     createdAt:
                       type: string
+                    conversationId:
+                      anyOf:
+                        - type: string
+                        - type: "null"
                   required:
                     - id
                     - name
                     - type
                     - size
                     - createdAt
+                    - conversationId
                   additionalProperties: false
       security:
         - bearerAuth: []
@@ -3852,7 +3857,7 @@ components:
           properties:
             providerType:
               type: string
-              const: gemini
+              const: google-ai-studio
             name:
               type: string
               minLength: 2
@@ -3968,7 +3973,7 @@ components:
           properties:
             providerType:
               type: string
-              const: gemini
+              const: google-ai-studio
             name:
               type: string
               minLength: 2
@@ -4152,7 +4157,7 @@ components:
           properties:
             providerType:
               type: string
-              const: gemini
+              const: google-ai-studio
             name:
               type: string
               minLength: 2

@@ -12,6 +12,7 @@ export interface UserImage {
   type: string
   size: number
   createdAt: string
+  conversationId: string | null
 }
 
 export const getUserImages = async () => {
