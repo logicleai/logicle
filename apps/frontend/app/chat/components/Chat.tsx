@@ -148,6 +148,7 @@ export const Chat = ({
           conversationId={selectedConversation.id}
           targetMessageId={selectedConversation.targetLeaf ?? undefined}
           tokenLimit={assistant.tokenLimit}
+          autoFocus
           onSend={({ content, attachments }) => {
             setAutoScrollEnabled(true)
             messagesEndRef.current?.scrollIntoView()

@@ -43,6 +43,7 @@ interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
   disabled?: boolean
   disabledMsg?: string
+  autoFocus?: boolean
   textAreaRef?: MutableRefObject<HTMLTextAreaElement | null>
   chatInput: string
   supportedMedia: string[]
@@ -62,6 +63,7 @@ export const ChatInput = ({
   onSend,
   disabled,
   disabledMsg,
+  autoFocus,
   textAreaRef,
   chatInput,
   setChatInput,
@@ -115,15 +117,15 @@ export const ChatInput = ({
 
   const fileInputId = `${useId()}-attach`
 
-  // Focus the textarea on mount and whenever the conversation changes.
   useEffect(() => {
+    if (!autoFocus) return
     const el = textareaRefInt.current
     if (el) {
       el.focus()
       const len = el.value.length
       el.setSelectionRange(len, len)
     }
-  }, [conversationId])
+  }, [autoFocus, conversationId])
 
   const completedAttachmentFileIds = uploadedFiles.current
     .filter((upload) => upload.done)
