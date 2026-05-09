@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { UserImage } from '@/services/files'
 import { IconCopy, IconDownload } from '@tabler/icons-react'
 import { copyImageUrlToClipboard } from '@/frontend/lib/clipboard'
+import { cn } from '@/frontend/lib/utils'
 
 export default function ImagesPage() {
   const { t } = useTranslation()
@@ -24,7 +25,7 @@ export default function ImagesPage() {
                 <img
                   alt={image.name}
                   src={`/api/files/${image.id}/content`}
-                  className={`w-full h-full object-contain bg-foreground/5 ${image.conversationId ? 'cursor-pointer' : ''}`}
+                  className={cn('w-full h-full object-contain bg-foreground/5', image.conversationId && 'cursor-pointer')}
                   onClick={() => image.conversationId && router.push(`/chat/${image.conversationId}#file-${image.id}`)}
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors pointer-events-none" />
