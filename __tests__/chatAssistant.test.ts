@@ -133,7 +133,6 @@ const makeRealAssistant = () => {
   vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
     functions: {},
     functionToolIdMap: new Map(),
-    groundingFallbackOptions: {},
   })
   return new ChatAssistant(
     { providerType: 'openai', apiKey: 'k', provisioned: false } as unknown as ProviderConfig,

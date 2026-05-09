@@ -19,6 +19,7 @@ import { ChatState } from '@/backend/lib/chat/ChatState'
 import { ClientSink } from '@/backend/lib/chat/ClientSink'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
+import { getFileWithId } from '@/models/file'
 
 export interface SubAssistantEntry {
   id: string
@@ -53,6 +54,18 @@ export class SubAssistantTool implements ToolImplementation {
               type: 'string',
               description: 'The input message to send to the assistant',
             },
+            attachments: {
+              type: 'array',
+              description: 'Optional file attachments to send along with the input message',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', description: 'File ID' },
+                },
+                required: ['id'],
+                additionalProperties: false,
+              },
+            },
           },
           required: ['assistantId', 'input'],
           additionalProperties: false,
@@ -61,6 +74,7 @@ export class SubAssistantTool implements ToolImplementation {
         invoke: async ({ params, userId, conversationId, rootOwner }) => {
           const assistantId = params.assistantId as string
           const input = params.input as string
+          const attachmentIds = (params.attachments as Array<{ id: string }> | undefined) ?? []
           const entry = assistants.find((a) => a.id === assistantId)
           const label = entry?.name ?? assistantId
           try {
@@ -108,11 +122,21 @@ export class SubAssistantTool implements ToolImplementation {
                 | null,
             }
 
+            // Pass the parent conversationId and rootOwner so that any files
+            // created by the sub-assistant's tools (e.g. generated images) are
+            // stored as owned by the parent chat, not by the ephemeral
+            // sub-conversation.
             const assistant = await ChatAssistant.build(providerConfig, assistantParams, parameters, tools, files, {
               user: userId,
               conversationId,
               rootOwner,
             })
+
+            const attachments: dto.Attachment[] = (
+              await Promise.all(attachmentIds.map(({ id }) => getFileWithId(id)))
+            )
+              .filter((f): f is NonNullable<typeof f> => f != null)
+              .map((f) => ({ id: f.id, mimetype: f.type, name: f.name, size: f.size ?? 0 }))
 
             const subConversationId = nanoid()
             const userMsg: dto.UserMessage = {
@@ -122,7 +146,7 @@ export class SubAssistantTool implements ToolImplementation {
               sentAt: new Date().toISOString(),
               role: 'user',
               content: input,
-              attachments: [],
+              attachments,
             }
 
             const chatState = new ChatState([userMsg])
@@ -139,11 +163,30 @@ export class SubAssistantTool implements ToolImplementation {
             if (errorPart) {
               return { type: 'error-text', value: errorPart.error }
             }
-            const text = assistantMsg.parts
+            const textContent = assistantMsg.parts
               .filter((p): p is dto.TextPart => p.type === 'text')
               .map((p) => p.text)
               .join('')
-            return { type: 'text', value: text }
+            type ContentFile = { type: 'file'; id: string; mimetype: string; name: string; size: number }
+            const generatedFiles = chatState.chatHistory
+              .filter((m): m is dto.ToolMessage => m.role === 'tool')
+              .flatMap((m) => m.parts)
+              .filter((p): p is dto.ToolCallResultPart => p.type === 'tool-result')
+              .flatMap((p) =>
+                p.result.type === 'content'
+                  ? (p.result.value.filter((v) => v.type === 'file') as ContentFile[])
+                  : []
+              )
+            if (generatedFiles.length > 0) {
+              return {
+                type: 'content',
+                value: [
+                  ...(textContent ? [{ type: 'text' as const, text: textContent }] : []),
+                  ...generatedFiles,
+                ],
+              }
+            }
+            return { type: 'text', value: textContent }
           } catch (e) {
             logger.error(`SubAssistantTool: error invoking "${label}"`, e)
             return { type: 'error-text', value: (e as Error).message ?? 'Sub-assistant invocation failed' }
