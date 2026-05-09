@@ -156,28 +156,22 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
               textareaRef?.current?.focus()
             }}
           ></StartChatFromHere>
-          {sendDisabled ? (
-            <div className="pt-.5 px-4 text-body1">
-              <div className="relative max-w-[var(--thread-content-max-width)] mx-auto w-full flex flex-col rounded-md text-center">
-                {t('configure_assistant_before_sending_messages')}
-              </div>
-            </div>
-          ) : (
-            <ChatInputOrApiKey
-              assistant={userAssistant}
-              chatInput={chatInput}
-              setChatInput={setChatInput}
-              textAreaRef={textareaRef}
-              supportedMedia={['*/*']}
-              modelId={assistant.model}
-              tokenLimit={assistant.tokenLimit}
-              draftAssistantForEstimate={assistant}
-              draftMessagesForEstimate={conversation.messages}
-              initialServerContextTokens={cachedPreviewContextLength}
-              onServerContextTokensChange={setCachedPreviewContextLength}
-              onSend={(msg) => handleSend({ msg: { ...msg, role: 'user' } })}
-            />
-          )}
+          <ChatInputOrApiKey
+            assistant={userAssistant}
+            chatInput={chatInput}
+            setChatInput={setChatInput}
+            textAreaRef={textareaRef}
+            supportedMedia={['*/*']}
+            modelId={assistant.model}
+            tokenLimit={assistant.tokenLimit}
+            draftAssistantForEstimate={assistant}
+            draftMessagesForEstimate={conversation.messages}
+            initialServerContextTokens={cachedPreviewContextLength}
+            onServerContextTokensChange={setCachedPreviewContextLength}
+            disabled={sendDisabled}
+            disabledMsg={t('configure_assistant_before_sending_messages')}
+            onSend={(msg) => handleSend({ msg: { ...msg, role: 'user' } })}
+          />
           {sendDisabled && <ChatDisclaimer />}
         </div>
       ) : (

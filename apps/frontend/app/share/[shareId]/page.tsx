@@ -87,6 +87,7 @@ const SharePage = () => {
             setChatInput={setChatInput}
             textAreaRef={textareaRef}
             supportedMedia={['*/*']}
+            autoFocus
             onSend={handleSend}
           />
         ) : (
@@ -99,6 +100,7 @@ const SharePage = () => {
             setChatInput={setChatInput}
             textAreaRef={textareaRef}
             supportedMedia={['*/*']}
+            autoFocus
             onSend={handleSend}
           />
         )}

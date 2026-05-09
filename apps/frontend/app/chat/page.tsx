@@ -123,6 +123,7 @@ const StartChat = () => {
         supportedMedia={assistant.supportedMedia}
         modelId={assistant.model}
         tokenLimit={assistant.tokenLimit}
+        autoFocus
       />
     </div>
   )
