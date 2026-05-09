@@ -19,6 +19,7 @@ import { ChatState } from '@/backend/lib/chat/ChatState'
 import { ClientSink } from '@/backend/lib/chat/ClientSink'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
+import { getFileWithId } from '@/models/file'
 
 export interface SubAssistantEntry {
   id: string
@@ -53,6 +54,18 @@ export class SubAssistantTool implements ToolImplementation {
               type: 'string',
               description: 'The input message to send to the assistant',
             },
+            attachments: {
+              type: 'array',
+              description: 'Optional file attachments to send along with the input message',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', description: 'File ID' },
+                },
+                required: ['id'],
+                additionalProperties: false,
+              },
+            },
           },
           required: ['assistantId', 'input'],
           additionalProperties: false,
@@ -61,6 +74,7 @@ export class SubAssistantTool implements ToolImplementation {
         invoke: async ({ params, userId, conversationId, rootOwner }) => {
           const assistantId = params.assistantId as string
           const input = params.input as string
+          const attachmentIds = (params.attachments as Array<{ id: string }> | undefined) ?? []
           const entry = assistants.find((a) => a.id === assistantId)
           const label = entry?.name ?? assistantId
           try {
@@ -118,6 +132,12 @@ export class SubAssistantTool implements ToolImplementation {
               rootOwner,
             })
 
+            const attachments: dto.Attachment[] = (
+              await Promise.all(attachmentIds.map(({ id }) => getFileWithId(id)))
+            )
+              .filter((f): f is NonNullable<typeof f> => f != null)
+              .map((f) => ({ id: f.id, mimetype: f.type, name: f.name, size: f.size ?? 0 }))
+
             const subConversationId = nanoid()
             const userMsg: dto.UserMessage = {
               id: nanoid(),
@@ -126,7 +146,7 @@ export class SubAssistantTool implements ToolImplementation {
               sentAt: new Date().toISOString(),
               role: 'user',
               content: input,
-              attachments: [],
+              attachments,
             }
 
             const chatState = new ChatState([userMsg])
