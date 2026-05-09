@@ -111,8 +111,19 @@ function setupSubAssistantRun(
   })
 }
 
+type InvokeParamsOverrides = {
+  params?: Record<string, unknown>
+  userId?: string
+  conversationId?: string
+  rootOwner?: { type: 'CHAT' | 'USER' | 'ASSISTANT'; id: string }
+  toolCallId?: string
+  toolName?: string
+  assistantId?: string
+  debug?: boolean
+}
+
 /** Build a minimal ToolInvokeParams-compatible object. */
-function invokeParams(overrides: Partial<Parameters<typeof invokeAssistant>[0]> = {}) {
+function invokeParams(overrides: InvokeParamsOverrides = {}) {
   return {
     params: { assistantId: 'sub-assistant-id', input: 'do something' },
     userId: 'user-1',
@@ -143,7 +154,9 @@ beforeEach(async () => {
     [{ id: 'sub-assistant-id', name: 'ImageBot', description: 'generates images' }]
   )
   const fns = await tool.functions({} as any, {} as any)
-  invokeAssistant = (p) => fns['invoke_assistant'].invoke(p as any)
+  const fn = fns['invoke_assistant']
+  if (!fn || fn.type === 'provider') throw new Error('invoke_assistant not found or not a function tool')
+  invokeAssistant = (p) => fn.invoke(p as any)
 })
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
