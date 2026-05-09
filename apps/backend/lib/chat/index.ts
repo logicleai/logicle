@@ -426,9 +426,7 @@ export class ChatAssistant {
     )
   }
 
-  private providerOptions(
-    _messages: ai.ModelMessage[]
-  ): Record<string, any> | undefined {
+  private providerOptions(_messages: ai.ModelMessage[]): Record<string, any> | undefined {
     const assistantParams = this.assistantParams
     const options = this.options
     const vercelProviderType = this.languageModel.provider
@@ -451,6 +449,9 @@ export class ChatAssistant {
                 reasoningEffort:
                   assistantParams.reasoning_effort ?? this.llmModel.defaultReasoning ?? null,
               }
+            : {}),
+          ...(this.llmModelCapabilities.prompt_cache_retention
+            ? { promptCacheRetention: this.llmModelCapabilities.prompt_cache_retention }
             : {}),
         } satisfies openai.OpenAIResponsesProviderOptions,
       }
