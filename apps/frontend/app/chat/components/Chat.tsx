@@ -96,7 +96,7 @@ export const Chat = ({
     setAutoScrollEnabled(false)
     const elTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
     container.scrollTo({ top: elTop - (container.clientHeight - el.offsetHeight) / 2, behavior: 'smooth' })
-  }, [selectedConversation?.messages])
+  }, [selectedConversation])
 
   useEffect(() => {
     throttledScrollDown()
