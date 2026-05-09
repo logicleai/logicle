@@ -108,6 +108,10 @@ export class SubAssistantTool implements ToolImplementation {
                 | null,
             }
 
+            // Pass the parent conversationId and rootOwner so that any files
+            // created by the sub-assistant's tools (e.g. generated images) are
+            // stored as owned by the parent chat, not by the ephemeral
+            // sub-conversation.
             const assistant = await ChatAssistant.build(providerConfig, assistantParams, parameters, tools, files, {
               user: userId,
               conversationId,
