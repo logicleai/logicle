@@ -330,6 +330,7 @@ export const gpt5ChatModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'medium',
 }
@@ -365,6 +366,7 @@ export const gpt51ChatModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'medium',
 }
@@ -400,6 +402,7 @@ export const gpt52ProModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -417,6 +420,7 @@ export const gpt52ChatModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'medium',
 }
