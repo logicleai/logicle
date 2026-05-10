@@ -438,7 +438,7 @@ export const gpt55Model: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
-    promptCaching: false,
+    promptCaching: false, // caching is automatic and non-configurable on this model
   },
   defaultReasoning: 'low',
 }
@@ -456,7 +456,7 @@ export const gpt55ProModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
-    promptCaching: false,
+    promptCaching: false, // caching is automatic and non-configurable on this model
   },
   defaultReasoning: 'low',
 }
