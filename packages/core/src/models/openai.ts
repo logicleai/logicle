@@ -99,6 +99,7 @@ export const gpt41Model: LlmModel = {
     function_calling: true,
     reasoning: false,
     supportedMedia: ['application/pdf'],
+    promptCaching: true,
   },
 }
 
@@ -271,6 +272,7 @@ export const gpt5Model: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -324,6 +326,7 @@ export const gpt5ChatModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'medium',
 }
@@ -341,6 +344,7 @@ export const gpt51Model: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -358,6 +362,7 @@ export const gpt51ChatModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'medium',
 }
@@ -375,6 +380,7 @@ export const gpt52Model: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -392,6 +398,7 @@ export const gpt52ProModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -409,8 +416,45 @@ export const gpt52ChatModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'medium',
+}
+
+export const gpt55Model: LlmModel = {
+  id: 'gpt-5.5',
+  model: 'gpt-5.5',
+  name: 'GPT-5.5',
+  description: 'GPT-5.5, available via Chat Completions and Responses APIs',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 400000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: false, // caching is automatic and non-configurable on this model
+  },
+  defaultReasoning: 'low',
+}
+
+export const gpt55ProModel: LlmModel = {
+  id: 'gpt-5.5-pro',
+  model: 'gpt-5.5-pro',
+  name: 'GPT-5.5 Pro',
+  description: 'GPT-5.5 Pro, available via Responses API only; supports Batch API',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 400000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    reasoning: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: false, // caching is automatic and non-configurable on this model
+  },
+  defaultReasoning: 'low',
 }
 
 export const gpt54Model: LlmModel = {
@@ -426,6 +470,7 @@ export const gpt54Model: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -464,6 +509,8 @@ export const openaiModels: LlmModel[] = [
   gpt52Model,
   gpt52ProModel, // too expensive
   gpt54Model,
+  gpt55Model,
+  gpt55ProModel,
   o1Model,
   o1MiniModel,
   o3Model,
