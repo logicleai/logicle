@@ -4061,6 +4061,8 @@ components:
           type: boolean
         knowledge:
           type: boolean
+        promptCaching:
+          type: boolean
       required:
         - vision
         - function_calling

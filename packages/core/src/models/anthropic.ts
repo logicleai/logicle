@@ -162,6 +162,7 @@ export const claude4OpusModel: LlmModel = {
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 32000,
 }
@@ -182,6 +183,7 @@ export const claude41OpusModel: LlmModel = {
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 32000,
 }
@@ -202,6 +204,7 @@ export const claude45SonnetModel: LlmModel = {
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 64000,
 }
@@ -222,6 +225,7 @@ export const claude45HaikuModel: LlmModel = {
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 64000,
 }
@@ -241,6 +245,7 @@ export const claude45OpusModel: LlmModel = {
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 64000,
 }
@@ -261,6 +266,7 @@ export const claude46SonnetModel: LlmModel = {
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 64000,
 }

@@ -9,6 +9,18 @@ function parseOptionalFloat(text?: string) {
   return Number.isNaN(value) ? undefined : value
 }
 
+function parseAnthropicCacheMode(raw: string | undefined, defaultValue: 'none' | '5m' | '1h'): 'none' | '5m' | '1h' {
+  if (raw === 'none' || raw === '0') return 'none'
+  if (raw === '5m' || raw === '1h') return raw
+  return defaultValue
+}
+
+function parseOpenAiCacheMode(raw: string | undefined, defaultValue: 'none' | 'in_memory' | '24h'): 'none' | 'in_memory' | '24h' {
+  if (raw === 'none' || raw === '0') return 'none'
+  if (raw === 'in_memory' || raw === '24h') return raw
+  return defaultValue
+}
+
 function parseCleanupMode(raw?: string): 'off' | 'dry-run' | 'delete' {
   if (raw === 'dry-run' || raw === 'delete' || raw === 'off') {
     return raw
@@ -164,6 +176,13 @@ const env = {
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS === '1',
     enableUi: process.env.ENABLE_APIKEYS_UI === '1',
+  },
+  promptCaching: {
+    anthropic: {
+      preamble: parseAnthropicCacheMode(process.env.PROMPT_CACHE_ANTHROPIC_PREAMBLE, '1h'),
+      automatic: parseAnthropicCacheMode(process.env.PROMPT_CACHE_ANTHROPIC_AUTOMATIC, '5m'),
+    },
+    openai: parseOpenAiCacheMode(process.env.PROMPT_CACHE_OPENAI, '24h'),
   },
   dumpLlmConversation: process.env.DUMP_LLM_CONVERSATION === '1',
   allowMockProvider: process.env.ALLOW_MOCK_PROVIDER === '1',
