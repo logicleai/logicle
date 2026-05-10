@@ -157,6 +157,7 @@ export const claude4OpusModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 32000,
 }
@@ -176,6 +177,7 @@ export const claude41OpusModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 32000,
 }
@@ -195,6 +197,7 @@ export const claude45SonnetModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 64000,
 }
@@ -214,6 +217,7 @@ export const claude45HaikuModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 64000,
 }
@@ -232,6 +236,7 @@ export const claude45OpusModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 64000,
 }
@@ -251,6 +256,7 @@ export const claude46SonnetModel: LlmModel = {
     reasoning: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
+    promptCaching: true,
   },
   maxOutputTokens: 64000,
 }
