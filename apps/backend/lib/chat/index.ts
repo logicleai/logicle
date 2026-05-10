@@ -450,7 +450,9 @@ export class ChatAssistant {
                   assistantParams.reasoning_effort ?? this.llmModel.defaultReasoning ?? null,
               }
             : {}),
-          ...(this.llmModelCapabilities.promptCaching ? { promptCacheRetention: '24h' } : {}),
+          ...(this.llmModelCapabilities.promptCaching && env.promptCaching.openai !== 'none'
+            ? { promptCacheRetention: env.promptCaching.openai }
+            : {}),
         } satisfies openai.OpenAIResponsesProviderOptions,
       }
     } else if (vercelProviderType === 'openai.chat') {
@@ -483,7 +485,10 @@ export class ChatAssistant {
                 },
               }
             : {}),
-          ...(this.llmModelCapabilities.promptCaching ? { cacheControl: { type: 'ephemeral' } } : {}),
+          ...(this.llmModelCapabilities.promptCaching &&
+          env.promptCaching.anthropic.automatic !== 'none'
+            ? { cacheControl: { type: 'ephemeral', ttl: env.promptCaching.anthropic.automatic } }
+            : {}),
         } satisfies anthropic.AnthropicProviderOptions,
       }
     }
@@ -539,7 +544,8 @@ export class ChatAssistant {
   }
 
   private applyAnthropicCacheBreakpoint(message: ai.ModelMessage): void {
-    const cacheControl = { type: 'ephemeral' } as const
+    const ttl = env.promptCaching.anthropic.preamble
+    const cacheControl = { type: 'ephemeral', ...(ttl !== 'none' ? { ttl } : {}) } as const
     if (message.role === 'system') {
       message.providerOptions = {
         ...message.providerOptions,
@@ -551,7 +557,10 @@ export class ChatAssistant {
         const last = parts[parts.length - 1]! as { providerOptions?: Record<string, unknown> }
         last.providerOptions = {
           ...last.providerOptions,
-          anthropic: { ...(last.providerOptions?.['anthropic'] as object | undefined), cacheControl },
+          anthropic: {
+            ...(last.providerOptions?.['anthropic'] as object | undefined),
+            cacheControl,
+          },
         }
       }
     }
@@ -575,7 +584,12 @@ export class ChatAssistant {
     )
 
     const isAnthropic = this.languageModel.provider === 'anthropic.messages'
-    if (isAnthropic && this.llmModelCapabilities.promptCaching && preambleSegments.length > 0) {
+    if (
+      isAnthropic &&
+      this.llmModelCapabilities.promptCaching &&
+      env.promptCaching.anthropic.preamble !== 'none' &&
+      preambleSegments.length > 0
+    ) {
       this.applyAnthropicCacheBreakpoint(preambleSegments[preambleSegments.length - 1]!.message)
     }
 
