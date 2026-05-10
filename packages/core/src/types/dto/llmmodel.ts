@@ -9,7 +9,7 @@ export const llmModelCapabilitiesSchema = z.object({
   supportedMedia: z.array(z.string()).optional(),
   web_search: z.boolean().optional(),
   knowledge: z.boolean().optional(),
-  prompt_cache_retention: z.enum(['in_memory', '24h']).optional(),
+  promptCaching: z.boolean().optional(),
 }).meta({ id: 'LlmModelCapabilities' })
 
 export const llmModelSchema = z.object({

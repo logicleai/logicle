@@ -450,9 +450,7 @@ export class ChatAssistant {
                   assistantParams.reasoning_effort ?? this.llmModel.defaultReasoning ?? null,
               }
             : {}),
-          ...(this.llmModelCapabilities.prompt_cache_retention
-            ? { promptCacheRetention: this.llmModelCapabilities.prompt_cache_retention }
-            : {}),
+          ...(this.llmModelCapabilities.promptCaching ? { promptCacheRetention: '24h' } : {}),
         } satisfies openai.OpenAIResponsesProviderOptions,
       }
     } else if (vercelProviderType === 'openai.chat') {
@@ -485,6 +483,7 @@ export class ChatAssistant {
                 },
               }
             : {}),
+          ...(this.llmModelCapabilities.promptCaching ? { cacheControl: { type: 'ephemeral' } } : {}),
         } satisfies anthropic.AnthropicProviderOptions,
       }
     }
@@ -539,14 +538,52 @@ export class ChatAssistant {
     return segments.map((segment) => segment.message)
   }
 
+  private applyAnthropicCacheBreakpoint(message: ai.ModelMessage): void {
+    const cacheControl = { type: 'ephemeral' } as const
+    if (message.role === 'system') {
+      message.providerOptions = {
+        ...message.providerOptions,
+        anthropic: { ...(message.providerOptions?.anthropic as object | undefined), cacheControl },
+      }
+    } else if (message.role === 'user' || message.role === 'assistant') {
+      const parts = Array.isArray(message.content) ? message.content : undefined
+      if (parts && parts.length > 0) {
+        const last = parts[parts.length - 1]! as { providerOptions?: Record<string, unknown> }
+        last.providerOptions = {
+          ...last.providerOptions,
+          anthropic: { ...(last.providerOptions?.['anthropic'] as object | undefined), cacheControl },
+        }
+      }
+    }
+  }
+
   async invokeLlm(messages: dto.Message[]) {
     this.throwIfAborted()
     const truncatedChat = await this.truncateChat(messages)
-    const llmMessages = await this.computeLlmMessages(truncatedChat)
+
+    const preambleSegments = await buildPreambleSegments({
+      assistantParams: this.assistantParams,
+      llmModel: this.llmModel,
+      tools: this.tools,
+      parameters: this.parameters,
+      knowledge: this.knowledge,
+    })
+    const historySegments = await buildHistorySegments(
+      truncatedChat,
+      this.llmModel,
+      this.languageModel
+    )
+
+    const isAnthropic = this.languageModel.provider === 'anthropic.messages'
+    if (isAnthropic && this.llmModelCapabilities.promptCaching && preambleSegments.length > 0) {
+      this.applyAnthropicCacheBreakpoint(preambleSegments[preambleSegments.length - 1]!.message)
+    }
+
+    const llmMessages = [...preambleSegments, ...historySegments].map((s) => s.message)
     const tools = await this.createAiTools()
     const providerOptions = this.providerOptions(llmMessages)
     let maxOutputTokens = minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens)
-    if (maxOutputTokens && this.languageModel.provider === 'anthropic.messages') {
+    if (maxOutputTokens && isAnthropic) {
       const anthropicProviderOptions = providerOptions?.anthropic as
         | anthropic.AnthropicProviderOptions
         | undefined

@@ -18,7 +18,7 @@ export interface LlmModelCapabilities {
   web_search?: boolean
   knowledge?: boolean
   nativePdfPageLimit?: number
-  prompt_cache_retention?: 'in_memory' | '24h'
+  promptCaching?: boolean
 }
 
 export const tokenizerStrategies = ['cl100k_base', 'o200k_base', 'approx_4chars'] as const

@@ -4061,11 +4061,8 @@ components:
           type: boolean
         knowledge:
           type: boolean
-        prompt_cache_retention:
-          type: string
-          enum:
-            - in_memory
-            - 24h
+        promptCaching:
+          type: boolean
       required:
         - vision
         - function_calling

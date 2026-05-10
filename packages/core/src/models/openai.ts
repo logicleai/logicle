@@ -100,7 +100,7 @@ export const gpt41Model: LlmModel = {
     reasoning: false,
     web_search: true,
     supportedMedia: ['application/pdf'],
-    prompt_cache_retention: '24h',
+    promptCaching: true,
   },
 }
 
@@ -276,7 +276,7 @@ export const gpt5Model: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
-    prompt_cache_retention: '24h',
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -347,7 +347,7 @@ export const gpt51Model: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
-    prompt_cache_retention: '24h',
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -382,7 +382,7 @@ export const gpt52Model: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
-    prompt_cache_retention: '24h',
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -434,7 +434,7 @@ export const gpt55Model: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
-    prompt_cache_retention: '24h',
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -452,7 +452,7 @@ export const gpt55ProModel: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
-    prompt_cache_retention: '24h',
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
@@ -470,7 +470,7 @@ export const gpt54Model: LlmModel = {
     function_calling: true,
     reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
-    prompt_cache_retention: '24h',
+    promptCaching: true,
   },
   defaultReasoning: 'low',
 }
