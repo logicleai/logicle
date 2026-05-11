@@ -194,7 +194,11 @@ function convertOpenAPIOperationToToolFunction(
     }
 
     const urlString = url.toString()
-    const allHeaders = { ...headers, ...sensitiveHeaders }
+    const allHeaders = {
+      ...headers,
+      ...sensitiveHeaders,
+      ...(env.tenantId ? { 'x-tenant-id': env.tenantId } : {}),
+    }
 
     logger.info(`Invoking ${method} at ${urlString}`, {
       body: body,
