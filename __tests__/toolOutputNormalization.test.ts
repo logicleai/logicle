@@ -35,7 +35,7 @@ vi.mock('@/backend/lib/files/materialize', () => ({
 
 import {
   normalizeMcpToolResult,
-  persistFileLikePayload,
+  saveFile,
 } from '@/backend/lib/tools/file-output-normalization'
 
 describe('tool output normalization', () => {
@@ -66,74 +66,71 @@ describe('tool output normalization', () => {
   })
 
   test('openapi-like binary payload persists to stable file descriptor', async () => {
-    const payload = Buffer.from('binary-openapi').toString('base64')
-    const persisted = await persistFileLikePayload({
+    const persisted = await saveFile({
       assistantId: 'a1',
       userId: 'u1',
-      base64Data: payload,
+      content: Buffer.from('binary-openapi'),
       mimeType: 'application/pdf',
       nameHint: 'report.pdf',
       source: 'OpenAPI',
     })
-    expect(persisted.kind).toBe('file')
-    expect(persisted.value.type).toBe('file')
-    if (persisted.value.type === 'file') {
-      expect(persisted.value.name).toBe('report.pdf')
-      expect(persisted.value.mimetype).toBe('application/pdf')
+    expect(persisted.type).toBe('file')
+    if (persisted.type === 'file') {
+      expect(persisted.name).toBe('report.pdf')
+      expect(persisted.mimetype).toBe('application/pdf')
     }
   })
 
   test('file-like tool outputs in a chat are persisted with CHAT ownership', async () => {
-    const payload = Buffer.from('chat-owned-output').toString('base64')
-    const persisted = await persistFileLikePayload({
+    const persisted = await saveFile({
       assistantId: 'a1',
       userId: 'u1',
       conversationId: 'c1',
       rootOwner: { type: 'CHAT', id: 'c1' },
-      base64Data: payload,
+      content: Buffer.from('chat-owned-output'),
       mimeType: 'image/png',
       source: 'MCP',
     })
 
-    expect(persisted.kind).toBe('file')
+    expect(persisted.type).toBe('file')
     expect(materializeCalls).toHaveLength(1)
     expect(materializeCalls[0].owner).toEqual({ ownerType: 'CHAT', ownerId: 'c1' })
   })
 
   test('dedup regression: repeated identical payload resolves to same file id', async () => {
-    const payload = Buffer.from('same-bytes').toString('base64')
-    const first = await persistFileLikePayload({
+    const content = Buffer.from('same-bytes')
+    const first = await saveFile({
       assistantId: 'a1',
       userId: 'u1',
-      base64Data: payload,
+      content,
       mimeType: 'image/png',
       source: 'MCP',
     })
-    const second = await persistFileLikePayload({
+    const second = await saveFile({
       assistantId: 'a1',
       userId: 'u1',
-      base64Data: payload,
+      content,
       mimeType: 'image/png',
       source: 'MCP',
     })
-    expect(first.value.type).toBe('file')
-    expect(second.value.type).toBe('file')
-    if (first.value.type === 'file' && second.value.type === 'file') {
-      expect(first.value.id).toBe(second.value.id)
+    expect(first.type).toBe('file')
+    expect(second.type).toBe('file')
+    if (first.type === 'file' && second.type === 'file') {
+      expect(first.id).toBe(second.id)
     }
   })
 
-  test('unsupported mime types degrade to text fallback', async () => {
-    const payload = Buffer.from('fake').toString('base64')
-    const persisted = await persistFileLikePayload({
+  test('any mime type is persisted as-is', async () => {
+    const persisted = await saveFile({
       assistantId: 'a1',
       userId: 'u1',
-      base64Data: payload,
+      content: Buffer.from('fake'),
       mimeType: 'application/x-msdownload',
       source: 'MCP',
-      supportedMedia: ['image/png'],
     })
-    expect(persisted.kind).toBe('text')
-    expect(persisted.value.type).toBe('text')
+    expect(persisted.type).toBe('file')
+    if (persisted.type === 'file') {
+      expect(persisted.mimetype).toBe('application/x-msdownload')
+    }
   })
 })
