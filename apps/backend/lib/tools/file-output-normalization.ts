@@ -1,5 +1,4 @@
 import { resolveFileOwner } from '@/backend/lib/tools/ownership'
-import env from '@/lib/env'
 import { logger } from '@/lib/logging'
 import type { ToolInvokeParams } from '@/lib/chat/tools'
 import * as dto from '@/types/dto'
@@ -8,35 +7,13 @@ import { JSONValue } from 'ai'
 
 interface PersistFileLikeParams
   extends Pick<ToolInvokeParams, 'rootOwner' | 'conversationId' | 'userId' | 'assistantId'> {
-  base64Data: string
+  content: Buffer | Uint8Array
   mimeType: string
   nameHint?: string
   source: string
-  supportedMedia?: string[]
 }
 
 const defaultMimeType = 'application/octet-stream'
-
-const parseAllowedFromEnv = (): string[] => {
-  const raw = env.chat.attachments.allowedFormats
-  if (!raw) return []
-  return raw
-    .split(',')
-    .map((v) => v.trim().toLowerCase())
-    .filter(Boolean)
-}
-
-const mimeAllowed = (mimeType: string, allowlist: string[]): boolean => {
-  if (allowlist.length === 0) return true
-  const normalized = mimeType.toLowerCase()
-  return allowlist.some((allowed) => {
-    if (allowed.endsWith('/*')) {
-      const prefix = allowed.slice(0, allowed.length - 1)
-      return normalized.startsWith(prefix)
-    }
-    return normalized === allowed
-  })
-}
 
 const makeFileName = (mimeType: string, nameHint?: string): string => {
   if (nameHint && nameHint.length > 0) return nameHint
@@ -57,56 +34,11 @@ const toFilePart = (fileEntry: {
   size: fileEntry.size,
 })
 
-export const persistFileLikePayload = async (
+export const saveFile = async (
   params: PersistFileLikeParams
-): Promise<
-  | { kind: 'file'; value: Extract<dto.ToolCallResultOutput, { type: 'content' }>['value'][number] }
-  | { kind: 'text'; value: Extract<dto.ToolCallResultOutput, { type: 'content' }>['value'][number] }
-> => {
+): Promise<Extract<dto.ToolCallResultOutput, { type: 'content' }>['value'][number]> => {
   const mimeType = (params.mimeType || defaultMimeType).toLowerCase()
-  const allowlist = [
-    ...new Set([...(params.supportedMedia ?? []).map((m) => m.toLowerCase()), ...parseAllowedFromEnv()]),
-  ]
-  if (!mimeAllowed(mimeType, allowlist)) {
-    logger.warn(`[${params.source}] File-like output rejected by mime allowlist`, {
-      mimeType,
-      allowlist,
-    })
-    return {
-      kind: 'text',
-      value: {
-        type: 'text',
-        text: `Tool returned unsupported file payload (${mimeType}); keeping a text fallback instead.`,
-      },
-    }
-  }
-
-  const bytes = Buffer.from(params.base64Data, 'base64')
-  if (!bytes.length && params.base64Data.length > 0) {
-    logger.warn(`[${params.source}] File-like payload is not valid base64`, { mimeType })
-    return {
-      kind: 'text',
-      value: {
-        type: 'text',
-        text: `Tool returned an invalid base64 file payload (${mimeType}); keeping a text fallback instead.`,
-      },
-    }
-  }
-  if (bytes.byteLength > env.chat.attachments.maxSize) {
-    logger.warn(`[${params.source}] File-like payload exceeds max size`, {
-      mimeType,
-      size: bytes.byteLength,
-      maxSize: env.chat.attachments.maxSize,
-    })
-    return {
-      kind: 'text',
-      value: {
-        type: 'text',
-        text: `Tool returned a file payload too large to store (${bytes.byteLength} bytes, max ${env.chat.attachments.maxSize}).`,
-      },
-    }
-  }
-
+  const bytes = Buffer.from(params.content)
   const fileName = makeFileName(mimeType, params.nameHint)
   const { materializeFile } = await import('@/backend/lib/files/materialize')
   const dbFile = await materializeFile({
@@ -115,15 +47,13 @@ export const persistFileLikePayload = async (
     mimeType,
     owner: resolveFileOwner(params),
   })
-  return {
-    kind: 'file',
-    value: toFilePart({
-      id: dbFile.id,
-      type: dbFile.type,
-      name: dbFile.name,
-      size: dbFile.size ?? bytes.byteLength,
-    }),
-  }
+  logger.debug(`[${params.source}] Persisted file-like payload`, { mimeType, size: bytes.byteLength, name: fileName })
+  return toFilePart({
+    id: dbFile.id,
+    type: dbFile.type,
+    name: dbFile.name,
+    size: dbFile.size ?? bytes.byteLength,
+  })
 }
 
 export const normalizeMcpToolResult = async (
@@ -137,24 +67,24 @@ export const normalizeMcpToolResult = async (
       continue
     }
     if (item?.type === 'image' && typeof item.data === 'string') {
-      const persisted = await persistFileLikePayload({
+      const persisted = await saveFile({
         ...params,
-        base64Data: item.data,
+        content: Buffer.from(item.data, 'base64'),
         mimeType: item.mimeType ?? defaultMimeType,
         source: 'MCP',
       })
-      contentParts.push(persisted.value)
+      contentParts.push(persisted)
       continue
     }
     if (item?.type === 'resource' && typeof item.resource?.blob === 'string') {
-      const persisted = await persistFileLikePayload({
+      const persisted = await saveFile({
         ...params,
-        base64Data: item.resource.blob,
+        content: Buffer.from(item.resource.blob, 'base64'),
         mimeType: item.resource.mimeType ?? defaultMimeType,
         nameHint: item.resource.name,
         source: 'MCP',
       })
-      contentParts.push(persisted.value)
+      contentParts.push(persisted)
       continue
     }
     if (item?.type === 'resource' && typeof item.resource?.text === 'string') {

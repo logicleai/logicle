@@ -31,7 +31,7 @@ import {
 } from '@/backend/lib/chat/token-estimator'
 import {
   normalizeMcpToolResult,
-  persistFileLikePayload,
+  saveFile,
 } from '@/backend/lib/tools/file-output-normalization'
 
 export { fillTemplate } from './preamble'
@@ -291,16 +291,16 @@ export class ChatAssistant {
               }
               for (const r of content) {
                 if (r.type === 'image' && typeof r.data === 'string') {
-                  const persisted = await persistFileLikePayload({
+                  const persisted = await saveFile({
                     rootOwner: context.rootOwner,
                     conversationId: undefined,
                     userId: context.userId,
                     assistantId: context.assistantId,
-                    base64Data: r.data,
+                    content: Buffer.from(r.data, 'base64'),
                     mimeType: r.mimeType ?? 'application/octet-stream',
                     source: 'Satellite',
                   })
-                  toolResult.value.push(persisted.value)
+                  toolResult.value.push(persisted)
                 } else if (r.type === 'resource') {
                   const normalized = await normalizeMcpToolResult(
                     { content: [r] },
