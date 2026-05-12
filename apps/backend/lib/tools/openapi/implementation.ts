@@ -26,7 +26,7 @@ import { JSONSchema7 } from 'json-schema'
 import { JSONValue } from 'ai'
 import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
-import { persistFileLikePayload } from '@/backend/lib/tools/file-output-normalization'
+import { saveFile } from '@/backend/lib/tools/file-output-normalization'
 
 export interface OpenApiPluginParams extends Record<string, unknown> {
   spec: string
@@ -48,11 +48,12 @@ function mergeOperationParamsIntoToolFunctionSchema(
   })
 }
 
-function computeSecurityHeaders(
+async function computeSecurityHeaders(
   securitySchemes: Record<string, OpenAPIV3.SecuritySchemeObject>,
   toolParams: Record<string, unknown>,
+  toolId: string,
   provisioned: boolean
-): Record<string, string> {
+): Promise<Record<string, string>> {
   const headers: Record<string, string> = {}
   for (const securitySchemeId in securitySchemes) {
     const securityScheme = securitySchemes[securitySchemeId]
@@ -60,8 +61,9 @@ function computeSecurityHeaders(
       if (!toolParams[securitySchemeId]) {
         throw new Error(`auth parameter ${securitySchemeId} not configured`)
       }
-      headers[securityScheme.name] = expandIfProvisioned(
+      headers[securityScheme.name] = await expandParam(
         `${toolParams[securitySchemeId]}`,
+        toolId,
         provisioned
       )
     } else if (securityScheme.type === 'http') {
@@ -69,7 +71,7 @@ function computeSecurityHeaders(
       if (!authParam) {
         throw new Error(`auth parameter ${securitySchemeId} not configured`)
       }
-      let expanded = expandIfProvisioned(`${authParam}`, provisioned)
+      let expanded = await expandParam(`${authParam}`, toolId, provisioned)
       if (securityScheme.scheme === 'bearer' && !expanded.startsWith('Bearer')) {
         expanded = `Bearer ${expanded}`
       }
@@ -79,9 +81,9 @@ function computeSecurityHeaders(
   return headers
 }
 
-function expandIfProvisioned(template: string, provisioned: boolean) {
-  if (!provisioned) return template
-  else return expandEnv(template)
+async function expandParam(template: string, toolId: string, provisioned: boolean) {
+  const { resolveToolSecretReference } = await import('templates')
+  return provisioned ? expandEnv(template) : resolveToolSecretReference(toolId, template)
 }
 
 function dumpTruncatedBodyContent(body: RequestInit['body']): string | undefined {
@@ -107,6 +109,7 @@ function convertOpenAPIOperationToToolFunction(
   method: string,
   operation: OpenAPIV3.OperationObject,
   toolParams: Record<string, unknown>,
+  toolId: string,
   provisioned: boolean
 ): ToolFunction | undefined {
   // Extracting parameters
@@ -146,12 +149,12 @@ function convertOpenAPIOperationToToolFunction(
     rootOwner,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
     const storeFile = async (data: Uint8Array, fileName: string, contentType: string) =>
-      await persistFileLikePayload({
+      await saveFile({
         rootOwner,
         conversationId,
         userId,
         assistantId,
-        base64Data: Buffer.from(data).toString('base64'),
+        content: data,
         mimeType: contentType,
         nameHint: fileName,
         source: 'OpenAPI',
@@ -186,9 +189,10 @@ function convertOpenAPIOperationToToolFunction(
     }
     let sensitiveHeaders: Record<string, string> = {}
     if (securitySchemes) {
-      sensitiveHeaders = computeSecurityHeaders(
+      sensitiveHeaders = await computeSecurityHeaders(
         securitySchemes as Record<string, OpenAPIV3.SecuritySchemeObject>,
         toolParams,
+        toolId,
         provisioned
       )
     }
@@ -237,7 +241,7 @@ function convertOpenAPIOperationToToolFunction(
             })
           } else {
             const persisted = await storeFile(await part.bytes(), fileName, mediaType)
-            result.value.push(persisted.value)
+            result.value.push(persisted)
           }
         }
         return result
@@ -259,17 +263,17 @@ function convertOpenAPIOperationToToolFunction(
               type: 'text',
               text: `File ${fileName} has been sent to the user and is plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the ChatGPT UI already. Do not mention anything about visualizing / downloading to the user`,
             },
-            persisted.value,
+            persisted,
           ],
         }
-      } else if (contentType && contentType === 'application/json') {
+      } else if (contentType && contentType.startsWith('application/json')) {
         return { type: 'json', value: (await response.json()) as JSONValue }
       } else if (contentType && !contentType.startsWith('text/')) {
         const body = await response.blob()
         const persisted = await storeFile(await body.bytes(), 'response.bin', contentType)
         return {
           type: 'content',
-          value: [persisted.value],
+          value: [persisted],
         }
       } else {
         return { type: 'text', value: await response.text() }
@@ -322,6 +326,7 @@ async function customFetch(
 function convertOpenAPIDocumentToToolFunctions(
   openAPISpec: OpenAPIV3.Document,
   toolParams: Record<string, unknown>,
+  toolId: string,
   provisioned: boolean
 ): ToolFunctions {
   const openAIFunctions: ToolFunctions = {}
@@ -344,6 +349,7 @@ function convertOpenAPIDocumentToToolFunctions(
             method,
             operation,
             toolParams,
+            toolId,
             provisioned
           )
           if (openAIFunction) {
@@ -360,12 +366,13 @@ function convertOpenAPIDocumentToToolFunctions(
 }
 async function convertOpenAPISpecToToolFunctions(
   toolParams: OpenApiPluginParams,
+  toolId: string,
   provisioned: boolean
 ): Promise<ToolFunctions> {
   try {
     const doc = parseDocument(toolParams.spec)
     const openAPISpec = (await OpenAPIParser.validate(doc.toJSON())) as OpenAPIV3.Document
-    return convertOpenAPIDocumentToToolFunctions(openAPISpec, toolParams, provisioned)
+    return convertOpenAPIDocumentToToolFunctions(openAPISpec, toolParams, toolId, provisioned)
   } catch (error) {
     logger.error(`Error parsing OpenAPI string: ${error}`)
     return {}
@@ -375,7 +382,11 @@ async function convertOpenAPISpecToToolFunctions(
 export class OpenApiPlugin extends OpenApiInterface implements ToolImplementation {
   static builder: ToolBuilder = async (toolParams: ToolParams, params: Record<string, unknown>) => {
     const config = params as OpenApiPluginParams
-    const functions = await convertOpenAPISpecToToolFunctions(config, toolParams.provisioned)
+    const functions = await convertOpenAPISpecToToolFunctions(
+      config,
+      toolParams.id,
+      toolParams.provisioned
+    )
     return new OpenApiPlugin(toolParams, functions, config.supportedMedia || []) // TODO: need a better validation
   }
 
