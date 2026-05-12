@@ -189,10 +189,17 @@ async function convertMcpSpecToToolFunctions(
           }
           clientToUse = await getClient(toolParams, resolution.accessToken, userId)
         }
-        const result = await clientToUse.callTool({
-          name: tool.name,
-          arguments: params,
-        })
+        let result
+        try {
+          result = await clientToUse.callTool({
+            name: tool.name,
+            arguments: params,
+          })
+        } catch (e) {
+          logger.error(`MCP tool '${tool.name}' invocation failed`, e)
+          const errorMessage = e instanceof Error ? e.message : 'MCP tool invocation failed'
+          return { type: 'error-text' as const, value: errorMessage }
+        }
         return await normalizeMcpToolResult(result, invokeParams)
       },
     }

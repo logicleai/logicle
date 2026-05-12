@@ -251,9 +251,9 @@ function convertOpenAPIOperationToToolFunction(
         return result
       }
       if (response.status < 200 || response.status >= 300) {
-        throw new Error(
-          `Http request failed with status ${response.status} body ${await response.text()}`
-        )
+        const errorBody = await response.text()
+        logger.error(`OpenAPI tool HTTP error ${response.status} from ${urlString}: ${errorBody}`)
+        return { type: 'error-text' as const, value: `Http request failed with status ${response.status}: ${errorBody}` }
       }
       if (contentDisposition.type === 'attachment') {
         const contentTypeOrDefault = contentType ?? 'application/binary'
