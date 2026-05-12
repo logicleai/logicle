@@ -70,7 +70,10 @@ const computeHeaders = (
 }
 
 const createTransport = ({ url, authentication }: McpPluginParams, accessToken?: string) => {
-  const headers = computeHeaders(authentication, accessToken)
+  const headers = {
+    ...computeHeaders(authentication, accessToken),
+    ...(env.tenantId ? { 'x-tenant-id': env.tenantId } : {}),
+  }
   if (url.endsWith('/sse')) {
     logger.info(`Create MCP SSE transport for url ${url}`)
     return new SSEClientTransport(new URL(url), {
