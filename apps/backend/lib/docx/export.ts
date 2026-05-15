@@ -246,6 +246,7 @@ export async function renderDocxFromMarkdown(markdown: string): Promise<Uint8Arr
     .use(remarkMath)
     .use(remarkColoredSpans)
     .use(docx, {
+      thematicBreak: 'line',
       plugins: [
         coloredHtmlPlugin(),
         latexPlugin(),
