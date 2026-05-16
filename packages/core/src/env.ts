@@ -144,6 +144,8 @@ const env = {
       maxSize: parseInt(process.env.CHAT_ATTACHMENTS_MAX_SIZE ?? '50000000', 10),
     },
     maxOutputTokens: parseOptionalInt(process.env.CHAT_MAX_OUTPUT_TOKENS),
+    softMessageLimit: parseOptionalInt(process.env.CHAT_SOFT_MESSAGE_LIMIT),
+    hardMessageLimit: parseOptionalInt(process.env.CHAT_HARD_MESSAGE_LIMIT),
   },
   assistants: {
     enableInfo: process.env.ENABLE_ASSISTANT_INFO === '1',

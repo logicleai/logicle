@@ -110,6 +110,8 @@
   "hidden_assistant_description": "Nasconde questo assistente dal selettore principale, mantenendolo disponibile in I miei assistenti, amministrazione, chat dirette e selezione dei sotto-assistenti.",
   "chat_is_already_shared": "La conversazione è condivisa",
   "chat_response_failure": "Si è verificato un errore durante la ricezione della risposta",
+  "chat_soft_message_limit_warning": "Questa conversazione sta diventando lunga ({{count}} messaggi inviati). Considera di iniziare una nuova conversazione per risultati migliori.",
+  "chat_hard_message_limit_reached": "Questa conversazione ha raggiunto il limite di {{count}} messaggi. Inizia una nuova conversazione per continuare.",
   "choose-new-provider-type": "Scegli il tipo di provider",
   "choose-new-provider-type-description": "Scegli il tipo di provider LLM per il nuovo backend",
   "choose-workspace": "Scegli il tuo workspace",

@@ -22,6 +22,7 @@ interface Props {
   tokenLimit?: number
   disabled?: boolean
   disabledMsg?: string
+  locked?: boolean
   autoFocus?: boolean
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
   textAreaRef?: MutableRefObject<HTMLTextAreaElement | null>
@@ -42,6 +43,7 @@ export const ChatInputOrApiKey = ({
   tokenLimit,
   disabled,
   disabledMsg,
+  locked,
   autoFocus,
   onSend,
   textAreaRef,
@@ -71,6 +73,7 @@ export const ChatInputOrApiKey = ({
       tokenLimit={tokenLimit}
       disabled={disabled}
       disabledMsg={disabledMsg}
+      locked={locked}
       autoFocus={autoFocus}
       onSend={onSend}
       textAreaRef={textAreaRef}
