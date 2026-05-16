@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import ChatPageContext from './context'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useHardMessageLimitReached } from './useHardMessageLimitReached'
 
 const findAncestorUserMessage = (
   messages: dto.Message[],
@@ -24,12 +25,13 @@ const findAncestorUserMessage = (
 export const MessageError = ({ msgId, error }: { msgId: string; error: string }) => {
   const { t } = useTranslation()
   const { sendMessage, state } = useContext(ChatPageContext)
+  const hardLimitReached = useHardMessageLimitReached()
   return (
     <Alert variant="destructive" className="mt-2">
       <AlertDescription>
         <div className="flex items-center">
           <div className="flex-1">{t(error)} </div>
-          {sendMessage && (
+          {sendMessage && !hardLimitReached && (
             <Button
               size="small"
               className="shrink-0"

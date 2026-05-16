@@ -23,6 +23,8 @@ export type Environment = {
   maxAttachmentSize: number
   sessionRefreshIntervalMinutes: number
   sessionRefreshThrottleMinutes: number
+  softMessageLimit?: number
+  hardMessageLimit?: number
   models: LlmModel[]
   parameters: dto.Parameter[]
   faviconPath?: string

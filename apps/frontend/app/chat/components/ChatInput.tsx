@@ -1,4 +1,4 @@
-import { IconPaperclip, IconPlayerStopFilled, IconSend2 } from '@tabler/icons-react'
+import { IconAlertTriangle, IconBan, IconPaperclip, IconPlayerStopFilled, IconSend2 } from '@tabler/icons-react'
 import {
   ChangeEvent,
   DragEvent,
@@ -43,6 +43,7 @@ interface Props {
   onSend: (params: { content: string; attachments: dto.Attachment[] }) => void
   disabled?: boolean
   disabledMsg?: string
+  locked?: boolean
   autoFocus?: boolean
   textAreaRef?: MutableRefObject<HTMLTextAreaElement | null>
   chatInput: string
@@ -63,6 +64,7 @@ export const ChatInput = ({
   onSend,
   disabled,
   disabledMsg,
+  locked,
   autoFocus,
   textAreaRef,
   chatInput,
@@ -92,6 +94,12 @@ export const ChatInput = ({
   }
   const environment = useEnvironment()
   const model = environment.models.find((candidate) => candidate.id === modelId)
+  const userMessageCount = draftMessagesForEstimate?.filter((m) => m.role === 'user').length ?? 0
+  const softLimitReached =
+    environment.softMessageLimit !== undefined && userMessageCount >= environment.softMessageLimit
+  const hardLimitReached =
+    (environment.hardMessageLimit !== undefined && userMessageCount >= environment.hardMessageLimit) ||
+    !!locked
   const [isTyping, setIsTyping] = useState<boolean>(false)
   // using useState to keep the state of the uploads does not work, as xhr callbacks will not "pick up"
   // the state change, as they're bound to the state at xhr creation
@@ -292,7 +300,7 @@ export const ChatInput = ({
   }
 
   const handleSend = () => {
-    if (chatStatus.state !== 'idle' || anyUploadRunning) {
+    if (chatStatus.state !== 'idle' || anyUploadRunning || hardLimitReached) {
       return
     }
 
@@ -475,7 +483,7 @@ export const ChatInput = ({
         <div className="relative flex flex-col rounded-md border">
           <UploadList files={uploadedFiles.current} onDelete={handleDelete} modelId={modelId} />
           <textarea
-            disabled={disabled}
+            disabled={disabled || hardLimitReached}
             ref={textareaRefInt}
             className="m-0 w-full resize-none border-0 p-0 py-2 pr-8 pl-10 md:py-3 md:pl-10 bg-background text-body1 focus:ring-0 focus:ring-offset-0"
             style={{
@@ -499,7 +507,7 @@ export const ChatInput = ({
               className="absolute right-2 bottom-2 opacity-60"
               size="icon"
               variant="secondary"
-              disabled={disabled || (chatStatus.state === 'receiving' && !!chatStatus.stopRequested)}
+              disabled={disabled || hardLimitReached || (chatStatus.state === 'receiving' && !!chatStatus.stopRequested)}
               onClick={() => handleStopConversation()}
             >
               <IconPlayerStopFilled size={18} />
@@ -509,7 +517,7 @@ export const ChatInput = ({
               <Button
                 className="absolute right-2 bottom-2"
                 size="icon"
-                disabled={disabled || msgEmpty || anyUploadRunning}
+                disabled={disabled || hardLimitReached || msgEmpty || anyUploadRunning}
                 variant="primary"
                 onClick={() => handleSend()}
               >
@@ -532,6 +540,30 @@ export const ChatInput = ({
             </>
           )}
         </div>
+        {(softLimitReached || hardLimitReached) && (
+          <div
+            className={`mt-2 flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-sm font-medium ${
+              hardLimitReached
+                ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                : 'border-amber-400 bg-amber-50 text-amber-800 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-300'
+            }`}
+          >
+            {hardLimitReached ? (
+              <IconBan size={16} className="shrink-0" />
+            ) : (
+              <IconAlertTriangle size={16} className="shrink-0" />
+            )}
+            <span>
+              {hardLimitReached
+                ? t('chat_hard_message_limit_reached', {
+                    count: environment.hardMessageLimit ?? userMessageCount,
+                  })
+                : t('chat_soft_message_limit_warning', {
+                    count: environment.softMessageLimit ?? userMessageCount,
+                  })}
+            </span>
+          </div>
+        )}
         <ChatDisclaimer
           rightSlot={
             <ContextLengthIndicator

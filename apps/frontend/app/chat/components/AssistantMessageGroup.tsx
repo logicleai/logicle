@@ -29,6 +29,7 @@ import { computeMarkdown } from './markdown/process'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { Button } from '@/components/ui/button'
 import { downloadAsFile } from '@/lib/savefile'
+import { useHardMessageLimitReached } from './useHardMessageLimitReached'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -147,6 +148,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
   } = useContext(ChatPageContext)
 
   const { setSideBarContent } = useContext(ChatPageContext)
+  const hardLimitReached = useHardMessageLimitReached()
 
   const mainMessage = group.messages[0]
   const conversationId = mainMessage.conversationId
@@ -467,7 +469,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
                   />
                 </Button>
               )}
-              {isLast && sendMessage && (
+              {isLast && sendMessage && !hardLimitReached && (
                 <Button
                   variant="ghost"
                   size="icon"

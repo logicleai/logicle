@@ -88,6 +88,8 @@ export default async function RootLayout({
     logoPath: env.icons.logo,
     sessionRefreshIntervalMinutes: env.session.refreshIntervalMinutes,
     sessionRefreshThrottleMinutes: env.session.refreshThrottleMinutes,
+    softMessageLimit: env.chat.softMessageLimit,
+    hardMessageLimit: env.chat.hardMessageLimit,
   }
 
   const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []
