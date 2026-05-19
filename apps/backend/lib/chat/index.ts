@@ -965,10 +965,6 @@ export class ChatAssistant {
           clientSink.enqueue({ type: 'reasoning', reasoning: delta })
         } else if (chunk.type === 'finish') {
           const totalUsageWithDetails = chunk.totalUsage
-          const usageWithAliases = totalUsageWithDetails as typeof totalUsageWithDetails & {
-            inputTokenDetails?: unknown
-            outputTokenDetails?: unknown
-          }
           const totalTokens = totalUsageWithDetails.totalTokens ?? 0
           const inputTokens = totalUsageWithDetails.inputTokens ?? 0
           const outputTokens =
@@ -977,8 +973,8 @@ export class ChatAssistant {
             totalTokens,
             inputTokens,
             outputTokens,
-            inputTokenDetails: usageWithAliases.inputTokenDetails,
-            outputTokenDetails: usageWithAliases.outputTokenDetails,
+            inputTokenDetails: totalUsageWithDetails.inputTokenDetails,
+            outputTokenDetails: totalUsageWithDetails.outputTokenDetails,
           }
           if (chunk.finishReason === 'error') {
             throw new ai.AISDKError({
