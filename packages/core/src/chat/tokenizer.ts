@@ -16,7 +16,23 @@ export const countTextWithTokenizer = (tokenizer: TokenizerStrategy, text: strin
   if (tokenizer === 'approx_4chars') {
     return Math.ceil(text.length / 4)
   }
+  if (tokenizer === 'anthropic_smart') {
+    return countAnthropicSmartTokens(text)
+  }
   return getEncodingCached(tokenizer).encode(text).length
+}
+
+const countWhitespace = (text: string) => (text.match(/\s/g) ?? []).length
+const countPipe = (text: string) => (text.match(/\|/g) ?? []).length
+
+export const countAnthropicSmartTokens = (text: string) => {
+  // Linear model trained against Anthropic count_tokens endpoint:
+  // tokens ~= 2.38 * pipes + 0.31 * (chars - pipes - whitespace) + 0.07 * whitespace
+  const pipes = countPipe(text)
+  const whitespace = countWhitespace(text)
+  const charsMinusPipesMinusWhitespace = text.length - pipes - whitespace
+  const estimate = 2.38 * pipes + 0.31 * charsMinusPipesMinusWhitespace + 0.07 * whitespace
+  return Math.max(1, Math.round(estimate))
 }
 
 export const tokenizerForModel = (model: LlmModel): TokenizerStrategy =>

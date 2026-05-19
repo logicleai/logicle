@@ -21,7 +21,7 @@ export interface LlmModelCapabilities {
   promptCaching?: boolean
 }
 
-export const tokenizerStrategies = ['cl100k_base', 'o200k_base', 'approx_4chars'] as const
+export const tokenizerStrategies = ['cl100k_base', 'o200k_base', 'approx_4chars', 'anthropic_smart'] as const
 export type TokenizerStrategy = (typeof tokenizerStrategies)[number]
 
 export const llmModelNoCapabilities: LlmModelCapabilities = {
@@ -58,6 +58,7 @@ export const defaultTokenizerByProvider = (provider: ProviderType): TokenizerStr
     case 'logiclecloud':
       return 'cl100k_base'
     case 'anthropic':
+      return 'anthropic_smart'
     case 'gcp-vertex':
     case 'google-ai-studio':
     case 'mock':
@@ -71,6 +72,7 @@ export const defaultTokenizerByOwner = (owner: EngineOwner): TokenizerStrategy =
     case 'perplexity':
       return 'cl100k_base'
     case 'anthropic':
+      return 'anthropic_smart'
     case 'google':
     case 'gemini':
     case 'meta':

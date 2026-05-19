@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const tokenizerStrategySchema = z.enum(['cl100k_base', 'o200k_base', 'approx_4chars'])
+const tokenizerStrategySchema = z.enum(['cl100k_base', 'o200k_base', 'approx_4chars', 'anthropic_smart'])
 
 export const llmModelCapabilitiesSchema = z.object({
   vision: z.boolean(),
