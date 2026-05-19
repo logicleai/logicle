@@ -920,7 +920,7 @@ describe('estimateInputTokens', () => {
     expect(extractFromFile).toHaveBeenCalledWith(file)
   })
 
-  test('counts metadata for attachments without native analysis-backed handling', async () => {
+  test('counts extracted-text fallback for non-native attachments', async () => {
     const fileId = 'text-attachment'
     const file = {
       id: fileId,
@@ -933,6 +933,7 @@ describe('estimateInputTokens', () => {
       encrypted: 0 as const,
     }
     getFileWithId.mockResolvedValue(file)
+    extractFromFile.mockResolvedValue('notes attachment text')
     await mockBuildPreambleSegments([])
 
     const { estimateInputTokens } = await import('@/backend/lib/chat/token-estimator')
@@ -950,12 +951,13 @@ describe('estimateInputTokens', () => {
     expect(result.estimate.draft).toBe(
       countTextForModel(
         claude35SonnetModel,
-        JSON.stringify({ filename: file.name, mediaType: file.type })
+        `Here is the text content of the file "${file.name}" with id ${file.id}\nnotes attachment text`
       ) +
         countUserAttachmentDescriptorTokens(claude35SonnetModel, [
           { id: fileId, name: file.name, mimetype: file.type, size: file.size },
         ])
     )
+    expect(extractFromFile).toHaveBeenCalledWith(file)
   })
 
   test('counts assistant and tool history message parts', async () => {

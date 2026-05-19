@@ -359,13 +359,19 @@ const estimateAttachmentTokens = async (
     onDetail?.(entry.tokens, entry.algorithm, entry.params)
     return entry.tokens
   }
-  const tokens = await countTextTokensCached(
-    model,
-    JSON.stringify({ filename: attachment.name, mediaType: attachment.mimetype }),
-    stats
-  )
-  onDetail?.(tokens, algorithm)
-  return tokens
+  if (canSendAsNativeFile(attachment.mimetype, model.capabilities)) {
+    const tokens = await countTextTokensCached(
+      model,
+      JSON.stringify({ filename: attachment.name, mediaType: attachment.mimetype }),
+      stats
+    )
+    onDetail?.(tokens, algorithm)
+    return tokens
+  }
+
+  const fallbackTokens = await estimateTextFallbackAttachmentTokens(model, attachment.id, stats)
+  onDetail?.(fallbackTokens, 'text_fallback')
+  return fallbackTokens
 }
 
 const estimateDtoMessageTokens = async (
