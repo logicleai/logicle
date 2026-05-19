@@ -967,7 +967,7 @@ export class ChatAssistant {
           const totalUsageWithDetails = chunk.totalUsage
           const usageWithAliases = totalUsageWithDetails as typeof totalUsageWithDetails & {
             inputTokensDetails?: unknown
-            outputTokensDetails?: unknown
+            outputTokenDetails?: unknown
           }
           const totalTokens = totalUsageWithDetails.totalTokens ?? 0
           const inputTokens = totalUsageWithDetails.inputTokens ?? 0
@@ -977,10 +977,8 @@ export class ChatAssistant {
             totalTokens,
             inputTokens,
             outputTokens,
-            inputTokensDetails:
-              usageWithAliases.inputTokensDetails ?? totalUsageWithDetails.inputTokenDetails,
-            outputTokensDetails:
-              usageWithAliases.outputTokensDetails ?? totalUsageWithDetails.outputTokenDetails,
+            inputTokensDetails: usageWithAliases.inputTokensDetails,
+            outputTokenDetails: usageWithAliases.outputTokenDetails,
           }
           if (chunk.finishReason === 'error') {
             throw new ai.AISDKError({

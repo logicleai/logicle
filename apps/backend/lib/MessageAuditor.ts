@@ -49,7 +49,7 @@ export class MessageAuditor {
         logger.error('Expected a pending message')
       }
       auditEntry.tokens = usage.outputTokens
-      auditEntry.tokenDetails = stringifyTokenDetails(usage.outputTokensDetails)
+      auditEntry.tokenDetails = stringifyTokenDetails(usage.outputTokenDetails)
     }
     if (auditEntry.type === 'user' || auditEntry.type === 'tool') {
       this.pendingLlmInvocation = auditEntry

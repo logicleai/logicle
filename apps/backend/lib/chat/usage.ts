@@ -2,6 +2,6 @@ export interface Usage {
   inputTokens: number
   inputTokensDetails?: unknown
   outputTokens: number
-  outputTokensDetails?: unknown
+  outputTokenDetails?: unknown
   totalTokens: number
 }
