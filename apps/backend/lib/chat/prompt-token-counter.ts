@@ -8,11 +8,11 @@ import { estimateNativeImageTokens } from '@/backend/lib/chat/image-token-estima
 import type { PromptSegment } from './index'
 import type { TokenizerStrategy } from '@/lib/chat/models'
 import { LlmModel } from '@/lib/chat/models'
-import { countAnthropicSmartTokens, tokenizerForModel } from '@/lib/chat/tokenizer'
+import { countAnthropicHeuristicTokens, tokenizerForModel } from '@/lib/chat/tokenizer'
 
 type AsyncTokenizer = {
   countText: (
-    tokenizer: Exclude<TokenizerStrategy, 'approx_4chars' | 'anthropic_smart'>,
+    tokenizer: Exclude<TokenizerStrategy, 'approx_4chars' | 'anthropic_heuristic'>,
     text: string
   ) => Promise<number>
 }
@@ -60,8 +60,8 @@ export const countTextTokensCached = async (
   if (tokenizer === 'approx_4chars') {
     return Math.ceil(text.length / 4)
   }
-  if (tokenizer === 'anthropic_smart') {
-    return countAnthropicSmartTokens(text)
+  if (tokenizer === 'anthropic_heuristic') {
+    return countAnthropicHeuristicTokens(text)
   }
   const normalized = normalizeText(text)
   const key = hashKey('text', String(estimatorVersion), tokenizer, model.id, normalized)
