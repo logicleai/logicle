@@ -29,10 +29,7 @@ import {
   prepareConversationCostPlan,
   selectOptimalHistoryStartIndex,
 } from '@/backend/lib/chat/token-estimator'
-import {
-  normalizeMcpToolResult,
-  saveFile,
-} from '@/backend/lib/tools/file-output-normalization'
+import { normalizeMcpToolResult, saveFile } from '@/backend/lib/tools/file-output-normalization'
 
 export { fillTemplate } from './preamble'
 export type { PromptSegment } from './preamble'
@@ -967,14 +964,17 @@ export class ChatAssistant {
           }
           clientSink.enqueue({ type: 'reasoning', reasoning: delta })
         } else if (chunk.type === 'finish') {
-          const totalTokens = chunk.totalUsage.totalTokens ?? 0
-          const inputTokens = chunk.totalUsage.inputTokens ?? 0
+          const totalUsageWithDetails = chunk.totalUsage
+          const totalTokens = totalUsageWithDetails.totalTokens ?? 0
+          const inputTokens = totalUsageWithDetails.inputTokens ?? 0
           const outputTokens =
-            chunk.totalUsage.outputTokens ?? Math.max(totalTokens - inputTokens, 0)
+            totalUsageWithDetails.outputTokens ?? Math.max(totalTokens - inputTokens, 0)
           usage = {
             totalTokens,
             inputTokens,
             outputTokens,
+            inputTokenDetails: totalUsageWithDetails.inputTokenDetails,
+            outputTokenDetails: totalUsageWithDetails.outputTokenDetails,
           }
           if (chunk.finishReason === 'error') {
             throw new ai.AISDKError({

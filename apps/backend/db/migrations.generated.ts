@@ -41,6 +41,7 @@ import * as m202605052AssistantVersionName from './migrations/20260505.2-assista
 import * as m202605053AssistantVersionFileOrder from './migrations/20260505.3-assistant_version_file_order'
 import * as m20260506AssistantHidden from './migrations/20260506-assistant_hidden'
 import * as m20260508RenameGeminiProvider from './migrations/20260508-rename-gemini-provider'
+import * as m20260519MessageAuditTokenDetails from './migrations/20260519-message_audit_token_details'
 
 import type { MigrationWithDialect } from './migrations'
 
@@ -86,4 +87,5 @@ export const migrationModules: Record<string, MigrationWithDialect> = {
   '20260505.3-assistant_version_file_order': m202605053AssistantVersionFileOrder,
   '20260506-assistant_hidden': m20260506AssistantHidden,
   '20260508-rename-gemini-provider': m20260508RenameGeminiProvider,
+  '20260519-message_audit_token_details': m20260519MessageAuditTokenDetails,
 }

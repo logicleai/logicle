@@ -311,6 +311,7 @@ export interface MessageAudit {
     | 'user-response'
   model: string
   tokens: number
+  tokenDetails: string | null
   errors: string | null
   sentAt: string
 }

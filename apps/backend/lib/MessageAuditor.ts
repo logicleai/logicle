@@ -10,6 +10,13 @@ function doAuditMessage(value: schema.MessageAudit) {
   return db.insertInto('MessageAudit').values(value).execute()
 }
 
+function stringifyTokenDetails(value: unknown): string | null {
+  if (value == null) {
+    return null
+  }
+  return JSON.stringify(value)
+}
+
 export class MessageAuditor {
   pendingLlmInvocation: schema.MessageAudit | undefined
   constructor(
@@ -35,12 +42,14 @@ export class MessageAuditor {
     if (usage) {
       if (this.pendingLlmInvocation) {
         this.pendingLlmInvocation.tokens = usage.inputTokens
+        this.pendingLlmInvocation.tokenDetails = stringifyTokenDetails(usage.inputTokenDetails)
         await doAuditMessage(this.pendingLlmInvocation)
         this.pendingLlmInvocation = undefined
       } else {
         logger.error('Expected a pending message')
       }
       auditEntry.tokens = usage.outputTokens
+      auditEntry.tokenDetails = stringifyTokenDetails(usage.outputTokenDetails)
     }
     if (auditEntry.type === 'user' || auditEntry.type === 'tool') {
       this.pendingLlmInvocation = auditEntry
@@ -58,6 +67,7 @@ export class MessageAuditor {
       type: message.role,
       model: this.conversation.assistant.model,
       tokens: 0,
+      tokenDetails: null,
       sentAt: message.sentAt,
       errors: null,
     }
