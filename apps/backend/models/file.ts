@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid'
 export interface FileDbRow {
   id: string
   name: string
+  origin: 'uploaded' | 'generated' | null
   ownerType: 'USER' | 'CHAT' | 'ASSISTANT' | 'TOOL'
   ownerId: string
   path: string
@@ -41,6 +42,7 @@ export const addFile = async (
       name: file.name,
       path,
       type: file.type,
+      origin: 'uploaded',
       size: file.size,
       uploaded: 0,
       createdAt: new Date().toISOString(),
@@ -101,6 +103,7 @@ export const cloneFilesForOwner = async ({
     .select([
       'File.id as id',
       'File.name as name',
+      'File.origin as origin',
       'File.path as path',
       'File.type as type',
       'File.createdAt as createdAt',
@@ -127,6 +130,7 @@ export const cloneFilesForOwner = async ({
         name: source.name,
         path: source.path,
         type: source.type,
+        origin: source.origin,
         uploaded: source.fileBlobId ? 1 : 0,
         createdAt: now,
         encrypted: source.blobEncrypted ?? 0,

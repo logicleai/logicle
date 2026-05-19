@@ -53,6 +53,7 @@ const pdfFile = {
   fileBlobId: 'blob-1',
   id: 'pdf-1',
   name: 'example.pdf',
+  origin: null,
   ownerType: 'USER' as const,
   ownerId: 'u1',
   path: 'files/example.pdf',

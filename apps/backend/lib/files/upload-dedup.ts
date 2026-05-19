@@ -46,6 +46,7 @@ export const finalizeUploadedFile = async (params: {
   await db
     .updateTable('File')
     .set({
+      origin: 'uploaded',
       uploaded: 1,
       fileBlobId: blob.id,
       path: blob.path,

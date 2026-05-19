@@ -97,6 +97,7 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<Fi
         name: params.name,
         path: fileBlob.path,
         type: fileBlob.type,
+        origin: 'generated',
         size: fileBlob.size,
         uploaded: 1,
         createdAt: timestamp,
