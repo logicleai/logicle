@@ -33,6 +33,7 @@ export const GET = operation({
       )
       .distinct()
       .orderBy('F.createdAt', 'desc')
+      .orderBy('F.id', 'desc')
       .execute()
 
     return ok(rows)
