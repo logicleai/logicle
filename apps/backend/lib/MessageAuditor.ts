@@ -42,7 +42,7 @@ export class MessageAuditor {
     if (usage) {
       if (this.pendingLlmInvocation) {
         this.pendingLlmInvocation.tokens = usage.inputTokens
-        this.pendingLlmInvocation.tokenDetails = stringifyTokenDetails(usage.inputTokensDetails)
+        this.pendingLlmInvocation.tokenDetails = stringifyTokenDetails(usage.inputTokenDetails)
         await doAuditMessage(this.pendingLlmInvocation)
         this.pendingLlmInvocation = undefined
       } else {

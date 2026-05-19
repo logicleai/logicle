@@ -966,7 +966,7 @@ export class ChatAssistant {
         } else if (chunk.type === 'finish') {
           const totalUsageWithDetails = chunk.totalUsage
           const usageWithAliases = totalUsageWithDetails as typeof totalUsageWithDetails & {
-            inputTokensDetails?: unknown
+            inputTokenDetails?: unknown
             outputTokenDetails?: unknown
           }
           const totalTokens = totalUsageWithDetails.totalTokens ?? 0
@@ -977,7 +977,7 @@ export class ChatAssistant {
             totalTokens,
             inputTokens,
             outputTokens,
-            inputTokensDetails: usageWithAliases.inputTokensDetails,
+            inputTokenDetails: usageWithAliases.inputTokenDetails,
             outputTokenDetails: usageWithAliases.outputTokenDetails,
           }
           if (chunk.finishReason === 'error') {
