@@ -130,6 +130,7 @@ export const PUT = operation({
       .select([
         'File.id as id',
         'File.name as name',
+        'File.origin as origin',
         'File.ownerType as ownerType',
         'File.ownerId as ownerId',
         'File.path as path',

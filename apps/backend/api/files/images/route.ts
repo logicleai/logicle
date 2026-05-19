@@ -24,6 +24,7 @@ export const GET = operation({
       .select(['F.id', 'F.name', 'F.type', 'FB.size as size', 'F.createdAt', 'C.id as conversationId'])
       .where('F.fileBlobId', 'is not', null)
       .where('F.type', 'like', 'image/%')
+      .where('F.origin', '=', 'generated')
       .where((eb) =>
         eb.or([
           eb.and([eb('F.ownerType', '=', 'USER'), eb('F.ownerId', '=', session.userId)]),
@@ -32,6 +33,7 @@ export const GET = operation({
       )
       .distinct()
       .orderBy('F.createdAt', 'desc')
+      .orderBy('F.id', 'desc')
       .execute()
 
     return ok(rows)

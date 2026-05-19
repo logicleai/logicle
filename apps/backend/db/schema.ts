@@ -112,6 +112,7 @@ export interface File {
   fileBlobId: string | null
   id: string
   name: string
+  origin: FileOrigin | null
   ownerType: FileOwnerType
   ownerId: string
   path: string
@@ -141,6 +142,7 @@ export interface FileAnalysis {
 }
 
 export type FileOwnerType = 'USER' | 'CHAT' | 'ASSISTANT' | 'TOOL'
+export type FileOrigin = 'uploaded' | 'generated'
 
 export interface Image {
   id: string

@@ -38,6 +38,7 @@ describe('cachingExtractor', () => {
       encrypted: 0 as const,
       ownerType: 'USER' as const,
       ownerId: 'u1',
+      origin: null,
     }
 
     ensureFileAnalysisForFile.mockResolvedValue({
@@ -87,6 +88,7 @@ describe('cachingExtractor', () => {
       encrypted: 0 as const,
       ownerType: 'USER' as const,
       ownerId: 'u1',
+      origin: null,
     }
 
     ensureFileAnalysisForFile.mockResolvedValue(undefined)
@@ -116,6 +118,7 @@ describe('cachingExtractor', () => {
       encrypted: 0 as const,
       ownerType: 'USER' as const,
       ownerId: 'u1',
+      origin: null,
     }
 
     ensureFileAnalysisForFile.mockResolvedValue({
