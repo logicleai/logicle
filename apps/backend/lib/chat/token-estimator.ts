@@ -359,13 +359,19 @@ const estimateAttachmentTokens = async (
     onDetail?.(entry.tokens, entry.algorithm, entry.params)
     return entry.tokens
   }
-  const tokens = await countTextTokensCached(
-    model,
-    JSON.stringify({ filename: attachment.name, mediaType: attachment.mimetype }),
-    stats
-  )
-  onDetail?.(tokens, algorithm)
-  return tokens
+  if (canSendAsNativeFile(attachment.mimetype, model.capabilities)) {
+    const tokens = await countTextTokensCached(
+      model,
+      JSON.stringify({ filename: attachment.name, mediaType: attachment.mimetype }),
+      stats
+    )
+    onDetail?.(tokens, algorithm)
+    return tokens
+  }
+
+  const fallbackTokens = await estimateTextFallbackAttachmentTokens(model, attachment.id, stats)
+  onDetail?.(fallbackTokens, 'text_fallback')
+  return fallbackTokens
 }
 
 const estimateDtoMessageTokens = async (
@@ -464,10 +470,12 @@ export const selectOptimalHistoryStartIndex = (
   for (let i = historyMessageCosts.length - 1; i >= 0; i--) {
     running[i] = running[i + 1]! + (historyMessageCosts[i]?.tokens ?? 0)
   }
+  // Truncation windows must start from a user message so the model receives
+  // a coherent user turn after the preamble.
   const userTurnStartIndexes = history.flatMap((message, index) =>
-    message.role === 'user' && index > 0 ? [index] : []
+    message.role === 'user' ? [index] : []
   )
-  const candidateStartIndexes = [0, ...userTurnStartIndexes]
+  const candidateStartIndexes = userTurnStartIndexes
   for (const startIndex of candidateStartIndexes) {
     const total = assistantTokens + draftTokens + (running[startIndex] ?? 0)
     if (total <= tokenLimit) return startIndex

@@ -224,6 +224,19 @@ describe('truncateChat', () => {
     expect(result).toEqual(messages)
   })
 
+  test('keeps history starting at index 0 when first message is user and total is within budget', async () => {
+    const assistant = makeChatAssistant(40)
+    const messages = [
+      makeMessage('m1', 'user'),
+      makeMessage('m2', 'assistant'),
+      makeMessage('m3', 'user'),
+    ]
+
+    const result = await assistant.truncateChat(messages)
+
+    expect(result).toEqual(messages)
+  })
+
   test('cost plan is built exactly once', async () => {
     const assistant = makeChatAssistant(25)
     const messages = [
@@ -251,6 +264,21 @@ describe('truncateChat', () => {
     const result = await assistant.truncateChat(messages)
 
     expect(result).toEqual(messages.slice(2))
+  })
+
+  test('truncated history starts at a user message when history begins with assistant messages', async () => {
+    const assistant = makeChatAssistant(35)
+    const messages = [
+      makeMessage('m1', 'assistant'),
+      makeMessage('m2', 'assistant'),
+      makeMessage('m3', 'user'),
+      makeMessage('m4', 'assistant'),
+    ]
+
+    const result = await assistant.truncateChat(messages)
+
+    expect(result).toEqual(messages.slice(2))
+    expect(result[0]?.role).toBe('user')
   })
 
   test('falls back to last user turn when even the shortest candidate exceeds limit', async () => {
@@ -281,5 +309,14 @@ describe('truncateChat', () => {
     expect(mockLoggerInfo).toHaveBeenCalledWith(
       'Truncating chat: latest user turn still exceeds limit of 15'
     )
+  })
+
+  test('falls back safely to index 0 when history has no user messages', async () => {
+    const assistant = makeChatAssistant(15)
+    const messages = [makeMessage('m1', 'assistant'), makeMessage('m2', 'assistant')]
+
+    const result = await assistant.truncateChat(messages)
+
+    expect(result).toEqual(messages)
   })
 })
