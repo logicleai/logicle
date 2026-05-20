@@ -28,7 +28,7 @@ const tokenEstimateMetaSchema = z.object({
   assistantId: z.string().describe('Assistant id used for estimation.'),
   model: z.string().describe('Resolved model id used for estimation.'),
   tokenizer: z
-    .enum(['cl100k_base', 'o200k_base', 'approx_4chars'])
+    .enum(['cl100k_base', 'o200k_base', 'approx_4chars', 'anthropic_heuristic'])
     .describe('Tokenizer strategy used to compute token estimates.'),
 }).meta({ id: 'TokenEstimateMeta' })
 
@@ -42,7 +42,7 @@ export const tokenDetailPartSchema = z.object({
   algorithm: z
     .string()
     .describe(
-      'Algorithm or tokenizer used: cl100k_base, o200k_base, approx_4chars, native_image, pdf_native, pdf_text_fallback, pdf_page_limit_notice.'
+      'Algorithm or tokenizer used: cl100k_base, o200k_base, approx_4chars, anthropic_heuristic, native_image, pdf_native, pdf_text_fallback, pdf_page_limit_notice.'
     ),
   params: z
     .record(z.string(), z.unknown())
