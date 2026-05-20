@@ -9,7 +9,7 @@ import {
 import type { LlmModel } from '@/lib/chat/models'
 import type * as dto from '@/types/dto'
 
-// A model that uses the fast approx_4chars strategy (no WASM loading)
+// A model that uses Anthropic default tokenizer strategy
 const approxModel: LlmModel = {
   id: 'claude-3',
   model: 'claude-3',
@@ -27,8 +27,8 @@ const overrideModel: LlmModel = { ...approxModel, tokenizer: 'approx_4chars' }
 const base = { conversationId: 'c1', sentAt: '2024-01-01T00:00:00.000Z', parent: null }
 
 describe('tokenizerForModel', () => {
-  test('returns approx_4chars for anthropic provider', () => {
-    expect(tokenizerForModel(approxModel)).toBe('approx_4chars')
+  test('returns anthropic_heuristic for anthropic provider', () => {
+    expect(tokenizerForModel(approxModel)).toBe('anthropic_heuristic')
   })
 
   test('respects explicit tokenizer override on model', () => {
@@ -37,11 +37,11 @@ describe('tokenizerForModel', () => {
   })
 })
 
-describe('countTextForModel (approx_4chars)', () => {
-  test('counts ceil(length / 4) tokens', () => {
-    expect(countTextForModel(approxModel, 'abcd')).toBe(1)   // 4/4 = 1
-    expect(countTextForModel(approxModel, 'abcde')).toBe(2)  // ceil(5/4) = 2
-    expect(countTextForModel(approxModel, '')).toBe(0)
+describe('countTextForModel (anthropic_heuristic)', () => {
+  test('applies heuristic estimation and minimum token floor', () => {
+    expect(countTextForModel(approxModel, 'abcd')).toBe(1)
+    expect(countTextForModel(approxModel, 'abcde')).toBe(2)
+    expect(countTextForModel(approxModel, '')).toBe(1)
   })
 })
 

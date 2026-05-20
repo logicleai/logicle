@@ -200,7 +200,7 @@ describe('apps/backend/lib/models', () => {
     expect(llmModels).toHaveLength(2)
     expect(llmModels[0]).toMatchObject({
       id: 'anthropic-pdf',
-      tokenizer: 'approx_4chars',
+      tokenizer: 'anthropic_heuristic',
       capabilities: {
         nativePdfPageLimit: 100,
         supportedMedia: ['application/pdf'],
