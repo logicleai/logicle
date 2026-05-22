@@ -19,10 +19,8 @@ export const ThinkingIndicator: FC<Props> = ({ assistant }) => {
       </div>
       <div className="flex-1 min-w-0">
         <h3>{assistant.name}</h3>
-        <div className="flex gap-1 mt-2">
-          <span className="w-2 h-2 rounded-full bg-foreground/40 animate-bounce [animation-delay:-0.3s]" />
-          <span className="w-2 h-2 rounded-full bg-foreground/40 animate-bounce [animation-delay:-0.15s]" />
-          <span className="w-2 h-2 rounded-full bg-foreground/40 animate-bounce" />
+        <div className="prose">
+          <span style={{ animation: 'blink 0.5s linear infinite' }}>▍</span>
         </div>
       </div>
     </div>
