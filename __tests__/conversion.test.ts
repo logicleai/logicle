@@ -41,7 +41,6 @@ vi.mock('@/lib/logging', () => ({
 const pdfCapabilities: LlmModelCapabilities = {
   vision: false,
   function_calling: true,
-  reasoning: false,
   supportedMedia: ['application/pdf'],
   nativePdfPageLimit: 100,
 }
@@ -694,7 +693,7 @@ describe('dtoMessageToLlmMessage contract', () => {
           { type: 'tool-call', toolCallId: 'call-1', toolName: 'search', args: { q: 'cats' } },
         ],
       },
-      { vision: false, function_calling: true, reasoning: true, supportedMedia: [] },
+      { vision: false, function_calling: true, supportedMedia: [] },
       openaiLanguageModel.provider
     )
 

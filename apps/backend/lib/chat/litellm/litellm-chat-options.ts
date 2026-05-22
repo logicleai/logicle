@@ -12,7 +12,7 @@ export const litellmProviderOptions = z.object({
   /**
    * Reasoning effort for reasoning models. Defaults to `medium`.
    */
-  reasoningEffort: z.enum(['low', 'medium', 'high']).optional(),
+  reasoningEffort: z.enum(['none', 'minimal', 'low', 'medium', 'high', 'xhigh']).optional(),
 })
 
 export type LitellmProviderOptions = z.infer<typeof litellmProviderOptions>

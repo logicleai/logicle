@@ -1,6 +1,6 @@
 import { ProviderType } from '@/types/provider'
 
-export const reasoningEffortValues = ['low', 'medium', 'high'] as const
+export const reasoningEffortValues = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const
 export type ReasoningEffort = (typeof reasoningEffortValues)[number]
 
 enum WorkspaceRole {
@@ -53,7 +53,7 @@ export interface AssistantVersion {
   systemPrompt: string
   temperature: number
   tokenLimit: number
-  reasoning_effort: 'low' | 'medium' | 'high' | null
+  reasoning_effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | null
   tags: string
   prompts: string
   subAssistants: string | null

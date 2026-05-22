@@ -11,7 +11,6 @@ export const mockEchoModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
-    reasoning: false,
   },
 }
 

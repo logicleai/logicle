@@ -113,6 +113,8 @@ type TestableAssistant = {
 type ProviderOptionsShape = {
   openai?: { parallelToolCalls?: boolean }
   anthropic?: { disableParallelToolUse?: boolean }
+  google?: { thinkingConfig?: { thinkingLevel?: string; thinkingBudget?: number } }
+  vertex?: { thinkingConfig?: { thinkingLevel?: string; thinkingBudget?: number } }
 }
 
 const asTestableAssistant = (assistant: ChatAssistant): TestableAssistant =>
@@ -151,7 +153,6 @@ function makeAssistant(tools: Record<string, ToolFunction>) {
     capabilities: {
       function_calling: true,
       vision: false,
-      reasoning: false,
       knowledge: false,
       supportedMedia: [],
     },
@@ -457,5 +458,84 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
 
     const opts = testableAssistant.providerOptions([]) as ProviderOptionsShape
     expect(opts?.anthropic?.disableParallelToolUse).toBe(true)
+  })
+})
+
+describe('providerOptions: Gemini thinking config is forwarded', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  test('google.generative-ai includes thinkingConfig when configured', () => {
+    vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
+      provider: 'google.generative-ai',
+    } as unknown as LanguageModelV3)
+    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
+      functions: {},
+      functionToolIdMap: new Map(),
+    })
+
+    const assistant = makeAssistant({})
+    const testableAssistant = asTestableAssistant(assistant)
+    testableAssistant.languageModel = { provider: 'google.generative-ai' }
+    ;(testableAssistant as unknown as { llmModel: LlmModel }).llmModel = {
+      ...(testableAssistant as unknown as { llmModel: LlmModel }).llmModel,
+      model: 'gemini-3.1-pro-preview',
+      supportedReasoningEfforts: ['low', 'medium', 'high'],
+      defaultReasoning: 'medium',
+    }
+
+    const opts = testableAssistant.providerOptions([]) as ProviderOptionsShape
+    expect(opts?.google?.thinkingConfig?.thinkingLevel).toBe('medium')
+  })
+
+  test('google.generative-ai passes thinkingLevel as selected', () => {
+    vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
+      provider: 'google.generative-ai',
+    } as unknown as LanguageModelV3)
+    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
+      functions: {},
+      functionToolIdMap: new Map(),
+    })
+
+    const assistant = makeAssistant({})
+    const testableAssistant = asTestableAssistant(assistant)
+    testableAssistant.languageModel = { provider: 'google.generative-ai' }
+    ;(testableAssistant as unknown as { llmModel: LlmModel }).llmModel = {
+      ...(testableAssistant as unknown as { llmModel: LlmModel }).llmModel,
+      model: 'gemini-3.1-pro-preview',
+      supportedReasoningEfforts: ['low', 'high'],
+      defaultReasoning: 'low',
+    }
+    ;(testableAssistant as unknown as { assistantParams: AssistantParams }).assistantParams = {
+      ...(testableAssistant as unknown as { assistantParams: AssistantParams }).assistantParams,
+      reasoning_effort: 'medium',
+    }
+
+    const opts = testableAssistant.providerOptions([]) as ProviderOptionsShape
+    expect(opts?.google?.thinkingConfig?.thinkingLevel).toBe('medium')
+  })
+
+  test('vertex includes thinkingConfig when configured', () => {
+    vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
+      provider: 'vertex',
+    } as unknown as LanguageModelV3)
+    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
+      functions: {},
+      functionToolIdMap: new Map(),
+    })
+
+    const assistant = makeAssistant({})
+    const testableAssistant = asTestableAssistant(assistant)
+    testableAssistant.languageModel = { provider: 'vertex' }
+    ;(testableAssistant as unknown as { llmModel: LlmModel }).llmModel = {
+      ...(testableAssistant as unknown as { llmModel: LlmModel }).llmModel,
+      model: 'gemini-2.5-pro',
+      supportedReasoningEfforts: ['low', 'medium', 'high'],
+      defaultReasoning: 'medium',
+    }
+
+    const opts = testableAssistant.providerOptions([]) as ProviderOptionsShape
+    expect(opts?.vertex?.thinkingConfig?.thinkingBudget).toBe(4096)
   })
 })

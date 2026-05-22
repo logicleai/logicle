@@ -18,6 +18,28 @@ type CreateLanguageModelOptions = {
   user?: string
 }
 
+export type AssistantReasoningEffort = 'none' | 'low' | 'medium' | 'high'
+
+export const geminiThinkingConfigFromReasoningEffort = (
+  modelId: string,
+  reasoningEffort: AssistantReasoningEffort
+): { thinkingLevel: AssistantReasoningEffort } | { thinkingBudget: number } => {
+  if (modelId.includes('gemini-3')) {
+    return { thinkingLevel: reasoningEffort }
+  }
+  // Gemini 2.5 models use a budget; 0 disables thinking.
+  return {
+    thinkingBudget:
+      reasoningEffort === 'none'
+        ? 0
+        : reasoningEffort === 'high'
+          ? 8192
+          : reasoningEffort === 'medium'
+            ? 4096
+            : 1024,
+  }
+}
+
 export function createLanguageModelBasic(
   params: ProviderConfig,
   model: LlmModel,

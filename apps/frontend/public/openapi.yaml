@@ -3182,9 +3182,12 @@ components:
           anyOf:
             - type: string
               enum:
+                - none
+                - minimal
                 - low
                 - medium
                 - high
+                - xhigh
             - type: "null"
         tags:
           type: string
@@ -3304,9 +3307,12 @@ components:
           anyOf:
             - type: string
               enum:
+                - none
+                - minimal
                 - low
                 - medium
                 - high
+                - xhigh
             - type: "null"
         createdAt:
           type: string
@@ -3402,9 +3408,12 @@ components:
           anyOf:
             - type: string
               enum:
+                - none
+                - minimal
                 - low
                 - medium
                 - high
+                - xhigh
             - type: "null"
         tools:
           type: array
@@ -3479,9 +3488,12 @@ components:
           anyOf:
             - type: string
               enum:
+                - none
+                - minimal
                 - low
                 - medium
                 - high
+                - xhigh
             - type: "null"
         tools:
           type: array
@@ -3560,8 +3572,8 @@ components:
         algorithm:
           type: string
           description: "Algorithm or tokenizer used: cl100k_base, o200k_base,
-            approx_4chars, native_image, pdf_native, pdf_text_fallback,
-            pdf_page_limit_notice."
+            approx_4chars, anthropic_heuristic, native_image, pdf_native,
+            pdf_text_fallback, pdf_page_limit_notice."
         params:
           description: Algorithm parameters, e.g. image dimensions or PDF page counts.
           type: object
@@ -3623,6 +3635,7 @@ components:
             - cl100k_base
             - o200k_base
             - approx_4chars
+            - anthropic_heuristic
           description: Tokenizer strategy used to compute token estimates.
         estimate:
           type: object
@@ -4017,7 +4030,25 @@ components:
         defaultReasoning:
           anyOf:
             - type: string
+              enum:
+                - none
+                - minimal
+                - low
+                - medium
+                - high
+                - xhigh
             - type: "null"
+        supportedReasoningEfforts:
+          type: array
+          items:
+            type: string
+            enum:
+              - none
+              - minimal
+              - low
+              - medium
+              - high
+              - xhigh
         tags:
           type: array
           items:
@@ -4033,6 +4064,7 @@ components:
             - cl100k_base
             - o200k_base
             - approx_4chars
+            - anthropic_heuristic
       required:
         - id
         - model
@@ -4051,8 +4083,6 @@ components:
           type: boolean
         function_calling:
           type: boolean
-        reasoning:
-          type: boolean
         supportedMedia:
           type: array
           items:
@@ -4066,7 +4096,6 @@ components:
       required:
         - vision
         - function_calling
-        - reasoning
       additionalProperties: false
       id: LlmModelCapabilities
     InsertableBackend:
@@ -5132,6 +5161,7 @@ components:
             - cl100k_base
             - o200k_base
             - approx_4chars
+            - anthropic_heuristic
           description: Tokenizer strategy used to compute token estimates.
         estimate:
           type: object
@@ -5316,9 +5346,12 @@ components:
           anyOf:
             - type: string
               enum:
+                - none
+                - minimal
                 - low
                 - medium
                 - high
+                - xhigh
             - type: "null"
         createdAt:
           type: string

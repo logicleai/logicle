@@ -7,13 +7,12 @@ import { perplexityModels } from './perplexity'
 import { geminiModels } from './gemini'
 import { mockModels } from './mock'
 
-export const reasoningEffortValues = ['low', 'medium', 'high'] as const
+export const reasoningEffortValues = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const
 export type ReasoningEffort = (typeof reasoningEffortValues)[number]
 
 export interface LlmModelCapabilities {
   vision: boolean
   function_calling: boolean
-  reasoning: boolean
   supportedMedia?: string[]
   web_search?: boolean
   knowledge?: boolean
@@ -27,7 +26,6 @@ export type TokenizerStrategy = (typeof tokenizerStrategies)[number]
 export const llmModelNoCapabilities: LlmModelCapabilities = {
   vision: false,
   function_calling: false,
-  reasoning: false,
   knowledge: false,
 }
 
@@ -46,6 +44,7 @@ export interface LlmModel {
   context_length: number
   capabilities: LlmModelCapabilities
   defaultReasoning?: ReasoningEffort
+  supportedReasoningEfforts?: ReasoningEffort[]
   tags?: ModelTags[]
   maxOutputTokens?: number
   tokenizer?: TokenizerStrategy
@@ -79,6 +78,9 @@ export const defaultTokenizerByOwner = (owner: EngineOwner): TokenizerStrategy =
       return 'approx_4chars'
   }
 }
+
+export const modelSupportsReasoning = (model: LlmModel): boolean =>
+  (model.supportedReasoningEfforts?.length ?? 0) > 0
 
 export const stockModels = [
   ...openaiModels,

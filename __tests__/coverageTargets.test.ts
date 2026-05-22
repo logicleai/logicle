@@ -233,7 +233,6 @@ describe('apps/backend/lib/models', () => {
           capabilities: {
             vision: false,
             function_calling: true,
-            reasoning: false,
           },
         },
       ])
@@ -332,7 +331,6 @@ describe('packages/core runtime helpers', () => {
         capabilities: {
           vision: true,
           function_calling: true,
-          reasoning: false,
           supportedMedia: ['image/png'],
         },
         defaultReasoning: null,
@@ -357,7 +355,6 @@ describe('packages/core runtime helpers', () => {
         capabilities: {
           vision: false,
           function_calling: false,
-          reasoning: false,
         },
         tokenizer: 'invalid_tokenizer',
       })

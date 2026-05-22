@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
+import { useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { FormField, FormItem } from '@/components/ui/form'
-import { UseFormReturn } from 'react-hook-form'
+import { UseFormReturn, useWatch } from 'react-hook-form'
 import {
   Select,
   SelectContentScrollable,
@@ -33,9 +34,18 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
   const { data: tagSuggestions } = useAssistantTagSuggestions()
 
   const environment = useEnvironment()
-  const isReasoningModel = (modelId: string) => {
-    return environment.models.find((m) => m.id === modelId)?.capabilities.reasoning === true
-  }
+  const selectedModelId = useWatch({ control: form.control, name: 'model' }).modelId
+  const selectedReasoningEffort = useWatch({ control: form.control, name: 'reasoning_effort' })
+  const selectedModel = environment.models.find((m) => m.id === selectedModelId)
+  const supportedReasoningEfforts = selectedModel?.supportedReasoningEfforts ?? []
+
+  useEffect(() => {
+    if (selectedReasoningEffort && !supportedReasoningEfforts.includes(selectedReasoningEffort)) {
+      form.setError('reasoning_effort', { message: t('reasoning_effort_not_supported') })
+    } else {
+      form.clearErrors('reasoning_effort')
+    }
+  }, [selectedModelId, selectedReasoningEffort])
 
   const availableModels: Model[] = backendModels
     .flatMap((backend) => {
@@ -126,7 +136,7 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
             </FormItem>
           )}
         />
-        {isReasoningModel(form.getValues().model.modelId) && (
+        {(supportedReasoningEfforts.length > 0 || selectedReasoningEffort) && (
           <FormField
             control={form.control}
             name="reasoning_effort"
@@ -138,13 +148,15 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
                   onValueChange={(value) => field.onChange(value === NULL_VALUE ? null : value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('default_')} />
+                    <SelectValue placeholder={t('default_')}>
+                      {field.value ? t(field.value) : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContentScrollable className="max-h-72">
                     <SelectItem value={NULL_VALUE}>{t('default_')}</SelectItem>
-                    <SelectItem value="low">{t('low')}</SelectItem>
-                    <SelectItem value="medium">{t('medium')}</SelectItem>
-                    <SelectItem value="high">{t('high')}</SelectItem>
+                    {supportedReasoningEfforts.map((effort) => (
+                      <SelectItem key={effort} value={effort}>{t(effort)}</SelectItem>
+                    ))}
                   </SelectContentScrollable>
                 </Select>
               </FormItem>

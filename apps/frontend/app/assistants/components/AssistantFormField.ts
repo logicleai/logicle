@@ -18,7 +18,7 @@ export const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
   model: modelSchema,
   systemPrompt: z.string(),
-  reasoning_effort: z.enum(['low', 'medium', 'high']).nullable(),
+  reasoning_effort: z.enum(['none', 'minimal', 'low', 'medium', 'high', 'xhigh']).nullable(),
   tokenLimit: z.coerce.number().min(256),
   temperature: z.coerce.number().min(0).max(1),
   tools: z.string().array(),

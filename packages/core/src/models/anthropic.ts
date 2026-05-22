@@ -1,6 +1,6 @@
-import { LlmModel } from '.'
+import { LlmModel, ReasoningEffort } from '.'
 
-export const claudeThinkingBudgetTokens = (reasoning_effort?: 'low' | 'medium' | 'high') => {
+export const claudeThinkingBudgetTokens = (reasoning_effort?: ReasoningEffort) => {
   switch (reasoning_effort) {
     case 'low':
       return 1024
@@ -24,7 +24,6 @@ export const claude3HaikuModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
   },
   tags: ['obsolete'],
   maxOutputTokens: 4096,
@@ -41,7 +40,6 @@ export const claude3SonnetModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
   },
   tags: ['obsolete'],
   maxOutputTokens: 4096,
@@ -58,7 +56,6 @@ export const claude3OpusModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
   },
   tags: ['obsolete'],
   maxOutputTokens: 4096,
@@ -75,7 +72,6 @@ export const claude35HaikuModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
-    reasoning: false,
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
@@ -95,7 +91,6 @@ export const claude35SonnetModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
@@ -116,11 +111,11 @@ export const claude37SonnetModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   tags: ['obsolete'],
   maxOutputTokens: 8192,
 }
@@ -137,11 +132,11 @@ export const claude4SonnetModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   tags: ['obsolete'],
   maxOutputTokens: 64000,
 }
@@ -158,12 +153,12 @@ export const claude4OpusModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   maxOutputTokens: 32000,
 }
 
@@ -179,12 +174,12 @@ export const claude41OpusModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   maxOutputTokens: 32000,
 }
 
@@ -200,12 +195,12 @@ export const claude45SonnetModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   maxOutputTokens: 64000,
 }
 
@@ -221,12 +216,12 @@ export const claude45HaikuModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   maxOutputTokens: 64000,
 }
 
@@ -241,12 +236,12 @@ export const claude45OpusModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   maxOutputTokens: 64000,
 }
 
@@ -262,12 +257,12 @@ export const claude46SonnetModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     web_search: true,
     supportedMedia: ['application/pdf'],
     nativePdfPageLimit: 100,
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   maxOutputTokens: 64000,
 }
 

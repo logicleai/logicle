@@ -19,7 +19,7 @@ import {
   ToolUILink,
 } from '@/lib/chat/tools'
 import { logger } from '@/lib/logging'
-import { LlmModel, LlmModelCapabilities } from '@/lib/chat/models'
+import { LlmModel, LlmModelCapabilities, modelSupportsReasoning } from '@/lib/chat/models'
 import { claudeThinkingBudgetTokens } from '@/lib/chat/models/anthropic'
 import { llmModels } from '@/lib/models'
 import { z } from 'zod/v4'
@@ -43,7 +43,11 @@ import {
   withBuiltinTools as withBuiltinToolsAsync,
   computeSystemPrompt as computeSystemPromptFn,
 } from './preamble'
-import { createLanguageModel, createLanguageModelBasic } from './provider-factory'
+import {
+  createLanguageModel,
+  createLanguageModelBasic,
+  geminiThinkingConfigFromReasoningEffort,
+} from './provider-factory'
 import {
   generateAndSendSummary,
   summarize,
@@ -80,7 +84,7 @@ export interface AssistantParams {
   systemPrompt: string
   temperature: number
   tokenLimit: number
-  reasoning_effort: 'low' | 'medium' | 'high' | null
+  reasoning_effort: 'none' | 'low' | 'medium' | 'high' | null
 }
 
 export type AssistantParamsSource = Pick<
@@ -432,15 +436,33 @@ export class ChatAssistant {
         tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel)) : []
       )
     )
-    if (vercelProviderType === 'google.generative-ai') {
-      return Object.keys(providerOptions).length > 0 ? providerOptions : undefined
+    if (
+      vercelProviderType === 'google.generative-ai' ||
+      vercelProviderType === 'google.vertex' ||
+      vercelProviderType === 'vertex'
+    ) {
+      const reasoningEffort = modelSupportsReasoning(this.llmModel)
+        ? assistantParams.reasoning_effort ?? this.llmModel.defaultReasoning ?? null
+        : null
+      const thinkingConfig =
+        reasoningEffort === null
+          ? undefined
+          : geminiThinkingConfigFromReasoningEffort(this.llmModel.model, reasoningEffort)
+      const googleProviderOptions = {
+        ...providerOptions,
+        ...(thinkingConfig ? { thinkingConfig } : {}),
+      }
+      if (Object.keys(googleProviderOptions).length === 0) return undefined
+      return vercelProviderType === 'google.vertex' || vercelProviderType === 'vertex'
+        ? { vertex: googleProviderOptions }
+        : { google: googleProviderOptions }
     } else if (vercelProviderType === 'openai.responses') {
       return {
         openai: {
           store: false,
           user: options.user,
           ...(env.chat.disableParallelToolCalls ? { parallelToolCalls: false } : {}),
-          ...(this.llmModelCapabilities.reasoning
+          ...(modelSupportsReasoning(this.llmModel)
             ? {
                 reasoningSummary: 'auto',
                 reasoningEffort:
@@ -453,7 +475,7 @@ export class ChatAssistant {
         } satisfies openai.OpenAIResponsesProviderOptions,
       }
     } else if (vercelProviderType === 'openai.chat') {
-      if (this.llmModelCapabilities.reasoning) {
+      if (modelSupportsReasoning(this.llmModel)) {
         return {
           openai: {
             reasoningEffort: assistantParams.reasoning_effort,
@@ -462,7 +484,7 @@ export class ChatAssistant {
       }
     } else if (vercelProviderType === 'litellm.chat') {
       const litellmOptions: litellm.LitellmProviderOptions = { ...providerOptions }
-      if (this.llmModel.capabilities.reasoning && this.assistantParams.reasoning_effort) {
+      if (modelSupportsReasoning(this.llmModel) && this.assistantParams.reasoning_effort) {
         litellmOptions.reasoningEffort = this.assistantParams.reasoning_effort
       }
       litellmOptions.user = options.user
@@ -472,13 +494,14 @@ export class ChatAssistant {
         anthropic: {
           ...(env.chat.disableParallelToolCalls ? { disableParallelToolUse: true } : {}),
           ...providerOptions,
-          ...(this.assistantParams.reasoning_effort && this.llmModelCapabilities.reasoning
+          ...((claudeThinkingBudgetTokens(assistantParams.reasoning_effort ?? undefined) ?? 0) >
+            0 && modelSupportsReasoning(this.llmModel)
             ? {
                 thinking: {
                   type: 'enabled',
                   budgetTokens: claudeThinkingBudgetTokens(
                     assistantParams.reasoning_effort ?? undefined
-                  ),
+                  )!,
                 },
               }
             : {}),
@@ -613,7 +636,7 @@ export class ChatAssistant {
         this.llmModelCapabilities.function_calling && Object.keys(await this.functions).length !== 0
           ? 'auto'
           : undefined,
-      temperature: this.llmModelCapabilities.reasoning
+      temperature: modelSupportsReasoning(this.llmModel)
         ? undefined
         : this.assistantParams.temperature,
       providerOptions,
