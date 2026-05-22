@@ -93,10 +93,10 @@ export const logicleModels: LlmModel[] = [
   gemini20FlashLiteModel,
   gemini25ProModel,
   gemini25FlashModel,
-  { ...gemini30ProModel, model: 'gemini-3-pro-preview' },
-  { ...geminiProLatest, model: 'gemini-3-pro-preview' },
+  gemini30ProModel,
+  geminiProLatest,
   gemini31FlashLite,
-  { ...gemini31ProModel, id: 'gemini-3.1-pro-preview', model: 'gemini-3-1-pro-preview' },
+  gemini31ProModel,
   gemini35FlashModel,
   ...perplexityModels,
 ].map((model) => {

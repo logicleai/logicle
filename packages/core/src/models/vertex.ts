@@ -2,7 +2,7 @@ import { LlmModel } from '.'
 
 export const gemini15ProModel: LlmModel = {
   id: 'gemini-1.5-pro',
-  model: 'gemini-1.5-pro',
+  model: 'gemini-2.5-pro', // Simplify migration
   name: 'Gemini 1.5 Pro',
   description: 'Vertex',
   provider: 'gcp-vertex',
@@ -16,7 +16,7 @@ export const gemini15ProModel: LlmModel = {
 }
 export const gemini15FlashModel: LlmModel = {
   id: 'gemini-1.5-flash',
-  model: 'gemini-1.5-flash',
+  model: 'gemini-2.5-flash', // Simplify migration
   name: 'Gemini 1.5 Flash',
   description: 'Vertex',
   provider: 'gcp-vertex',
@@ -31,7 +31,7 @@ export const gemini15FlashModel: LlmModel = {
 
 export const gemini20FlashModel: LlmModel = {
   id: 'gemini-2.0-flash',
-  model: 'gemini-2.0-flash',
+  model: 'gemini-2.5-flash',
   name: 'Gemini 2.0 Flash',
   description:
     'A Gemini 2.0 Flash model delivering enhanced multimodal capabilities, native tool use, and low latency for agentic applications.',
@@ -47,7 +47,7 @@ export const gemini20FlashModel: LlmModel = {
 
 export const gemini20FlashLiteModel: LlmModel = {
   id: 'gemini-2.0-flash-lite',
-  model: 'gemini-2.0-flash-lite',
+  model: 'gemini-2.5-flash-lite', // simplify migration
   name: 'Gemini 2.0 Flash Lite',
   description: 'A Gemini 2.0 Flash model optimized for cost efficiency and low latency',
   provider: 'gcp-vertex',
@@ -62,7 +62,7 @@ export const gemini20FlashLiteModel: LlmModel = {
 
 export const gemini20ProModel: LlmModel = {
   id: 'gemini-2.0-pro',
-  model: 'gemini-2.0-pro',
+  model: 'gemini-2.5-pro', // simplify migrations
   name: 'Gemini 2.0 Pro',
   description:
     'An experimental Gemini 2.0 model optimized for complex tasks and coding, featuring a 2M token context window and enhanced reasoning capabilities.',
