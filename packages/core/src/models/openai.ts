@@ -11,7 +11,6 @@ export const gpt35Model: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
-    reasoning: false,
   },
   tags: ['obsolete'],
 }
@@ -28,7 +27,6 @@ export const gpt4TurboModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
     supportedMedia: ['application/pdf'],
   },
   tags: ['obsolete'],
@@ -45,7 +43,6 @@ export const gpt4Model: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
-    reasoning: false,
     supportedMedia: ['application/pdf'],
   },
   tags: ['obsolete'],
@@ -63,7 +60,6 @@ export const gpt4oModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
     supportedMedia: ['application/pdf'],
   },
   tags: ['obsolete'],
@@ -80,7 +76,6 @@ export const gpt4oMiniModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
     supportedMedia: ['application/pdf'],
   },
   tags: ['obsolete'],
@@ -97,7 +92,6 @@ export const gpt41Model: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
     web_search: true,
     supportedMedia: ['application/pdf'],
     promptCaching: true,
@@ -115,7 +109,6 @@ export const gpt41MiniModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
     web_search: true,
     supportedMedia: ['application/pdf'],
   },
@@ -132,7 +125,6 @@ export const gpt41NanoModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
     web_search: true,
     supportedMedia: ['application/pdf'],
   },
@@ -150,8 +142,8 @@ export const o1Model: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   tags: ['obsolete'],
 }
 
@@ -167,8 +159,8 @@ export const o1MiniModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
-    reasoning: true,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   tags: ['obsolete'],
 }
 
@@ -184,9 +176,9 @@ export const o3Model: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf'],
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   tags: ['obsolete'],
 }
 
@@ -202,10 +194,10 @@ export const o3DeepResearchModel: LlmModel = {
   capabilities: {
     vision: true, // Deep Research can analyze images/PDFs it finds or that you attach
     function_calling: true, // uses Responses API "tools" (web_search_preview, code_interpreter, mcp)
-    reasoning: true,
     knowledge: false,
     supportedMedia: ['text/html', 'application/pdf', 'image/png', 'image/jpeg'],
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   // optional: you can keep a shorthand alias if your code accepts it
   // aliases: ['o3-deep-research'],
 }
@@ -221,8 +213,8 @@ export const o3MiniModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
-    reasoning: true,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
   tags: ['obsolete'],
 }
 
@@ -238,10 +230,10 @@ export const o4MiniModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     web_search: true,
     supportedMedia: ['application/pdf'],
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
 }
 
 export const o4MiniDeepResearchModel: LlmModel = {
@@ -256,10 +248,10 @@ export const o4MiniDeepResearchModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['text/html', 'application/pdf', 'image/png', 'image/jpeg'],
     knowledge: false,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
 }
 
 export const gpt5Model: LlmModel = {
@@ -274,10 +266,10 @@ export const gpt5Model: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['minimal', 'low', 'medium', 'high'],
   defaultReasoning: 'low',
 }
 
@@ -293,9 +285,9 @@ export const gpt5MiniModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
   },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high'],
   defaultReasoning: 'low',
 }
 
@@ -311,9 +303,9 @@ export const gpt5NanoModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
   },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high'],
   defaultReasoning: 'low',
 }
 
@@ -328,10 +320,10 @@ export const gpt5ChatModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high'],
   defaultReasoning: 'medium',
 }
 
@@ -346,10 +338,10 @@ export const gpt51Model: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high'],
   defaultReasoning: 'low',
 }
 
@@ -364,10 +356,10 @@ export const gpt51ChatModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high'],
   defaultReasoning: 'medium',
 }
 
@@ -382,10 +374,10 @@ export const gpt52Model: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high'],
   defaultReasoning: 'low',
 }
 
@@ -400,10 +392,10 @@ export const gpt52ProModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high'],
   defaultReasoning: 'low',
 }
 
@@ -418,10 +410,10 @@ export const gpt52ChatModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['medium'],
   defaultReasoning: 'medium',
 }
 
@@ -436,10 +428,10 @@ export const gpt55Model: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
     promptCaching: false, // caching is automatic and non-configurable on this model
   },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high', 'xhigh'],
   defaultReasoning: 'low',
 }
 
@@ -447,18 +439,17 @@ export const gpt55ProModel: LlmModel = {
   id: 'gpt-5.5-pro',
   model: 'gpt-5.5-pro',
   name: 'GPT-5.5 Pro',
-  description: 'GPT-5.5 Pro, available via Responses API only; supports Batch API',
+  description:
+    'GPT-5.5 Pro, available via Responses API only; supports Batch API; reasoning effort is fixed at highest level',
   provider: 'openai',
   owned_by: 'openai',
   context_length: 400000,
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
     promptCaching: false, // caching is automatic and non-configurable on this model
   },
-  defaultReasoning: 'low',
 }
 
 export const gpt54Model: LlmModel = {
@@ -472,10 +463,10 @@ export const gpt54Model: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
     supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
     promptCaching: true,
   },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high', 'xhigh'],
   defaultReasoning: 'low',
 }
 

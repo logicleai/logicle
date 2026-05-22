@@ -11,7 +11,6 @@ export const gemini15ProModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
   },
   tags: ['obsolete'],
 }
@@ -26,7 +25,6 @@ export const gemini15FlashModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
   },
   tags: ['obsolete'],
 }
@@ -43,7 +41,6 @@ export const gemini20FlashModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
   },
   tags: ['obsolete'],
 }
@@ -59,7 +56,6 @@ export const gemini20FlashLiteModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: true,
-    reasoning: false,
   },
   tags: ['obsolete'],
 }
@@ -76,42 +72,8 @@ export const gemini20ProModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: false,
   },
   tags: ['obsolete'],
-}
-
-export const gemini25ProModel: LlmModel = {
-  id: 'gemini-2.5-pro',
-  model: 'gemini-2.5-pro',
-  name: 'Gemini 2.5 Pro',
-  description:
-    "Google's latest large-scale model, offering advanced reasoning capabilities, multimodal understanding, and improved performance across a wide range of tasks",
-  provider: 'gcp-vertex',
-  owned_by: 'google',
-  context_length: 1000000,
-  capabilities: {
-    vision: true,
-    function_calling: true,
-    reasoning: true,
-  },
-}
-
-export const gemini30ProModel: LlmModel = {
-  id: 'gemini-3.0-pro',
-  model: 'gemini-3-pro-preview',
-  name: 'Gemini 3.0 Pro',
-  description:
-    "Google's most intelligent model family to date, built on a foundation of state-of-the-art reasoning",
-  provider: 'gcp-vertex',
-  owned_by: 'google',
-  context_length: 1000000,
-  capabilities: {
-    vision: true,
-    function_calling: true,
-    reasoning: true,
-    web_search: true,
-  },
 }
 
 export const gemini25FlashModel: LlmModel = {
@@ -126,8 +88,92 @@ export const gemini25FlashModel: LlmModel = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
+}
+
+export const gemini25ProModel: LlmModel = {
+  id: 'gemini-2.5-pro',
+  model: 'gemini-2.5-pro',
+  name: 'Gemini 2.5 Pro',
+  description:
+    "Google's latest large-scale model, offering advanced reasoning capabilities, multimodal understanding, and improved performance across a wide range of tasks",
+  provider: 'gcp-vertex',
+  owned_by: 'google',
+  context_length: 1000000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+  },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
+}
+
+export const gemini30ProModel: LlmModel = {
+  id: 'gemini-3.0-pro',
+  model: 'gemini-3-pro-preview',
+  name: 'Gemini 3.0 Pro',
+  description:
+    "Google's most intelligent model family to date, built on a foundation of state-of-the-art reasoning",
+  provider: 'gcp-vertex',
+  owned_by: 'google',
+  context_length: 1000000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    web_search: true,
+  },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
+}
+
+export const gemini31FlashLite: LlmModel = {
+  id: 'gemini-3.1-flash-lite',
+  model: 'gemini-3.1-flash-lite',
+  name: 'Gemini 3.1 Flash lite',
+  description:
+    "Google's most intelligent model family to date, built on a foundation of state-of-the-art reasoning",
+  provider: 'gcp-vertex',
+  owned_by: 'google',
+  context_length: 1000000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    web_search: true,
+  },
+  supportedReasoningEfforts: ['minimal', 'low', 'medium', 'high'],
+}
+
+export const gemini31ProModel: LlmModel = {
+  id: 'gemini-3.1-pro',
+  model: 'gemini-3.1-pro-preview',
+  name: 'Gemini 3.1 Pro',
+  description:
+    "Google's most intelligent model family to date, built on a foundation of state-of-the-art reasoning",
+  provider: 'gcp-vertex',
+  owned_by: 'google',
+  context_length: 1000000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    web_search: true,
+  },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
+}
+
+export const gemini35FlashModel: LlmModel = {
+  id: 'gemini-3.5-flash',
+  model: 'gemini-3.5-flash',
+  name: 'Gemini 3.5 Flash',
+  description:
+    "Google's most intelligent model family to date, built on a foundation of state-of-the-art reasoning",
+  provider: 'gcp-vertex',
+  owned_by: 'google',
+  context_length: 1000000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    web_search: true,
+  },
+  supportedReasoningEfforts: ['minimal', 'low', 'medium', 'high'],
 }
 
 export const geminiProLatest: LlmModel = {
@@ -147,4 +193,7 @@ export const vertexModels: LlmModel[] = [
   gemini25ProModel,
   gemini25FlashModel,
   gemini30ProModel,
+  gemini31FlashLite,
+  gemini31ProModel,
+  gemini35FlashModel,
 ]

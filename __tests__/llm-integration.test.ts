@@ -77,7 +77,7 @@ function makeModel(
     name: model,
     description: 'integration test',
     context_length: 128_000,
-    capabilities: { vision: false, function_calling: true, reasoning: false },
+    capabilities: { vision: false, function_calling: true },
     provider,
     owned_by,
   }

@@ -11,7 +11,6 @@ export const sonarModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
-    reasoning: false,
     knowledge: false,
   },
 }
@@ -27,7 +26,6 @@ export const sonarProModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
-    reasoning: false,
     knowledge: false,
   },
 }
@@ -44,9 +42,9 @@ export const sonarReasoningModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
-    reasoning: true,
     knowledge: false,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
 }
 
 export const sonarReasoningProModel: LlmModel = {
@@ -60,9 +58,9 @@ export const sonarReasoningProModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
-    reasoning: true,
     knowledge: false,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
 }
 
 export const sonarDeepResearchModel: LlmModel = {
@@ -77,9 +75,9 @@ export const sonarDeepResearchModel: LlmModel = {
   capabilities: {
     vision: false,
     function_calling: false,
-    reasoning: true,
     knowledge: false,
   },
+  supportedReasoningEfforts: ['low', 'medium', 'high'],
 }
 
 export const sonarLatest: LlmModel = {

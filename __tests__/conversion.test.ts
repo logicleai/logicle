@@ -41,7 +41,6 @@ vi.mock('@/lib/logging', () => ({
 const pdfCapabilities: LlmModelCapabilities = {
   vision: false,
   function_calling: true,
-  reasoning: false,
   supportedMedia: ['application/pdf'],
   nativePdfPageLimit: 100,
 }
@@ -481,7 +480,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
           },
         ],
       },
-      { vision: false, function_calling: true, reasoning: false, supportedMedia: [] },
+      { vision: false, function_calling: true, supportedMedia: [] },
       openaiLanguageModel.provider
     )
 
@@ -623,7 +622,7 @@ describe('dtoMessageToLlmMessage contract', () => {
         content: 'hello',
         attachments: [],
       },
-      { vision: false, function_calling: true, reasoning: false, supportedMedia: [] },
+      { vision: false, function_calling: true, supportedMedia: [] },
       openaiLanguageModel.provider
     )
 
@@ -655,7 +654,7 @@ describe('dtoMessageToLlmMessage contract', () => {
         metadata: { locale: 'en-US' },
         attachments: [{ id: imageFile.id, name: imageFile.name, mimetype: imageFile.type, size: imageFile.size }],
       },
-      { vision: true, function_calling: true, reasoning: false, supportedMedia: ['image/png'] },
+      { vision: true, function_calling: true, supportedMedia: ['image/png'] },
       openaiLanguageModel.provider
     )
 
@@ -694,7 +693,7 @@ describe('dtoMessageToLlmMessage contract', () => {
           { type: 'tool-call', toolCallId: 'call-1', toolName: 'search', args: { q: 'cats' } },
         ],
       },
-      { vision: false, function_calling: true, reasoning: true, supportedMedia: [] },
+      { vision: false, function_calling: true, supportedMedia: [] },
       openaiLanguageModel.provider
     )
 

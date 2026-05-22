@@ -23,7 +23,7 @@ const gemini3Model = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
+
     web_search: true,
   },
 } as unknown as LlmModel
@@ -38,7 +38,7 @@ const gemini25Model = {
   capabilities: {
     vision: true,
     function_calling: true,
-    reasoning: true,
+
   },
 } as unknown as LlmModel
 

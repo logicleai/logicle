@@ -18,7 +18,7 @@ const approxModel: LlmModel = {
   owned_by: 'anthropic',
   description: '',
   context_length: 200000,
-  capabilities: { vision: true, function_calling: true, reasoning: false },
+  capabilities: { vision: true, function_calling: true },
 }
 
 // A model with explicit tokenizer override

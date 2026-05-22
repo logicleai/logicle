@@ -25,7 +25,7 @@ const fakeModel: LlmModel = {
   owned_by: 'openai',
   description: '',
   context_length: 128000,
-  capabilities: { vision: true, function_calling: true, reasoning: false, knowledge: false },
+  capabilities: { vision: true, function_calling: true, knowledge: false },
 }
 
 describe('image generator editing exposure', () => {
