@@ -10,7 +10,6 @@ import * as dto from '@/types/dto'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
 import { MessageGroup } from './MessageGroup'
 import { ConversationSidebar } from './ConversationSidebar'
-import { ThinkingIndicator } from './ThinkingIndicator'
 import { useTranslation } from 'react-i18next'
 
 export interface ChatProps {
@@ -108,7 +107,7 @@ export const Chat = ({
     return null
   }
   let streamingPart: dto.MessagePart | undefined
-  if (chatStatus.state === 'receiving' && selectedConversation.messages.length) {
+  if (chatStatus.state !== 'idle' && selectedConversation.messages.length) {
     const lastMessage = selectedConversation.messages[selectedConversation.messages.length - 1]
     if (lastMessage.role === 'assistant' || lastMessage.role === 'tool') {
       if (lastMessage.parts.length) {
@@ -121,22 +120,6 @@ export const Chat = ({
     selectedConversation.targetLeaf,
     streamingPart
   )
-
-  const lastGroup = groupList.length > 0 ? groupList[groupList.length - 1] : null
-  const lastAssistantHasContent =
-    lastGroup?.actor === 'assistant' &&
-    lastGroup.messages.some(
-      (m) =>
-        (m.role === 'assistant' &&
-          m.parts.some(
-            (p) =>
-              (p.type === 'text' && p.text.length > 0) ||
-              (p.type === 'reasoning' && (p as dto.ReasoningPart).reasoning.length > 0) ||
-              p.type === 'tool-call'
-          )) ||
-        m.role === 'tool'
-    )
-  const showThinkingIndicator = chatStatus.state !== 'idle' && !lastAssistantHasContent
 
   return (
     <div className={`flex overflow-hidden gap-4 ${className ?? ''}`}>
@@ -155,7 +138,6 @@ export const Chat = ({
                 isLast={index + 1 === groupList.length}
               />
             ))}
-            {showThinkingIndicator && <ThinkingIndicator assistant={assistant} />}
             <div className="h-[1px]" ref={messagesEndRef} />
           </div>
           {showScrollDownButton && (

@@ -33,6 +33,7 @@ import { maintainChatRunSubscription } from './chatRunSubscription'
 import {
   applyChatRunEventToConversation,
   applyChatRunFailureToConversation,
+  THINKING_PLACEHOLDER_ID,
 } from './chatRunConversationState'
 
 interface Props {
@@ -377,12 +378,20 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
 
     conversation.targetLeaf = undefined
     const userMessage = createDtoMessage(msg, conversation.id, parent)
+    const thinkingPlaceholder: dto.AssistantMessage = {
+      id: THINKING_PLACEHOLDER_ID,
+      role: 'assistant',
+      parts: [{ type: 'text', text: '' }],
+      conversationId: conversation.id,
+      parent: userMessage.id,
+      sentAt: new Date().toISOString(),
+    }
     const optimisticConversation = {
       ...conversation,
-      messages: applyStreamPartToMessages(conversation.messages, {
-        type: 'message',
-        msg: userMessage,
-      }),
+      messages: applyStreamPartToMessages(
+        applyStreamPartToMessages(conversation.messages, { type: 'message', msg: userMessage }),
+        { type: 'message', msg: thinkingPlaceholder }
+      ),
     }
 
     setSelectedConversationState(optimisticConversation)

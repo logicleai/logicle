@@ -2,6 +2,8 @@ import { ConversationWithMessages } from '@/lib/chat/types'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import * as dto from '@/types/dto'
 
+export const THINKING_PLACEHOLDER_ID = '__thinking_placeholder__'
+
 export const applyChatRunEventToConversation = (
   conversation: ConversationWithMessages,
   event: dto.TextStreamPart
@@ -10,6 +12,17 @@ export const applyChatRunEventToConversation = (
     return {
       ...conversation,
       name: event.summary,
+    }
+  }
+
+  if (event.type === 'message') {
+    const messages = conversation.messages
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg?.id === THINKING_PLACEHOLDER_ID) {
+      return {
+        ...conversation,
+        messages: [...messages.slice(0, -1), event.msg],
+      }
     }
   }
 
