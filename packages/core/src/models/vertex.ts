@@ -127,7 +127,7 @@ export const gemini30ProModel: LlmModel = {
 
 export const gemini31FlashLite: LlmModel = {
   id: 'gemini-3.1-flash-lite',
-  model: 'gemini-3.1-pro-preview',
+  model: 'gemini-3.1-flash-lite',
   name: 'Gemini 3.1 Flash lite',
   description:
     "Google's most intelligent model family to date, built on a foundation of state-of-the-art reasoning",
@@ -139,7 +139,7 @@ export const gemini31FlashLite: LlmModel = {
     function_calling: true,
     web_search: true,
   },
-  supportedReasoningEfforts: ['none', 'low', 'medium', 'high'],
+  supportedReasoningEfforts: ['minimal', 'low', 'medium', 'high'],
 }
 
 export const gemini31ProModel: LlmModel = {
