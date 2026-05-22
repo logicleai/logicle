@@ -33,10 +33,10 @@ export const geminiThinkingConfigFromReasoningEffort = (
       reasoningEffort === 'none'
         ? 0
         : reasoningEffort === 'high'
-          ? 8192
-          : reasoningEffort === 'medium'
-            ? 4096
-            : 1024,
+        ? 8192
+        : reasoningEffort === 'medium'
+        ? 4096
+        : 1024,
   }
 }
 
@@ -92,6 +92,7 @@ export function createLanguageModelBasic(
       return google
         .createGoogleGenerativeAI({
           apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
+          headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
           fetch,
         })
         .languageModel(model.model)
@@ -114,11 +115,11 @@ export function createLanguageModelBasic(
             fetch,
           })
           .languageModel(model.model)
-      } else if (model.owned_by === 'gemini') {
+      } else if (model.owned_by === 'gemini' || model.owned_by === 'google') {
         return google
           .createGoogleGenerativeAI({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            baseURL: `${params.endPoint}/v1`,
+            baseURL: `${params.endPoint}/gemini/v1beta`,
             headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
             fetch,
           })
