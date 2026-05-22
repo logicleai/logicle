@@ -114,11 +114,11 @@ export function createLanguageModelBasic(
             fetch,
           })
           .languageModel(model.model)
-      } else if (model.owned_by === 'gemini') {
+      } else if (model.owned_by === 'gemini' || model.owned_by === 'google') {
         return google
           .createGoogleGenerativeAI({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            baseURL: `${params.endPoint}/v1`,
+            baseURL: `${params.endPoint}/gemini/v1beta`,
             headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
             fetch,
           })

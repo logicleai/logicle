@@ -47,6 +47,9 @@ import {
   gemini25FlashModel,
   geminiProLatest,
   gemini30ProModel,
+  gemini31FlashLite,
+  gemini31ProModel,
+  gemini35FlashModel,
 } from './vertex'
 
 export const logicleModels: LlmModel[] = [
@@ -92,6 +95,9 @@ export const logicleModels: LlmModel[] = [
   gemini25FlashModel,
   { ...gemini30ProModel, model: 'gemini-3.0-pro' },
   { ...geminiProLatest, model: 'gemini-3.0-pro' },
+  gemini31FlashLite,
+  { ...gemini31ProModel, id: 'gemini-3.1-pro-preview', model: 'gemini-3.1-pro-preview' },
+  gemini35FlashModel,
   ...perplexityModels,
 ].map((model) => {
   return {
