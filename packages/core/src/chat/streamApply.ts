@@ -25,6 +25,12 @@ export function applyStreamPartToMessage(
       if (!isAssistantMessagePart(streamPart.part)) {
         throw new Error(`Invalid assistant part type: ${streamPart.part.type}`)
       }
+      // If the only existing part is an empty text placeholder (the streaming cursor
+      // sentinel), replace it with the first real part rather than appending.
+      const existing = message.parts
+      if (existing.length === 1 && existing[0].type === 'text' && existing[0].text === '') {
+        return { ...message, parts: [streamPart.part] }
+      }
       return {
         ...message,
         parts: [...message.parts, streamPart.part],
