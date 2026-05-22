@@ -480,7 +480,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
           },
         ],
       },
-      { vision: false, function_calling: true, reasoning: false, supportedMedia: [] },
+      { vision: false, function_calling: true, supportedMedia: [] },
       openaiLanguageModel.provider
     )
 
@@ -622,7 +622,7 @@ describe('dtoMessageToLlmMessage contract', () => {
         content: 'hello',
         attachments: [],
       },
-      { vision: false, function_calling: true, reasoning: false, supportedMedia: [] },
+      { vision: false, function_calling: true, supportedMedia: [] },
       openaiLanguageModel.provider
     )
 
@@ -654,7 +654,7 @@ describe('dtoMessageToLlmMessage contract', () => {
         metadata: { locale: 'en-US' },
         attachments: [{ id: imageFile.id, name: imageFile.name, mimetype: imageFile.type, size: imageFile.size }],
       },
-      { vision: true, function_calling: true, reasoning: false, supportedMedia: ['image/png'] },
+      { vision: true, function_calling: true, supportedMedia: ['image/png'] },
       openaiLanguageModel.provider
     )
 

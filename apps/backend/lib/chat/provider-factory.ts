@@ -18,7 +18,7 @@ type CreateLanguageModelOptions = {
   user?: string
 }
 
-export type AssistantReasoningEffort = 'none' | 'low' | 'medium' | 'high'
+export type AssistantReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
 
 export const geminiThinkingConfigFromReasoningEffort = (
   modelId: string,

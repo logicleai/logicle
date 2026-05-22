@@ -84,7 +84,7 @@ export interface AssistantParams {
   systemPrompt: string
   temperature: number
   tokenLimit: number
-  reasoning_effort: 'none' | 'low' | 'medium' | 'high' | null
+  reasoning_effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | null
 }
 
 export type AssistantParamsSource = Pick<
