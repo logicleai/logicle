@@ -107,7 +107,7 @@ export const Chat = ({
     return null
   }
   let streamingPart: dto.MessagePart | undefined
-  if (chatStatus.state === 'receiving' && selectedConversation.messages.length) {
+  if (chatStatus.state !== 'idle' && selectedConversation.messages.length) {
     const lastMessage = selectedConversation.messages[selectedConversation.messages.length - 1]
     if (lastMessage.role === 'assistant' || lastMessage.role === 'tool') {
       if (lastMessage.parts.length) {

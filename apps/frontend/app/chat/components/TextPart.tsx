@@ -38,8 +38,8 @@ export const TextPart: FC<{
     }
   }
   const processedMarkdown = useMemo(
-    () => computeMarkdown(part.text, message.citations),
-    [part.text, message.citations]
+    () => computeMarkdown(part.text, message.citations) || (part.running ? ' ' : ''),
+    [part.text, message.citations, part.running]
   )
   return (
     <>

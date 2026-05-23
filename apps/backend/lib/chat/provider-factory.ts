@@ -23,9 +23,9 @@ export type AssistantReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | '
 export const geminiThinkingConfigFromReasoningEffort = (
   modelId: string,
   reasoningEffort: AssistantReasoningEffort
-): { thinkingLevel: AssistantReasoningEffort } | { thinkingBudget: number } => {
+): { thinkingLevel: AssistantReasoningEffort; includeThoughts: true } | { thinkingBudget: number; includeThoughts: true } => {
   if (modelId.includes('gemini-3')) {
-    return { thinkingLevel: reasoningEffort }
+    return { thinkingLevel: reasoningEffort, includeThoughts: true }
   }
   // Gemini 2.5 models use a budget; 0 disables thinking.
   return {
@@ -37,6 +37,7 @@ export const geminiThinkingConfigFromReasoningEffort = (
         : reasoningEffort === 'medium'
         ? 4096
         : 1024,
+    includeThoughts: true,
   }
 }
 

@@ -2,6 +2,26 @@ import { ConversationWithMessages } from '@/lib/chat/types'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import * as dto from '@/types/dto'
 
+export const THINKING_PLACEHOLDER_ID = '__thinking_placeholder__'
+
+/**
+ * Returns a new conversation with the thinking placeholder removed if it is the last
+ * message. If the placeholder is not present, returns the conversation unchanged.
+ */
+export const removePlaceholderIfPresent = (
+  conversation: ConversationWithMessages
+): ConversationWithMessages => {
+  const messages = conversation.messages
+  const lastMessage = messages[messages.length - 1]
+  if (lastMessage?.id !== THINKING_PLACEHOLDER_ID) {
+    return conversation
+  }
+  return {
+    ...conversation,
+    messages: messages.slice(0, -1),
+  }
+}
+
 export const applyChatRunEventToConversation = (
   conversation: ConversationWithMessages,
   event: dto.TextStreamPart
@@ -10,6 +30,24 @@ export const applyChatRunEventToConversation = (
     return {
       ...conversation,
       name: event.summary,
+    }
+  }
+
+  if (event.type === 'message') {
+    const messages = conversation.messages
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg?.id === THINKING_PLACEHOLDER_ID) {
+      // Keep an empty text part so the streaming cursor (▍) stays visible until
+      // the first real content part arrives and replaces it.
+      const assistantMsg = event.msg as dto.AssistantMessage
+      const msg: dto.AssistantMessage =
+        assistantMsg.parts.length === 0
+          ? { ...assistantMsg, parts: [{ type: 'text', text: '' }] }
+          : assistantMsg
+      return {
+        ...conversation,
+        messages: [...messages.slice(0, -1), msg],
+      }
     }
   }
 
@@ -26,17 +64,18 @@ export const applyChatRunFailureToConversation = ({
   conversation: ConversationWithMessages
   error: string
 }): ConversationWithMessages => {
-  if (conversation.messages.length === 0) {
-    return conversation
+  const withoutPlaceholder = removePlaceholderIfPresent(conversation)
+  if (withoutPlaceholder.messages.length === 0) {
+    return withoutPlaceholder
   }
 
-  const lastIndex = conversation.messages.length - 1
+  const lastIndex = withoutPlaceholder.messages.length - 1
   return {
-    ...conversation,
+    ...withoutPlaceholder,
     messages: [
-      ...conversation.messages.slice(0, lastIndex),
+      ...withoutPlaceholder.messages.slice(0, lastIndex),
       {
-        ...conversation.messages[lastIndex],
+        ...withoutPlaceholder.messages[lastIndex],
         error,
       },
     ],
