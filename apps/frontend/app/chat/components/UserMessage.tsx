@@ -12,7 +12,6 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { getMessageAndDescendants } from '@/lib/chat/conversationUtils'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { MessageEdit, MessageEditHandle } from './MessageEdit'
-import { useHardMessageLimitReached } from './useHardMessageLimitReached'
 
 interface UserMessageProps {
   message: dto.UserMessage
@@ -42,7 +41,6 @@ export const UserMessage: FC<UserMessageProps> = ({
     ...dto.userPreferencesDefaults,
     ...(useUserProfile()?.preferences ?? {}),
   }
-  const hardLimitReached = useHardMessageLimitReached()
   const messageEditRef = useRef<MessageEditHandle | null>(null)
   const messageViewRef = useRef<HTMLDivElement | null>(null)
   const [editHeight, setEditHeight] = useState<number | undefined>(undefined)
@@ -187,7 +185,7 @@ export const UserMessage: FC<UserMessageProps> = ({
                 title={t('edit_and_send_message')}
                 className="invisible group-hover:visible"
                 onClick={() => setEditMode('branch')}
-                disabled={chatStatus.state !== 'idle' || hardLimitReached}
+                disabled={chatStatus.state !== 'idle'}
               >
                 {enableUserMessageEdit ? (
                   <IconGitBranch size={20} className="opacity-50 hover:opacity-100" />
