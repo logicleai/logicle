@@ -45,7 +45,12 @@ export const ReasoningGroupPart: FC<{
       />
     )
   } else if (part.type === 'reasoning') {
-    return <Reasoning text={part.reasoning} />
+    return (
+      <div>
+        {part.title && <div className="text-sm font-semibold">{part.title}</div>}
+        {part.reasoning && <Reasoning text={part.reasoning} />}
+      </div>
+    )
   } else {
     return null
   }
