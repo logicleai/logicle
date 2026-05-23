@@ -229,7 +229,7 @@ export const groupMessages = (
   messages_: MessageWithError[],
   targetLeaf?: string,
   streamingPart?: dto.MessagePart
-): IMessageGroup[] => {
+): { groups: IMessageGroup[]; flattened: MessageWithError[] } => {
   const flattened = flatten(messages_, targetLeaf)
   const groups: IMessageGroup[] = []
   let currentAssistantMessages: MessageWithError[] | undefined
@@ -248,7 +248,7 @@ export const groupMessages = (
   if (currentAssistantMessages) {
     groups.push(makeAssistantGroup(currentAssistantMessages, messages_, streamingPart))
   }
-  return groups
+  return { groups, flattened }
 }
 
 export const getMessageAndDescendants = (messageId: string, inMessages: MessageWithError[]) => {
