@@ -65,7 +65,13 @@ export const ReasoningGroup: FC<Props> = ({ parts, subAssistants, assistantTools
   const running = lastPartWithMeta?.running
   const title = (running && lastPartWithMeta?.title) ? lastPartWithMeta.title : t('thinking')
 
+  const hasContent = parts.some(
+    (p) => p.type !== 'reasoning' || (p as UIReasoningPart).reasoning || (p as UIReasoningPart).title
+  )
+
   const [open, setOpen] = useState('')
+
+  if (!running && !hasContent) return null
 
   return (
     <Accordion type="single" collapsible value={open} onValueChange={setOpen}>
