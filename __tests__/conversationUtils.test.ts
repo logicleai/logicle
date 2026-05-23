@@ -113,12 +113,12 @@ describe('getMessageAndDescendants', () => {
 
 describe('groupMessages', () => {
   test('empty list returns empty groups', () => {
-    expect(groupMessages([]).groups).toEqual([])
+    expect(groupMessages([])).toEqual([])
   })
 
   test('single user message produces one user group', () => {
     const m = userMsg('m1', null)
-    const { groups } = groupMessages([m])
+    const groups = groupMessages([m])
     expect(groups).toHaveLength(1)
     expect(groups[0].actor).toBe('user')
   })
@@ -126,7 +126,7 @@ describe('groupMessages', () => {
   test('user then assistant produces two groups', () => {
     const u = userMsg('u1', null, '2024-01-01T00:00:00.000Z')
     const a = assistantMsg('a1', 'u1', '2024-01-01T00:00:01.000Z')
-    const { groups } = groupMessages([u, a])
+    const groups = groupMessages([u, a])
     expect(groups).toHaveLength(2)
     expect(groups[0].actor).toBe('user')
     expect(groups[1].actor).toBe('assistant')
@@ -137,7 +137,7 @@ describe('groupMessages', () => {
     const a1 = assistantMsg('a1', 'u1', '2024-01-01T00:00:01.000Z')
     const u2 = userMsg('u2', 'a1', '2024-01-01T00:00:02.000Z')
     const a2 = assistantMsg('a2', 'u2', '2024-01-01T00:00:03.000Z')
-    const { groups } = groupMessages([u1, a1, u2, a2])
+    const groups = groupMessages([u1, a1, u2, a2])
     expect(groups.map((g) => g.actor)).toEqual(['user', 'assistant', 'user', 'assistant'])
   })
 })

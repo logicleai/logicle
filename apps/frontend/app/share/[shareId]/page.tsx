@@ -17,7 +17,7 @@ const SharePage = () => {
   const { data: sharedConversation } = useSWRJson<dto.SharedConversation>(`/api/share/${shareId}`)
   const router = useRouter()
   const messages = sharedConversation?.messages ?? []
-  const { groups: groupList } = groupMessages(messages)
+  const groupList = groupMessages(messages)
   const [chatInput, setChatInput] = useState<string>('')
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const { sendMessage } = useContext(ChatPageContext)
