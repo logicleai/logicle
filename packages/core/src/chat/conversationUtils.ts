@@ -1,6 +1,8 @@
 import {
   UIAssistantMessage,
   UIAssistantMessagePart,
+  UIReasoningGroup,
+  UIReasoningLikePart,
   IMessageGroup,
   IUserMessageGroup,
   MessageWithError,
@@ -112,6 +114,44 @@ const splitReasoningPart = (part: dto.ReasoningPart, running: boolean): UIReason
     title: s.title,
     running: running && i === filtered.length - 1,
   }))
+}
+
+const canGroupInReasoning = (p: UIAssistantMessagePart) =>
+  p.type === 'builtin-tool-result' || p.type === 'tool-call'
+
+const isEmptyReasoningPart = (p: UIReasoningLikePart) =>
+  p.type === 'reasoning' && !p.reasoning && !p.title
+
+export const groupForReasoning = (
+  parts: UIAssistantMessagePart[]
+): Array<UIAssistantMessagePart | UIReasoningGroup> => {
+  const result: Array<UIAssistantMessagePart | UIReasoningGroup> = []
+  let buffer: UIReasoningLikePart[] = []
+
+  const flushBuffer = () => {
+    if (buffer.length === 0) return
+    const running = buffer.some((p) => 'running' in p && (p as UIReasoningPart).running)
+    const title = buffer
+      .filter((p): p is UIReasoningPart => p.type === 'reasoning' && !!(p as UIReasoningPart).running && !!(p as UIReasoningPart).title)
+      .at(-1)?.title
+    const displayParts = buffer.filter((p) => !isEmptyReasoningPart(p))
+    result.push({ type: 'reasoning-group', parts: displayParts, running, title })
+    buffer = []
+  }
+
+  for (const p of parts) {
+    if (p.type === 'reasoning') {
+      buffer.push(p)
+    } else if (buffer.length !== 0 && canGroupInReasoning(p)) {
+      buffer.push(p as UIReasoningLikePart)
+    } else {
+      flushBuffer()
+      result.push(p)
+    }
+  }
+  flushBuffer()
+
+  return result
 }
 
 const makeAssistantGroup = (

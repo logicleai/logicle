@@ -23,6 +23,21 @@ export type UITextPart = dto.TextPart & {
   running: boolean
 }
 
+export type UIReasoningLikePart =
+  | UIReasoningPart
+  | UIToolCallPart
+  | dto.BuiltinToolCallResultPart
+  | dto.ToolCallResultPart
+
+export type UIReasoningGroup = {
+  type: 'reasoning-group'
+  /** Filtered parts: empty reasoning parts (no title, no body) are excluded. */
+  parts: UIReasoningLikePart[]
+  running: boolean
+  /** Title of the last running reasoning part, if any. */
+  title?: string
+}
+
 export type UIAssistantMessagePart =
   | UIReasoningPart
   | UITextPart
