@@ -152,12 +152,20 @@ jobs:
           tags: |
             type=sha,format=long
 
+      - name: Set build version
+        id: buildver
+        run: |
+          DATE=$(date -u +%Y%m%d%H%M%S)
+          SHORT_SHA="${GITHUB_SHA::8}"
+          echo "version=${DATE}.${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+
       - name: Build production image (local)
         uses: docker/build-push-action@v5
         with:
           context: .
           load: true
           tags: ${{ env.SMOKE_IMAGE }}
+          build-args: APP_VERSION=${{ steps.buildver.outputs.version }}
           cache-from: type=gha,scope=nextjs-build
           cache-to: type=gha,mode=max,scope=nextjs-build
 
