@@ -3,7 +3,7 @@ import { useContext, useEffect, useRef, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
 import { ChatInputOrApiKey } from './ChatInputOrApiKey'
-import { groupMessages } from '@/lib/chat/conversationUtils'
+import { flatten, groupMessages } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconArrowDown } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
@@ -120,6 +120,7 @@ export const Chat = ({
     selectedConversation.targetLeaf,
     streamingPart
   )
+  const currentBranchMessages = flatten(selectedConversation.messages, selectedConversation.targetLeaf)
 
   return (
     <div className={`flex overflow-hidden gap-4 ${className ?? ''}`}>
@@ -160,7 +161,7 @@ export const Chat = ({
           supportedMedia={supportedMedia}
           modelId={assistant.model}
           draftAssistantForEstimate={draftAssistantForEstimate}
-          draftMessagesForEstimate={selectedConversation.messages}
+          draftMessagesForEstimate={currentBranchMessages}
           initialServerContextTokens={initialServerContextTokens}
           onServerContextTokensChange={onServerContextTokensChange}
           conversationId={selectedConversation.id}
