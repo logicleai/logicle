@@ -5,7 +5,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { UIReasoningPart, UIToolCallPart } from '@/lib/chat/types'
-import { FC, useState, useEffect } from 'react'
+import { FC, useState } from 'react'
 import { RotatingLines } from 'react-loader-spinner'
 import * as dto from '@/types/dto'
 import { useTranslation } from 'react-i18next'
@@ -63,13 +63,9 @@ export const ReasoningGroup: FC<Props> = ({ parts, subAssistants, assistantTools
   const lastPartWithMeta = lastPart as PartWithMeta | undefined
 
   const running = lastPartWithMeta?.running
-  const lastTitle = running ? lastPartWithMeta?.title : undefined
-  const title = lastTitle ?? t('reasoning')
+  const title = (running && lastPartWithMeta?.title) ? lastPartWithMeta.title : t('thinking')
 
-  const [open, setOpen] = useState('item-1')
-  useEffect(() => {
-    if (running) setOpen('item-1')
-  }, [running])
+  const [open, setOpen] = useState('')
 
   return (
     <Accordion type="single" collapsible value={open} onValueChange={setOpen}>

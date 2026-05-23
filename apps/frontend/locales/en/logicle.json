@@ -455,6 +455,7 @@
   "publish_no_effective_changes_message": "This draft has no changes compared to the published version.",
   "publish_no_effective_changes_hint": "To discard this draft, use the options menu.",
   "reasoning": "Reasoning",
+  "thinking": "Thinking",
   "reasoning_effort": "Reasoning effort",
   "reasoning_effort_not_supported": "Reasoning effort not supported by this model",
   "minimal": "Minimal",
