@@ -33,6 +33,7 @@ import { maintainChatRunSubscription } from './chatRunSubscription'
 import {
   applyChatRunEventToConversation,
   applyChatRunFailureToConversation,
+  removePlaceholderIfPresent,
   THINKING_PLACEHOLDER_ID,
 } from './chatRunConversationState'
 
@@ -214,6 +215,13 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         },
         onFinished() {
           if (subscriptionNonceRef.current !== nonce) return
+          const currentConversation = selectedConversationRef.current
+          if (currentConversation?.id === conversationId) {
+            const cleaned = removePlaceholderIfPresent(currentConversation)
+            if (cleaned !== currentConversation) {
+              setSelectedConversationState(cleaned)
+            }
+          }
           setChatRunMachineState(
             transitionChatRunMachine(chatRunMachineRef.current, {
               type: 'run-finished',

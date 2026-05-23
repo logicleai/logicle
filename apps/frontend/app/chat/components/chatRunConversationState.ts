@@ -4,6 +4,24 @@ import * as dto from '@/types/dto'
 
 export const THINKING_PLACEHOLDER_ID = '__thinking_placeholder__'
 
+/**
+ * Returns a new conversation with the thinking placeholder removed if it is the last
+ * message. If the placeholder is not present, returns the conversation unchanged.
+ */
+export const removePlaceholderIfPresent = (
+  conversation: ConversationWithMessages
+): ConversationWithMessages => {
+  const messages = conversation.messages
+  const lastMessage = messages[messages.length - 1]
+  if (lastMessage?.id !== THINKING_PLACEHOLDER_ID) {
+    return conversation
+  }
+  return {
+    ...conversation,
+    messages: messages.slice(0, -1),
+  }
+}
+
 export const applyChatRunEventToConversation = (
   conversation: ConversationWithMessages,
   event: dto.TextStreamPart
@@ -46,17 +64,18 @@ export const applyChatRunFailureToConversation = ({
   conversation: ConversationWithMessages
   error: string
 }): ConversationWithMessages => {
-  if (conversation.messages.length === 0) {
-    return conversation
+  const withoutPlaceholder = removePlaceholderIfPresent(conversation)
+  if (withoutPlaceholder.messages.length === 0) {
+    return withoutPlaceholder
   }
 
-  const lastIndex = conversation.messages.length - 1
+  const lastIndex = withoutPlaceholder.messages.length - 1
   return {
-    ...conversation,
+    ...withoutPlaceholder,
     messages: [
-      ...conversation.messages.slice(0, lastIndex),
+      ...withoutPlaceholder.messages.slice(0, lastIndex),
       {
-        ...conversation.messages[lastIndex],
+        ...withoutPlaceholder.messages[lastIndex],
         error,
       },
     ],
