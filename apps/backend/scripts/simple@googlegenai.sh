@@ -7,6 +7,7 @@ REASONING_BUDGET=""
 REASONING_LEVEL=""
 INCLUDE_THOUGHTS=false
 STREAM=true
+IMAGE_FILE=""
 
 usage() {
   cat <<EOF
@@ -19,7 +20,11 @@ Options:
   --include-thoughts      Add includeThoughts: true to thinkingConfig
   --no-stream             Disable streaming response
   --logiclecloud          Use LogicleCloud Gemini endpoint and LOGICLECLOUD_API_KEY
+  -i, --image FILE        Include an image in the message (JPEG/PNG)
   -h, --help              Show this help
+
+Test image:
+  curl -Lo /tmp/test.jpg 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Fronalpstock_big.jpg/1280px-Fronalpstock_big.jpg'
 EOF
   exit 0
 }
@@ -32,6 +37,7 @@ while [[ $# -gt 0 ]]; do
     --include-thoughts) INCLUDE_THOUGHTS=true; shift ;;
     --no-stream) STREAM=false; shift ;;
     --logiclecloud) USE_LOGICLECLOUD=true; shift ;;
+    -i|--image) IMAGE_FILE=$2; shift 2 ;;
     -h|--help)  usage ;;
     *) echo "Unknown option: $1" >&2; usage ;;
   esac
@@ -80,14 +86,23 @@ build_thinking_config() {
 
 THINKING_CONFIG=$(build_thinking_config)
 
+if [[ -n "$IMAGE_FILE" ]]; then
+  IMAGE_DATA=$(base64 -w 0 "$IMAGE_FILE")
+  MIME_TYPE=$(file --mime-type -b "$IMAGE_FILE")
+  PARTS_JSON=$(jq -n \
+    --arg data "$IMAGE_DATA" \
+    --arg mime "$MIME_TYPE" \
+    '[{inline_data: {mime_type: $mime, data: $data}}, {text: "What do you see in this image?"}]')
+else
+  PARTS_JSON='[{"text":"Explain photosynthesis in simple terms."}]'
+fi
+
+PAYLOAD=$(jq -n \
+  --argjson parts "$PARTS_JSON" \
+  --argjson thinking "${THINKING_CONFIG:-null}" \
+  '{contents: [{parts: $parts}]}
+   + (if $thinking != null then {generationConfig: {thinkingConfig: $thinking}} else {} end)')
+
 curl -s "$API_URL" \
   -H "Content-Type: application/json" \
-  --data-binary @- <<JSON
-{
-    "contents": [
-      {"parts": [{"text": "Explain photosynthesis in simple terms."}]}
-    ]$(if [[ -n "$THINKING_CONFIG" ]]; then
-      printf ',\n    "generationConfig": {\n      "thinkingConfig": %s\n    }' "$THINKING_CONFIG"
-    fi)
-}
-JSON
+  -d "$PAYLOAD"
