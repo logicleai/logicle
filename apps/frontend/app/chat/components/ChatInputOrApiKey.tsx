@@ -13,6 +13,7 @@ interface Props {
   setChatInput: (chatInput: string) => void
   supportedMedia: string[]
   modelId?: string
+  userMessageCount?: number
   draftAssistantForEstimate?: dto.AssistantDraft
   draftMessagesForEstimate?: dto.Message[]
   initialServerContextTokens?: number
@@ -34,6 +35,7 @@ export const ChatInputOrApiKey = ({
   setChatInput,
   supportedMedia,
   modelId,
+  userMessageCount,
   draftAssistantForEstimate,
   draftMessagesForEstimate,
   initialServerContextTokens,
@@ -64,6 +66,7 @@ export const ChatInputOrApiKey = ({
       supportedMedia={supportedMedia}
       modelId={modelId}
       assistantId={assistant.id}
+      userMessageCount={userMessageCount}
       draftAssistantForEstimate={draftAssistantForEstimate}
       draftMessagesForEstimate={draftMessagesForEstimate}
       initialServerContextTokens={initialServerContextTokens}

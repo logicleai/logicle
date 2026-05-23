@@ -51,6 +51,7 @@ interface Props {
   setChatInput: (chatInput: string) => void
   modelId?: string
   assistantId: string
+  userMessageCount?: number
   draftAssistantForEstimate?: dto.AssistantDraft
   draftMessagesForEstimate?: dto.Message[]
   initialServerContextTokens?: number
@@ -72,6 +73,7 @@ export const ChatInput = ({
   supportedMedia,
   modelId,
   assistantId,
+  userMessageCount,
   draftAssistantForEstimate,
   draftMessagesForEstimate,
   initialServerContextTokens,
@@ -94,11 +96,10 @@ export const ChatInput = ({
   }
   const environment = useEnvironment()
   const model = environment.models.find((candidate) => candidate.id === modelId)
-  const userMessageCount = draftMessagesForEstimate?.filter((m) => m.role === 'user').length ?? 0
   const softLimitReached =
-    environment.softMessageLimit !== undefined && userMessageCount >= environment.softMessageLimit
+    environment.softMessageLimit !== undefined && (userMessageCount ?? 0) >= environment.softMessageLimit
   const hardLimitReached =
-    (environment.hardMessageLimit !== undefined && userMessageCount >= environment.hardMessageLimit) ||
+    (environment.hardMessageLimit !== undefined && (userMessageCount ?? 0) >= environment.hardMessageLimit) ||
     !!locked
   const [isTyping, setIsTyping] = useState<boolean>(false)
   // using useState to keep the state of the uploads does not work, as xhr callbacks will not "pick up"

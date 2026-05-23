@@ -120,6 +120,7 @@ export const Chat = ({
     selectedConversation.targetLeaf,
     streamingPart
   )
+  const userMessageCount = groupList.filter((g) => g.actor === 'user').length
 
   return (
     <div className={`flex overflow-hidden gap-4 ${className ?? ''}`}>
@@ -159,6 +160,7 @@ export const Chat = ({
           setChatInput={setChatInput}
           supportedMedia={supportedMedia}
           modelId={assistant.model}
+          userMessageCount={userMessageCount}
           draftAssistantForEstimate={draftAssistantForEstimate}
           draftMessagesForEstimate={selectedConversation.messages}
           initialServerContextTokens={initialServerContextTokens}
