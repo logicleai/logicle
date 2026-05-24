@@ -111,3 +111,31 @@ export const PATCH = operation({
     return noBody()
   },
 })
+
+export const DELETE = operation({
+  name: 'Unshare conversation',
+  description: 'Remove all share links for a conversation.',
+  authentication: 'user',
+  responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
+  implementation: async ({ params, session }) => {
+    const conversation = await getConversation(params.conversationId)
+    if (!conversation) {
+      return notFound(`No conversation with id ${params.conversationId}`)
+    }
+    if (conversation.ownerId !== session.userId) {
+      return forbidden()
+    }
+    const shares = await getConversationSharing(params.conversationId)
+    if (shares.length > 0) {
+      await db
+        .deleteFrom('ConversationSharing')
+        .where(
+          'ConversationSharing.id',
+          'in',
+          shares.map((s) => s.id)
+        )
+        .execute()
+    }
+    return noBody()
+  },
+})

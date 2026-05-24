@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Dialog } from '@radix-ui/react-dialog'
 import { Button } from '@/components/ui/button'
-import { patch, post } from '@/lib/fetch'
+import { delete_, patch, post } from '@/lib/fetch'
 import React, { useState } from 'react'
 import type { ConversationSharing } from '@/types/dto/chat'
 import { useEnvironment } from '@/app/context/environmentProvider'
@@ -89,6 +89,15 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
     toast.success(t('links_updated'))
     await mutate()
   }
+  const unshare = async () => {
+    const response = await delete_(`/api/conversations/${conversationId}/share`)
+    if (response.error) {
+      toast.error(t('failed_unsharing'))
+      return
+    }
+    toast.success(t('conversation_unshared'))
+    await mutate()
+  }
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-[48rem] flex flex-col">
@@ -102,13 +111,23 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
             <ChatSharingList list={data || []}></ChatSharingList>
             <div className="flex gap-2">
               {(data?.length ?? 0) > 0 && (
-                <Button
-                  onClick={async () => {
-                    await updateLinks()
-                  }}
-                >
-                  {t('update_links')}
-                </Button>
+                <>
+                  <Button
+                    onClick={async () => {
+                      await updateLinks()
+                    }}
+                  >
+                    {t('update_links')}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      await unshare()
+                    }}
+                  >
+                    {t('unshare')}
+                  </Button>
+                </>
               )}
               {(data?.length ?? 0) === 0 && (
                 <Button
