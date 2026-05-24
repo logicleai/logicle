@@ -104,6 +104,7 @@ interface Options {
   }
   debug?: boolean
   abortSignal?: AbortSignal
+  disableAutoSummary?: boolean
 }
 
 export class ChatAbortedError extends Error {
@@ -873,7 +874,10 @@ export class ChatAssistant {
   }
 
   async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
-    const generateSummary = env.chat.autoSummary.enable && chatState.chatHistory.length === 1
+    const generateSummary =
+      !this.options.disableAutoSummary &&
+      env.chat.autoSummary.enable &&
+      chatState.chatHistory.length === 1
     const receiveStreamIntoMessage = async (
       stream: ai.StreamTextResult<Record<string, ai.Tool>, any>
     ): Promise<Usage | undefined> => {
