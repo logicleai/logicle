@@ -6,7 +6,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { UIReasoningGroup, UIReasoningLikePart, UIReasoningPart } from '@/lib/chat/types'
-import { FC, useState, useEffect } from 'react'
+import { FC, useState } from 'react'
 import { RotatingLines } from 'react-loader-spinner'
 import * as dto from '@/types/dto'
 import { useTranslation } from 'react-i18next'
@@ -49,13 +49,7 @@ export const ReasoningGroup: FC<{
   const { t } = useTranslation()
   const { parts, running, title } = group
 
-  const [open, setOpen] = useState(running ? 'item-1' : '')
-
-  // Auto-expand while streaming, auto-collapse when done.
-  // User can still toggle manually during streaming.
-  useEffect(() => {
-    if (!running) setOpen('')
-  }, [running])
+  const [open, setOpen] = useState('')
 
   if (!running && parts.length === 0) return null
 
