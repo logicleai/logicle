@@ -1608,7 +1608,7 @@ describe('estimateInputTokens', () => {
     const preambleModule = await import('@/backend/lib/chat/preamble')
     const buildPlanSpy = vi.spyOn(preambleModule, 'preparePreamblePlan').mockResolvedValue({
       systemPromptMessage: { role: 'system', content: 'system' },
-      knowledgeFileEntries: [{ fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', partIndex: 0 }],
+      knowledgeFileEntries: [{ fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', size: 0, partIndex: 0 }],
     })
     const buildEstimatedSpy = vi.spyOn(preambleModule, 'buildEstimatedPreambleSegments')
     const renderSpy = vi.spyOn(preambleModule, 'renderPreamblePlan')
@@ -1650,7 +1650,7 @@ describe('estimateInputTokens', () => {
     const preambleModule = await import('@/backend/lib/chat/preamble')
     vi.spyOn(preambleModule, 'preparePreamblePlan').mockResolvedValue({
       systemPromptMessage: { role: 'system', content: 'system' },
-      knowledgeFileEntries: [{ fileId, fileName: file.name, mimetype: file.type, partIndex: 0 }],
+      knowledgeFileEntries: [{ fileId, fileName: file.name, mimetype: file.type, size: file.size, partIndex: 0 }],
     })
     vi.spyOn(preambleModule, 'renderPreamblePlan')
 

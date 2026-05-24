@@ -35,8 +35,9 @@ import {
 import type * as ai from 'ai'
 import { buildEstimatedPreambleSegments, preparePreamblePlan, PreamblePlan } from '@/backend/lib/chat/preamble'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
-import { projectMessageForEstimation } from '@/backend/lib/chat/message-projection'
+import { projectMessageForEstimation, fileDescriptorText } from '@/backend/lib/chat/message-projection'
 import { projectedToolResultAttachedFilesDescriptor } from '@/backend/lib/chat/message-projection'
+import env from '@/lib/env'
 
 // --- File token cache -----------------------------------------------------------
 
@@ -381,7 +382,7 @@ const estimateDtoMessageTokens = async (
   onDetail?: (part: dto.TokenDetailPart) => void
 ): Promise<number> => {
   const algorithm = tokenizerForModel(model)
-  const projected = projectMessageForEstimation(message)
+  const projected = projectMessageForEstimation(message, env.knowledge.intersperseFileMetadata)
   if (projected.role === 'ignored') return 0
   let tokens = 0
   for (const item of projected.items) {
@@ -578,16 +579,21 @@ export const estimatePreambleTokensFromPlan = async ({
     const messageParts = Array.isArray(knowledgeSegment.message.content)
       ? (knowledgeSegment.message.content as unknown[])
       : []
-    for (const entry of (knowledgeSegment.knowledgeFileEntries ?? [])) {
+    for (const [ordinal0, entry] of (knowledgeSegment.knowledgeFileEntries ?? []).entries()) {
       const fileEntry = await estimateKnowledgeFileTokens(
         entry.fileId, entry.fileName, entry.mimetype, entry.partIndex, messageParts, model, stats
       )
-      knowledgeTokens += fileEntry.tokens
+      let entryTokens = fileEntry.tokens
+      if (plan.intersperseFileMetadata) {
+        const descText = fileDescriptorText(entry.fileName, entry.fileId, entry.mimetype, entry.size, ordinal0 + 1, 'Knowledge')
+        entryTokens += await countTextTokensCached(model, descText, stats)
+      }
+      knowledgeTokens += entryTokens
       collector?.addPreamblePart({
         type: 'knowledge_file',
         id: entry.fileId,
         name: entry.fileName,
-        tokens: fileEntry.tokens,
+        tokens: entryTokens,
         algorithm: fileEntry.algorithm,
         params: fileEntry.params,
       })
