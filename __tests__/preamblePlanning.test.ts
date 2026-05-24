@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type { LlmModel } from '@/lib/chat/models'
 
-const { mockKnowledgeToInputPart } = vi.hoisted(() => ({
-  mockKnowledgeToInputPart: vi.fn(),
+const { mockLoadKnowledgeFilePart } = vi.hoisted(() => ({
+  mockLoadKnowledgeFilePart: vi.fn(),
 }))
 
 vi.mock('@/lib/env', () => ({
@@ -12,15 +12,13 @@ vi.mock('@/lib/env', () => ({
 }))
 
 vi.mock('@/backend/lib/tools/knowledge/implementation', () => ({
+  loadKnowledgeFilePart: mockLoadKnowledgeFilePart,
   KnowledgePlugin: class KnowledgePlugin {
     toolParams = { id: 'knowledge', provisioned: false, promptFragment: '', name: 'knowledge' }
     params: unknown = {}
     constructor(toolParams: unknown, params: unknown) {
       this.toolParams = toolParams as typeof this.toolParams
       this.params = params
-    }
-    async knowledgeToInputPart(...args: unknown[]) {
-      return mockKnowledgeToInputPart(...args)
     }
   },
 }))
@@ -38,7 +36,7 @@ describe('preamble planning and rendering', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockKnowledgeToInputPart.mockResolvedValue({ type: 'text', text: 'knowledge content' })
+    mockLoadKnowledgeFilePart.mockResolvedValue({ type: 'text', text: 'knowledge content' })
   })
 
   test('preparePreamblePlan stays lightweight and does not materialize knowledge parts', async () => {
@@ -54,7 +52,7 @@ describe('preamble planning and rendering', () => {
     expect(plan.knowledgeFileEntries).toEqual([
       { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', size: 1, partIndex: 0 },
     ])
-    expect(mockKnowledgeToInputPart).not.toHaveBeenCalled()
+    expect(mockLoadKnowledgeFilePart).not.toHaveBeenCalled()
   })
 
   test('buildEstimatedPreambleSegments stays lightweight without materialization', async () => {
@@ -74,7 +72,7 @@ describe('preamble planning and rendering', () => {
     expect(segments[1]?.knowledgeFileEntries).toEqual([
       { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', size: 1, partIndex: 0 },
     ])
-    expect(mockKnowledgeToInputPart).not.toHaveBeenCalled()
+    expect(mockLoadKnowledgeFilePart).not.toHaveBeenCalled()
   })
 
   test('renderPreamblePlan materializes knowledge parts for real model rendering', async () => {
@@ -90,7 +88,7 @@ describe('preamble planning and rendering', () => {
     const segments = await renderPreamblePlan(plan)
 
     expect(segments).toHaveLength(2)
-    expect(mockKnowledgeToInputPart).toHaveBeenCalledTimes(1)
+    expect(mockLoadKnowledgeFilePart).toHaveBeenCalledTimes(1)
     expect(segments[1]?.message).toEqual({
       role: 'user',
       content: [{ type: 'text', text: 'knowledge content' }],
@@ -118,7 +116,7 @@ describe('preamble planning and rendering', () => {
     expect(segments).toHaveLength(2)
     expect(segments[1]?.message).toEqual({ role: 'user', content: [] })
     expect(segments[1]?.knowledgeFileEntries).toHaveLength(200)
-    expect(mockKnowledgeToInputPart).not.toHaveBeenCalled()
+    expect(mockLoadKnowledgeFilePart).not.toHaveBeenCalled()
   })
 
 })

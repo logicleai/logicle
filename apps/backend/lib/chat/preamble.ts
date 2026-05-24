@@ -102,22 +102,21 @@ export async function computeSystemPrompt(
   }
 }
 
-export async function withBuiltinTools(tools: ToolImplementation[], llmModel: LlmModel) {
+export async function withBuiltinTools(tools: ToolImplementation[], llmModel: LlmModel): Promise<ToolImplementation[]> {
   if (!(llmModel.capabilities.knowledge ?? true)) {
     return tools
   }
   const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
+  // Only add the plugin when sendInPrompt is off — that is the only mode where
+  // the plugin exposes an active function (GetFile) to the LLM. When sendInPrompt
+  // is on, knowledge content is injected directly into the prompt; the plugin
+  // contributes nothing as a tool.
+  if (env.knowledge.sendInPrompt) {
+    return tools
+  }
   return [
     ...tools,
-    new KnowledgePlugin(
-      {
-        id: 'knowledge',
-        provisioned: false,
-        promptFragment: '',
-        name: 'knowledge',
-      },
-      {}
-    ),
+    new KnowledgePlugin({ id: 'knowledge', provisioned: false, promptFragment: '', name: 'knowledge' }, {}),
   ]
 }
 
@@ -138,6 +137,10 @@ export async function buildPreambleSegments({
   return renderPreamblePlan(plan)
 }
 
+const knowledgeFileSelectionNotice =
+  `When the user requests to gather information from unspecified files, ` +
+  `he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.`
+
 export async function preparePreamblePlan({
   assistantParams,
   llmModel,
@@ -156,101 +159,50 @@ export async function preparePreamblePlan({
   if (knowledge.length === 0 || !env.knowledge.sendInPrompt) {
     return { systemPromptMessage }
   }
-  const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
-  const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
+  const { loadKnowledgeFilePart } = await import('@/backend/lib/tools/knowledge/implementation')
 
-  if (env.knowledge.intersperseFileMetadata) {
-    const knowledgePrompt = `
-      Assistant knowledge files are embedded in this conversation, each preceded by a brief descriptor.
-      When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
-      `
-    const knowledgeFileEntries: KnowledgeFileEntry[] = knowledge.map((k, index) => ({
-      fileId: k.id,
-      fileName: k.name,
-      mimetype: k.type,
-      size: k.size,
-      partIndex: index * 2 + 1,
-    }))
-    if (!knowledgePlugin) {
-      return { systemPromptMessage, knowledgePrompt, knowledgeFileEntries, intersperseFileMetadata: true }
-    }
-    return {
-      systemPromptMessage,
-      knowledgePrompt,
-      knowledgeFileEntries,
-      intersperseFileMetadata: true,
-      materializeKnowledgeSegment: async () => {
-        // Limit concurrency to avoid saturating the libuv thread pool.
-        // mapWithConcurrency callback receives only the item; thread the index via indexed entries.
-        const indexedKnowledge = knowledge.map((k, i) => ({ k, i }))
-        const pairs = await mapWithConcurrency(
-          indexedKnowledge,
-          async ({ k, i }): Promise<[ai.TextPart, ai.TextPart | ai.ImagePart | ai.FilePart]> => {
-            const descriptor: ai.TextPart = {
-              type: 'text',
-              text: fileDescriptorText(k.name, k.id, k.type, k.size, i + 1, 'Knowledge'),
-            }
-            const content = await (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel)
-            return [descriptor, content]
-          },
-          8
-        )
-        const interleavedParts: (ai.TextPart | ai.ImagePart | ai.FilePart)[] = []
-        const analysisFileIds: string[] = []
-        for (let i = 0; i < pairs.length; i++) {
-          const [descriptor, content] = pairs[i]!
-          interleavedParts.push(descriptor, content)
-          if (content.type === 'file') {
-            const id = knowledge[i]?.id
-            if (id) analysisFileIds.push(id)
-          }
-        }
-        return {
-          message: { role: 'user', content: interleavedParts },
-          analysisFileIds,
-        }
-      },
-    }
-  }
+  const intersperse = env.knowledge.intersperseFileMetadata
 
-  const knowledgePrompt = `
-      More files are available as assistant knowledge.
-      These files can be retrieved or processed by function calls referring to their id.
-      Here is the assistant knowledge:
-      ${JSON.stringify(knowledge)}
-      When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
-      `
-  if (!knowledgePlugin) {
-    return { systemPromptMessage, knowledgePrompt }
-  }
+  const knowledgePrompt = intersperse
+    ? `Assistant knowledge files are embedded in this conversation, each preceded by a brief descriptor.\n${knowledgeFileSelectionNotice}`
+    : `More files are available as assistant knowledge. These files can be retrieved or processed by function calls referring to their id.\nHere is the assistant knowledge:\n${JSON.stringify(knowledge)}\n${knowledgeFileSelectionNotice}`
+
   const knowledgeFileEntries: KnowledgeFileEntry[] = knowledge.map((k, index) => ({
     fileId: k.id,
     fileName: k.name,
     mimetype: k.type,
     size: k.size,
-    partIndex: index,
+    partIndex: intersperse ? index * 2 + 1 : index,
   }))
+
   return {
     systemPromptMessage,
     knowledgePrompt,
     knowledgeFileEntries,
+    intersperseFileMetadata: intersperse || undefined,
+    // Limit concurrency to avoid saturating the libuv thread pool and the Node.js microtask queue
+    // when an assistant has many knowledge files — unbounded Promise.all causes multi-second stalls.
     materializeKnowledgeSegment: async () => {
-      // Limit concurrency to avoid saturating the libuv thread pool and
-      // the Node.js microtask queue when an assistant has many knowledge files.
-      // Unbounded Promise.all over hundreds of files causes multi-second
-      // health-check stalls and S3 socket pool exhaustion.
-      const parts = await mapWithConcurrency(
-        knowledge,
-        (k) => (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel),
+      const indexed = knowledge.map((k, i) => ({ k, i }))
+      const loaded = await mapWithConcurrency(
+        indexed,
+        async ({ k, i }) => ({
+          fileId: k.id,
+          descriptor: intersperse
+            ? fileDescriptorText(k.name, k.id, k.type, k.size, i + 1, 'Knowledge')
+            : null,
+          content: await loadKnowledgeFilePart(k, llmModel),
+        }),
         8
       )
-      const analysisFileIds = parts
-        .flatMap((part, index) => (part.type === 'file' ? [knowledge[index]?.id ?? ''] : []))
-        .filter((id) => id.length > 0)
-      return {
-        message: { role: 'user', content: parts },
-        analysisFileIds,
+      const parts: (ai.TextPart | ai.ImagePart | ai.FilePart)[] = []
+      const analysisFileIds: string[] = []
+      for (const { fileId, descriptor, content } of loaded) {
+        if (descriptor) parts.push({ type: 'text', text: descriptor })
+        parts.push(content)
+        if (content.type === 'file') analysisFileIds.push(fileId)
       }
+      return { message: { role: 'user', content: parts }, analysisFileIds }
     },
   }
 }

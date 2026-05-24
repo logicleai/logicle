@@ -315,21 +315,34 @@ describe('ChatAssistant.assistantParamsFrom', () => {
 // ============================================================
 
 describe('ChatAssistant.withBuiltinTools', () => {
-  test('appends KnowledgePlugin when knowledge capability is not false', async () => {
+  test('appends KnowledgePlugin when knowledge=true and sendInPrompt=false', async () => {
     const tools = [makeToolImpl()]
     const model = makeFakeLlmModel({ capabilities: { knowledge: true } } as unknown as Partial<LlmModel>)
     const result = await ChatAssistant.withBuiltinTools(tools, model)
     expect(result).toHaveLength(2)
   })
 
-  test('does not append KnowledgePlugin when knowledge=false', async () => {
+  test('does not append KnowledgePlugin when knowledge capability=false', async () => {
     const tools = [makeToolImpl()]
     const model = makeFakeLlmModel({ capabilities: { knowledge: false } } as unknown as Partial<LlmModel>)
     const result = await ChatAssistant.withBuiltinTools(tools, model)
     expect(result).toHaveLength(1)
   })
 
-  test('defaults to adding KnowledgePlugin when knowledge capability is undefined', async () => {
+  test('does not append KnowledgePlugin when sendInPrompt=true (files go directly into prompt)', async () => {
+    const { default: env } = await import('@/lib/env')
+    ;(env as any).knowledge.sendInPrompt = true
+    try {
+      const tools = [makeToolImpl()]
+      const model = makeFakeLlmModel({ capabilities: { knowledge: true } } as unknown as Partial<LlmModel>)
+      const result = await ChatAssistant.withBuiltinTools(tools, model)
+      expect(result).toHaveLength(1)
+    } finally {
+      ;(env as any).knowledge.sendInPrompt = false
+    }
+  })
+
+  test('defaults to adding KnowledgePlugin when knowledge capability is undefined and sendInPrompt=false', async () => {
     const tools: ToolImplementation[] = []
     const model = makeFakeLlmModel({ capabilities: {} } as unknown as Partial<LlmModel>)
     const result = await ChatAssistant.withBuiltinTools(tools, model)

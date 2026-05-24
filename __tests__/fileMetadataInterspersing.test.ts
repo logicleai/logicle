@@ -538,14 +538,13 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
         knowledge: { sendInPrompt: true, intersperseFileMetadata: true, alwaysConvertToText: true },
       },
     }))
-    // Mock KnowledgePlugin import
-    const knowledgeToInputPart = vi.fn().mockResolvedValue({ type: 'text', text: 'extracted' })
+    const mockLoadKnowledgeFilePart = vi.fn().mockResolvedValue({ type: 'text', text: 'extracted' })
     vi.doMock('@/backend/lib/tools/knowledge/implementation', () => ({
+      loadKnowledgeFilePart: mockLoadKnowledgeFilePart,
       KnowledgePlugin: class {
         toolParams = { promptFragment: '' }
         supportedMedia = []
         functions = async () => ({})
-        knowledgeToInputPart = knowledgeToInputPart
       },
     }))
 
@@ -575,15 +574,15 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
         knowledge: { sendInPrompt: true, intersperseFileMetadata: true, alwaysConvertToText: true },
       },
     }))
-    const knowledgeToInputPart = vi.fn()
+    const mockLoadKnowledgeFilePart = vi.fn()
       .mockResolvedValueOnce({ type: 'text', text: 'handbook text' })
       .mockResolvedValueOnce({ type: 'text', text: 'photo text' })
     vi.doMock('@/backend/lib/tools/knowledge/implementation', () => ({
+      loadKnowledgeFilePart: mockLoadKnowledgeFilePart,
       KnowledgePlugin: class {
         toolParams = { promptFragment: '' }
         supportedMedia = []
         functions = async () => ({})
-        knowledgeToInputPart = knowledgeToInputPart
       },
     }))
 
@@ -615,13 +614,13 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
         knowledge: { sendInPrompt: true, intersperseFileMetadata: false, alwaysConvertToText: true },
       },
     }))
-    const knowledgeToInputPart = vi.fn().mockResolvedValue({ type: 'text', text: 'x' })
+    const mockLoadKnowledgeFilePart = vi.fn().mockResolvedValue({ type: 'text', text: 'x' })
     vi.doMock('@/backend/lib/tools/knowledge/implementation', () => ({
+      loadKnowledgeFilePart: mockLoadKnowledgeFilePart,
       KnowledgePlugin: class {
         toolParams = { promptFragment: '' }
         supportedMedia = []
         functions = async () => ({})
-        knowledgeToInputPart = knowledgeToInputPart
       },
     }))
 
@@ -644,15 +643,15 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
         knowledge: { sendInPrompt: true, intersperseFileMetadata: false, alwaysConvertToText: true },
       },
     }))
-    const knowledgeToInputPart = vi.fn()
+    const mockLoadKnowledgeFilePart = vi.fn()
       .mockResolvedValueOnce({ type: 'text', text: 'handbook text' })
       .mockResolvedValueOnce({ type: 'text', text: 'photo text' })
     vi.doMock('@/backend/lib/tools/knowledge/implementation', () => ({
+      loadKnowledgeFilePart: mockLoadKnowledgeFilePart,
       KnowledgePlugin: class {
         toolParams = { promptFragment: '' }
         supportedMedia = []
         functions = async () => ({})
-        knowledgeToInputPart = knowledgeToInputPart
       },
     }))
 
@@ -680,11 +679,11 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
       },
     }))
     vi.doMock('@/backend/lib/tools/knowledge/implementation', () => ({
+      loadKnowledgeFilePart: vi.fn(),
       KnowledgePlugin: class {
         toolParams = { promptFragment: '' }
         supportedMedia = []
         functions = async () => ({})
-        knowledgeToInputPart = vi.fn()
       },
     }))
 
@@ -707,13 +706,13 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
         knowledge: { sendInPrompt: true, intersperseFileMetadata: true, alwaysConvertToText: true },
       },
     }))
-    const knowledgeToInputPart = vi.fn().mockResolvedValue({ type: 'text', text: '' })
+    const mockLoadKnowledgeFilePart = vi.fn().mockResolvedValue({ type: 'text', text: '' })
     vi.doMock('@/backend/lib/tools/knowledge/implementation', () => ({
+      loadKnowledgeFilePart: mockLoadKnowledgeFilePart,
       KnowledgePlugin: class {
         toolParams = { promptFragment: '' }
         supportedMedia = []
         functions = async () => ({})
-        knowledgeToInputPart = knowledgeToInputPart
       },
     }))
     const three: dto.AssistantFile[] = [
