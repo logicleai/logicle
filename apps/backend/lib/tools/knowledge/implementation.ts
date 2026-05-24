@@ -18,6 +18,36 @@ import { dtoFileToLlmFilePart } from '@/backend/lib/chat/conversion'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import type { FileDbRow } from '@/backend/models/file'
 
+export async function loadKnowledgeFilePart(
+  knowledgeFile: dto.AssistantFile,
+  llmModel: LlmModel
+): Promise<ai.TextPart | ai.ImagePart | ai.FilePart> {
+  const fileEntry = await db
+    .selectFrom('File')
+    .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
+    .select([
+      'File.id as id',
+      'File.name as name',
+      'File.ownerType as ownerType',
+      'File.ownerId as ownerId',
+      'File.path as path',
+      'File.type as type',
+      'File.createdAt as createdAt',
+      'File.fileBlobId as fileBlobId',
+      'FileBlob.size as size',
+      'FileBlob.encrypted as encrypted',
+    ])
+    .where('File.id', '=', `${knowledgeFile.id}`)
+    .executeTakeFirst() as FileDbRow | undefined
+  if (!fileEntry) {
+    return {
+      type: 'text',
+      text: `The knowledge file with id ${knowledgeFile.id} could not be found.`,
+    } satisfies ai.TextPart
+  }
+  return dtoFileToLlmFilePart(fileEntry, llmModel.capabilities)
+}
+
 export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
     new KnowledgePlugin(toolParams, params as KnowledgePluginParams)
@@ -29,12 +59,7 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
     super()
   }
 
-  functions = async (_model: LlmModel, _context: ToolFunctionContext) => {
-    if (env.knowledge.sendInPrompt) {
-      return {}
-    }
-    return this.functions_
-  }
+  functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
   functions_: ToolFunctions = {
     GetFile: {
@@ -94,33 +119,6 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
         }
       },
     },
-  }
-
-  async knowledgeToInputPart(knowledgeFile: dto.AssistantFile, llmModel: LlmModel) {
-    const fileEntry = await db
-      .selectFrom('File')
-      .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
-      .select([
-        'File.id as id',
-        'File.name as name',
-        'File.ownerType as ownerType',
-        'File.ownerId as ownerId',
-        'File.path as path',
-        'File.type as type',
-        'File.createdAt as createdAt',
-        'File.fileBlobId as fileBlobId',
-        'FileBlob.size as size',
-        'FileBlob.encrypted as encrypted',
-      ])
-      .where('File.id', '=', `${knowledgeFile.id}`)
-      .executeTakeFirst() as FileDbRow | undefined
-    if (!fileEntry) {
-      return {
-        type: 'text',
-        text: `The knowledge file with id ${knowledgeFile.id} could not be found.`,
-      } satisfies ai.TextPart
-    }
-    return dtoFileToLlmFilePart(fileEntry, llmModel.capabilities)
   }
 
 }
