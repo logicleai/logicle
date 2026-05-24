@@ -52,7 +52,7 @@ export type PreamblePlan = {
   materializeKnowledgeSegment?: () => Promise<{
     message: ai.UserModelMessage
     analysisFileIds: string[]
-  } | null>
+  }>
 }
 
 export function fillTemplate(
@@ -83,16 +83,13 @@ export async function computeSystemPrompt(
 ): Promise<ai.SystemModelMessage> {
   const userSystemPrompt = assistantParams.systemPrompt ?? ''
   const attachmentSystemPrompt = `
-      Files uploaded by the user are described in the conversation. 
+      Files uploaded by the user are described in the conversation.
       They are listed in the message to which they are attached. The content, if possible, is in the message. They can also be retrieved or processed by means of function calls referring to their id.
     `
-  const promptFragments = [
-    assistantParams.systemPrompt,
-    ...tools.map((t) => t.toolParams.promptFragment),
-  ].filter((f) => f.length !== 0)
+  const toolFragments = tools.map((t) => t.toolParams.promptFragment).filter((f) => f.length !== 0)
 
   const systemPrompt = fillTemplate(
-    `${userSystemPrompt}${attachmentSystemPrompt}${promptFragments}`,
+    [userSystemPrompt, attachmentSystemPrompt, ...toolFragments].join(''),
     parameters
   )
 
@@ -103,17 +100,12 @@ export async function computeSystemPrompt(
 }
 
 export async function withBuiltinTools(tools: ToolImplementation[], llmModel: LlmModel): Promise<ToolImplementation[]> {
-  if (!(llmModel.capabilities.knowledge ?? true)) {
+  // KnowledgePlugin exposes GetFile to the LLM only in tool-call mode (sendInPrompt=false).
+  // In prompt-injection mode the content is embedded directly; the plugin contributes nothing.
+  if (!(llmModel.capabilities.knowledge ?? true) || env.knowledge.sendInPrompt) {
     return tools
   }
   const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
-  // Only add the plugin when sendInPrompt is off — that is the only mode where
-  // the plugin exposes an active function (GetFile) to the LLM. When sendInPrompt
-  // is on, knowledge content is injected directly into the prompt; the plugin
-  // contributes nothing as a tool.
-  if (env.knowledge.sendInPrompt) {
-    return tools
-  }
   return [
     ...tools,
     new KnowledgePlugin({ id: 'knowledge', provisioned: false, promptFragment: '', name: 'knowledge' }, {}),
@@ -240,7 +232,6 @@ export async function renderPreamblePlan(
     return segments
   }
   const renderedKnowledge = await plan.materializeKnowledgeSegment()
-  if (!renderedKnowledge) return segments
   segments[1] = {
     scope: 'prompt',
     message: renderedKnowledge.message,
