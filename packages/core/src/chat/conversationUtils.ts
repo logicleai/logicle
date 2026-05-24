@@ -1,5 +1,8 @@
 import {
   UIAssistantMessage,
+  UIAssistantMessagePart,
+  UIReasoningGroup,
+  UIReasoningLikePart,
   IMessageGroup,
   IUserMessageGroup,
   MessageWithError,
@@ -78,34 +81,77 @@ const makeUserGroup = (
   }
 }
 
-const extractReasoningTitle = (text: string) => {
-  const raw = text ?? ''
+const splitReasoningPart = (part: dto.ReasoningPart, running: boolean): UIReasoningPart[] => {
+  const raw = part.reasoning ?? ''
   const lines = raw.split(/\r?\n/)
-  const first = (lines[0] ?? '').trim()
 
-  // Case A: full-line bold => ** Title **
-  const fullBoldMatch = first.match(/^\*\*(.+?)\*\*$/)
-  if (fullBoldMatch) {
-    return {
-      title: fullBoldMatch[1].trim(),
-      body: lines.slice(1).join('\n').trimStart(),
+  const sections: { title?: string; bodyLines: string[] }[] = []
+  let current: { title?: string; bodyLines: string[] } = { bodyLines: [] }
+
+  for (const line of lines) {
+    const m = line.trim().match(/^\*\*(.+?)\*\*$/)
+    if (m) {
+      sections.push(current)
+      current = { title: m[1].trim(), bodyLines: [] }
+    } else {
+      // Stop before an incomplete bold header still being streamed
+      const trimmed = line.trim()
+      if (/^\*\*/.test(trimmed) && !trimmed.slice(2).includes('**')) break
+      current.bodyLines.push(line)
     }
   }
+  sections.push(current)
 
-  // Case B: starts with ** but no closing ** yet (incomplete header)
-  const startsBold = /^\*\*/.test(first)
-  const hasClosingAfterStart = first.slice(2).includes('**')
-  if (startsBold && !hasClosingAfterStart) {
-    // Keep default title ("Reasoning"), clear body while streaming that first line
-    return {
-      body: '',
+  const filtered = sections.filter((s) => s.title !== undefined || s.bodyLines.join('').trim())
+
+  if (filtered.length === 0) {
+    return [{ ...part, reasoning: '', title: undefined, running }]
+  }
+
+  return filtered.map((s, i) => ({
+    ...part,
+    reasoning: s.bodyLines.join('\n').trim(),
+    title: s.title,
+    running: running && i === filtered.length - 1,
+  }))
+}
+
+const canGroupInReasoning = (p: UIAssistantMessagePart) =>
+  p.type === 'builtin-tool-result' || p.type === 'tool-call'
+
+const isEmptyReasoningPart = (p: UIReasoningLikePart) =>
+  p.type === 'reasoning' && !p.reasoning && !p.title
+
+export const groupForReasoning = (
+  parts: UIAssistantMessagePart[]
+): Array<UIAssistantMessagePart | UIReasoningGroup> => {
+  const result: Array<UIAssistantMessagePart | UIReasoningGroup> = []
+  let buffer: UIReasoningLikePart[] = []
+
+  const flushBuffer = () => {
+    if (buffer.length === 0) return
+    const running = buffer.some((p) => 'running' in p && (p as UIReasoningPart).running)
+    const title = buffer
+      .filter((p): p is UIReasoningPart => p.type === 'reasoning' && !!(p as UIReasoningPart).running && !!(p as UIReasoningPart).title)
+      .at(-1)?.title
+    const displayParts = buffer.filter((p) => !isEmptyReasoningPart(p))
+    result.push({ type: 'reasoning-group', parts: displayParts, running, title })
+    buffer = []
+  }
+
+  for (const p of parts) {
+    if (p.type === 'reasoning') {
+      buffer.push(p)
+    } else if (buffer.length !== 0 && canGroupInReasoning(p)) {
+      buffer.push(p as UIReasoningLikePart)
+    } else {
+      flushBuffer()
+      result.push(p)
     }
   }
+  flushBuffer()
 
-  // Fallback: default title + full body
-  return {
-    body: raw,
-  }
+  return result
 }
 
 const makeAssistantGroup = (
@@ -121,33 +167,17 @@ const makeAssistantGroup = (
     if (msg.role === 'assistant') {
       const uiAssistantMessage = {
         ...msg,
-        parts: msg.parts.map((part) => {
+        parts: msg.parts.flatMap((part): UIAssistantMessagePart[] => {
           if (part.type === 'tool-call') {
-            return {
-              ...part,
-              status: 'running',
-            } satisfies UIToolCallPart
+            return [{ ...part, status: 'running' } satisfies UIToolCallPart]
           } else if (part.type === 'text') {
-            return {
-              ...part,
-              running: streamingPart === part,
-            }
+            return [{ ...part, running: streamingPart === part }]
           } else if (part.type === 'reasoning') {
-            const { body, title } = extractReasoningTitle(part.reasoning)
-            return {
-              ...part,
-              reasoning: body,
-              title,
-              running: streamingPart === part,
-            } satisfies UIReasoningPart
+            return splitReasoningPart(part, streamingPart === part)
           } else if (part.type === 'builtin-tool-call') {
-            return {
-              ...part,
-              status: 'running',
-              type: 'tool-call',
-            } satisfies UIToolCallPart
+            return [{ ...part, status: 'running', type: 'tool-call' } satisfies UIToolCallPart]
           } else {
-            return part
+            return [part]
           }
         }),
       } satisfies UIAssistantMessage

@@ -455,6 +455,7 @@
   "publish_no_effective_changes_message": "Questa bozza non contiene modifiche rispetto alla versione pubblicata.",
   "publish_no_effective_changes_hint": "Per eliminare questa bozza, usa il menu delle opzioni.",
   "reasoning": "Ragionamento",
+  "thinking": "Ragionamento",
   "reasoning_effort": "Livello di ragionamento",
   "reasoning_effort_not_supported": "Livello di ragionamento non supportato da questo modello",
   "minimal": "Minimo",
