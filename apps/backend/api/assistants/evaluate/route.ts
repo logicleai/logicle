@@ -59,6 +59,7 @@ export const POST = operation({
         user: session.userId,
         conversationId,
         rootOwner: { type: 'USER', id: session.userId },
+        disableAutoSummary: true,
       }
     )
 
