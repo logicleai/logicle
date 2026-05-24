@@ -106,19 +106,17 @@ export const Chat = ({
   if (!selectedConversation) {
     return null
   }
-  let streamingPart: dto.MessagePart | undefined
+  let streamingMessageId: string | undefined
   if (chatStatus.state !== 'idle' && selectedConversation.messages.length) {
     const lastMessage = selectedConversation.messages[selectedConversation.messages.length - 1]
     if (lastMessage.role === 'assistant' || lastMessage.role === 'tool') {
-      if (lastMessage.parts.length) {
-        streamingPart = lastMessage.parts[lastMessage.parts.length - 1]
-      }
+      streamingMessageId = lastMessage.id
     }
   }
   const groupList = groupMessages(
     selectedConversation.messages,
     selectedConversation.targetLeaf,
-    streamingPart
+    streamingMessageId
   )
   const userMessageCount = groupList.filter((g) => g.actor === 'user').length
 

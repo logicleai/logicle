@@ -154,10 +154,12 @@ export const groupForReasoning = (
   return result
 }
 
+const DUMMY_TEXT_PART: UIAssistantMessagePart = { type: 'text', text: '', running: true }
+
 const makeAssistantGroup = (
   messages: MessageWithError[],
   allMessages: MessageWithError[],
-  streamingPart?: dto.MessagePart
+  streamingMessageId?: string
 ): IMessageGroup => {
   const UIMessages: UIMessage[] = []
   const pendingToolCalls = new Map<string, UIToolCallPart>()
@@ -165,21 +167,29 @@ const makeAssistantGroup = (
   for (const msg of messages) {
     let msgExt: UIMessage
     if (msg.role === 'assistant') {
+      const isStreaming = msg.id === streamingMessageId
+      const lastPartIndex = msg.parts.length - 1
+      const uiParts: UIAssistantMessagePart[] = msg.parts.flatMap((part, i): UIAssistantMessagePart[] => {
+        const partIsRunning = isStreaming && i === lastPartIndex
+        if (part.type === 'tool-call') {
+          return [{ ...part, status: 'running' } satisfies UIToolCallPart]
+        } else if (part.type === 'text') {
+          return [{ ...part, running: partIsRunning }]
+        } else if (part.type === 'reasoning') {
+          return splitReasoningPart(part, partIsRunning)
+        } else if (part.type === 'builtin-tool-call') {
+          return [{ ...part, status: 'running', type: 'tool-call' } satisfies UIToolCallPart]
+        } else {
+          return [part]
+        }
+      })
+      // When nothing has arrived yet, show a blinking cursor placeholder.
+      if (isStreaming && uiParts.length === 0) {
+        uiParts.push(DUMMY_TEXT_PART)
+      }
       const uiAssistantMessage = {
         ...msg,
-        parts: msg.parts.flatMap((part): UIAssistantMessagePart[] => {
-          if (part.type === 'tool-call') {
-            return [{ ...part, status: 'running' } satisfies UIToolCallPart]
-          } else if (part.type === 'text') {
-            return [{ ...part, running: streamingPart === part }]
-          } else if (part.type === 'reasoning') {
-            return splitReasoningPart(part, streamingPart === part)
-          } else if (part.type === 'builtin-tool-call') {
-            return [{ ...part, status: 'running', type: 'tool-call' } satisfies UIToolCallPart]
-          } else {
-            return [part]
-          }
-        }),
+        parts: uiParts,
       } satisfies UIAssistantMessage
       const toolCalls = uiAssistantMessage.parts.filter((b) => b.type === 'tool-call')
       toolCalls.forEach((toolCall) => {
@@ -258,7 +268,7 @@ const makeAssistantGroup = (
 export const groupMessages = (
   messages_: MessageWithError[],
   targetLeaf?: string,
-  streamingPart?: dto.MessagePart
+  streamingMessageId?: string
 ): IMessageGroup[] => {
   const flattened = flatten(messages_, targetLeaf)
   const groups: IMessageGroup[] = []
@@ -266,7 +276,7 @@ export const groupMessages = (
   for (const message of flattened) {
     if (message.role === 'user') {
       if (currentAssistantMessages) {
-        groups.push(makeAssistantGroup(currentAssistantMessages, messages_, streamingPart))
+        groups.push(makeAssistantGroup(currentAssistantMessages, messages_, streamingMessageId))
       }
       currentAssistantMessages = undefined
       groups.push(makeUserGroup(message, messages_))
@@ -276,7 +286,7 @@ export const groupMessages = (
     }
   }
   if (currentAssistantMessages) {
-    groups.push(makeAssistantGroup(currentAssistantMessages, messages_, streamingPart))
+    groups.push(makeAssistantGroup(currentAssistantMessages, messages_, streamingMessageId))
   }
   return groups
 }
