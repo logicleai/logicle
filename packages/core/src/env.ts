@@ -9,13 +9,19 @@ function parseOptionalFloat(text?: string) {
   return Number.isNaN(value) ? undefined : value
 }
 
-function parseAnthropicCacheMode(raw: string | undefined, defaultValue: 'none' | '5m' | '1h'): 'none' | '5m' | '1h' {
+function parseAnthropicCacheMode(
+  raw: string | undefined,
+  defaultValue: 'none' | '5m' | '1h'
+): 'none' | '5m' | '1h' {
   if (raw === 'none' || raw === '0') return 'none'
   if (raw === '5m' || raw === '1h') return raw
   return defaultValue
 }
 
-function parseOpenAiCacheMode(raw: string | undefined, defaultValue: 'none' | 'in_memory' | '24h'): 'none' | 'in_memory' | '24h' {
+function parseOpenAiCacheMode(
+  raw: string | undefined,
+  defaultValue: 'none' | 'in_memory' | '24h'
+): 'none' | 'in_memory' | '24h' {
   if (raw === 'none' || raw === '0') return 'none'
   if (raw === 'in_memory' || raw === '24h') return raw
   return defaultValue
@@ -128,7 +134,7 @@ const env = {
     enable: process.env.ENABLE_SIGNUP === '1',
   },
   chat: {
-    enableSharing: process.env.ENABLE_CHAT_SHARING === '1',
+    enableSharing: process.env.ENABLE_CHAT_SHARING !== '0',
     enableFolders: process.env.ENABLE_CHAT_FOLDERS === '1',
     enableShowToolResult: process.env.ENABLE_SHOW_TOOL_RESULT === '1',
     enableTreeNavigation: process.env.ENABLE_CHAT_TREE_NAVIGATION === '1',
