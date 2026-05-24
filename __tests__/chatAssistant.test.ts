@@ -380,33 +380,49 @@ describe('ChatAssistant.build', () => {
 // ChatAssistant.computeSystemPrompt
 // ============================================================
 
+const attachmentSystemPrompt = `
+      Files uploaded by the user are described in the conversation.
+      They are listed in the message to which they are attached. The content, if possible, is in the message. They can also be retrieved or processed by means of function calls referring to their id.
+    `
+
 describe('ChatAssistant.computeSystemPrompt', () => {
-  test('returns system role message', async () => {
+  test('no tools: system prompt + attachment notice, nothing else', async () => {
     const result = await ChatAssistant.computeSystemPrompt(
       { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'Be helpful', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
       [],
       {}
     )
     expect(result.role).toBe('system')
+    expect(result.content).toBe(`Be helpful${attachmentSystemPrompt}`)
   })
 
-  test('includes system prompt in content', async () => {
+  test('empty system prompt: only attachment notice', async () => {
     const result = await ChatAssistant.computeSystemPrompt(
-      { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'Custom prompt', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
+      { assistantId: 'a1', model: 'gpt-4', systemPrompt: '', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
       [],
       {}
     )
-    expect(result.content).toContain('Custom prompt')
+    expect(result.content).toBe(attachmentSystemPrompt)
   })
 
-  test('concatenates tool prompt fragments', async () => {
-    const tools = [makeToolImpl('tool-fragment-here')]
+  test('tool fragments appended after attachment notice, joined without separator', async () => {
+    const tools = [makeToolImpl('fragment-a'), makeToolImpl('fragment-b')]
     const result = await ChatAssistant.computeSystemPrompt(
       { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'Base', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
       tools,
       {}
     )
-    expect(result.content).toContain('tool-fragment-here')
+    expect(result.content).toBe(`Base${attachmentSystemPrompt}fragment-afragment-b`)
+  })
+
+  test('empty tool fragments are excluded', async () => {
+    const tools = [makeToolImpl(''), makeToolImpl('non-empty'), makeToolImpl('')]
+    const result = await ChatAssistant.computeSystemPrompt(
+      { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'S', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
+      tools,
+      {}
+    )
+    expect(result.content).toBe(`S${attachmentSystemPrompt}non-empty`)
   })
 
   test('applies template substitution from parameters', async () => {
@@ -415,7 +431,7 @@ describe('ChatAssistant.computeSystemPrompt', () => {
       [],
       { user: { value: 'Alice', defaultValue: '', description: 'user' } } as any
     )
-    expect(result.content).toContain('Hello Alice')
+    expect(result.content).toBe(`Hello Alice${attachmentSystemPrompt}`)
   })
 })
 
