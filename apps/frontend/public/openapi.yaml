@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: "@logicleai/logicle"
-  version: 0.26-snapshot
+  version: 0.0.0
 paths:
   /api/analytics/activity/byassistant:
     get:
@@ -1390,6 +1390,24 @@ paths:
         "404":
           $ref: "#/components/responses/Error"
         "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Unshare conversation
+      description: Remove all share links for a conversation.
+      responses:
+        "204":
+          description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
           $ref: "#/components/responses/Error"
       parameters:
         - name: conversationId
