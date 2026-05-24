@@ -1,6 +1,7 @@
 import { db } from '@/db/database'
 import { sql } from 'kysely'
 import { ok, operation, responseSpec } from '@/lib/routes'
+import { WorkspaceRole } from '@/types/workspace'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -18,14 +19,34 @@ export const GET = operation({
   authentication: 'user',
   responses: [responseSpec(200, assistantStatsSchema.array())] as const,
   implementation: async ({ session }) => {
-      const ownedAssistants = await db
+      const editableAssistants = await db
         .selectFrom('Assistant')
         .select('id')
-        .where('owner', '=', session.userId)
         .where('deleted', '=', 0)
+        .where((eb) =>
+          eb.or([
+            eb('Assistant.owner', '=', session.userId),
+            eb.exists(
+              eb
+                .selectFrom('AssistantSharing')
+                .select('AssistantSharing.id')
+                .whereRef('AssistantSharing.assistantId', '=', 'Assistant.id')
+                .where('AssistantSharing.workspaceId', 'is not', null)
+                .where(
+                  'AssistantSharing.workspaceId',
+                  'in',
+                  eb
+                    .selectFrom('WorkspaceMember')
+                    .select('WorkspaceMember.workspaceId')
+                    .where('WorkspaceMember.userId', '=', session.userId)
+                    .where('WorkspaceMember.role', 'in', [WorkspaceRole.EDITOR, WorkspaceRole.OWNER, WorkspaceRole.ADMIN])
+                )
+            ),
+          ])
+        )
         .execute()
 
-      const assistantIds = ownedAssistants.map((a) => a.id)
+      const assistantIds = editableAssistants.map((a) => a.id)
       if (assistantIds.length === 0) return ok([])
 
       const msgRows = await db
