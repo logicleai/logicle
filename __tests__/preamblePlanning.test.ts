@@ -52,7 +52,7 @@ describe('preamble planning and rendering', () => {
     })
 
     expect(plan.knowledgeFileEntries).toEqual([
-      { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', partIndex: 0 },
+      { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', size: 1, partIndex: 0 },
     ])
     expect(mockKnowledgeToInputPart).not.toHaveBeenCalled()
   })
@@ -72,7 +72,7 @@ describe('preamble planning and rendering', () => {
     expect(segments).toHaveLength(2)
     expect(segments[1]?.message).toEqual({ role: 'user', content: [] })
     expect(segments[1]?.knowledgeFileEntries).toEqual([
-      { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', partIndex: 0 },
+      { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', size: 1, partIndex: 0 },
     ])
     expect(mockKnowledgeToInputPart).not.toHaveBeenCalled()
   })

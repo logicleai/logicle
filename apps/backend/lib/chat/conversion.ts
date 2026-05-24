@@ -8,6 +8,7 @@ import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from '@/lib/chat/models'
 import { cachingExtractor } from '@/lib/textextraction/cache'
+import env from '@/lib/env'
 import {
   acceptableImageTypes,
   canSendAsNativeFile,
@@ -165,7 +166,8 @@ export const dtoMessageToLlmMessage = async (
   capabilities: LlmModelCapabilities,
   providerName: string
 ): Promise<ai.ModelMessage | undefined> => {
-  const projected = projectMessageForEstimation(m)
+  const intersperseFileMetadata = env.knowledge.intersperseFileMetadata
+  const projected = projectMessageForEstimation(m, intersperseFileMetadata)
   if (projected.role === 'ignored') return undefined
   if (projected.role === 'tool') {
     const results = projected.items.filter((item) => item.kind === 'tool_result')
@@ -282,24 +284,44 @@ export const dtoMessageToLlmMessage = async (
   const message: ai.ModelMessage = { role: 'user', content: '' }
   const attachments = projected.items.filter((item) => item.kind === 'attachment')
   if (attachments.length !== 0) {
-    const messageParts: typeof message.content = []
-    for (const item of projected.items) {
-      if (item.kind !== 'text') continue
-      messageParts.push({ type: 'text', text: item.text })
-    }
-    const fileParts = (
-      await Promise.all(
-        attachments.map(async (item) => {
+    if (intersperseFileMetadata) {
+      // Interspersed: process projected items in order so each descriptor immediately
+      // precedes the corresponding file part.
+      const parts: Array<ai.TextPart | ai.ImagePart | ai.FilePart> = []
+      for (const item of projected.items) {
+        if (item.kind === 'text') {
+          parts.push({ type: 'text', text: item.text })
+        } else if (item.kind === 'attachment') {
           const fileEntry = await getFileWithId(item.attachment.id)
           if (!fileEntry) {
             logger.warn(`Can't find entry for attachment ${item.attachment.id}`)
-            return undefined
+            continue
           }
-          return await dtoFileToLlmFilePart(fileEntry, capabilities)
-        })
-      )
-    ).filter((a) => a !== undefined)
-    message.content = [...messageParts, ...fileParts]
+          parts.push(await dtoFileToLlmFilePart(fileEntry, capabilities))
+        }
+      }
+      message.content = parts
+    } else {
+      // Classic: all text parts first, then all file parts appended at the end.
+      const messageParts: typeof message.content = []
+      for (const item of projected.items) {
+        if (item.kind !== 'text') continue
+        messageParts.push({ type: 'text', text: item.text })
+      }
+      const fileParts = (
+        await Promise.all(
+          attachments.map(async (item) => {
+            const fileEntry = await getFileWithId(item.attachment.id)
+            if (!fileEntry) {
+              logger.warn(`Can't find entry for attachment ${item.attachment.id}`)
+              return undefined
+            }
+            return await dtoFileToLlmFilePart(fileEntry, capabilities)
+          })
+        )
+      ).filter((a) => a !== undefined)
+      message.content = [...messageParts, ...fileParts]
+    }
   } else {
     const textItems = projected.items.filter((item) => item.kind === 'text')
     const messageParts: typeof message.content = []

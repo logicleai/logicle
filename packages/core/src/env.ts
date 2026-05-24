@@ -154,6 +154,7 @@ const env = {
   knowledge: {
     sendInPrompt: process.env.KNOWLEDGE_SEND_IN_PROMPT !== '0',
     alwaysConvertToText: process.env.KNOWLEDGE_ALWAYS_CONVERT !== '0',
+    intersperseFileMetadata: process.env.INTERSPERSE_FILE_METADATA === '1',
   },
   provision: {
     config: process.env.PROVISION_PATH,

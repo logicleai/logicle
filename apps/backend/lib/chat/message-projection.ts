@@ -1,5 +1,23 @@
 import * as dto from '@/types/dto'
 
+const isImageMimeType = (mimetype: string) => mimetype.startsWith('image/')
+
+/**
+ * Generates a concise per-file metadata descriptor for interspersed mode.
+ * If name is absent/empty, falls back to 'pasted image' for images or 'pasted' otherwise.
+ */
+export const fileDescriptorText = (
+  name: string | null | undefined,
+  id: string,
+  mimetype: string,
+  size: number,
+  ordinal: number,
+  label: 'Attachment' | 'Knowledge'
+): string => {
+  const displayName = name?.trim() ? name.trim() : isImageMimeType(mimetype) ? 'pasted image' : 'pasted'
+  return `${label} ${ordinal}: ${displayName} (id ${id}, ${mimetype}, ${size} bytes)`
+}
+
 export const projectedToolResultAttachedFilesDescriptor = (
   files: Array<{ id: string; name: string; size: number; mimetype: string }>
 ) => ({
@@ -65,7 +83,10 @@ export type ProjectedMessageForEstimation =
   | { role: 'user' | 'assistant' | 'tool'; items: MessageProjectionItem[] }
   | { role: 'ignored'; items: [] }
 
-export const projectMessageForEstimation = (message: dto.Message): ProjectedMessageForEstimation => {
+export const projectMessageForEstimation = (
+  message: dto.Message,
+  intersperseFileMetadata = false
+): ProjectedMessageForEstimation => {
   if (message.role === 'user-request' || message.role === 'user-response') {
     return { role: 'ignored', items: [] }
   }
@@ -74,16 +95,29 @@ export const projectMessageForEstimation = (message: dto.Message): ProjectedMess
     const metadataText = userMessageMetadataText(message)
     if (metadataText) items.push({ kind: 'text', text: metadataText, source: 'metadata' })
     if (message.content.length !== 0) items.push({ kind: 'text', text: message.content, source: 'content' })
-    const attachmentDescriptorText = userAttachmentDescriptorText(message)
-    if (attachmentDescriptorText) {
-      items.push({
-        kind: 'text',
-        text: attachmentDescriptorText,
-        source: 'attachment_descriptor',
+    if (intersperseFileMetadata) {
+      // Interspersed: emit (descriptor text, attachment) pairs in order
+      message.attachments.forEach((attachment, index) => {
+        items.push({
+          kind: 'text',
+          text: fileDescriptorText(attachment.name, attachment.id, attachment.mimetype, attachment.size, index + 1, 'Attachment'),
+          source: 'attachment_descriptor',
+        })
+        items.push({ kind: 'attachment', attachment })
       })
-    }
-    for (const attachment of message.attachments) {
-      items.push({ kind: 'attachment', attachment })
+    } else {
+      // Classic: one aggregated descriptor block, then all file parts
+      const attachmentDescriptorText = userAttachmentDescriptorText(message)
+      if (attachmentDescriptorText) {
+        items.push({
+          kind: 'text',
+          text: attachmentDescriptorText,
+          source: 'attachment_descriptor',
+        })
+      }
+      for (const attachment of message.attachments) {
+        items.push({ kind: 'attachment', attachment })
+      }
     }
     return { role: 'user', items }
   }

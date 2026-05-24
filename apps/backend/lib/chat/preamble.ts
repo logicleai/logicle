@@ -6,6 +6,7 @@ import { LlmModel } from '@/lib/chat/models'
 import { ToolImplementation } from '@/lib/chat/tools'
 import type { ParameterValueAndDescription } from '@/models/user'
 import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from '@/backend/lib/chat/conversion'
+import { fileDescriptorText } from '@/backend/lib/chat/message-projection'
 
 async function mapWithConcurrency<T, R>(
   items: T[],
@@ -32,6 +33,7 @@ export type KnowledgeFileEntry = {
   fileId: string
   fileName: string
   mimetype: string
+  size: number
   partIndex: number
 }
 
@@ -46,6 +48,7 @@ export type PreamblePlan = {
   systemPromptMessage: ai.SystemModelMessage
   knowledgePrompt?: string
   knowledgeFileEntries?: KnowledgeFileEntry[]
+  intersperseFileMetadata?: boolean
   materializeKnowledgeSegment?: () => Promise<{
     message: ai.UserModelMessage
     analysisFileIds: string[]
@@ -153,6 +156,63 @@ export async function preparePreamblePlan({
   if (knowledge.length === 0 || !env.knowledge.sendInPrompt) {
     return { systemPromptMessage }
   }
+  const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
+  const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
+
+  if (env.knowledge.intersperseFileMetadata) {
+    const knowledgePrompt = `
+      Assistant knowledge files are embedded in this conversation, each preceded by a brief descriptor.
+      When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
+      `
+    const knowledgeFileEntries: KnowledgeFileEntry[] = knowledge.map((k, index) => ({
+      fileId: k.id,
+      fileName: k.name,
+      mimetype: k.type,
+      size: k.size,
+      partIndex: index * 2 + 1,
+    }))
+    if (!knowledgePlugin) {
+      return { systemPromptMessage, knowledgePrompt, knowledgeFileEntries, intersperseFileMetadata: true }
+    }
+    return {
+      systemPromptMessage,
+      knowledgePrompt,
+      knowledgeFileEntries,
+      intersperseFileMetadata: true,
+      materializeKnowledgeSegment: async () => {
+        // Limit concurrency to avoid saturating the libuv thread pool.
+        // mapWithConcurrency callback receives only the item; thread the index via indexed entries.
+        const indexedKnowledge = knowledge.map((k, i) => ({ k, i }))
+        const pairs = await mapWithConcurrency(
+          indexedKnowledge,
+          async ({ k, i }): Promise<[ai.TextPart, ai.TextPart | ai.ImagePart | ai.FilePart]> => {
+            const descriptor: ai.TextPart = {
+              type: 'text',
+              text: fileDescriptorText(k.name, k.id, k.type, k.size, i + 1, 'Knowledge'),
+            }
+            const content = await (knowledgePlugin as InstanceType<typeof KnowledgePlugin>).knowledgeToInputPart(k, llmModel)
+            return [descriptor, content]
+          },
+          8
+        )
+        const interleavedParts: (ai.TextPart | ai.ImagePart | ai.FilePart)[] = []
+        const analysisFileIds: string[] = []
+        for (let i = 0; i < pairs.length; i++) {
+          const [descriptor, content] = pairs[i]!
+          interleavedParts.push(descriptor, content)
+          if (content.type === 'file') {
+            const id = knowledge[i]?.id
+            if (id) analysisFileIds.push(id)
+          }
+        }
+        return {
+          message: { role: 'user', content: interleavedParts },
+          analysisFileIds,
+        }
+      },
+    }
+  }
+
   const knowledgePrompt = `
       More files are available as assistant knowledge.
       These files can be retrieved or processed by function calls referring to their id.
@@ -160,8 +220,6 @@ export async function preparePreamblePlan({
       ${JSON.stringify(knowledge)}
       When the user requests to gather information from unspecified files, he's referring to files attached in the same message, so **do not mention / use the knowledge if it's not useful to answer the user question**.
       `
-  const { KnowledgePlugin } = await import('@/backend/lib/tools/knowledge/implementation')
-  const knowledgePlugin = resolvedTools.find((t) => t instanceof KnowledgePlugin)
   if (!knowledgePlugin) {
     return { systemPromptMessage, knowledgePrompt }
   }
@@ -169,6 +227,7 @@ export async function preparePreamblePlan({
     fileId: k.id,
     fileName: k.name,
     mimetype: k.type,
+    size: k.size,
     partIndex: index,
   }))
   return {
