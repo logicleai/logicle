@@ -38,8 +38,8 @@ export const TextPart: FC<{
     }
   }
   const processedMarkdown = useMemo(
-    () => computeMarkdown(part.text, message.citations) || (part.running ? ' ' : ''),
-    [part.text, message.citations, part.running]
+    () => computeMarkdown(part.text, message.citations),
+    [part.text, message.citations]
   )
   return (
     <>
@@ -51,10 +51,16 @@ export const TextPart: FC<{
           part={part}
           height={editHeight}
         />
-      ) : (
+      ) : processedMarkdown ? (
         <MemoizedMarkdown ref={messageViewRef} className={className}>
           {processedMarkdown}
         </MemoizedMarkdown>
+      ) : (
+        // ReactMarkdown renders nothing for empty/whitespace strings, so the CSS
+        // ::after cursor has no child element to attach to. Render a real element.
+        <div ref={messageViewRef} className={className}>
+          {part.running && <p />}
+        </div>
       )}
     </>
   )
