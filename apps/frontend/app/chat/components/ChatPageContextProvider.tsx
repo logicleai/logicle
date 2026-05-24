@@ -389,7 +389,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     const thinkingPlaceholder: dto.AssistantMessage = {
       id: THINKING_PLACEHOLDER_ID,
       role: 'assistant',
-      parts: [{ type: 'text', text: '' }],
+      parts: [],
       conversationId: conversation.id,
       parent: userMessage.id,
       sentAt: new Date().toISOString(),
