@@ -53,6 +53,10 @@ export const ParametersPanel = ({ user }: { user: dto.UserProfile }) => {
     await mutate(adminUserPath)
   }
 
+  if (environment.parameters.length === 0) {
+    return <p className="text-muted-foreground">{t('no-parameters-available')}</p>
+  }
+
   return (
     <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className={`space-y-6`}>
       <FormField
