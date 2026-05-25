@@ -497,6 +497,7 @@
   "saml-config-updated": "SAML Config updated successfully.",
   "saml-connection-established": "Single Sign-On connection is enabled for your workspace.",
   "save": "Save",
+  "no-parameters-available": "No parameters available",
   "save-changes": "Save Changes",
   "save_and_submit": "Save & Submit",
   "scim-url": "SCIM URL.",
