@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache'
 import type { FileDbRow } from '@/backend/models/file'
-import { findExtractor } from '.'
+import { findExtractor, genericTextExtractor } from '.'
 import { storage } from '../storage'
 import { ensureFileAnalysisForFile, readExtractedTextFromAnalysis } from '@/lib/file-analysis'
 
@@ -29,7 +29,8 @@ export const cachingExtractor = {
       return analyzedText
     }
 
-    const extractor = findExtractor(fileEntry.type)
+    const isUnknownText = analysis?.status === 'ready' && analysis.payload?.kind === 'unknown' && analysis.payload.isText
+    const extractor = findExtractor(fileEntry.type) ?? (isUnknownText ? genericTextExtractor : undefined)
     if (!extractor) {
       return undefined
     }

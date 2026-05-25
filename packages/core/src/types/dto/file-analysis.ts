@@ -20,6 +20,7 @@ export const unknownFileAnalysisPayloadSchema = z.object({
   kind: z.literal('unknown'),
   mimeType: z.string(),
   sizeBytes: z.number().int().nonnegative(),
+  isText: z.boolean().default(false),
   extractedTextPath: z.string().nullable(),
 }).meta({ id: 'UnknownFileAnalysisPayload' })
 
