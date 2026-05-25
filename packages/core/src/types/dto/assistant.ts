@@ -145,6 +145,15 @@ export type UpdateableAssistantDraft = z.infer<typeof updateableAssistantDraftSc
 
 export type UpdateableAssistantVisibility = z.infer<typeof updateableAssistantVisibilitySchema>
 
+export const assistantParentSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+  })
+  .meta({ id: 'AssistantParent' })
+
+export type AssistantParent = z.infer<typeof assistantParentSchema>
+
 export const assistantWithOwnerSchema = z
   .object({
     id: z.string(),

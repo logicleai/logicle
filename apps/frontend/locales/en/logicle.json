@@ -628,6 +628,8 @@
   "failed_unsharing": "Failed to unshare conversation",
   "url": "URL",
   "usage": "Usage",
+  "assistant_usage_empty": "This assistant is not used as a sub-assistant by any other assistant.",
+  "assistant_usage_used_by": "This assistant is used as a sub-assistant by:",
   "user": "User",
   "user-deleted": "User successfully deleted",
   "user-disabled-successfully": "User disabled successfully",
