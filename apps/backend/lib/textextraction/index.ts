@@ -13,7 +13,7 @@ export interface TextExtractionOption {
 
 export type TextExtractor = (buffer: Buffer, options?: TextExtractionOption) => Promise<string>
 
-const genericTextExtractor: TextExtractor = async (data: Buffer) => {
+export const genericTextExtractor: TextExtractor = async (data: Buffer) => {
   return data.toString('utf8')
 }
 

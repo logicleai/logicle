@@ -9,6 +9,7 @@ export type AnalyzerPayload =
       kind: 'unknown'
       mimeType: string
       sizeBytes: number
+      isText: boolean
       extractedText: null
     }
   | {
@@ -260,5 +261,6 @@ export const analyzeFileBuffer = async (buffer: Buffer, mimeType: string): Promi
   if (spreadsheetMimeTypes.has(mimeType)) return analyzeSpreadsheet(buffer, mimeType)
   if (presentationMimeTypes.has(mimeType)) return analyzePresentation(buffer, mimeType)
   if (wordMimeTypes.has(mimeType)) return analyzeWord(buffer, mimeType)
-  return { kind: 'unknown', mimeType, sizeBytes: buffer.byteLength, extractedText: null }
+  const isText = !buffer.slice(0, 8192).includes(0)
+  return { kind: 'unknown', mimeType, sizeBytes: buffer.byteLength, isText, extractedText: null }
 }
