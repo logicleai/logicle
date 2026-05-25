@@ -74,7 +74,7 @@ const AdvancedInstructionsEditor = forwardRef<HTMLDivElement, Props>(function In
       editable={!disabled}
       basicSetup={{
         lineNumbers: false,
-        foldGutter: false,
+        foldGutter: true,
         highlightActiveLineGutter: false,
       }}
       placeholder={placeholder}
