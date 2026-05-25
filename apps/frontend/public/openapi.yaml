@@ -504,6 +504,31 @@ paths:
               type: array
               items:
                 $ref: "#/components/schemas/AssistantSharing"
+  /api/assistants/{assistantId}/usage:
+    get:
+      summary: Get assistant usage
+      description: Return the list of assistants that use this assistant as a sub-assistant.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssistantParent"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: assistantId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
   /api/assistants/{assistantId}/visibility:
     patch:
       summary: Update assistant visibility
@@ -3459,6 +3484,18 @@ components:
             type: string
       additionalProperties: false
       id: UpdateableAssistantDraft
+    AssistantParent:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+      additionalProperties: false
+      id: AssistantParent
     UpdateableAssistantVisibility:
       type: object
       properties:
@@ -4499,6 +4536,9 @@ components:
           type: integer
           minimum: 0
           maximum: 9007199254740991
+        isText:
+          default: false
+          type: boolean
         extractedTextPath:
           anyOf:
             - type: string
@@ -4507,6 +4547,7 @@ components:
         - kind
         - mimeType
         - sizeBytes
+        - isText
         - extractedTextPath
       additionalProperties: false
       id: UnknownFileAnalysisPayload

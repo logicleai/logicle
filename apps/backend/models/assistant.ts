@@ -790,3 +790,17 @@ export const assistantUserData = async (assistantId: string, userId: string) => 
     .where((eb) => eb.and([eb('assistantId', '=', assistantId), eb('userId', '=', userId)]))
     .executeTakeFirst()
 }
+
+export const getAssistantParentAssistants = async (
+  assistantId: string
+): Promise<{ id: string; name: string }[]> => {
+  return db
+    .selectFrom('Assistant')
+    .innerJoin('AssistantVersion', (join) =>
+      join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersionId')
+    )
+    .select(['Assistant.id', 'AssistantVersion.name'])
+    .where('AssistantVersion.subAssistants', 'like', `%"${assistantId}"%`)
+    .where('Assistant.deleted', '=', 0)
+    .execute()
+}

@@ -628,6 +628,8 @@
   "failed_unsharing": "Errore nella rimozione della condivisione",
   "url": "URL",
   "usage": "Utilizzo",
+  "assistant_usage_empty": "Questo assistente non è utilizzato come sottoassistente da nessun altro assistente.",
+  "assistant_usage_used_by": "Questo assistente è utilizzato come sottoassistente da:",
   "user": "Utente",
   "user-deleted": "Utente eliminato con successo",
   "user-disabled-successfully": "Utente disabilitato con successo",

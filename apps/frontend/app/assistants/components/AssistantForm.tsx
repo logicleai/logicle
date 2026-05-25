@@ -13,6 +13,7 @@ import { KnowledgeTabPanel } from './KnowledgeTabPanel'
 import { GeneralTabPanel } from './GeneralTabPanel'
 import { SystemPromptTabPanel } from './SystemPromptTabPanel'
 import { AdvancedTabPanel } from './AdvancedTabPanel'
+import { UsageTabPanel } from './UsageTabPanel'
 import { llmModelNoCapabilities } from '@/lib/chat/models'
 import { useCachedContextLength } from '@/components/providers/localstoragechatstate'
 import { estimateAssistantDraftTokens } from '@/services/tokens'
@@ -30,7 +31,7 @@ interface Props {
   firePublish?: MutableRefObject<(() => void) | undefined>
 }
 
-type TabState = 'general' | 'instructions' | 'tools' | 'knowledge' | 'advanced'
+type TabState = 'general' | 'instructions' | 'tools' | 'knowledge' | 'advanced' | 'usage'
 
 const tabErrorsEqual = (
   left: Readonly<{
@@ -329,6 +330,7 @@ export const AssistantForm = ({
               <TabsTrigger value="advanced">
                 {t('advanced')} {tabErrors.advanced && <IconAlertCircle color="red" />}
               </TabsTrigger>
+              <TabsTrigger value="usage">{t('usage')}</TabsTrigger>
             </TabsList>
           </Tabs>
           <ContextLengthIndicator
@@ -370,6 +372,11 @@ export const AssistantForm = ({
           className="flex-1 min-w-0"
           form={form}
           visible={activeTab === 'advanced'}
+        />
+        <UsageTabPanel
+          className="flex-1 min-w-0"
+          visible={activeTab === 'usage'}
+          assistantId={assistant.assistantId}
         />
       </form>
     </FormProvider>
