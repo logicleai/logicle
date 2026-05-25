@@ -45,7 +45,14 @@ export const GET = operation({
         null as dto.UserAssistant | null
       )
 
-    const pinnedAssistants = userAssistants.filter((a) => a.pinned)
+    const pinnedAssistants = userAssistants
+      .filter((a) => a.pinned)
+      .sort((a, b) => {
+        if (!a.lastUsed && !b.lastUsed) return 0
+        if (!a.lastUsed) return 1
+        if (!b.lastUsed) return -1
+        return b.lastUsed < a.lastUsed ? -1 : b.lastUsed > a.lastUsed ? 1 : 0
+      })
 
     if (lastUsedAssistant == null) {
       const lastChat = await getMostRecentConversation(session.userId)
