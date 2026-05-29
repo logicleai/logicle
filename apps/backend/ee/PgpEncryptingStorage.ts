@@ -1,9 +1,40 @@
 import { Storage, BaseStorage, StorageReadOptions } from '@/lib/storage/api'
 import * as openpgp from 'openpgp'
 
+// PGP S2K (String-to-Key) key derivation is synchronous JavaScript and blocks
+// the event loop for ~15ms per call. Serializing decrypt initiations ensures
+// the event loop is only blocked for one S2K at a time instead of N × 15ms.
+class Semaphore {
+  private queue: Array<() => void> = []
+  private running = 0
+  constructor(private readonly limit: number) {}
+
+  acquire(): Promise<() => void> {
+    return new Promise((resolve) => {
+      const attempt = () => {
+        if (this.running < this.limit) {
+          this.running++
+          resolve(() => {
+            this.running--
+            const next = this.queue.shift()
+            // setImmediate yields to the macrotask queue so the event loop can
+            // process pending I/O between consecutive S2K derivations.
+            if (next) setImmediate(next)
+          })
+        } else {
+          this.queue.push(attempt)
+        }
+      }
+      attempt()
+    })
+  }
+}
+
 export class PgpEncryptingStorage extends BaseStorage {
   innerStorage: Storage
   passPhrase: string
+  private readonly decryptSemaphore = new Semaphore(1)
+
   constructor(innerStorage: Storage, passPhrase: string) {
     super()
     this.innerStorage = innerStorage
@@ -21,12 +52,17 @@ export class PgpEncryptingStorage extends BaseStorage {
   ): Promise<ReadableStream<Uint8Array>> {
     const innerStream = await this.innerStorage.readStream(path, encrypted, options)
     if (!encrypted) return innerStream
-    const { data: clearStream } = await openpgp.decrypt({
-      message: await openpgp.readMessage({ binaryMessage: innerStream }),
-      passwords: [this.passPhrase], // Use the passphrase for encryption
-      format: 'binary', // Use 'binary' format for streaming
-    })
-    return clearStream
+    const release = await this.decryptSemaphore.acquire()
+    try {
+      const { data: clearStream } = await openpgp.decrypt({
+        message: await openpgp.readMessage({ binaryMessage: innerStream }),
+        passwords: [this.passPhrase],
+        format: 'binary',
+      })
+      return clearStream
+    } finally {
+      release()
+    }
   }
 
   async writeStream(
