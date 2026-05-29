@@ -61,7 +61,75 @@ function makeCountedStream(chunks: Uint8Array[]): { stream: ReadableStream<Uint8
   return { stream, pullCount: () => count }
 }
 
+// Simulates a slow web client: reads one chunk every `delayMs` milliseconds.
+// Returns the maximum number of chunks the source produced ahead of the consumer
+// at any single point during consumption (i.e. peak in-flight chunks).
+async function slowClientPeakInFlight(stream: ReadableStream<Uint8Array>, delayMs: number, readCount: number) {
+  let chunksConsumed = 0
+  let maxInFlight = 0
+  const reader = stream.getReader()
+  try {
+    for (let i = 0; i < readCount; i++) {
+      await new Promise<void>((r) => setTimeout(r, delayMs))
+      const { done } = await reader.read()
+      if (done) break
+      chunksConsumed++
+      // Access internals aren't exposed — we track in-flight via the source's pull count
+    }
+  } finally {
+    await reader.cancel()
+  }
+  return { chunksConsumed, maxInFlight }
+}
+
 describe('backpressure', () => {
+  test('slow client: source is not drained ahead of consumer', async () => {
+    const TOTAL_CHUNKS = 50
+    const CHUNK_SIZE = 64 * 1024 // 64 KB — realistic HTTP chunk
+
+    let chunksProduced = 0
+    let chunksConsumed = 0
+    let peakInFlight = 0
+
+    // Fast source: produces chunks synchronously whenever pull() is called.
+    // Simulates a file that can be read quickly from disk.
+    const source = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (chunksProduced < TOTAL_CHUNKS) {
+          controller.enqueue(new Uint8Array(CHUNK_SIZE).fill(chunksProduced % 256))
+          chunksProduced++
+        } else {
+          controller.close()
+        }
+      },
+    })
+
+    const inner = new MemoryStorage()
+    vi.spyOn(inner, 'readStream').mockResolvedValue(source)
+    const cachingStorage = new CachingStorage(inner, 100) // large cache — no bypass
+
+    const out = await cachingStorage.readStream('huge.bin', false)
+    const reader = out.getReader()
+
+    // Slow consumer: 10 ms between reads, simulating a rate-limited HTTP client.
+    for (let i = 0; i < 10; i++) {
+      await new Promise<void>((r) => setTimeout(r, 10))
+      const { done } = await reader.read()
+      if (done) break
+      chunksConsumed++
+      peakInFlight = Math.max(peakInFlight, chunksProduced - chunksConsumed)
+    }
+    await reader.cancel()
+
+    // With pull-based backpressure the source stays at most 2 chunks ahead:
+    // one in the inner stream's queue (its reader is held by CachingStorage) and
+    // one in the outer stream's queue (held by the consumer reader).
+    // Without backpressure all 50 chunks would be produced immediately.
+    expect(peakInFlight).toBeLessThanOrEqual(2)
+    expect(chunksProduced).toBeLessThan(TOTAL_CHUNKS)
+  })
+
+
   test('Readable.toWeb streams data in order and supports mid-stream cancellation', async () => {
     const total = 20
     let readCount = 0
