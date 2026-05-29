@@ -5,11 +5,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { AesEncryptingStorage } from '@/ee/AesEncryptingStorage'
 import { MemoryStorage } from '@/lib/storage/MemoryStorage'
-import {
-  bufferToReadableStream,
-  collectStreamToBuffer,
-  nodeStreamToReadableStream,
-} from '@/lib/storage/utils'
+import { bufferToReadableStream, collectStreamToBuffer } from '@/lib/storage/utils'
 
 const password = 'my_key'
 
@@ -38,7 +34,7 @@ describe('apps/backend/lib/storage/utils', () => {
   test('destroy node streams when web stream is cancelled', async () => {
     const nodeStream = new Readable({ read() {} })
     const destroySpy = vi.spyOn(nodeStream, 'destroy')
-    const webStream = nodeStreamToReadableStream(nodeStream)
+    const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>
 
     await webStream.cancel()
 
