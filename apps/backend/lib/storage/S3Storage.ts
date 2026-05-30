@@ -1,7 +1,11 @@
+import http from 'node:http'
+import https from 'node:https'
 import { BaseStorage } from './api'
 import { logger } from '@/lib/logging'
 import { Upload } from '@aws-sdk/lib-storage'
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { NodeHttpHandler } from '@smithy/node-http-handler'
+
 export class S3Storage extends BaseStorage {
   bucketName: string
   region: string
@@ -21,7 +25,10 @@ export class S3Storage extends BaseStorage {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
       },
-      requestHandler: { maxSockets: 500 } as never,
+      requestHandler: new NodeHttpHandler({
+        httpAgent: new http.Agent({ maxSockets: 500 }),
+        httpsAgent: new https.Agent({ maxSockets: 500 }),
+      }),
     })
     this.bucketName = bucketName
     this.hostName = `${this.bucketName}.s3.${this.region}.amazonaws.com`

@@ -58,25 +58,30 @@ export class CachingStorage extends BaseStorage {
     const reader = stream.getReader()
     return new ReadableStream<Uint8Array>({
       async pull(controller) {
-        const { done, value } = await reader.read()
-        if (done) {
-          controller.close()
+        try {
+          const { done, value } = await reader.read()
+          if (done) {
+            controller.close()
+            if (shouldCache) {
+              cache.set(path, Buffer.concat(chunks))
+              logger.debug(`cache size is ${cache.calculatedSize}`)
+            }
+            return
+          }
           if (shouldCache) {
-            cache.set(path, Buffer.concat(chunks))
-            logger.debug(`cache size is ${cache.calculatedSize}`)
+            totalBytes += value.byteLength
+            if (totalBytes > maxCacheableItemSizeBytes) {
+              shouldCache = false
+              chunks.length = 0
+            } else {
+              chunks.push(Buffer.from(value))
+            }
           }
-          return
+          controller.enqueue(value)
+        } catch (e) {
+          logger.error('Readable stream failed')
+          controller.error(e)
         }
-        if (shouldCache) {
-          totalBytes += value.byteLength
-          if (totalBytes > maxCacheableItemSizeBytes) {
-            shouldCache = false
-            chunks.length = 0
-          } else {
-            chunks.push(Buffer.from(value))
-          }
-        }
-        controller.enqueue(value)
       },
       cancel() {
         return reader.cancel()
