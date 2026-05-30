@@ -24,6 +24,7 @@ export default defineConfig({
     'worker-script': 'packages/file-analyzer/src/worker/script.ts',
     'search-script': 'apps/backend/lib/search/script.ts',
     'tokenizer-script': 'apps/backend/lib/chat/tokenizer-worker/script.ts',
+    'pgp-s2k-script': 'apps/backend/ee/pgp-s2k-worker/script.ts',
   },
   outDir: 'dist-server',
   target: 'node24',

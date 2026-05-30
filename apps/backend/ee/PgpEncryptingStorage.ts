@@ -1,44 +1,17 @@
 import { Storage, BaseStorage, StorageReadOptions } from '@/lib/storage/api'
 import * as openpgp from 'openpgp'
+import type { PgpS2kWorkerRuntime } from './pgp-s2k-worker/runtime'
 
-// PGP S2K (String-to-Key) key derivation is synchronous JavaScript and blocks
-// the event loop for ~15ms per call. Serializing decrypt initiations ensures
-// the event loop is only blocked for one S2K at a time instead of N × 15ms.
-class Semaphore {
-  private queue: Array<() => void> = []
-  private running = 0
-  constructor(private readonly limit: number) {}
+// Injected at bootstrap so the EE module doesn't need to construct the worker itself.
+let s2kWorker: PgpS2kWorkerRuntime | null = null
 
-  acquire(): Promise<() => void> {
-    return new Promise((resolve) => {
-      const attempt = () => {
-        if (this.running < this.limit) {
-          this.running++
-          resolve(() => {
-            this.running--
-            const next = this.queue.shift()
-            // setImmediate yields to the macrotask queue so the event loop can
-            // process pending I/O between consecutive S2K derivations.
-            if (next) setImmediate(next)
-          })
-        } else {
-          this.queue.push(attempt)
-        }
-      }
-      attempt()
-    })
-  }
+export function setPgpS2kWorker(worker: PgpS2kWorkerRuntime) {
+  s2kWorker = worker
 }
 
 export class PgpEncryptingStorage extends BaseStorage {
   innerStorage: Storage
   passPhrase: string
-  private readonly decryptSemaphore = new Semaphore(1)
-  // Coalesces concurrent S2K derivations for the same file.
-  // All requests that arrive while S2K is in-flight share one Promise and get
-  // the key as soon as it resolves. The entry is deleted immediately after
-  // resolution so the key is never retained beyond the requests that needed it.
-  private readonly pendingSessionKeys = new Map<string, Promise<openpgp.DecryptedSessionKey>>()
 
   constructor(innerStorage: Storage, passPhrase: string) {
     super()
@@ -58,29 +31,45 @@ export class PgpEncryptingStorage extends BaseStorage {
     const innerStream = await this.innerStorage.readStream(path, encrypted, options)
     if (!encrypted) return innerStream
 
-    // readMessage reads only the PGP packet headers (a few hundred bytes of I/O).
-    // Keeping it outside the semaphore lets concurrent S3/disk reads happen in parallel.
-    const message = await openpgp.readMessage({ binaryMessage: innerStream })
+    // Read the first chunk from the storage stream. The SKESK (session-key
+    // encrypted session key) packet lives in the first ~50 bytes of a PGP
+    // message, well within any single storage chunk.
+    const initialReader = innerStream.getReader()
+    const { value: firstChunk, done } = await initialReader.read()
+    initialReader.releaseLock()
 
-    let pending = this.pendingSessionKeys.get(path)
-    if (!pending) {
-      pending = (async () => {
-        const release = await this.decryptSemaphore.acquire()
-        try {
-          const [sk] = await openpgp.decryptSessionKeys({ message, passwords: [this.passPhrase] })
-          return sk
-        } finally {
-          release()
-          // Remove immediately: requests already awaiting this Promise still
-          // receive the value, but the next request starts a fresh derivation.
-          this.pendingSessionKeys.delete(path)
+    if (!firstChunk || done) throw new Error(`PGP stream for ${path} is empty`)
+
+    // Derive the session key in the worker thread — S2K is synchronous JavaScript
+    // that blocks for ~15ms; running it off the main thread keeps the event loop free
+    // regardless of how many concurrent requests arrive.
+    const worker = s2kWorker
+    if (!worker) throw new Error('PGP S2K worker is not initialised')
+    const sessionKey = await worker.deriveSessionKey(
+      firstChunk.slice(0, Math.min(512, firstChunk.length)),
+      this.passPhrase
+    )
+
+    // Reconstruct the full stream by prepending the already-read first chunk.
+    const restReader = innerStream.getReader()
+    let firstSent = false
+    const fullStream = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        if (!firstSent) {
+          firstSent = true
+          controller.enqueue(firstChunk)
+          return
         }
-      })()
-      this.pendingSessionKeys.set(path, pending)
-    }
+        const { done, value } = await restReader.read()
+        if (done) controller.close()
+        else controller.enqueue(value)
+      },
+      cancel() {
+        return restReader.cancel()
+      },
+    })
 
-    const sessionKey = await pending
-
+    const message = await openpgp.readMessage({ binaryMessage: fullStream })
     const { data: clearStream } = await openpgp.decrypt({
       message,
       sessionKeys: [sessionKey as openpgp.SessionKey],
