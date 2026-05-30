@@ -2,7 +2,7 @@ import { TextRun } from 'docx'
 import type { IRunOptions } from 'docx'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
-import type { InlineCode as MdastInlineCode, Root, RootContent, Text as MdastText } from 'mdast'
+import type { Image as MdastImage, InlineCode as MdastInlineCode, Root, RootContent, Text as MdastText } from 'mdast'
 import docx from 'remark-docx'
 import { htmlPlugin } from 'remark-docx/plugins/html'
 import { imagePlugin } from 'remark-docx/plugins/image'
@@ -14,6 +14,7 @@ import remarkMath from 'remark-math'
 import remarkParse from 'remark-parse'
 import type { Plugin } from 'unified'
 import { unified } from 'unified'
+import { visit } from 'unist-util-visit'
 
 declare module 'mdast' {
   interface TextData {
@@ -198,6 +199,49 @@ export const coloredHtmlPlugin = (): RemarkDocxPlugin => {
   }
 }
 
+const FILE_URL_PATTERN = /^\/api\/files\/([^/]+)\/content$/
+
+const remarkNonImageFileLinks: Plugin<[string], Root> = (baseUrl: string) => {
+  return async (tree: Root) => {
+      type Replacement = { parent: { children: RootContent[] }; index: number; text: string; url: string }
+      const replacements: Replacement[] = []
+      const tasks: Promise<void>[] = []
+
+      visit(tree, 'image', (node: MdastImage, index, parent) => {
+        const fileMatch = node.url.match(FILE_URL_PATTERN)
+        if (!fileMatch || index === undefined || !parent) return
+
+        const fileId = fileMatch[1]
+        const p = parent as { children: RootContent[] }
+        const idx = index
+
+        tasks.push(
+          getFileWithId(fileId).then((file) => {
+            if (!file || !file.type.startsWith('image/')) {
+              replacements.push({
+                parent: p,
+                index: idx,
+                text: node.alt || file?.name || 'attachment',
+                url: `${baseUrl}${node.url}`,
+              })
+            }
+          })
+        )
+      })
+
+      await Promise.all(tasks)
+
+      replacements.sort((a, b) => (a.parent === b.parent ? b.index - a.index : 0))
+      for (const { parent, index, text, url } of replacements) {
+        parent.children.splice(index, 1, {
+          type: 'link',
+          url,
+          children: [{ type: 'text', value: text }],
+        } as RootContent)
+      }
+  }
+}
+
 function dataUrlToArrayBuffer(url: string): ArrayBuffer {
   const [, payload = ''] = url.split(',', 2)
   const buffer = Buffer.from(payload, 'base64')
@@ -240,11 +284,13 @@ async function fallbackSvgToBuffer({ buffer }: { buffer: ArrayBuffer }) {
 }
 
 export async function renderDocxFromMarkdown(markdown: string): Promise<Uint8Array> {
+  const baseUrl = process.env.APP_URL ?? ''
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)
     .use(remarkMath)
     .use(remarkColoredSpans)
+    .use(remarkNonImageFileLinks, baseUrl)
     .use(docx, {
       thematicBreak: 'line',
       plugins: [
