@@ -40,8 +40,9 @@ export class PgpEncryptingStorage extends BaseStorage {
   passPhrase: string
 
   // Session keys are deterministic for a given (path, passphrase) pair and
-  // expensive to derive (~4ms per S2K at count=224). Cache them for 1 hour.
-  private sessionKeyCache = new LRUCache<string, openpgp.DecryptedSessionKey>({
+  // expensive to derive (~4ms per S2K at count=224). Cache the derivation
+  // promise so concurrent requests for the same file share one S2K task.
+  private sessionKeyCache = new LRUCache<string, Promise<openpgp.DecryptedSessionKey>>({
     max: 1000,
     ttl: 60 * 60 * 1000,
   })
@@ -93,13 +94,19 @@ export class PgpEncryptingStorage extends BaseStorage {
     }
 
     // Session key derivation — cached by path (each blob has a fixed SKESK).
-    let sessionKey = this.sessionKeyCache.get(path)
-    if (!sessionKey) {
-      sessionKey = s2kWorker
-        ? await s2kWorker.deriveSessionKey(headerBuf, this.passPhrase)
-        : await deriveSessionKeyDirect(headerBuf, this.passPhrase)
-      this.sessionKeyCache.set(path, sessionKey)
+    // Cache in-flight promises to deduplicate concurrent work.
+    let sessionKeyPromise = this.sessionKeyCache.get(path)
+    if (!sessionKeyPromise) {
+      sessionKeyPromise = (s2kWorker
+        ? s2kWorker.deriveSessionKey(headerBuf, this.passPhrase)
+        : deriveSessionKeyDirect(headerBuf, this.passPhrase)
+      ).catch((error) => {
+        this.sessionKeyCache.delete(path)
+        throw error
+      })
+      this.sessionKeyCache.set(path, sessionKeyPromise)
     }
+    const sessionKey = await sessionKeyPromise
 
     // Reconstruct the full stream: replay buffered chunks, then continue reading.
     const restReader = innerStream.getReader()
