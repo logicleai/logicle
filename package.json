@@ -46,7 +46,8 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "build-ci": "next build apps/frontend",
-    "generate:openapi": "DATABASE_URL=memory: FILE_STORAGE_LOCATION=. APP_URL=http://localhost:3000 NODE_OPTIONS='--import=tsx' tsx apps/backend/generate_openapi.ts --out apps/frontend/public/openapi.yaml"
+    "generate:openapi": "DATABASE_URL=memory: FILE_STORAGE_LOCATION=. APP_URL=http://localhost:3000 NODE_OPTIONS='--import=tsx' tsx apps/backend/generate_openapi.ts --out apps/frontend/public/openapi.yaml",
+    "bench:pgp-s2k": "tsx bench/pgp-s2k.bench.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.75",

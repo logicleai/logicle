@@ -1,12 +1,39 @@
 import { Storage, BaseStorage, StorageReadOptions } from '@/lib/storage/api'
 import * as openpgp from 'openpgp'
 import type { PgpS2kWorkerRuntime } from './pgp-s2k-worker/runtime'
+import { streamingIteratedS2kProduceKey } from './pgp-s2k-worker/streaming-s2k'
 
 // Injected at bootstrap so the EE module doesn't need to construct the worker itself.
 let s2kWorker: PgpS2kWorkerRuntime | null = null
 
 export function setPgpS2kWorker(worker: PgpS2kWorkerRuntime) {
   s2kWorker = worker
+}
+
+// Direct (same-thread) fallback used when the worker is not running (e.g. tests).
+async function deriveSessionKeyDirect(
+  headerBytes: Uint8Array,
+  passphrase: string
+): Promise<openpgp.DecryptedSessionKey> {
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(headerBytes)
+      // Intentionally do NOT close — same reasoning as the worker script.
+    },
+  })
+  const message = await openpgp.readMessage({ binaryMessage: stream })
+
+  for (const pkt of message.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)) {
+    const s2k = (pkt as any).s2k
+    if (s2k?.type === 'iterated') {
+      const { algorithm, salt, c } = s2k
+      s2k.produceKey = (pass: string, keySizeBytes: number): Promise<Uint8Array> =>
+        Promise.resolve(streamingIteratedS2kProduceKey(algorithm, salt, c, pass, keySizeBytes))
+    }
+  }
+
+  const [sk] = await openpgp.decryptSessionKeys({ message, passwords: [passphrase] })
+  return sk
 }
 
 export class PgpEncryptingStorage extends BaseStorage {
@@ -40,15 +67,13 @@ export class PgpEncryptingStorage extends BaseStorage {
 
     if (!firstChunk || done) throw new Error(`PGP stream for ${path} is empty`)
 
-    // Derive the session key in the worker thread — S2K is synchronous JavaScript
-    // that blocks for ~15ms; running it off the main thread keeps the event loop free
-    // regardless of how many concurrent requests arrive.
-    const worker = s2kWorker
-    if (!worker) throw new Error('PGP S2K worker is not initialised')
-    const sessionKey = await worker.deriveSessionKey(
-      firstChunk.slice(0, Math.min(512, firstChunk.length)),
-      this.passPhrase
-    )
+    // Derive the session key. The worker offloads the ~4ms S2K computation off
+    // the main thread; fall back to a direct call when the worker is not running
+    // (e.g. in tests or standalone scripts).
+    const headerBytes = firstChunk.slice(0, Math.min(512, firstChunk.length))
+    const sessionKey = s2kWorker
+      ? await s2kWorker.deriveSessionKey(headerBytes, this.passPhrase)
+      : await deriveSessionKeyDirect(headerBytes, this.passPhrase)
 
     // Reconstruct the full stream by prepending the already-read first chunk.
     const restReader = innerStream.getReader()
