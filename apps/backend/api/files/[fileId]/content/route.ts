@@ -9,35 +9,6 @@ import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import env from '@/lib/env'
 
-const MAX_ACTIVE_FILE_DOWNLOADS_GLOBAL = 24
-const MAX_ACTIVE_FILE_DOWNLOADS_PER_USER_FILE = 2
-let activeFileDownloads = 0
-const activeFileDownloadsByUserFile = new Map<string, number>()
-
-const acquireDownloadSlot = (sessionUserId: string, fileId: string): boolean => {
-  const key = `${sessionUserId}:${fileId}`
-  const perKey = activeFileDownloadsByUserFile.get(key) ?? 0
-  if (activeFileDownloads >= MAX_ACTIVE_FILE_DOWNLOADS_GLOBAL) {
-    return false
-  }
-  if (perKey >= MAX_ACTIVE_FILE_DOWNLOADS_PER_USER_FILE) {
-    return false
-  }
-  activeFileDownloads += 1
-  activeFileDownloadsByUserFile.set(key, perKey + 1)
-  return true
-}
-
-const releaseDownloadSlot = (sessionUserId: string, fileId: string): void => {
-  const key = `${sessionUserId}:${fileId}`
-  const perKey = activeFileDownloadsByUserFile.get(key) ?? 0
-  if (perKey <= 1) {
-    activeFileDownloadsByUserFile.delete(key)
-  } else {
-    activeFileDownloadsByUserFile.set(key, perKey - 1)
-  }
-  activeFileDownloads = Math.max(0, activeFileDownloads - 1)
-}
 
 // A synchronized tee, i.e. faster reader has to wait
 function _synchronizedTee(
@@ -182,7 +153,7 @@ export const PUT = operation({
 export const GET = operation({
   name: 'Download file content',
   authentication: 'user',
-  responses: [responseSpec(200, z.any()), errorSpec(403), errorSpec(404), errorSpec(429)] as const,
+  responses: [responseSpec(200, z.any()), errorSpec(403), errorSpec(404)] as const,
   implementation: async ({ params, session }) => {
     const file = await db
       .selectFrom('File')
@@ -196,49 +167,14 @@ export const GET = operation({
     if (!(await canAccessFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
       return forbidden()
     }
-    if (!acquireDownloadSlot(session.userId, params.fileId)) {
-      return error(429, 'Too many concurrent downloads for this file')
-    }
-    let released = false
-    const release = () => {
-      if (released) return
-      released = true
-      releaseDownloadSlot(session.userId, params.fileId)
-    }
-    try {
-      const fileContent = await storage.readStream(file.path, !!file.encrypted, {
-        expectedSizeBytes: file.size ?? undefined,
-      })
-      const reader = fileContent.getReader()
-      const guardedStream = new ReadableStream<Uint8Array>({
-        async pull(controller) {
-          try {
-            const { done, value } = await reader.read()
-            if (done) {
-              release()
-              controller.close()
-            } else {
-              controller.enqueue(value)
-            }
-          } catch (err) {
-            release()
-            controller.error(err)
-          }
-        },
-        async cancel(reason) {
-          release()
-          await reader.cancel(reason)
-        },
-      })
-      return new Response(guardedStream, {
-        headers: {
-          'content-type': file.type,
-          ...(typeof file.size === 'number' ? { 'content-length': `${file.size}` } : {}),
-        },
-      })
-    } catch (err) {
-      release()
-      throw err
-    }
+    const fileContent = await storage.readStream(file.path, !!file.encrypted, {
+      expectedSizeBytes: file.size ?? undefined,
+    })
+    return new Response(fileContent, {
+      headers: {
+        'content-type': file.type,
+        ...(typeof file.size === 'number' ? { 'content-length': `${file.size}` } : {}),
+      },
+    })
   },
 })
