@@ -123,31 +123,29 @@ export class AesEncryptingStorage extends BaseStorage {
       return new Uint8Array(encrypted)
     }
 
-    return new ReadableStream({
-      start(controller) {
-        const reader = stream.getReader()
-        async function push() {
-          try {
-            const { done, value } = await reader.read()
-            if (done) {
-              const clearText = concatenate(chunks)
-              const encryptedData = await encrypt(clearText)
-              controller.enqueue(encryptedData)
-              controller.close()
-              return
-            }
-            chunks.push(value) // Collect data for Buffer
-            const clearText = getAvailableDataAligned16()
+    const reader = stream.getReader()
+    return new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        try {
+          const { done, value } = await reader.read()
+          if (done) {
+            const clearText = concatenate(chunks)
             const encryptedData = await encrypt(clearText)
             controller.enqueue(encryptedData)
-          } catch (e) {
-            logger.error('Readable stream failed')
-            controller.error(e)
+            controller.close()
             return
           }
-          await push() // Read the next chunk
+          chunks.push(value)
+          const clearText = getAvailableDataAligned16()
+          const encryptedData = await encrypt(clearText)
+          controller.enqueue(encryptedData)
+        } catch (e) {
+          logger.error('Readable stream failed')
+          controller.error(e)
         }
-        void push()
+      },
+      cancel() {
+        return reader.cancel()
       },
     })
   }

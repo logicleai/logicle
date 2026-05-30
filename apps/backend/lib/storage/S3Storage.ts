@@ -1,7 +1,10 @@
+import http from 'node:http'
+import https from 'node:https'
 import { BaseStorage } from './api'
 import { logger } from '@/lib/logging'
 import { Upload } from '@aws-sdk/lib-storage'
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { NodeHttpHandler } from '@smithy/node-http-handler'
 
 export class S3Storage extends BaseStorage {
   bucketName: string
@@ -11,12 +14,21 @@ export class S3Storage extends BaseStorage {
   constructor(bucketName: string) {
     super()
     this.region = process.env.AWS_DEFAULT_REGION!
+    // A single shared client is used for both reads and writes.
+    // maxSockets is raised well above the default (50) because pull-based
+    // streaming keeps connections open for the full duration of each download;
+    // many concurrent slow clients would otherwise exhaust the pool and delay
+    // uploads waiting for a free connection.
     this.s3Client = new S3Client({
       region: process.env.AWS_DEFAULT_REGION,
       credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
       },
+      requestHandler: new NodeHttpHandler({
+        httpAgent: new http.Agent({ maxSockets: 500 }),
+        httpsAgent: new https.Agent({ maxSockets: 500 }),
+      }),
     })
     this.bucketName = bucketName
     this.hostName = `${this.bucketName}.s3.${this.region}.amazonaws.com`
@@ -24,9 +36,8 @@ export class S3Storage extends BaseStorage {
 
   async writeStream(path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
     try {
-      const client = new S3Client({ region: this.region })
       const upload = new Upload({
-        client,
+        client: this.s3Client,
         params: {
           Bucket: this.bucketName,
           Key: path,

@@ -4,12 +4,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { AesEncryptingStorage } from '@/ee/AesEncryptingStorage'
+import { CachingStorage } from '@/lib/storage/CachingStorage'
 import { MemoryStorage } from '@/lib/storage/MemoryStorage'
-import {
-  bufferToReadableStream,
-  collectStreamToBuffer,
-  nodeStreamToReadableStream,
-} from '@/lib/storage/utils'
+import { bufferToReadableStream, collectStreamToBuffer } from '@/lib/storage/utils'
 
 const password = 'my_key'
 
@@ -38,11 +35,103 @@ describe('apps/backend/lib/storage/utils', () => {
   test('destroy node streams when web stream is cancelled', async () => {
     const nodeStream = new Readable({ read() {} })
     const destroySpy = vi.spyOn(nodeStream, 'destroy')
-    const webStream = nodeStreamToReadableStream(nodeStream)
+    const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>
 
     await webStream.cancel()
 
     expect(destroySpy).toHaveBeenCalled()
+  })
+})
+
+// A controlled ReadableStream whose source is only pulled on consumer demand.
+// pullCount tracks how many times the source has been asked for data.
+function makeCountedStream(chunks: Uint8Array[]): { stream: ReadableStream<Uint8Array>; pullCount: () => number } {
+  let count = 0
+  let index = 0
+  const stream = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      count++
+      if (index < chunks.length) {
+        controller.enqueue(chunks[index++])
+      } else {
+        controller.close()
+      }
+    },
+  })
+  return { stream, pullCount: () => count }
+}
+
+describe('backpressure', () => {
+  test('Readable.toWeb streams data in order and supports mid-stream cancellation', async () => {
+    const total = 20
+    let readCount = 0
+    const nodeStream = new Readable({
+      read() {
+        if (readCount < total) {
+          this.push(Buffer.from([readCount++]))
+        } else {
+          this.push(null)
+        }
+      },
+    })
+    const destroySpy = vi.spyOn(nodeStream, 'destroy')
+
+    const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>
+    const reader = webStream.getReader()
+
+    // Read only the first 5 chunks
+    const received: number[] = []
+    for (let i = 0; i < 5; i++) {
+      const { value } = await reader.read()
+      received.push(value![0])
+    }
+    expect(received).toEqual([0, 1, 2, 3, 4])
+
+    // Cancel mid-stream — underlying node stream must be destroyed
+    await reader.cancel()
+    expect(destroySpy).toHaveBeenCalled()
+  })
+
+  test('CachingStorage does not consume inner stream until consumer reads', async () => {
+    const chunks = Array.from({ length: 10 }, (_, i) => new Uint8Array([i]))
+    const { stream: inner, pullCount } = makeCountedStream(chunks)
+
+    const inner_storage = new MemoryStorage()
+    vi.spyOn(inner_storage, 'readStream').mockResolvedValue(inner)
+
+    const cachingStorage = new CachingStorage(inner_storage, 10)
+    const out = await cachingStorage.readStream('x', false)
+    const reader = out.getReader()
+
+    // Yield without reading — inner stream must not have been pre-drained
+    await new Promise<void>((r) => setImmediate(r))
+    expect(pullCount()).toBeLessThan(chunks.length)
+
+    const first = await reader.read()
+    expect(first.value).toEqual(new Uint8Array([0]))
+
+    await reader.cancel()
+  })
+
+  test('AesEncryptingStorage does not consume inner stream until consumer reads', async () => {
+    const chunks = Array.from({ length: 10 }, (_, i) => new Uint8Array(16).fill(i))
+    const { stream: inner, pullCount } = makeCountedStream(chunks)
+
+    const inner_storage = new MemoryStorage()
+    vi.spyOn(inner_storage, 'readStream').mockResolvedValue(inner)
+
+    const aesStorage = await AesEncryptingStorage.create(inner_storage, 'key')
+    const out = await aesStorage.readStream('path', true)
+    const reader = out.getReader()
+
+    // Yield without reading
+    await new Promise<void>((r) => setImmediate(r))
+    expect(pullCount()).toBeLessThan(chunks.length)
+
+    const first = await reader.read()
+    expect(first.done).toBe(false)
+
+    await reader.cancel()
   })
 })
 
@@ -161,7 +250,7 @@ describe('apps/backend/lib/storage/S3Storage', () => {
     expect(storage.bucketName).toBe('bucket-name')
     expect(storage.region).toBe('eu-west-1')
     expect(storage.hostName).toBe('bucket-name.s3.eu-west-1.amazonaws.com')
-    expect(clientConfigs[0]).toEqual({
+    expect(clientConfigs[0]).toMatchObject({
       region: 'eu-west-1',
       credentials: {
         accessKeyId: 'key',

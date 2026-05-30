@@ -55,38 +55,36 @@ export class CachingStorage extends BaseStorage {
     const chunks: Buffer[] = []
     let totalBytes = 0
     let shouldCache = true
-    return new ReadableStream({
-      start(controller) {
-        const reader = stream.getReader()
-
-        async function push() {
-          try {
-            const { done, value } = await reader.read()
-            if (done) {
-              controller.close()
-              if (shouldCache) {
-                cache.set(path, Buffer.concat(chunks))
-                logger.debug(`cache size is ${cache.calculatedSize}`)
-              }
-              return
-            }
+    const reader = stream.getReader()
+    return new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        try {
+          const { done, value } = await reader.read()
+          if (done) {
+            controller.close()
             if (shouldCache) {
-              totalBytes += value.byteLength
-              if (totalBytes > maxCacheableItemSizeBytes) {
-                shouldCache = false
-                chunks.length = 0
-              } else {
-                chunks.push(Buffer.from(value))
-              }
+              cache.set(path, Buffer.concat(chunks))
+              logger.debug(`cache size is ${cache.calculatedSize}`)
             }
-            controller.enqueue(value) // Pass data downstream
-            await push() // Read the next chunk
-          } catch (e) {
-            logger.error('Readable stream failed')
-            controller.error(e)
+            return
           }
+          if (shouldCache) {
+            totalBytes += value.byteLength
+            if (totalBytes > maxCacheableItemSizeBytes) {
+              shouldCache = false
+              chunks.length = 0
+            } else {
+              chunks.push(Buffer.from(value))
+            }
+          }
+          controller.enqueue(value)
+        } catch (e) {
+          logger.error('Readable stream failed')
+          controller.error(e)
         }
-        void push()
+      },
+      cancel() {
+        return reader.cancel()
       },
     })
   }

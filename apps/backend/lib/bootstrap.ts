@@ -8,6 +8,8 @@ import env from '@/lib/env'
 import { startSearchWorker } from '@/lib/search/runtime'
 import { TokenizerWorkerRuntime } from '@/backend/lib/chat/tokenizer-worker/runtime'
 import { setTokenizerWorker } from '@/backend/lib/chat/prompt-token-counter'
+import { PgpS2kWorkerRuntime } from '@/ee/pgp-s2k-worker/runtime'
+import { setPgpS2kWorker } from '@/ee/PgpEncryptingStorage'
 import { startFileOrphanCleanupRuntime } from '@/backend/lib/files/orphan-cleanup'
 
 let backendBootstrapped = false
@@ -34,6 +36,7 @@ export async function bootstrapBackendRuntime() {
 
   setFileAnalyzerRuntime(new WorkerRuntime(getLogger()))
   setTokenizerWorker(new TokenizerWorkerRuntime())
+  setPgpS2kWorker(new PgpS2kWorkerRuntime())
 
   if (env.search.meiliHost) {
     startSearchWorker()

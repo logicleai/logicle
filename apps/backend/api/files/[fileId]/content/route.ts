@@ -9,6 +9,7 @@ import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import env from '@/lib/env'
 
+
 // A synchronized tee, i.e. faster reader has to wait
 function _synchronizedTee(
   input: ReadableStream
@@ -166,7 +167,9 @@ export const GET = operation({
     if (!(await canAccessFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
       return forbidden()
     }
-    const fileContent = await storage.readStream(file.path, !!file.encrypted)
+    const fileContent = await storage.readStream(file.path, !!file.encrypted, {
+      expectedSizeBytes: file.size ?? undefined,
+    })
     return new Response(fileContent, {
       headers: {
         'content-type': file.type,

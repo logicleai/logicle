@@ -1,7 +1,7 @@
 import { logger } from '@/lib/logging'
 import { BaseStorage } from './api'
 import fs, { createReadStream } from 'node:fs'
-import { nodeStreamToReadableStream } from './utils'
+import { Readable } from 'node:stream'
 
 export class FsStorage extends BaseStorage {
   rootPath: string
@@ -36,7 +36,7 @@ export class FsStorage extends BaseStorage {
   ): Promise<ReadableStream<Uint8Array>> {
     const fsPath = `${this.rootPath}/${path}`
     const nodeStream = createReadStream(fsPath)
-    return nodeStreamToReadableStream(nodeStream)
+    return Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>
   }
 
   async writeStream(path: string, stream: ReadableStream<Uint8Array>) {
