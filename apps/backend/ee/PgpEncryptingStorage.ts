@@ -1,5 +1,6 @@
 import { Storage, BaseStorage, StorageReadOptions } from '@/lib/storage/api'
 import * as openpgp from 'openpgp'
+import { LRUCache } from 'lru-cache'
 import type { PgpS2kWorkerRuntime } from './pgp-s2k-worker/runtime'
 import { patchSkeskPackets } from './pgp-s2k-worker/streaming-s2k'
 
@@ -29,9 +30,21 @@ async function deriveSessionKeyDirect(
   return sk
 }
 
+// Minimum bytes needed to contain the PGP SKESK header (v4 iterated S2K ≈ 18B)
+// plus the start of the following SEIPD packet header. 64B is a comfortable margin.
+const MIN_HEADER_BYTES = 64
+const MAX_HEADER_BYTES = 512
+
 export class PgpEncryptingStorage extends BaseStorage {
   innerStorage: Storage
   passPhrase: string
+
+  // Session keys are deterministic for a given (path, passphrase) pair and
+  // expensive to derive (~4ms per S2K at count=224). Cache them for 1 hour.
+  private sessionKeyCache = new LRUCache<string, openpgp.DecryptedSessionKey>({
+    max: 1000,
+    ttl: 60 * 60 * 1000,
+  })
 
   constructor(innerStorage: Storage, passPhrase: string) {
     super()
@@ -51,36 +64,56 @@ export class PgpEncryptingStorage extends BaseStorage {
     const innerStream = await this.innerStorage.readStream(path, encrypted, options)
     if (!encrypted) return innerStream
 
-    // Read the first chunk from the storage stream. The SKESK (session-key
-    // encrypted session key) packet lives in the first ~50 bytes of a PGP
-    // message, well within any single storage chunk.
+    // Accumulate chunks until we have enough bytes to parse the SKESK header.
+    // Storage backends may return arbitrarily small initial chunks (e.g. an
+    // in-memory stream that yields one byte at a time), so we cannot assume
+    // the first chunk alone contains the full header.
+    const bufferedChunks: Uint8Array[] = []
+    let bufferedSize = 0
+
     const initialReader = innerStream.getReader()
-    const { value: firstChunk, done } = await initialReader.read()
+    while (bufferedSize < MIN_HEADER_BYTES) {
+      const { value, done } = await initialReader.read()
+      if (done) break
+      bufferedChunks.push(value)
+      bufferedSize += value.length
+    }
     initialReader.releaseLock()
 
-    if (!firstChunk || done) throw new Error(`PGP stream for ${path} is empty`)
+    if (bufferedSize === 0) throw new Error(`PGP stream for ${path} is empty`)
 
-    // Derive the session key. The worker offloads the ~4ms S2K computation off
-    // the main thread; fall back to a direct call when the worker is not running
-    // (e.g. in tests or standalone scripts).
-    const headerBytes = firstChunk.slice(0, Math.min(512, firstChunk.length))
-    const sessionKey = s2kWorker
-      ? await s2kWorker.deriveSessionKey(headerBytes, this.passPhrase)
-      : await deriveSessionKeyDirect(headerBytes, this.passPhrase)
+    // Build a header slice (up to MAX_HEADER_BYTES) from the buffered chunks.
+    const headerBuf = new Uint8Array(Math.min(bufferedSize, MAX_HEADER_BYTES))
+    let off = 0
+    for (const chunk of bufferedChunks) {
+      if (off >= headerBuf.length) break
+      const n = Math.min(chunk.length, headerBuf.length - off)
+      headerBuf.set(chunk.subarray(0, n), off)
+      off += n
+    }
 
-    // Reconstruct the full stream by prepending the already-read first chunk.
+    // Session key derivation — cached by path (each blob has a fixed SKESK).
+    let sessionKey = this.sessionKeyCache.get(path)
+    if (!sessionKey) {
+      sessionKey = s2kWorker
+        ? await s2kWorker.deriveSessionKey(headerBuf, this.passPhrase)
+        : await deriveSessionKeyDirect(headerBuf, this.passPhrase)
+      this.sessionKeyCache.set(path, sessionKey)
+    }
+
+    // Reconstruct the full stream: replay buffered chunks, then continue reading.
     const restReader = innerStream.getReader()
-    let firstSent = false
+    let chunkIdx = 0
     const fullStream = new ReadableStream<Uint8Array>({
-      async pull(controller) {
-        if (!firstSent) {
-          firstSent = true
-          controller.enqueue(firstChunk)
+      pull(controller) {
+        if (chunkIdx < bufferedChunks.length) {
+          controller.enqueue(bufferedChunks[chunkIdx++])
           return
         }
-        const { done, value } = await restReader.read()
-        if (done) controller.close()
-        else controller.enqueue(value)
+        return restReader.read().then(({ done, value }) => {
+          if (done) controller.close()
+          else controller.enqueue(value)
+        })
       },
       cancel() {
         return restReader.cancel()
