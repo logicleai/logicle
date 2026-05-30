@@ -1,7 +1,7 @@
 import { Storage, BaseStorage, StorageReadOptions } from '@/lib/storage/api'
 import * as openpgp from 'openpgp'
 import type { PgpS2kWorkerRuntime } from './pgp-s2k-worker/runtime'
-import { streamingIteratedS2kProduceKey } from './pgp-s2k-worker/streaming-s2k'
+import { patchSkeskPackets } from './pgp-s2k-worker/streaming-s2k'
 
 // Injected at bootstrap so the EE module doesn't need to construct the worker itself.
 let s2kWorker: PgpS2kWorkerRuntime | null = null
@@ -23,14 +23,7 @@ async function deriveSessionKeyDirect(
   })
   const message = await openpgp.readMessage({ binaryMessage: stream })
 
-  for (const pkt of message.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)) {
-    const s2k = (pkt as any).s2k
-    if (s2k?.type === 'iterated') {
-      const { algorithm, salt, c } = s2k
-      s2k.produceKey = (pass: string, keySizeBytes: number): Promise<Uint8Array> =>
-        Promise.resolve(streamingIteratedS2kProduceKey(algorithm, salt, c, pass, keySizeBytes))
-    }
-  }
+  patchSkeskPackets(message)
 
   const [sk] = await openpgp.decryptSessionKeys({ message, passwords: [passphrase] })
   return sk

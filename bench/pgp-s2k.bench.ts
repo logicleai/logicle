@@ -9,9 +9,9 @@
  */
 
 import * as openpgp from 'openpgp'
-import { createHash } from 'node:crypto'
 import assert from 'node:assert/strict'
 import { performance } from 'node:perf_hooks'
+import { streamingIteratedS2kProduceKey } from '../apps/backend/ee/pgp-s2k-worker/streaming-s2k'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -75,75 +75,8 @@ async function openpgpS2kProduceKey(bc: S2kBenchmarkCase): Promise<Uint8Array> {
 
 // ─── Streaming Implementation ─────────────────────────────────────────────────
 
-/**
- * Maximum bytes fed to the hash per update() call.
- *
- * We build a reusable chunk of exactly `floor(MAX_CHUNK / block.length)`
- * copies of `block`.  This reduces the number of update() calls without
- * materialising the full `count`-byte buffer.
- */
-const STREAMING_CHUNK_BYTES = 65_536
-
-/**
- * Produce the same derived key as OpenPGP.js GenericS2K (iterated type)
- * without allocating a buffer of `count` bytes.
- *
- * Algorithm (RFC 4880 §3.7.1.3):
- *   count  = max((16 + (C & 15)) << ((C >> 4) + 6),  block.length)
- *   block  = salt || passphraseBytes
- *   round k: SHA(0x00×k || block repeated up to count bytes) → digestK
- *   key    = concat(digest0, digest1, …)[0 : keySizeBytes]
- */
 function streamingS2kProduceKey(bc: S2kBenchmarkCase): Uint8Array {
-  const passphraseBytes = Buffer.from(bc.passphrase, 'utf8')
-  const block = Buffer.concat([Buffer.from(bc.salt), passphraseBytes])
-
-  if (block.length === 0) {
-    throw new Error('S2K block is empty (salt must be 8 bytes)')
-  }
-
-  const decodedCount = (16 + (bc.encodedCount & 15)) << ((bc.encodedCount >> 4) + 6)
-  const count = Math.max(decodedCount, block.length)
-
-  // Build a chunk: exact multiple of block.length, capped at STREAMING_CHUNK_BYTES.
-  // Because the chunk is an exact multiple of block.length, the repeating
-  // pattern is preserved at chunk boundaries — so `chunk[0..remaining-1]`
-  // always gives the correct suffix when the last chunk is partial.
-  const chunkRepeats = Math.max(1, Math.floor(STREAMING_CHUNK_BYTES / block.length))
-  const chunkBuf = Buffer.allocUnsafe(chunkRepeats * block.length)
-  for (let i = 0; i < chunkRepeats; i++) chunkBuf.set(block, i * block.length)
-  const chunkLen = chunkBuf.length
-
-  const digests: Buffer[] = []
-  let totalBytes = 0
-  let prefixLen = 0 // zero-byte prefix for round k
-
-  while (totalBytes < bc.keySizeBytes) {
-    const h = createHash(bc.hashAlgorithmName)
-
-    // Prefix zeros distinguish digest rounds (OpenPGP multi-round convention).
-    if (prefixLen > 0) h.update(Buffer.alloc(prefixLen))
-
-    // Feed block repeated to satisfy count bytes — no large allocation.
-    let fed = 0
-    while (fed < count) {
-      const remaining = count - fed
-      if (remaining >= chunkLen) {
-        h.update(chunkBuf)
-        fed += chunkLen
-      } else {
-        h.update(chunkBuf.subarray(0, remaining))
-        fed = count
-      }
-    }
-
-    const digest = h.digest()
-    digests.push(digest)
-    totalBytes += digest.length
-    prefixLen++
-  }
-
-  return Buffer.concat(digests).subarray(0, bc.keySizeBytes)
+  return streamingIteratedS2kProduceKey(bc.hashAlgorithmByte, bc.salt, bc.encodedCount, bc.passphrase, bc.keySizeBytes)
 }
 
 // ─── Measurement ──────────────────────────────────────────────────────────────

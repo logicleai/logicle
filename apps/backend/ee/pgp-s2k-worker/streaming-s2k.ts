@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import * as openpgp from 'openpgp'
 
 /**
  * Maps OpenPGP hash enum bytes (RFC 4880 §9.4) to Node.js crypto names.
@@ -98,4 +99,21 @@ export function streamingIteratedS2kProduceKey(
   }
 
   return Buffer.concat(digests).subarray(0, keySizeBytes)
+}
+
+/**
+ * Patch every iterated SKESK packet in `message` so that its `s2k.produceKey`
+ * calls `streamingIteratedS2kProduceKey` instead of the default OpenPGP.js
+ * implementation.  All other openpgp machinery (CFB session-key unwrap, AEAD,
+ * output formatting) is left unchanged.
+ */
+export function patchSkeskPackets(message: openpgp.Message<Uint8Array>): void {
+  for (const pkt of message.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)) {
+    const s2k = (pkt as any).s2k
+    if (s2k?.type === 'iterated') {
+      const { algorithm, salt, c } = s2k
+      s2k.produceKey = (passphrase: string, keySizeBytes: number): Promise<Uint8Array> =>
+        Promise.resolve(streamingIteratedS2kProduceKey(algorithm, salt, c, passphrase, keySizeBytes))
+    }
+  }
 }
