@@ -55,42 +55,28 @@ export class CachingStorage extends BaseStorage {
     const chunks: Buffer[] = []
     let totalBytes = 0
     let shouldCache = true
-    // Use start (eager) rather than pull so that for writes the upload body is
-    // read independently of downstream S3 speed — backpressure from a full S3
-    // connection pool must not stall the HTTP client that is uploading.
-    // For reads, large files already bypass the cache via expectedSizeBytes, so
-    // only small (cacheable) files reach this path and eager buffering is fine.
     const reader = stream.getReader()
     return new ReadableStream<Uint8Array>({
-      start(controller) {
-        ;(async () => {
-          try {
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) {
-                controller.close()
-                if (shouldCache) {
-                  cache.set(path, Buffer.concat(chunks))
-                  logger.debug(`cache size is ${cache.calculatedSize}`)
-                }
-                return
-              }
-              if (shouldCache) {
-                totalBytes += value.byteLength
-                if (totalBytes > maxCacheableItemSizeBytes) {
-                  shouldCache = false
-                  chunks.length = 0
-                } else {
-                  chunks.push(Buffer.from(value))
-                }
-              }
-              controller.enqueue(value)
-            }
-          } catch (e) {
-            logger.error('Readable stream failed')
-            controller.error(e)
+      async pull(controller) {
+        const { done, value } = await reader.read()
+        if (done) {
+          controller.close()
+          if (shouldCache) {
+            cache.set(path, Buffer.concat(chunks))
+            logger.debug(`cache size is ${cache.calculatedSize}`)
           }
-        })()
+          return
+        }
+        if (shouldCache) {
+          totalBytes += value.byteLength
+          if (totalBytes > maxCacheableItemSizeBytes) {
+            shouldCache = false
+            chunks.length = 0
+          } else {
+            chunks.push(Buffer.from(value))
+          }
+        }
+        controller.enqueue(value)
       },
       cancel() {
         return reader.cancel()

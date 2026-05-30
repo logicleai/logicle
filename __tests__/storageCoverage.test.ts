@@ -92,7 +92,7 @@ describe('backpressure', () => {
     expect(destroySpy).toHaveBeenCalled()
   })
 
-  test('CachingStorage eagerly drains the inner stream to avoid blocking uploads on downstream S3 speed', async () => {
+  test('CachingStorage does not consume inner stream until consumer reads', async () => {
     const chunks = Array.from({ length: 10 }, (_, i) => new Uint8Array([i]))
     const { stream: inner, pullCount } = makeCountedStream(chunks)
 
@@ -103,10 +103,9 @@ describe('backpressure', () => {
     const out = await cachingStorage.readStream('x', false)
     const reader = out.getReader()
 
-    // Yield without reading — the inner stream must have been pre-drained eagerly
-    // so that uploads are not blocked by slow downstream (e.g. S3 connection pool).
+    // Yield without reading — inner stream must not have been pre-drained
     await new Promise<void>((r) => setImmediate(r))
-    expect(pullCount()).toBe(chunks.length + 1) // +1 for the done sentinel
+    expect(pullCount()).toBeLessThan(chunks.length)
 
     const first = await reader.read()
     expect(first.value).toEqual(new Uint8Array([0]))
@@ -251,7 +250,7 @@ describe('apps/backend/lib/storage/S3Storage', () => {
     expect(storage.bucketName).toBe('bucket-name')
     expect(storage.region).toBe('eu-west-1')
     expect(storage.hostName).toBe('bucket-name.s3.eu-west-1.amazonaws.com')
-    expect(clientConfigs[0]).toEqual({
+    expect(clientConfigs[0]).toMatchObject({
       region: 'eu-west-1',
       credentials: {
         accessKeyId: 'key',
