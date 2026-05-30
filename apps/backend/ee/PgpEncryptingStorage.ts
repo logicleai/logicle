@@ -34,6 +34,11 @@ export class PgpEncryptingStorage extends BaseStorage {
   innerStorage: Storage
   passPhrase: string
   private readonly decryptSemaphore = new Semaphore(1)
+  // Session keys are deterministic per file (same S2K params + same password = same key).
+  // Caching them amortises the ~15ms S2K cost across all reads of the same file:
+  // 100 concurrent requests go from 100×15ms = 1500ms to 1×15ms + 99×<1ms = ~15ms.
+  // Invalidated on write/delete so stale keys are never used after file replacement.
+  private readonly sessionKeyCache = new Map<string, openpgp.DecryptedSessionKey>()
 
   constructor(innerStorage: Storage, passPhrase: string) {
     super()
@@ -52,17 +57,33 @@ export class PgpEncryptingStorage extends BaseStorage {
   ): Promise<ReadableStream<Uint8Array>> {
     const innerStream = await this.innerStorage.readStream(path, encrypted, options)
     if (!encrypted) return innerStream
-    const release = await this.decryptSemaphore.acquire()
-    try {
-      const { data: clearStream } = await openpgp.decrypt({
-        message: await openpgp.readMessage({ binaryMessage: innerStream }),
-        passwords: [this.passPhrase],
-        format: 'binary',
-      })
-      return clearStream
-    } finally {
-      release()
+
+    // readMessage reads only the PGP packet headers (a few hundred bytes of I/O).
+    // Keeping it outside the semaphore lets concurrent S3/disk reads happen in parallel.
+    const message = await openpgp.readMessage({ binaryMessage: innerStream })
+
+    let sessionKey = this.sessionKeyCache.get(path)
+    if (!sessionKey) {
+      const release = await this.decryptSemaphore.acquire()
+      try {
+        // Re-check after acquiring: another request may have populated the cache.
+        sessionKey = this.sessionKeyCache.get(path)
+        if (!sessionKey) {
+          const [sk] = await openpgp.decryptSessionKeys({ message, passwords: [this.passPhrase] })
+          this.sessionKeyCache.set(path, sk)
+          sessionKey = sk
+        }
+      } finally {
+        release()
+      }
     }
+
+    const { data: clearStream } = await openpgp.decrypt({
+      message,
+      sessionKeys: [sessionKey as openpgp.SessionKey],
+      format: 'binary',
+    })
+    return clearStream
   }
 
   async writeStream(
@@ -71,16 +92,18 @@ export class PgpEncryptingStorage extends BaseStorage {
     encrypted: boolean
   ): Promise<void> {
     if (encrypted) {
+      this.sessionKeyCache.delete(path)
       stream = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: stream }),
-        passwords: [this.passPhrase], // Use the passphrase for encryption
-        format: 'binary', // Use 'binary' format for streaming
+        passwords: [this.passPhrase],
+        format: 'binary',
       })
     }
     return this.innerStorage.writeStream(path, stream, encrypted)
   }
 
   rm(path: string): Promise<void> {
+    this.sessionKeyCache.delete(path)
     return this.innerStorage.rm(path)
   }
 }
