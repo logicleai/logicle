@@ -34,11 +34,11 @@ export class PgpEncryptingStorage extends BaseStorage {
   innerStorage: Storage
   passPhrase: string
   private readonly decryptSemaphore = new Semaphore(1)
-  // Session keys are deterministic per file (same S2K params + same password = same key).
-  // Caching them amortises the ~15ms S2K cost across all reads of the same file:
-  // 100 concurrent requests go from 100×15ms = 1500ms to 1×15ms + 99×<1ms = ~15ms.
-  // Invalidated on write/delete so stale keys are never used after file replacement.
-  private readonly sessionKeyCache = new Map<string, openpgp.DecryptedSessionKey>()
+  // Coalesces concurrent S2K derivations for the same file.
+  // All requests that arrive while S2K is in-flight share one Promise and get
+  // the key as soon as it resolves. The entry is deleted immediately after
+  // resolution so the key is never retained beyond the requests that needed it.
+  private readonly pendingSessionKeys = new Map<string, Promise<openpgp.DecryptedSessionKey>>()
 
   constructor(innerStorage: Storage, passPhrase: string) {
     super()
@@ -62,21 +62,24 @@ export class PgpEncryptingStorage extends BaseStorage {
     // Keeping it outside the semaphore lets concurrent S3/disk reads happen in parallel.
     const message = await openpgp.readMessage({ binaryMessage: innerStream })
 
-    let sessionKey = this.sessionKeyCache.get(path)
-    if (!sessionKey) {
-      const release = await this.decryptSemaphore.acquire()
-      try {
-        // Re-check after acquiring: another request may have populated the cache.
-        sessionKey = this.sessionKeyCache.get(path)
-        if (!sessionKey) {
+    let pending = this.pendingSessionKeys.get(path)
+    if (!pending) {
+      pending = (async () => {
+        const release = await this.decryptSemaphore.acquire()
+        try {
           const [sk] = await openpgp.decryptSessionKeys({ message, passwords: [this.passPhrase] })
-          this.sessionKeyCache.set(path, sk)
-          sessionKey = sk
+          return sk
+        } finally {
+          release()
+          // Remove immediately: requests already awaiting this Promise still
+          // receive the value, but the next request starts a fresh derivation.
+          this.pendingSessionKeys.delete(path)
         }
-      } finally {
-        release()
-      }
+      })()
+      this.pendingSessionKeys.set(path, pending)
     }
+
+    const sessionKey = await pending
 
     const { data: clearStream } = await openpgp.decrypt({
       message,
@@ -92,7 +95,6 @@ export class PgpEncryptingStorage extends BaseStorage {
     encrypted: boolean
   ): Promise<void> {
     if (encrypted) {
-      this.sessionKeyCache.delete(path)
       stream = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: stream }),
         passwords: [this.passPhrase],
@@ -103,7 +105,6 @@ export class PgpEncryptingStorage extends BaseStorage {
   }
 
   rm(path: string): Promise<void> {
-    this.sessionKeyCache.delete(path)
     return this.innerStorage.rm(path)
   }
 }
