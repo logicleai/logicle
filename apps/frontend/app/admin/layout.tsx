@@ -3,8 +3,9 @@ import Navbar, { NavEntry } from '@/components/ui/navbar'
 import { useTranslation } from 'react-i18next'
 import { Environment, useEnvironment } from '../context/environmentProvider'
 import { MainLayout } from '../layouts/MainLayout'
+import { useDiscoverSatelliteTools } from '@/hooks/useDiscoverSatelliteTools'
 
-const navEntries = (env: Environment) => {
+const navEntries = (env: Environment, satelliteBadge?: number) => {
   const entries: NavEntry[] = []
   entries.push({
     title: 'analytics',
@@ -37,6 +38,7 @@ const navEntries = (env: Environment) => {
   entries.push({
     title: 'satellites',
     href: '/admin/satellites',
+    badge: satelliteBadge,
   })
 
   entries.push({
@@ -62,9 +64,12 @@ const Sidebar = ({ title, navEntries }: { title: string; navEntries: NavEntry[] 
 export default function AdminLayout({ children }) {
   const { t } = useTranslation()
   const environment = useEnvironment()
+  const { discoverableSatellites } = useDiscoverSatelliteTools()
+  const satelliteBadgeCount = discoverableSatellites.length
+
   return (
     <MainLayout
-      leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries(environment)} />}
+      leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries(environment, satelliteBadgeCount)} />}
       leftBarCollapsible={false}
     >
       <div className="flex-1 h-full bg-background overflow-hidden">{children}</div>

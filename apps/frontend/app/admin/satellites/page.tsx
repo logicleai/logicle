@@ -87,11 +87,6 @@ const AllSatellites = () => {
       title={t('all-satellites')}
       topBar={
         <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-          {discoverableSatellites.length > 0 && (
-            <Button onClick={openDiscoveryModal} variant="secondary">
-              🛰️ {discoverableSatellites.length}
-            </Button>
-          )}
           <Button onClick={onCreateSatellite}>
             {t('create-satellite')}
           </Button>

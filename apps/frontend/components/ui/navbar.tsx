@@ -8,6 +8,7 @@ export interface NavEntry {
   title: string
   icon?: TablerIcon
   href: string
+  badge?: number
 }
 
 interface Props {
@@ -29,7 +30,7 @@ export function Navbar({ className, entries }: Props) {
     <nav className={className}>
       <ul className="flex flex-col text-h3">
         {entries.map((item) => (
-          <li key={`li-${item.href}`}>
+          <li key={`li-${item.href}`} className="relative">
             <Link
               className={`w-full px-2 py-3 ${
                 item.href === match.href ? '' : 'hover:bg-secondary-hover/50'
@@ -40,6 +41,11 @@ export function Navbar({ className, entries }: Props) {
             >
               {t(item.title)}
             </Link>
+            {item.badge && item.badge > 0 && (
+              <span className="absolute top-2 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {item.badge}
+              </span>
+            )}
           </li>
         ))}
       </ul>
