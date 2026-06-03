@@ -3,8 +3,6 @@ import Navbar, { NavEntry } from '@/components/ui/navbar'
 import { useTranslation } from 'react-i18next'
 import { Environment, useEnvironment } from '../context/environmentProvider'
 import { MainLayout } from '../layouts/MainLayout'
-import { useDiscoverSatelliteTools } from '@/hooks/useDiscoverSatelliteTools'
-
 const navEntries = (env: Environment) => {
   const entries: NavEntry[] = []
   entries.push({
@@ -63,8 +61,6 @@ const Sidebar = ({ title, navEntries }: { title: string; navEntries: NavEntry[] 
 export default function AdminLayout({ children }) {
   const { t } = useTranslation()
   const environment = useEnvironment()
-  const { discoverableSatellites } = useDiscoverSatelliteTools()
-  const satelliteBadgeCount = discoverableSatellites.length
 
   return (
     <MainLayout
