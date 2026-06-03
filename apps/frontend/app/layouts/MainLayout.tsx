@@ -46,7 +46,7 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
           <Link href="/images">
             <Images size={28}></Images>
           </Link>
-          <Link href="/admin/satellites" title="Satellites" className="relative">
+          <Link href="/satellites" title="Satellites" className="relative">
             <IconSatellite size={28}></IconSatellite>
             {discoverableSatellites.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
@@ -109,7 +109,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
           <Link title={t('images')} href="/images">
             <Images size={28}></Images>
           </Link>
-          <Link href="/admin/satellites" title="Satellites" className="relative">
+          <Link href="/satellites" title="Satellites" className="relative">
             <IconSatellite size={28}></IconSatellite>
             {discoverableSatellites.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
