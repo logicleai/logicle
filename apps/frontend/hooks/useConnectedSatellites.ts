@@ -18,7 +18,10 @@ export function useConnectedSatellites() {
         try {
           const data = JSON.parse(event.data)
 
-          if (data.type === 'satellite_connected') {
+          if (data.type === 'snapshot') {
+            // Replace entire state with snapshot
+            setConnectedSatellites(data.satellites || [])
+          } else if (data.type === 'satellite_connected') {
             setConnectedSatellites((prev) => {
               const exists = prev.findIndex((s) => s.satelliteId === data.satelliteId)
               if (exists >= 0) {
