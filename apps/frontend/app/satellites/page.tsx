@@ -46,7 +46,7 @@ const MySatellitesPage = () => {
   const toggleTool = (satelliteId: string, toolName: string) => {
     setSelectedTools((prev) => {
       const newMap = new Map(prev)
-      const satelliteTools = newMap.get(satelliteId) || new Set()
+      const satelliteTools = new Set(newMap.get(satelliteId) || [])
       if (satelliteTools.has(toolName)) {
         satelliteTools.delete(toolName)
       } else {
