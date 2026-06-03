@@ -45,9 +45,16 @@ const SatelliteDetail = () => {
   }
 
   async function loadApiKeys() {
-    // TODO: Create an endpoint to list API keys for a satellite
-    // For now we'll fetch and filter them client-side if needed
-    setApiKeys([])
+    try {
+      const response = await get(`/api/me/satellites/${satelliteId}/api-keys`)
+      if (response.error) {
+        toast.error(response.error.message)
+        return
+      }
+      setApiKeys(response.data as dto.ApiKey[])
+    } catch (err) {
+      toast.error(t('error-loading-api-keys'))
+    }
   }
 
   async function onCreateApiKey(e: React.FormEvent) {
