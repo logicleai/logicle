@@ -74,7 +74,7 @@ ws.on('open', () => {
   // Send registration with tools
   ws.send(JSON.stringify({
     type: 'register',
-    name: 'My Python Bridge',  // optional; server assigns one if not provided
+    name: 'My Python Bridge',
     tools: [
       {
         name: 'github',

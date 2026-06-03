@@ -142,7 +142,7 @@ async function handleSatelliteMessage(
       let conn = findConnection(socket)
       if (conn) {
         // Already connected - treat as an update
-        conn.tools = tools || []
+        conn.tools = tools
         logger.info(
           `[SatelliteHub] "${conn.name}" (${conn.satelliteId}) updated tools`
         )
@@ -153,7 +153,7 @@ async function handleSatelliteMessage(
       let finalName: string
 
       if (authSatelliteId) {
-        // Registered satellite - ID comes from API key
+        // Registered satellite - ID comes from API key, use DB name
         satelliteId = authSatelliteId
         const satellite = await getSatellite(authSatelliteId)
         if (!satellite) {
@@ -163,9 +163,9 @@ async function handleSatelliteMessage(
         }
         finalName = satellite.name
       } else {
-        // Ephemeral satellite - generate ID, use provided name or default
+        // Ephemeral satellite - generate ID, use provided name
         satelliteId = `ephemeral_${nanoid()}`
-        finalName = name || 'Personal Bridge'
+        finalName = name
       }
 
       // Replace existing connection with same ID
@@ -181,7 +181,7 @@ async function handleSatelliteMessage(
         satelliteId,
         name: finalName,
         userId,
-        tools: tools || [],
+        tools,
         socket,
         pendingCalls: new Map(),
         connectedAt: new Date(),

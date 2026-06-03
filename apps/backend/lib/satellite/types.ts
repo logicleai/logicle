@@ -11,8 +11,8 @@ export interface Tool {
 
 export interface RegisterMessage {
   type: 'register'
-  name?: string
-  tools?: Tool[]
+  name: string
+  tools: Tool[]
 }
 
 export interface RegisteredMessage {
