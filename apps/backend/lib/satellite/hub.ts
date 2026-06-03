@@ -15,6 +15,7 @@ import { authenticateWithAuthorizationHeader } from '@/backend/api/utils/auth'
 import { logger } from '@/lib/logging'
 import { getTool } from '@/models/tool'
 import { SatelliteInterface } from '@/lib/tools/schemas'
+import { satelliteEventBus } from '@/lib/satellite/events'
 
 export interface SatelliteConnection {
   satelliteId: string
@@ -131,6 +132,16 @@ async function handleSatelliteMessage(socket: WebSocket, userId: string, data: W
           .map((t) => t.name)
           .join(', ')}`
       )
+
+      // Publish connection event
+      satelliteEventBus.publish({
+        type: 'satellite_connected',
+        userId,
+        satelliteId,
+        satelliteName: name,
+        timestamp: new Date().toISOString(),
+      })
+
       const registered: RegisteredMessage = {
         type: 'registered',
         satelliteId,
@@ -155,6 +166,17 @@ async function handleSatelliteMessage(socket: WebSocket, userId: string, data: W
           .map((c) => c.name)
           .join(', ')}`
       )
+
+      // Publish manifest event
+      satelliteEventBus.publish({
+        type: 'capabilities_available',
+        userId: conn.userId,
+        satelliteId: conn.satelliteId,
+        satelliteName: conn.name,
+        capabilities: manifest.capabilities,
+        timestamp: new Date().toISOString(),
+      })
+
       return
     }
 
@@ -204,6 +226,14 @@ function handleSatelliteClose(socket: WebSocket) {
   }
   conn.pendingCalls.clear()
   logger.info(`[SatelliteHub] Satellite disconnected: ${conn.name} (${conn.satelliteId})`)
+
+  // Publish disconnection event
+  satelliteEventBus.publish({
+    type: 'satellite_disconnected',
+    userId: conn.userId,
+    satelliteId: conn.satelliteId,
+    timestamp: new Date().toISOString(),
+  })
 }
 
 /**
