@@ -48,10 +48,11 @@ export const createApiKey = async (userId: string, key: string, data: dto.Insert
 }
 
 export const createSatelliteApiKey = async (userId: string, satelliteId: string, label?: string) => {
-  const key = (await import('nanoid')).nanoid()
-  const hashed = await hashPassword(key)
-  return await createApiKeyWithId(
-    (await import('nanoid')).nanoid(),
+  const id = nanoid()
+  const secret = nanoid()
+  const hashed = await hashPassword(secret)
+  const apiKey = await createApiKeyWithId(
+    id,
     hashed,
     {
       userId: userId,
@@ -61,6 +62,11 @@ export const createSatelliteApiKey = async (userId: string, satelliteId: string,
     false,
     `satelliteId:${satelliteId}`
   )
+  // Return the raw key (id.secret) instead of the hash
+  return {
+    ...apiKey,
+    key: `${id}.${secret}`,
+  }
 }
 export const createApiKeyWithId = async (
   id: string,
