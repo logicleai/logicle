@@ -71,6 +71,8 @@ export const toolsToDtos = async (tools: schema.Tool[]): Promise<dto.Tool[]> => 
       tags: JSON.parse(tool.tags),
       configuration: JSON.parse(tool.configuration),
       sharing: makeSharing(tool.sharing, sharingData.get(tool.id) ?? []),
+      satelliteId: tool.satelliteId,
+      enabled: !!tool.enabled,
     }
   })
 }
@@ -119,6 +121,8 @@ export const createToolWithId = async (
     id: id,
     provisioned: provisioned ? 1 : 0,
     capability: capability ? 1 : 0,
+    satelliteId: null,
+    enabled: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     sharing: tool.sharing.type,
@@ -205,4 +209,19 @@ export const updateTool = async (
 
 export const deleteTool = async (toolId: schema.Tool['id']) => {
   return db.deleteFrom('Tool').where('id', '=', toolId).executeTakeFirstOrThrow()
+}
+
+export const updateToolSatelliteInfo = async (
+  toolId: string,
+  satelliteId: string,
+  enabled: boolean
+): Promise<void> => {
+  await db
+    .updateTable('Tool')
+    .set({
+      satelliteId,
+      enabled: enabled ? 1 : 0,
+    })
+    .where('id', '=', toolId)
+    .execute()
 }

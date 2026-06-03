@@ -22,7 +22,7 @@ const MySatellitesPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const modalContext = useConfirmationContext()
   const { discoverableSatellites, removeSatellite } = useSatelliteDiscovery()
-  const [selectedTools, setSelectedTools] = useState<Map<string, Set<string>>>(new Map())
+  const [toolEnabled, setToolEnabled] = useState<Map<string, Map<string, boolean>>>(new Map())
   const [savingFor, setSavingFor] = useState<string | null>(null)
   const [expandedSatellite, setExpandedSatellite] = useState<string | null>(null)
 
@@ -43,39 +43,33 @@ const MySatellitesPage = () => {
     toast.success(t('satellite-successfully-deleted'))
   }
 
-  const toggleTool = (satelliteId: string, toolName: string) => {
-    setSelectedTools((prev) => {
+  const toggleToolEnabled = (satelliteId: string, toolName: string) => {
+    setToolEnabled((prev) => {
       const newMap = new Map(prev)
-      const satelliteTools = new Set(newMap.get(satelliteId) || [])
-      if (satelliteTools.has(toolName)) {
-        satelliteTools.delete(toolName)
-      } else {
-        satelliteTools.add(toolName)
-      }
-      if (satelliteTools.size === 0) {
-        newMap.delete(satelliteId)
-      } else {
-        newMap.set(satelliteId, satelliteTools)
-      }
+      const satelliteTools = new Map(newMap.get(satelliteId) || [])
+      const currentEnabled = satelliteTools.get(toolName) ?? true
+      satelliteTools.set(toolName, !currentEnabled)
+      newMap.set(satelliteId, satelliteTools)
       return newMap
     })
   }
 
-  const saveTools = async (satelliteId: string) => {
-    const toolNames = selectedTools.get(satelliteId)
-    if (!toolNames || toolNames.size === 0) return
-
+  const saveOrIgnoreTools = async (satelliteId: string, mode: 'save' | 'ignore') => {
     const satellite = discoverableSatellites.find((s) => s.satelliteId === satelliteId)
     if (!satellite) return
 
     setSavingFor(satelliteId)
     try {
-      const toolsToSave = Array.from(toolNames)
-        .map((name) => satellite.tools.find((t) => t.name === name))
-        .filter(Boolean) as typeof satellite.tools
+      const toolStates = toolEnabled.get(satelliteId) || new Map()
+      const toolsToSend = satellite.tools.map((t) => ({
+        name: t.name,
+        description: t.description,
+        enabled: mode === 'save' ? (toolStates.get(t.name) ?? true) : false,
+      }))
 
       const response = await post(`/api/me/satellites/${satelliteId}/tools`, {
-        tools: toolsToSave,
+        tools: toolsToSend,
+        enabled: true,
       })
 
       if (response.error) {
@@ -83,16 +77,16 @@ const MySatellitesPage = () => {
         return
       }
 
-      toast.success(t('tools-saved'))
+      toast.success(mode === 'save' ? t('tools-saved') : t('tools-ignored'))
       removeSatellite(satelliteId)
-      setSelectedTools((prev) => {
+      setToolEnabled((prev) => {
         const newMap = new Map(prev)
         newMap.delete(satelliteId)
         return newMap
       })
       setExpandedSatellite(null)
     } catch (err) {
-      toast.error(t('error-saving-tools'))
+      toast.error(mode === 'save' ? t('error-saving-tools') : t('error-ignoring-tools'))
     } finally {
       setSavingFor(null)
     }
@@ -202,47 +196,53 @@ const MySatellitesPage = () => {
 
                           {isExpanded && (
                             <div className="mt-3 space-y-2 pl-4">
-                              {discoverableSat.tools.map((tool) => (
-                                <label
-                                  key={tool.name}
-                                  className="flex items-center gap-2 cursor-pointer"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      selectedTools.get(satellite.id)?.has(tool.name) ?? false
-                                    }
-                                    onChange={() => toggleTool(satellite.id, tool.name)}
-                                  />
-                                  <div>
-                                    <div className="text-sm font-medium">{tool.name}</div>
-                                    {tool.description && (
-                                      <div className="text-xs text-gray-500">
-                                        {tool.description}
-                                      </div>
-                                    )}
+                              {discoverableSat.tools.map((tool) => {
+                                const toolStates = toolEnabled.get(satellite.id) || new Map()
+                                const isEnabled = toolStates.get(tool.name) ?? true
+                                return (
+                                  <div
+                                    key={tool.name}
+                                    className="flex items-start gap-3 p-2 bg-gray-50 rounded"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isEnabled}
+                                      onChange={() => toggleToolEnabled(satellite.id, tool.name)}
+                                      className="mt-1"
+                                    />
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium">{tool.name}</div>
+                                      {tool.description && (
+                                        <div className="text-xs text-gray-500">
+                                          {tool.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <span
+                                      className={`text-xs px-2 py-1 rounded whitespace-nowrap ${
+                                        isEnabled
+                                          ? 'bg-green-100 text-green-700'
+                                          : 'bg-gray-200 text-gray-700'
+                                      }`}
+                                    >
+                                      {isEnabled ? 'Enabled' : 'Disabled'}
+                                    </span>
                                   </div>
-                                </label>
-                              ))}
+                                )
+                              })}
                               <div className="flex gap-2 mt-3">
                                 <Button
-                                  onClick={() => saveTools(satellite.id)}
-                                  disabled={
-                                    !selectedTools.get(satellite.id) ||
-                                    selectedTools.get(satellite.id)!.size === 0 ||
-                                    savingFor === satellite.id
-                                  }
+                                  onClick={() => saveOrIgnoreTools(satellite.id, 'save')}
+                                  disabled={savingFor === satellite.id}
                                   size="small"
                                 >
                                   {savingFor === satellite.id ? t('saving') : t('save-tools')}
                                 </Button>
                                 <Button
-                                  onClick={() => {
-                                    removeSatellite(satellite.id)
-                                    setExpandedSatellite(null)
-                                  }}
+                                  onClick={() => saveOrIgnoreTools(satellite.id, 'ignore')}
                                   variant="secondary"
                                   size="small"
+                                  disabled={savingFor === satellite.id}
                                 >
                                   {t('ignore')}
                                 </Button>
@@ -319,47 +319,53 @@ const MySatellitesPage = () => {
 
                           {isExpanded && (
                             <div className="mt-3 space-y-2 pl-4">
-                              {discoverableSat.tools.map((tool) => (
-                                <label
-                                  key={tool.name}
-                                  className="flex items-center gap-2 cursor-pointer"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      selectedTools.get(satellite.id)?.has(tool.name) ?? false
-                                    }
-                                    onChange={() => toggleTool(satellite.id, tool.name)}
-                                  />
-                                  <div>
-                                    <div className="text-sm font-medium">{tool.name}</div>
-                                    {tool.description && (
-                                      <div className="text-xs text-gray-500">
-                                        {tool.description}
-                                      </div>
-                                    )}
+                              {discoverableSat.tools.map((tool) => {
+                                const toolStates = toolEnabled.get(satellite.id) || new Map()
+                                const isEnabled = toolStates.get(tool.name) ?? true
+                                return (
+                                  <div
+                                    key={tool.name}
+                                    className="flex items-start gap-3 p-2 bg-white bg-opacity-50 rounded"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isEnabled}
+                                      onChange={() => toggleToolEnabled(satellite.id, tool.name)}
+                                      className="mt-1"
+                                    />
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium">{tool.name}</div>
+                                      {tool.description && (
+                                        <div className="text-xs text-gray-500">
+                                          {tool.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <span
+                                      className={`text-xs px-2 py-1 rounded whitespace-nowrap ${
+                                        isEnabled
+                                          ? 'bg-green-100 text-green-700'
+                                          : 'bg-gray-200 text-gray-700'
+                                      }`}
+                                    >
+                                      {isEnabled ? 'Enabled' : 'Disabled'}
+                                    </span>
                                   </div>
-                                </label>
-                              ))}
+                                )
+                              })}
                               <div className="flex gap-2 mt-3">
                                 <Button
-                                  onClick={() => saveTools(satellite.id)}
-                                  disabled={
-                                    !selectedTools.get(satellite.id) ||
-                                    selectedTools.get(satellite.id)!.size === 0 ||
-                                    savingFor === satellite.id
-                                  }
+                                  onClick={() => saveOrIgnoreTools(satellite.id, 'save')}
+                                  disabled={savingFor === satellite.id}
                                   size="small"
                                 >
                                   {savingFor === satellite.id ? t('saving') : t('approve-tools')}
                                 </Button>
                                 <Button
-                                  onClick={() => {
-                                    removeSatellite(satellite.id)
-                                    setExpandedSatellite(null)
-                                  }}
+                                  onClick={() => saveOrIgnoreTools(satellite.id, 'ignore')}
                                   variant="secondary"
                                   size="small"
+                                  disabled={savingFor === satellite.id}
                                 >
                                   {t('ignore')}
                                 </Button>

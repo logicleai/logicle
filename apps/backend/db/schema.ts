@@ -279,6 +279,8 @@ export interface Tool {
   provisioned: number
   capability: number
   sharing: 'private' | 'public' | 'workspace'
+  satelliteId: string | null
+  enabled: number
   createdAt: string
   updatedAt: string
 }
