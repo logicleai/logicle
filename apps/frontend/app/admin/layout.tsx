@@ -5,7 +5,7 @@ import { Environment, useEnvironment } from '../context/environmentProvider'
 import { MainLayout } from '../layouts/MainLayout'
 import { useDiscoverSatelliteTools } from '@/hooks/useDiscoverSatelliteTools'
 
-const navEntries = (env: Environment, satelliteBadge?: number) => {
+const navEntries = (env: Environment) => {
   const entries: NavEntry[] = []
   entries.push({
     title: 'analytics',
@@ -38,7 +38,6 @@ const navEntries = (env: Environment, satelliteBadge?: number) => {
   entries.push({
     title: 'satellites',
     href: '/admin/satellites',
-    badge: satelliteBadge,
   })
 
   entries.push({
@@ -69,7 +68,7 @@ export default function AdminLayout({ children }) {
 
   return (
     <MainLayout
-      leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries(environment, satelliteBadgeCount)} />}
+      leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries(environment)} />}
       leftBarCollapsible={false}
     >
       <div className="flex-1 h-full bg-background overflow-hidden">{children}</div>

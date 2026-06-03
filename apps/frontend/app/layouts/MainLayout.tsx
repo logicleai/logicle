@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 import { useDiscoverSatelliteTools } from '@/hooks/useDiscoverSatelliteTools'
+import { useConnectedSatellites } from '@/hooks/useConnectedSatellites'
 import { t } from 'i18next'
 
 export interface Props {
@@ -26,6 +27,7 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
   const LeftBar = leftBar
   const [showDrawer, setShowDrawer] = useState<boolean>(false)
   const { discoverableSatellites } = useDiscoverSatelliteTools()
+  const { hasConnectedSatellites } = useConnectedSatellites()
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
@@ -54,6 +56,11 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
               </span>
             )}
           </Link>
+          {hasConnectedSatellites && (
+            <div className="flex items-center justify-center bg-red-500 text-white rounded px-2 py-1 text-xs font-semibold gap-1" title="Satellites connected">
+              <span>!</span>
+            </div>
+          )}
         </div>
         <div>
           <AppMenu />
@@ -83,6 +90,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
   const layoutconfigContext = useLayoutConfig()
   const hideLeftBar = pathname === '/chat/assistants/select'
   const { discoverableSatellites } = useDiscoverSatelliteTools()
+  const { hasConnectedSatellites } = useConnectedSatellites()
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
@@ -117,6 +125,11 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
               </span>
             )}
           </Link>
+          {hasConnectedSatellites && (
+            <div className="flex items-center justify-center bg-red-500 text-white rounded px-2 py-1 text-xs font-semibold gap-1" title="Satellites connected">
+              <span>!</span>
+            </div>
+          )}
         </div>
         <div>
           <AppMenu />
