@@ -61,8 +61,8 @@ const SatelliteDetail = () => {
         return
       }
       const apiKey = response.data as dto.ApiKey
-      // Show the raw key only once
-      setNewKey(apiKey.key)
+      // Show the raw key only once: {id}.{secret}
+      setNewKey(`${apiKey.id}.${apiKey.key}`)
       setApiKeys([...apiKeys, { ...apiKey, key: '<hidden>' }])
       setShowNewKeyForm(false)
       setNewKeyLabel('')
