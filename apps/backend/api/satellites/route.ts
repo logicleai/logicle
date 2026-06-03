@@ -14,6 +14,7 @@ export const GET = operation({
       200,
       z
         .object({
+          satelliteId: z.string(),
           name: z.string(),
           userId: z.string(),
           tools: z.array(z.any()),
@@ -26,6 +27,7 @@ export const GET = operation({
     const result = Array.from(satelliteHub.connections.values())
       .filter((conn) => isAdmin || conn.userId === session.userId)
       .map((conn) => ({
+        satelliteId: conn.satelliteId,
         name: conn.name,
         userId: conn.userId,
         tools: conn.tools,

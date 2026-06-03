@@ -11,12 +11,14 @@ export interface Tool {
 
 export interface RegisterMessage {
   type: 'register'
+  satelliteId: string
   name: string
   tools: Tool[]
 }
 
 export interface RegisteredMessage {
   type: 'registered'
+  satelliteId: string
   name: string
 }
 
@@ -43,9 +45,21 @@ export interface ToolOutputMessage {
   }
 }
 
+export interface PublishedCapability {
+  type: 'mcp_tool' | 'llm_model'
+  name: string
+  description: string
+}
+
+export interface ManifestMessage {
+  type: 'manifest'
+  capabilities: PublishedCapability[]
+}
+
 export type Message =
   | RegisterMessage
   | RegisteredMessage
   | ToolCallMessage
   | ToolResultMessage
   | ToolOutputMessage
+  | ManifestMessage

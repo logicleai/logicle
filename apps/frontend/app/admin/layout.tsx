@@ -35,6 +35,11 @@ const navEntries = (env: Environment) => {
   })
 
   entries.push({
+    title: 'satellites',
+    href: '/admin/satellites',
+  })
+
+  entries.push({
     title: 'SSO',
     href: '/admin/sso',
   })

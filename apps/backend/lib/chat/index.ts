@@ -29,7 +29,6 @@ import {
   prepareConversationCostPlan,
   selectOptimalHistoryStartIndex,
 } from '@/backend/lib/chat/token-estimator'
-import { normalizeMcpToolResult, saveFile } from '@/backend/lib/tools/file-output-normalization'
 
 export { fillTemplate } from './preamble'
 export type { PromptSegment } from './preamble'
@@ -270,84 +269,6 @@ export class ChatAssistant {
     ).flatMap((toolFunctions) => Object.entries(toolFunctions))
     const functions_ = Object.fromEntries(toolFunctionEntries)
 
-    const satelliteHub = await import('@/lib/satellite/hub')
-    const { callSatelliteMethod } = satelliteHub
-    const connections = satelliteHub.connections
-    connections.forEach((conn) => {
-      if (conn.userId !== context.userId) return
-      conn.tools.forEach((tool) => {
-        const toolFunction: ToolFunction = {
-          description: tool.description,
-          parameters: tool.inputSchema,
-          invoke: async ({
-            params,
-            uiLink,
-          }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
-            try {
-              const result = await callSatelliteMethod(conn.name, tool.name, uiLink, params)
-              logger.log('Received satellite response', result)
-              const { content, structuredContent } = result
-              const toolResult: dto.ToolCallResultOutput = {
-                type: 'content',
-                value: [],
-              }
-              for (const r of content) {
-                if (r.type === 'image' && typeof r.data === 'string') {
-                  const persisted = await saveFile({
-                    rootOwner: context.rootOwner,
-                    conversationId: undefined,
-                    userId: context.userId,
-                    assistantId: context.assistantId,
-                    content: Buffer.from(r.data, 'base64'),
-                    mimeType: r.mimeType ?? 'application/octet-stream',
-                    source: 'Satellite',
-                  })
-                  toolResult.value.push(persisted)
-                } else if (r.type === 'resource') {
-                  const normalized = await normalizeMcpToolResult(
-                    { content: [r] },
-                    {
-                      rootOwner: context.rootOwner,
-                      conversationId: undefined,
-                      userId: context.userId,
-                      assistantId: context.assistantId,
-                    }
-                  )
-                  if (normalized.type === 'content') {
-                    toolResult.value.push(...normalized.value)
-                  } else {
-                    toolResult.value.push({ type: 'text', text: JSON.stringify(normalized.value) })
-                  }
-                } else if (r.type === 'text' && typeof r.text === 'string') {
-                  toolResult.value.push({
-                    type: 'text',
-                    text: r.text,
-                  })
-                } else {
-                  toolResult.value.push({
-                    type: 'text',
-                    text: JSON.stringify(r),
-                  })
-                }
-              }
-              if (structuredContent) {
-                toolResult.value.push({
-                  type: 'text',
-                  text: JSON.stringify(structuredContent),
-                })
-              }
-              return toolResult
-            } catch (_e) {
-              return {
-                type: 'error-json',
-                value: { error: String(_e) },
-              } as dto.ToolCallResultOutput
-            }
-          },
-        }
-        functions_[tool.name] = toolFunction
-      })
-    })
     return { functions: functions_, functionToolIdMap }
   }
 

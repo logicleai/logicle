@@ -41,14 +41,32 @@ export const createApiKey = async (userId: string, key: string, data: dto.Insert
       userId: userId,
       ...data,
     },
-    false
+    false,
+    'user'
+  )
+}
+
+export const createSatelliteApiKey = async (userId: string, satelliteId: string, label?: string) => {
+  const key = (await import('nanoid')).nanoid()
+  const hashed = await hashPassword(key)
+  return await createApiKeyWithId(
+    (await import('nanoid')).nanoid(),
+    hashed,
+    {
+      userId: userId,
+      description: label || `Satellite: ${satelliteId}`,
+      expiresAt: null,
+    },
+    false,
+    `satelliteId:${satelliteId}`
   )
 }
 export const createApiKeyWithId = async (
   id: string,
   key: string,
   apiKey: dto.InsertableApiKey,
-  provisioned: boolean
+  provisioned: boolean,
+  scope?: string
 ) => {
   await db
     .insertInto('ApiKey')
@@ -59,6 +77,7 @@ export const createApiKeyWithId = async (
       enabled: 1,
       createdAt: new Date().toISOString(),
       provisioned: provisioned ? 1 : 0,
+      scope: scope || null,
     })
     .executeTakeFirstOrThrow()
   const created = await getApiKey(id)

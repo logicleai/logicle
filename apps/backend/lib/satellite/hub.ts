@@ -5,14 +5,19 @@ import {
   Tool,
   ToolCallMessage,
   ToolResultMessage,
+  ManifestMessage,
+  PublishedCapability,
 } from '@/lib/satellite/types'
 import { ToolUILink } from '@/lib/chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import { authenticateWithAuthorizationHeader } from '@/backend/api/utils/auth'
 import { logger } from '@/lib/logging'
+import { getTool } from '@/models/tool'
+import { SatelliteInterface } from '@/lib/tools/schemas'
 
 export interface SatelliteConnection {
+  satelliteId: string
   name: string
   userId: string
   tools: Tool[]
@@ -25,6 +30,10 @@ export interface SatelliteConnection {
       uiLink: ToolUILink
     }
   >
+  manifest?: {
+    capabilities: PublishedCapability[]
+  }
+  connectedAt: Date
 }
 
 export type SatelliteHub = {
@@ -90,8 +99,17 @@ async function handleSatelliteMessage(socket: WebSocket, userId: string, data: W
   try {
     const msg = JSON.parse(String(data)) as Message
     if (msg.type === 'register') {
-      const { name, tools } = msg
-      const existing = connections.get(name)
+      const { satelliteId, name, tools } = msg
+      const persistedTool = await getTool(satelliteId)
+      if (!persistedTool || persistedTool.type !== SatelliteInterface.toolName) {
+        logger.warn(
+          `[SatelliteHub] Rejected satellite registration for unknown id "${satelliteId}"`
+        )
+        socket.close(1008, 'Unknown satellite id')
+        return
+      }
+
+      const existing = connections.get(satelliteId)
       if (existing && existing.socket !== socket) {
         for (const { reject } of existing.pendingCalls.values()) {
           reject(new Error('Satellite replaced by a new connection'))
@@ -99,21 +117,44 @@ async function handleSatelliteMessage(socket: WebSocket, userId: string, data: W
         existing.pendingCalls.clear()
       }
       const newConn = {
+        satelliteId,
         name,
         userId,
         tools,
         socket,
         pendingCalls: new Map(),
+        connectedAt: new Date(),
       }
-      connections.set(name, newConn)
+      connections.set(satelliteId, newConn)
       logger.info(
-        `[SatelliteHub] "${name}" registered methods: ${tools.map((t) => t.name).join(', ')}`
+        `[SatelliteHub] "${name}" (${satelliteId}) registered methods: ${tools
+          .map((t) => t.name)
+          .join(', ')}`
       )
       const registered: RegisteredMessage = {
         type: 'registered',
+        satelliteId,
         name,
       }
       socket.send(JSON.stringify(registered))
+      return
+    }
+
+    if (msg.type === 'manifest') {
+      const conn = findConnection(socket)
+      if (!conn) {
+        logger.warn('[SatelliteHub] Received manifest from unregistered connection')
+        return
+      }
+      const manifest = msg as ManifestMessage
+      conn.manifest = {
+        capabilities: manifest.capabilities,
+      }
+      logger.info(
+        `[SatelliteHub] "${conn.name}" (${conn.satelliteId}) published capabilities: ${manifest.capabilities
+          .map((c) => c.name)
+          .join(', ')}`
+      )
       return
     }
 
@@ -157,12 +198,12 @@ function handleSatelliteClose(socket: WebSocket) {
     return
   }
 
-  connections.delete(conn.name)
+  connections.delete(conn.satelliteId)
   for (const { reject } of conn.pendingCalls.values()) {
     reject(new Error('Satellite disconnected'))
   }
   conn.pendingCalls.clear()
-  logger.info(`[SatelliteHub] Satellite disconnected: ${conn.name}`)
+  logger.info(`[SatelliteHub] Satellite disconnected: ${conn.name} (${conn.satelliteId})`)
 }
 
 /**
@@ -170,18 +211,18 @@ function handleSatelliteClose(socket: WebSocket) {
  * Used by your Next server code.
  */
 export function callSatelliteMethod(
-  satelliteName: string,
+  satelliteId: string,
   method: string,
   uiLink: ToolUILink,
   params: unknown
 ): Promise<CallToolResult> {
-  const conn = connections.get(satelliteName)
+  const conn = connections.get(satelliteId)
   if (!conn) {
-    throw new Error(`Satellite "${satelliteName}" is not connected`)
+    throw new Error(`Satellite "${satelliteId}" is not connected`)
   }
   const tool = conn.tools.find((t) => t.name === method)
   if (!tool) {
-    throw new Error(`Satellite "${satelliteName}" does not expose method "${method}"`)
+    throw new Error(`Satellite "${satelliteId}" does not expose method "${method}"`)
   }
 
   const id = String(hub.nextCallId++)

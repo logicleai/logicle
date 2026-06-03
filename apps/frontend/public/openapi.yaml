@@ -2369,6 +2369,8 @@ paths:
                 items:
                   type: object
                   properties:
+                    satelliteId:
+                      type: string
                     name:
                       type: string
                     userId:
@@ -2377,6 +2379,7 @@ paths:
                       type: array
                       items: {}
                   required:
+                    - satelliteId
                     - name
                     - userId
                     - tools

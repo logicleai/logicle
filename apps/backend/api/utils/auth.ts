@@ -20,6 +20,7 @@ export async function findUserByApiKey(apiKey: string) {
         'ApiKey.enabled',
         'ApiKey.expiresAt',
         'ApiKey.key',
+        'ApiKey.scope',
       ])
       .where('ApiKey.id', '=', id)
       .executeTakeFirst()

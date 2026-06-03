@@ -332,6 +332,7 @@ export interface ApiKey {
   expiresAt: string | null
   enabled: number
   provisioned: number
+  scope: string | null
 }
 
 export interface UserSecret {
@@ -362,6 +363,14 @@ export interface IdpConnection {
   config: string
 }
 
+export interface Satellite {
+  id: string
+  name: string
+  userId: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface DB {
   Account: Account
   ApiKey: ApiKey
@@ -390,6 +399,7 @@ export interface DB {
   ToolSharing: ToolSharing
   Prompt: Prompt
   Property: Property
+  Satellite: Satellite
   Session: Session
   Workspace: Workspace
   WorkspaceMember: WorkspaceMember

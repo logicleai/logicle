@@ -15,8 +15,9 @@ Satellite process                    Logicle backend (/api/rpc)
   Authorization: Bearer <id>.<key>   checkAuthentication()
                                         └─ admin API key required
                 ◄──────────────────  101 Switching Protocols
-  { type: "register",             ──►  connections.set(name, conn)
-    name: "my-satellite",              conn.userId = authenticating user
+  { type: "register",             ──►  connections.set(satelliteId, conn)
+    satelliteId: "<tool-id>",         conn.userId = authenticating user
+    name: "my-satellite",             
     tools: [{ name, description,
               inputSchema }] }
 
@@ -41,8 +42,8 @@ Satellite process                    Logicle backend (/api/rpc)
 
 | Direction       | Type          | Purpose                                           |
 | --------------- | ------------- | ------------------------------------------------- |
-| Client → Server | `register`    | Announce satellite name and tool list             |
-| Server → Client | `registered`  | Confirm that registration succeeded               |
+| Client → Server | `register`    | Bind a live connection to a persisted `satellite` tool id and announce its tool list |
+| Server → Client | `registered`  | Confirm that registration succeeded for that `satelliteId` |
 | Server → Client | `tool-call`   | Invoke a tool with a call id and params           |
 | Client → Server | `tool-result` | Return content for a pending call id              |
 | Client → Server | `tool-output` | (defined in types, unused in current server code) |
@@ -66,7 +67,7 @@ connections.forEach((conn) => {
 })
 ```
 
-**Current scoping rule**: a satellite's tools are only available in chats belonging to the user who authenticated the WebSocket connection. Two admins each running a satellite see only their own tools.
+**Current scoping rule**: satellite methods are only available when the corresponding persisted `satellite` tool is assigned to the assistant. The live connection still records the authenticating `userId` for audit and listing.
 
 ---
 
@@ -76,8 +77,9 @@ Connections are stored in a module-level `Map<string, SatelliteConnection>`:
 
 ```typescript
 interface SatelliteConnection {
+  satelliteId: string // persisted Tool.id for a tool of type "satellite"
   name: string // satellite's self-reported name
-  userId: string // admin user who authenticated the connection
+  userId: string // user who authenticated the connection
   tools: Tool[] // as sent in the register message
   socket: WebSocket
   pendingCalls: Map<string, { resolve; reject; uiLink }>
@@ -90,19 +92,15 @@ State is lost on server restart. There is no persistence, no reconnection logic,
 
 ## Weak points
 
-### 1. No per-assistant tool assignment
-
-Satellite tools bypass the normal `AssistantVersionToolAssociation` model entirely. Any satellite tool owned by the current user is available to every assistant that user interacts with, regardless of whether that assistant was designed to use it. There is no admin UI to assign or restrict satellite tools.
-
-### 2. Tool name collision
+### 1. Tool name collision
 
 Satellite tool names occupy the same flat namespace as database-backed tools. If a satellite registers a tool named `web_search` and the assistant also has a web-search tool configured, the satellite silently wins (last write wins in the `functions_` object).
 
-### 3. Ephemeral tools — no UI representation
+### 2. Runtime availability depends on connection state
 
-Because satellite tools are not persisted, they do not appear in the admin Tools page, cannot be described to users in the assistant configuration screen, and leave no trace after the satellite disconnects. Admins have no visibility into what tools are currently active unless they call `GET /api/satellites`.
+A `satellite` tool is persisted and assignable, but its callable methods only exist while a bridge/satellite is actively connected for that `satelliteId`. A disconnected tool remains visible in admin and assistant configuration but contributes no callable functions at runtime.
 
-### 4. Single server process only
+### 3. Single server process only
 
 The in-memory connection map does not survive horizontal scaling. In a multi-instance deployment, a satellite connected to instance A is invisible to instance B.
 
@@ -116,16 +114,15 @@ When a tool result includes a `resource` content item, the server stores it as a
 
 ### Short term
 
-- **Namespace tool names**: prefix satellite tools as `sat::{satelliteName}::{toolName}` to prevent collisions with database tools.
+- **Namespace tool names**: prefix satellite tools as `sat::{satelliteId}::{toolName}` to prevent collisions with database tools.
 
 ### Medium term
 
-- **Persist satellite tool definitions**: when a satellite registers, upsert its tools into the `Tool` table with a special type (e.g. `satellite`) and store the satellite name in the configuration. This makes tools visible in the admin UI, assignable to assistants, and durable across reconnects. Mark them `disconnected` when the satellite closes.
-- **Per-assistant assignment**: once persisted, satellite tools participate in `AssistantVersionToolAssociation` like any other tool type. Admins assign them to assistants explicitly.
-- **Relax the admin-only restriction**: done — any authenticated user with an API key can now connect a satellite.
+- **Disconnected status in UI**: surface connection status for persisted `satellite` tools in admin and assistant screens.
+- **Tool versioning**: include a `version` field in `register` so the server can detect when a satellite upgrades its tools mid-session.
+- **Relax the admin-only restriction**: done — any authenticated user with an API key can now connect a satellite if they know a valid `satelliteId`.
 
 ### Long term
 
 - **Multi-instance coordination**: publish satellite registrations to a shared store (Redis pub/sub, database) so all backend instances see the same set of satellites. Route `tool-call` messages to the instance that holds the connection.
-- **Tool versioning**: include a `version` field in `register` so the server can detect when a satellite upgrades its tools mid-session.
 - **Streaming tool results**: the `tool-output` message type is defined but unused. It could support incremental output (progress updates, streaming data) before the final `tool-result`.

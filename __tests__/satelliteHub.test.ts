@@ -6,9 +6,15 @@ import { EventEmitter } from 'node:events'
 const { mockAuthenticateWithAuthorizationHeader } = vi.hoisted(() => ({
   mockAuthenticateWithAuthorizationHeader: vi.fn(),
 }))
+const { mockGetTool } = vi.hoisted(() => ({
+  mockGetTool: vi.fn(),
+}))
 
 vi.mock('@/backend/api/utils/auth', () => ({
   authenticateWithAuthorizationHeader: mockAuthenticateWithAuthorizationHeader,
+}))
+vi.mock('@/models/tool', () => ({
+  getTool: mockGetTool,
 }))
 
 // --- imports after mocks ---
@@ -22,6 +28,7 @@ import {
 } from '@/lib/satellite/hub'
 import type { IncomingMessage } from 'node:http'
 import { UserRole } from '@/types/dto'
+import { SatelliteInterface } from '@/lib/tools/schemas'
 
 // --- helpers ---
 
@@ -55,6 +62,10 @@ function makeReq(authorization = ''): IncomingMessage {
   return { headers: { authorization } } as unknown as IncomingMessage
 }
 
+async function flushAsyncWork() {
+  await new Promise((resolve) => setTimeout(resolve, 0))
+}
+
 function adminAuthResult() {
   return { success: true, value: { userRole: UserRole.ADMIN, userId: 'user-admin' } }
 }
@@ -76,6 +87,10 @@ beforeEach(() => {
   connections.clear()
   hub.nextCallId = 1
   vi.clearAllMocks()
+  mockGetTool.mockResolvedValue({
+    id: 'sat-tool-id',
+    type: SatelliteInterface.toolName,
+  })
 })
 
 // ─── checkAuthentication ──────────────────────────────────────────────────────
@@ -113,7 +128,10 @@ describe('handleSatelliteConnection', () => {
     expect(ws.closeCode).toBe(1008)
     // The buffering listener is removed after auth fails; a subsequent 'message'
     // event should not register the satellite.
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'bot', tools: [] }))
+    ws.emit(
+      'message',
+      JSON.stringify({ type: 'register', satelliteId: 'sat-tool-id', name: 'bot', tools: [] })
+    )
     expect(connections.size).toBe(0)
   })
 
@@ -138,12 +156,22 @@ describe('register message', () => {
 
     ws.emit(
       'message',
-      JSON.stringify({ type: 'register', name: 'my-sat', tools: [{ name: 'doThing' }] })
+      JSON.stringify({
+        type: 'register',
+        satelliteId: 'sat-tool-id',
+        name: 'my-sat',
+        tools: [{ name: 'doThing' }],
+      })
     )
+    await flushAsyncWork()
 
-    expect(connections.has('my-sat')).toBe(true)
-    expect(connections.get('my-sat')!.tools).toEqual([{ name: 'doThing' }])
-    expect(JSON.parse(ws.sent[0])).toEqual({ type: 'registered', name: 'my-sat' })
+    expect(connections.has('sat-tool-id')).toBe(true)
+    expect(connections.get('sat-tool-id')!.tools).toEqual([{ name: 'doThing' }])
+    expect(JSON.parse(ws.sent[0])).toEqual({
+      type: 'registered',
+      satelliteId: 'sat-tool-id',
+      name: 'my-sat',
+    })
   })
 
   test('re-registration overwrites existing entry', async () => {
@@ -151,10 +179,44 @@ describe('register message', () => {
     const ws = new MockWebSocket()
     await handleSatelliteConnection(ws as any, makeReq('Bearer token'))
 
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'sat', tools: [{ name: 'a' }] }))
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'sat', tools: [{ name: 'b' }] }))
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'register',
+        satelliteId: 'sat-tool-id',
+        name: 'sat',
+        tools: [{ name: 'a' }],
+      })
+    )
+    await flushAsyncWork()
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'register',
+        satelliteId: 'sat-tool-id',
+        name: 'sat',
+        tools: [{ name: 'b' }],
+      })
+    )
+    await flushAsyncWork()
 
-    expect(connections.get('sat')!.tools).toEqual([{ name: 'b' }])
+    expect(connections.get('sat-tool-id')!.tools).toEqual([{ name: 'b' }])
+  })
+
+  test('rejects registration for unknown satellite tool id', async () => {
+    mockAuthenticateWithAuthorizationHeader.mockResolvedValue(adminAuthResult())
+    mockGetTool.mockResolvedValue(undefined)
+    const ws = new MockWebSocket()
+    await handleSatelliteConnection(ws as any, makeReq('Bearer token'))
+
+    ws.emit(
+      'message',
+      JSON.stringify({ type: 'register', satelliteId: 'missing-id', name: 'sat', tools: [] })
+    )
+    await flushAsyncWork()
+
+    expect(ws.closeCode).toBe(1008)
+    expect(ws.closeReason).toBe('Unknown satellite id')
   })
 })
 
@@ -165,9 +227,18 @@ describe('tool-result message', () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue(adminAuthResult())
     const ws = new MockWebSocket()
     await handleSatelliteConnection(ws as any, makeReq('Bearer token'))
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'sat', tools: [{ name: 'fn' }] }))
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'register',
+        satelliteId: 'sat-tool-id',
+        name: 'sat',
+        tools: [{ name: 'fn' }],
+      })
+    )
+    await flushAsyncWork()
 
-    const callPromise = callSatelliteMethod('sat', 'fn', fakeUiLink as any, { x: 1 })
+    const callPromise = callSatelliteMethod('sat-tool-id', 'fn', fakeUiLink as any, { x: 1 })
 
     ws.emit(
       'message',
@@ -176,14 +247,23 @@ describe('tool-result message', () => {
 
     const result = await callPromise
     expect(result).toMatchObject({ type: 'tool-result', id: '1' })
-    expect(connections.get('sat')!.pendingCalls.size).toBe(0)
+    expect(connections.get('sat-tool-id')!.pendingCalls.size).toBe(0)
   })
 
   test('ignores tool-result for unknown call id', async () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue(adminAuthResult())
     const ws = new MockWebSocket()
     await handleSatelliteConnection(ws as any, makeReq('Bearer token'))
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'sat', tools: [{ name: 'fn' }] }))
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'register',
+        satelliteId: 'sat-tool-id',
+        name: 'sat',
+        tools: [{ name: 'fn' }],
+      })
+    )
+    await flushAsyncWork()
 
     // no pending call — should not throw
     expect(() =>
@@ -199,20 +279,33 @@ describe('close handling', () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue(adminAuthResult())
     const ws = new MockWebSocket()
     await handleSatelliteConnection(ws as any, makeReq('Bearer token'))
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'sat', tools: [] }))
-    expect(connections.has('sat')).toBe(true)
+    ws.emit(
+      'message',
+      JSON.stringify({ type: 'register', satelliteId: 'sat-tool-id', name: 'sat', tools: [] })
+    )
+    await flushAsyncWork()
+    expect(connections.has('sat-tool-id')).toBe(true)
 
     ws.emit('close')
-    expect(connections.has('sat')).toBe(false)
+    expect(connections.has('sat-tool-id')).toBe(false)
   })
 
   test('rejects pending calls when satellite disconnects', async () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue(adminAuthResult())
     const ws = new MockWebSocket()
     await handleSatelliteConnection(ws as any, makeReq('Bearer token'))
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'sat', tools: [{ name: 'fn' }] }))
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'register',
+        satelliteId: 'sat-tool-id',
+        name: 'sat',
+        tools: [{ name: 'fn' }],
+      })
+    )
+    await flushAsyncWork()
 
-    const callPromise = callSatelliteMethod('sat', 'fn', fakeUiLink as any, {})
+    const callPromise = callSatelliteMethod('sat-tool-id', 'fn', fakeUiLink as any, {})
     ws.emit('close')
 
     await expect(callPromise).rejects.toThrow('Satellite disconnected')
@@ -232,10 +325,14 @@ describe('callSatelliteMethod', () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue(adminAuthResult())
     const ws = new MockWebSocket()
     await handleSatelliteConnection(ws as any, makeReq('Bearer token'))
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'sat', tools: [] }))
+    ws.emit(
+      'message',
+      JSON.stringify({ type: 'register', satelliteId: 'sat-tool-id', name: 'sat', tools: [] })
+    )
+    await flushAsyncWork()
 
-    expect(() => callSatelliteMethod('sat', 'unknownFn', fakeUiLink as any, {})).toThrow(
-      'Satellite "sat" does not expose method "unknownFn"'
+    expect(() => callSatelliteMethod('sat-tool-id', 'unknownFn', fakeUiLink as any, {})).toThrow(
+      'Satellite "sat-tool-id" does not expose method "unknownFn"'
     )
   })
 
@@ -243,23 +340,41 @@ describe('callSatelliteMethod', () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue(adminAuthResult())
     const ws = new MockWebSocket(false) // not open
     await handleSatelliteConnection(ws as any, makeReq('Bearer token'))
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'sat', tools: [{ name: 'fn' }] }))
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'register',
+        satelliteId: 'sat-tool-id',
+        name: 'sat',
+        tools: [{ name: 'fn' }],
+      })
+    )
+    await flushAsyncWork()
 
-    await expect(callSatelliteMethod('sat', 'fn', fakeUiLink as any, {})).rejects.toThrow(
+    await expect(callSatelliteMethod('sat-tool-id', 'fn', fakeUiLink as any, {})).rejects.toThrow(
       'Satellite socket not open'
     )
-    expect(connections.get('sat')!.pendingCalls.size).toBe(0)
+    expect(connections.get('sat-tool-id')!.pendingCalls.size).toBe(0)
   })
 
   test('sends serialised tool-call message with incrementing id', async () => {
     mockAuthenticateWithAuthorizationHeader.mockResolvedValue(adminAuthResult())
     const ws = new MockWebSocket()
     await handleSatelliteConnection(ws as any, makeReq('Bearer token'))
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'sat', tools: [{ name: 'fn' }] }))
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'register',
+        satelliteId: 'sat-tool-id',
+        name: 'sat',
+        tools: [{ name: 'fn' }],
+      })
+    )
+    await flushAsyncWork()
     ws.sent = []
 
-    callSatelliteMethod('sat', 'fn', fakeUiLink as any, { arg: 42 })
-    callSatelliteMethod('sat', 'fn', fakeUiLink as any, { arg: 99 })
+    callSatelliteMethod('sat-tool-id', 'fn', fakeUiLink as any, { arg: 42 })
+    callSatelliteMethod('sat-tool-id', 'fn', fakeUiLink as any, { arg: 99 })
 
     expect(ws.sent).toHaveLength(2)
     expect(JSON.parse(ws.sent[0])).toMatchObject({ type: 'tool-call', id: '1', method: 'fn' })

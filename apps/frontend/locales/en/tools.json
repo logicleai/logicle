@@ -12,6 +12,7 @@
   "mcp": "Mcp",
   "mcp_sse_endpoint_placeholder": "Mcp sse endpoint...",
   "openapi": "OpenAPI",
+  "satellite": "Satellite",
   "timeofday": "Time of day",
   "websearch": "Web search"
 }

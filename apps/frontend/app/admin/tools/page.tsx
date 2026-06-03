@@ -26,6 +26,7 @@ import { GoogleImageGeneratorPluginInterface } from '@/lib/tools/schemas'
 import { ImageGeneratorPluginInterface } from '@/lib/tools/schemas'
 import { OpenAiImageGeneratorPluginInterface } from '@/lib/tools/schemas'
 import { ReplicateImageGeneratorPluginInterface } from '@/lib/tools/schemas'
+import { SatelliteInterface } from '@/lib/tools/schemas'
 import { ToolType } from '@/lib/tools/tools'
 import { TogetherImageGeneratorPluginInterface } from '@/lib/tools/schemas'
 import { WebSearchInterface } from '@/lib/tools/schemas'
@@ -44,6 +45,7 @@ const creatableTools: ToolType[] = [
   GoogleImageGeneratorPluginInterface.toolName,
   TogetherImageGeneratorPluginInterface.toolName,
   ReplicateImageGeneratorPluginInterface.toolName,
+  SatelliteInterface.toolName,
   TimeOfDayInterface.toolName,
   WebSearchInterface.toolName,
   LogicleCloudWebSearchInterface.toolName,

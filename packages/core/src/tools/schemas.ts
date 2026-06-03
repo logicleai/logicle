@@ -80,6 +80,12 @@ export class ReplicateImageGeneratorPluginInterface {
   static toolName = 'imagegen.replicate'
 }
 
+export const SatelliteSchema = z.object({}).strict()
+export type SatelliteParams = z.infer<typeof SatelliteSchema>
+export class SatelliteInterface {
+  static toolName = 'satellite'
+}
+
 export const KnowledgePluginSchema = z.object({}).strict()
 export type KnowledgePluginParams = z.infer<typeof KnowledgePluginSchema>
 export class KnowledgePluginInterface {
