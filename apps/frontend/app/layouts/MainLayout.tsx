@@ -4,6 +4,7 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconMenu2,
+  IconSatellite,
 } from '@tabler/icons-react'
 import Link from 'next/link'
 import React, { useState } from 'react'
@@ -12,6 +13,7 @@ import { MessageSquare, Compass, Images } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
+import { useDiscoverSatelliteTools } from '@/hooks/useDiscoverSatelliteTools'
 import { t } from 'i18next'
 
 export interface Props {
@@ -23,6 +25,7 @@ export interface Props {
 const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }) => {
   const LeftBar = leftBar
   const [showDrawer, setShowDrawer] = useState<boolean>(false)
+  const { discoverableSatellites } = useDiscoverSatelliteTools()
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
@@ -42,6 +45,14 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
           </Link>
           <Link href="/images">
             <Images size={28}></Images>
+          </Link>
+          <Link href="/admin/satellites" title="Satellites" className="relative">
+            <IconSatellite size={28}></IconSatellite>
+            {discoverableSatellites.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                {discoverableSatellites.length}
+              </span>
+            )}
           </Link>
         </div>
         <div>
@@ -71,6 +82,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
   const pathname = usePathname()
   const layoutconfigContext = useLayoutConfig()
   const hideLeftBar = pathname === '/chat/assistants/select'
+  const { discoverableSatellites } = useDiscoverSatelliteTools()
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
@@ -96,6 +108,14 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
           </Link>
           <Link title={t('images')} href="/images">
             <Images size={28}></Images>
+          </Link>
+          <Link href="/admin/satellites" title="Satellites" className="relative">
+            <IconSatellite size={28}></IconSatellite>
+            {discoverableSatellites.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                {discoverableSatellites.length}
+              </span>
+            )}
           </Link>
         </div>
         <div>
