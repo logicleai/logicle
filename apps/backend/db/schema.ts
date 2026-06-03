@@ -371,6 +371,16 @@ export interface Satellite {
   updatedAt: string
 }
 
+export interface SatelliteTool {
+  id: string
+  satelliteId: string
+  name: string
+  description: string | null
+  inputSchema: string | null
+  outputSchema: string | null
+  createdAt: string
+}
+
 export interface DB {
   Account: Account
   ApiKey: ApiKey
@@ -400,6 +410,7 @@ export interface DB {
   Prompt: Prompt
   Property: Property
   Satellite: Satellite
+  SatelliteTool: SatelliteTool
   Session: Session
   Workspace: Workspace
   WorkspaceMember: WorkspaceMember

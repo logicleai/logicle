@@ -197,6 +197,7 @@ async function handleSatelliteMessage(
         userId,
         satelliteId,
         satelliteName: finalName,
+        tools,
         timestamp: new Date().toISOString(),
       })
 

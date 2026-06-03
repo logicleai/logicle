@@ -1,11 +1,12 @@
 import { logger } from '@/lib/logging'
-import { PublishedCapability } from './types'
+import { PublishedCapability, Tool } from './types'
 
 export interface SatelliteEvent {
   type: 'capabilities_available' | 'satellite_connected' | 'satellite_disconnected'
   userId: string
   satelliteId: string
   satelliteName?: string
+  tools?: Tool[]
   capabilities?: PublishedCapability[]
   timestamp: string
 }
