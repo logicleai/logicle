@@ -47,6 +47,11 @@ export function useDiscoverSatelliteTools() {
                 return [...prev, newSatellite]
               }
             })
+          } else if (data.type === 'satellite_disconnected') {
+            // Remove from discoverable list
+            setDiscoverableSatellites((prev) =>
+              prev.filter((s) => s.satelliteId !== data.satelliteId)
+            )
           }
         } catch (err) {
           console.error('[DiscoverSatelliteTools] Failed to parse event:', err)
