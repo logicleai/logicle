@@ -24,7 +24,10 @@ export function useDiscoverSatelliteTools() {
         try {
           const data = JSON.parse(event.data)
 
-          if (data.type === 'satellite_connected' && data.tools && data.tools.length > 0) {
+          if (data.type === 'discoverable_snapshot') {
+            // Replace entire state with snapshot
+            setDiscoverableSatellites(data.satellites || [])
+          } else if (data.type === 'satellite_connected' && data.tools && data.tools.length > 0) {
             setDiscoverableSatellites((prev) => {
               // Check if satellite already exists
               const existing = prev.findIndex((s) => s.satelliteId === data.satelliteId)

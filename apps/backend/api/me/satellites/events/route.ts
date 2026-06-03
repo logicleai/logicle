@@ -20,19 +20,22 @@ export async function GET(req: Request) {
   // Create SSE response
   const stream = new ReadableStream<string>({
     start(controller) {
-      // Send initial snapshot of connected satellites
-      const connectedSatellites = Array.from(hub.connections.values())
-        .filter((conn) => conn.userId === userId)
+      // Send initial snapshot of discoverable satellites (with tools)
+      const discoverableSatellites = Array.from(hub.connections.values())
+        .filter((conn) => conn.userId === userId && conn.tools && conn.tools.length > 0)
         .map((conn) => ({
           satelliteId: conn.satelliteId,
           satelliteName: conn.name,
+          tools: conn.tools,
         }))
 
-      const snapshot = {
-        type: 'snapshot',
-        satellites: connectedSatellites,
+      if (discoverableSatellites.length > 0) {
+        const discoverableSnapshot = {
+          type: 'discoverable_snapshot',
+          satellites: discoverableSatellites,
+        }
+        controller.enqueue(`data: ${JSON.stringify(discoverableSnapshot)}\n\n`)
       }
-      controller.enqueue(`data: ${JSON.stringify(snapshot)}\n\n`)
 
       // Subscribe to events
       const unsubscribe = satelliteEventBus.subscribe(userId, (event: SatelliteEvent) => {
