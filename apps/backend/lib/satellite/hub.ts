@@ -262,6 +262,7 @@ function handleSatelliteClose(socket: WebSocket) {
     type: 'satellite_disconnected',
     userId: conn.userId,
     satelliteId: conn.satelliteId,
+    satelliteName: conn.name,
     timestamp: new Date().toISOString(),
   })
 }
