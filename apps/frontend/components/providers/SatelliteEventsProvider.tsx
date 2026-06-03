@@ -1,5 +1,6 @@
 'use client'
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import toast from 'react-hot-toast'
 
 export interface DiscoverableSatellite {
   satelliteId: string
@@ -59,6 +60,17 @@ export function SatelliteEventsProvider({ children }: { children: ReactNode }) {
             setDiscoverableSatellites((prev) =>
               prev.filter((s) => s.satelliteId !== data.satelliteId)
             )
+            // Show disconnect toast
+            toast.error(`${data.satelliteName} disconnesso\nI tool rimangono ma non funzionano`, {
+              duration: 4000,
+              icon: '⚠️',
+            })
+          } else if (data.type === 'satellite_connected') {
+            // Show connect toast
+            toast.success(`${data.satelliteName} connesso`, {
+              duration: 3000,
+              icon: '✅',
+            })
           }
         } catch (err) {
           console.error('[SatelliteEventsProvider] Failed to parse event:', err)

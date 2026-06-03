@@ -17,7 +17,6 @@ import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 import { appVersion } from '@/lib/version'
 import { getEnvironmentParameters } from '@/backend/lib/app-config'
 import { Metadata } from 'next'
-import { SatelliteEventsListener } from '@/components/providers/SatelliteEventsListener'
 import { SatelliteEventsProvider } from '@/components/providers/SatelliteEventsProvider'
 
 export const dynamic = 'force-dynamic'
@@ -115,7 +114,6 @@ export default async function RootLayout({
                     <SessionRefreshProvider>
                       <ActiveWorkspaceProvider>
                         <SatelliteEventsProvider>
-                          <SatelliteEventsListener />
                           <ChatPageContextProvider>{children}</ChatPageContextProvider>
                         </SatelliteEventsProvider>
                       </ActiveWorkspaceProvider>
