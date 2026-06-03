@@ -1,4 +1,4 @@
-import { ok, operation, responseSpec, notFound } from '@/lib/routes'
+import { ok, operation, responseSpec, errorSpec, notFound } from '@/lib/routes'
 import { getSatellite, deleteSatellite } from '@/models/satellite'
 import { satelliteSchema } from '@/types/dto'
 
@@ -8,7 +8,7 @@ export const GET = operation({
   name: 'Get satellite details',
   description: 'Fetch details for a specific satellite.',
   authentication: 'user',
-  responses: [responseSpec(200, satelliteSchema), responseSpec(404, notFound())] as const,
+  responses: [responseSpec(200, satelliteSchema), errorSpec(404)] as const,
   implementation: async ({ session, params }) => {
     const satellite = await getSatellite(params.id)
     if (!satellite || satellite.userId !== session.userId) {
@@ -22,7 +22,7 @@ export const DELETE = operation({
   name: 'Delete satellite',
   description: 'Delete a satellite.',
   authentication: 'user',
-  responses: [responseSpec(204), responseSpec(404, notFound())] as const,
+  responses: [responseSpec(204), errorSpec(404)] as const,
   implementation: async ({ session, params }) => {
     const satellite = await getSatellite(params.id)
     if (!satellite || satellite.userId !== session.userId) {
