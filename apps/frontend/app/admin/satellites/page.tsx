@@ -12,7 +12,7 @@ import { delete_ } from '@/lib/fetch'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import toast from 'react-hot-toast'
 import { useSatellites } from '@/hooks/satellites'
-import { useDiscoverSatelliteTools } from '@/hooks/useDiscoverSatelliteTools'
+import { useSatelliteDiscovery } from '@/components/providers/SatelliteEventsProvider'
 import { SatelliteToolsDiscoveryModal } from '@/components/admin/SatelliteToolsDiscoveryModal'
 import * as dto from '@/types/dto'
 import { Link } from '@/components/ui/link'
@@ -25,7 +25,7 @@ const AllSatellites = () => {
   const showDiscovery = searchParams.get('discovery') === 'true'
   const [searchTerm, setSearchTerm] = useState<string>('')
   const modalContext = useConfirmationContext()
-  const { discoverableSatellites, removeSatellite } = useDiscoverSatelliteTools()
+  const { discoverableSatellites, removeSatellite } = useSatelliteDiscovery()
 
   async function onDelete(satellite: dto.Satellite) {
     const result = await modalContext.askConfirmation({

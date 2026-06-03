@@ -13,7 +13,7 @@ import { MessageSquare, Compass, Images } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
-import { useDiscoverSatelliteTools } from '@/hooks/useDiscoverSatelliteTools'
+import { useSatelliteDiscovery } from '@/components/providers/SatelliteEventsProvider'
 import { t } from 'i18next'
 
 export interface Props {
@@ -25,7 +25,7 @@ export interface Props {
 const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }) => {
   const LeftBar = leftBar
   const [showDrawer, setShowDrawer] = useState<boolean>(false)
-  const { discoverableSatellites } = useDiscoverSatelliteTools()
+  const { discoverableSatellites } = useSatelliteDiscovery()
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
@@ -82,7 +82,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
   const pathname = usePathname()
   const layoutconfigContext = useLayoutConfig()
   const hideLeftBar = pathname === '/chat/assistants/select'
-  const { discoverableSatellites } = useDiscoverSatelliteTools()
+  const { discoverableSatellites } = useSatelliteDiscovery()
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
