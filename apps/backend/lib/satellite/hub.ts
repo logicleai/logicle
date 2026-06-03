@@ -1,11 +1,11 @@
 import WebSocket from 'ws'
 import {
   Message,
+  RegisterMessage,
   RegisteredMessage,
   Tool,
   ToolCallMessage,
   ToolResultMessage,
-  ManifestMessage,
   PublishedCapability,
 } from '@/lib/satellite/types'
 import { ToolUILink } from '@/lib/chat/tools'
@@ -134,199 +134,78 @@ async function handleSatelliteMessage(
   try {
     const msg = JSON.parse(String(data)) as Message
 
-    // For registered satellites, we already know the ID from the API key
-    if (authSatelliteId) {
-      // Registered satellite mode - use authenticated satellite ID
+    // Unified register handler for both registered and ephemeral satellites
+    if (msg.type === 'register') {
+      const registerMsg = msg as RegisterMessage
+      const { name, tools } = registerMsg
 
-      // Support old "register" message for backward compatibility
-      if (msg.type === 'register') {
-        const { tools } = msg
+      let conn = findConnection(socket)
+      if (conn) {
+        // Already connected - treat as an update
+        conn.tools = tools || []
+        logger.info(
+          `[SatelliteHub] "${conn.name}" (${conn.satelliteId}) updated tools`
+        )
+        return
+      }
+
+      let satelliteId: string
+      let finalName: string
+
+      if (authSatelliteId) {
+        // Registered satellite - ID comes from API key
+        satelliteId = authSatelliteId
         const satellite = await getSatellite(authSatelliteId)
         if (!satellite) {
           logger.warn(`[SatelliteHub] Satellite ${authSatelliteId} not found`)
           socket.close(1008, 'Satellite not found')
           return
         }
-
-        const existing = connections.get(authSatelliteId)
-        if (existing && existing.socket !== socket) {
-          for (const { reject } of existing.pendingCalls.values()) {
-            reject(new Error('Satellite replaced by a new connection'))
-          }
-          existing.pendingCalls.clear()
-        }
-
-        const newConn: SatelliteConnection = {
-          satelliteId: authSatelliteId,
-          name: satellite.name,
-          userId,
-          tools: tools || [],
-          socket,
-          pendingCalls: new Map(),
-          connectedAt: new Date(),
-        }
-        connections.set(authSatelliteId, newConn)
-        logger.info(
-          `[SatelliteHub] Registered satellite connected (old protocol): "${satellite.name}" (${authSatelliteId})`
-        )
-
-        satelliteEventBus.publish({
-          type: 'satellite_connected',
-          userId,
-          satelliteId: authSatelliteId,
-          satelliteName: satellite.name,
-          timestamp: new Date().toISOString(),
-        })
-
-        const registered: RegisteredMessage = {
-          type: 'registered',
-          satelliteId: authSatelliteId,
-          name: satellite.name,
-        }
-        socket.send(JSON.stringify(registered))
-        return
+        finalName = satellite.name
+      } else {
+        // Ephemeral satellite - generate ID, use provided name or default
+        satelliteId = `ephemeral_${nanoid()}`
+        finalName = name || 'Personal Bridge'
       }
 
-      if (msg.type === 'manifest') {
-        let conn = findConnection(socket)
-        if (!conn) {
-          // First manifest - establish connection
-          const manifest = msg as ManifestMessage
-          const satellite = await getSatellite(authSatelliteId)
-          if (!satellite) {
-            logger.warn(`[SatelliteHub] Satellite ${authSatelliteId} not found`)
-            socket.close(1008, 'Satellite not found')
-            return
-          }
-
-          const existing = connections.get(authSatelliteId)
-          if (existing && existing.socket !== socket) {
-            for (const { reject } of existing.pendingCalls.values()) {
-              reject(new Error('Satellite replaced by a new connection'))
-            }
-            existing.pendingCalls.clear()
-          }
-
-          const newConn: SatelliteConnection = {
-            satelliteId: authSatelliteId,
-            name: satellite.name,
-            userId,
-            tools: [], // Registered satellites don't use tools field
-            socket,
-            pendingCalls: new Map(),
-            manifest: { capabilities: manifest.capabilities },
-            connectedAt: new Date(),
-          }
-          connections.set(authSatelliteId, newConn)
-          logger.info(
-            `[SatelliteHub] Registered satellite connected: "${satellite.name}" (${authSatelliteId})`
-          )
-
-          // Publish connection event with capabilities
-          satelliteEventBus.publish({
-            type: 'capabilities_available',
-            userId,
-            satelliteId: authSatelliteId,
-            satelliteName: satellite.name,
-            capabilities: manifest.capabilities,
-            timestamp: new Date().toISOString(),
-          })
-          return
+      // Replace existing connection with same ID
+      const existing = connections.get(satelliteId)
+      if (existing && existing.socket !== socket) {
+        for (const { reject } of existing.pendingCalls.values()) {
+          reject(new Error('Satellite replaced by a new connection'))
         }
-
-        // Update manifest for existing connection
-        conn = findConnection(socket)
-        if (conn) {
-          const manifest = msg as ManifestMessage
-          conn.manifest = { capabilities: manifest.capabilities }
-          logger.info(
-            `[SatelliteHub] "${conn.name}" (${conn.satelliteId}) updated capabilities: ${manifest.capabilities
-              .map((c) => c.name)
-              .join(', ')}`
-          )
-
-          satelliteEventBus.publish({
-            type: 'capabilities_available',
-            userId: conn.userId,
-            satelliteId: conn.satelliteId,
-            satelliteName: conn.name,
-            capabilities: manifest.capabilities,
-            timestamp: new Date().toISOString(),
-          })
-        }
-        return
+        existing.pendingCalls.clear()
       }
 
-      if (msg.type === 'tool-result') {
-        const conn = connections.get(authSatelliteId)
-        if (!conn) return
-        const res = msg as ToolResultMessage
-        const pending = conn.pendingCalls.get(res.id)
-        if (!pending) return
-        conn.pendingCalls.delete(res.id)
-        pending.resolve(res)
-        return
-      }
-
-      logger.warn('[SatelliteHub] Unknown message from registered satellite:', msg.type)
-      return
-    }
-
-    // For personal bridges (ephemeral), keep the old register flow for now
-    if (msg.type === 'register') {
-      const { name, tools } = msg
-      // Generate a connection ID for ephemeral connections
-      const connectionId = `ephemeral_${nanoid()}`
-
-      const newConn = {
-        satelliteId: connectionId,
-        name: name || 'Personal Bridge',
+      const newConn: SatelliteConnection = {
+        satelliteId,
+        name: finalName,
         userId,
-        tools,
+        tools: tools || [],
         socket,
         pendingCalls: new Map(),
         connectedAt: new Date(),
       }
-      connections.set(connectionId, newConn)
+
+      connections.set(satelliteId, newConn)
       logger.info(
-        `[SatelliteHub] Ephemeral connection established: "${newConn.name}" (${connectionId})`
+        `[SatelliteHub] Satellite connected: "${finalName}" (${satelliteId})`
       )
 
-      const registered: RegisteredMessage = {
-        type: 'registered',
-        satelliteId: connectionId,
-        name: newConn.name,
-      }
-      socket.send(JSON.stringify(registered))
-      return
-    }
-
-    if (msg.type === 'manifest') {
-      const conn = findConnection(socket)
-      if (!conn) {
-        logger.warn('[SatelliteHub] Received manifest from unregistered connection')
-        return
-      }
-      const manifest = msg as ManifestMessage
-      conn.manifest = {
-        capabilities: manifest.capabilities,
-      }
-      logger.info(
-        `[SatelliteHub] "${conn.name}" (${conn.satelliteId}) published capabilities: ${manifest.capabilities
-          .map((c) => c.name)
-          .join(', ')}`
-      )
-
-      // Publish manifest event
       satelliteEventBus.publish({
-        type: 'capabilities_available',
-        userId: conn.userId,
-        satelliteId: conn.satelliteId,
-        satelliteName: conn.name,
-        capabilities: manifest.capabilities,
+        type: 'satellite_connected',
+        userId,
+        satelliteId,
+        satelliteName: finalName,
         timestamp: new Date().toISOString(),
       })
 
+      const response: RegisteredMessage = {
+        type: 'registered',
+        satelliteId,
+        name: finalName,
+      }
+      socket.send(JSON.stringify(response))
       return
     }
 

@@ -11,9 +11,8 @@ export interface Tool {
 
 export interface RegisterMessage {
   type: 'register'
-  satelliteId: string
-  name: string
-  tools: Tool[]
+  name?: string
+  tools?: Tool[]
 }
 
 export interface RegisteredMessage {
@@ -51,15 +50,9 @@ export interface PublishedCapability {
   description: string
 }
 
-export interface ManifestMessage {
-  type: 'manifest'
-  capabilities: PublishedCapability[]
-}
-
 export type Message =
   | RegisterMessage
   | RegisteredMessage
   | ToolCallMessage
   | ToolResultMessage
   | ToolOutputMessage
-  | ManifestMessage

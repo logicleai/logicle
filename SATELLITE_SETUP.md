@@ -22,9 +22,9 @@ sequenceDiagram
     Logicle->>Logicle: Autentica API Key
     Logicle-->>Bridge: ACK (connessione accettata)
     
-    Bridge->>Logicle: 4. Invia Manifest di Capabilities
-    Logicle->>Logicle: Memorizza manifest
-    Logicle-->>User: Mostra capabilities scoperte
+    Bridge->>Logicle: 4. Invia registrazione (tools)
+    Logicle->>Logicle: Memorizza tools
+    Logicle-->>User: Mostra tools disponibili
     
     User->>Logicle: 5. Usa capability in chat
     Logicle->>Bridge: Tool call
@@ -71,19 +71,26 @@ const ws = new WebSocket('ws://logicle-host/api/satellites/ws', {
 ws.on('open', () => {
   console.log('Connected to Logicle');
   
-  // Send capability manifest
+  // Send registration with tools
   ws.send(JSON.stringify({
-    type: 'manifest',
-    capabilities: [
+    type: 'register',
+    name: 'My Python Bridge',  // optional; server assigns one if not provided
+    tools: [
       {
-        type: 'mcp_tool',
         name: 'github',
-        description: 'GitHub MCP tools'
+        description: 'GitHub MCP tools',
+        inputSchema: {
+          type: 'object',
+          properties: { /* ... */ }
+        }
       },
       {
-        type: 'llm_model',
         name: 'local-qwen',
-        description: 'Local Qwen model'
+        description: 'Local Qwen model',
+        inputSchema: {
+          type: 'object',
+          properties: { /* ... */ }
+        }
       }
     ]
   }));
