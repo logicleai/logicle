@@ -1,6 +1,6 @@
 'use client'
 import { useTranslation } from 'react-i18next'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { Column, SimpleTable, column } from '@/components/ui/tables'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,8 @@ import { delete_ } from '@/lib/fetch'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import toast from 'react-hot-toast'
 import { useSatellites } from '@/hooks/satellites'
+import { useDiscoverSatelliteTools } from '@/hooks/useDiscoverSatelliteTools'
+import { SatelliteToolsDiscoveryModal } from '@/components/admin/SatelliteToolsDiscoveryModal'
 import * as dto from '@/types/dto'
 import { Link } from '@/components/ui/link'
 
@@ -19,8 +21,11 @@ const AllSatellites = () => {
   const { t } = useTranslation()
   const { isLoading, error, data: satellites } = useSatellites()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const showDiscovery = searchParams.get('discovery') === 'true'
   const [searchTerm, setSearchTerm] = useState<string>('')
   const modalContext = useConfirmationContext()
+  const { discoverableSatellites, removeSatellite } = useDiscoverSatelliteTools()
 
   async function onDelete(satellite: dto.Satellite) {
     const result = await modalContext.askConfirmation({
@@ -67,6 +72,14 @@ const AllSatellites = () => {
     router.push('/admin/satellites/create')
   }
 
+  function openDiscoveryModal() {
+    router.push('/admin/satellites?discovery=true')
+  }
+
+  function closeDiscoveryModal() {
+    router.push('/admin/satellites')
+  }
+
   return (
     <AdminPage
       isLoading={isLoading}
@@ -74,12 +87,27 @@ const AllSatellites = () => {
       title={t('all-satellites')}
       topBar={
         <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+          {discoverableSatellites.length > 0 && (
+            <Button onClick={openDiscoveryModal} variant="secondary">
+              🛰️ {discoverableSatellites.length}
+            </Button>
+          )}
           <Button onClick={onCreateSatellite}>
             {t('create-satellite')}
           </Button>
         </SearchBarWithButtonsOnRight>
       }
     >
+      <SatelliteToolsDiscoveryModal
+        isOpen={showDiscovery}
+        satellites={discoverableSatellites}
+        onSaved={(satelliteId) => {
+          removeSatellite(satelliteId)
+          if (discoverableSatellites.length === 1) {
+            closeDiscoveryModal()
+          }
+        }}
+      />
       <SimpleTable
         className="flex-1"
         columns={columns}
