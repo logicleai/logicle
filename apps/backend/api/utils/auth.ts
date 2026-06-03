@@ -35,6 +35,37 @@ export async function findUserByApiKey(apiKey: string) {
   return undefined
 }
 
+export async function findSatelliteAuthByApiKey(apiKey: string) {
+  const keys = apiKey.split('.')
+  if (keys.length === 2) {
+    const id = keys[0]
+    const secret = keys[1]
+    const row = await db
+      .selectFrom('ApiKey')
+      .innerJoin('User', (join) => join.onRef('User.id', '=', 'ApiKey.userId'))
+      .select([
+        'User.enabled as userEnabled',
+        'User.id',
+        'ApiKey.enabled',
+        'ApiKey.expiresAt',
+        'ApiKey.key',
+        'ApiKey.scope',
+      ])
+      .where('ApiKey.id', '=', id)
+      .executeTakeFirst()
+    if (row && row.userEnabled && row.enabled && (!row.expiresAt || row.expiresAt > new Date().toISOString())) {
+      if (await bcrypt.compare(secret, row.key)) {
+        return {
+          userId: row.id,
+          scope: row.scope,
+        }
+      }
+    }
+  }
+  logger.warn('[SatelliteAuth] Invalid API key for satellite connection')
+  return null
+}
+
 type AuthResult = { success: true; value: AuthenticatedSession } | { success: false; msg: string }
 
 async function getUserAuthState(userId: string) {
