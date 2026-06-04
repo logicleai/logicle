@@ -11,6 +11,7 @@ export interface BuildableTool {
   configuration: Record<string, unknown>
   promptFragment: string
   provisioned: boolean
+  satelliteId?: string | null
 }
 
 export const dbToolToBuildableTool = (tool: schema.Tool): BuildableTool => {
@@ -21,6 +22,7 @@ export const dbToolToBuildableTool = (tool: schema.Tool): BuildableTool => {
     configuration: JSON.parse(tool.configuration),
     promptFragment: tool.promptFragment,
     provisioned: !!tool.provisioned,
+    satelliteId: tool.satelliteId,
   }
 }
 

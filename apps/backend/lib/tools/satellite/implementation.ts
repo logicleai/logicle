@@ -76,16 +76,17 @@ const toToolResult = async (
 }
 
 export class SatelliteTool extends SatelliteInterface implements ToolImplementation {
-  static builder: ToolBuilder = (toolParams: ToolParams) => new SatelliteTool(toolParams)
+  static builder: ToolBuilder = (toolParams: ToolParams, params: any) =>
+    new SatelliteTool(toolParams, params?.satelliteId || toolParams.id)
 
-  constructor(public toolParams: ToolParams) {
+  constructor(public toolParams: ToolParams, private satelliteId: string) {
     super()
   }
 
   supportedMedia = []
 
   functions = async (_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> => {
-    const conn = connections.get(this.toolParams.id)
+    const conn = connections.get(this.satelliteId)
     if (!conn) {
       return {}
     }
@@ -98,7 +99,7 @@ export class SatelliteTool extends SatelliteInterface implements ToolImplementat
           invoke: async (invokeParams: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
             try {
               const result = await callSatelliteMethod(
-                this.toolParams.id,
+                this.satelliteId,
                 tool.name,
                 invokeParams.uiLink,
                 invokeParams.params
