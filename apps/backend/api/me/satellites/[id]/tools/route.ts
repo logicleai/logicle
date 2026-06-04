@@ -1,7 +1,7 @@
 import { ok, operation, responseSpec, errorSpec, notFound } from '@/lib/routes'
 import { getSatellite } from '@/models/satellite'
 import { getTool, createToolWithId, updateToolSatelliteInfo } from '@/models/tool'
-import { toolSchema } from '@/types/dto'
+import { toolSchema, Tool } from '@/types/dto'
 import { z } from 'zod'
 import { nanoid } from 'nanoid'
 
@@ -27,7 +27,7 @@ export const POST = operation({
       return notFound()
     }
 
-    const createdTools: typeof toolSchema[] = []
+    const createdTools: Tool[] = []
 
     for (const tool of body.tools) {
       const createdTool = await createToolWithId(
