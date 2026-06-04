@@ -75,6 +75,27 @@ const toToolResult = async (
   return toolResult
 }
 
+export const createSatelliteToolFunction = (
+  satelliteId: string,
+  tool: { name: string; description: string; inputSchema?: any }
+): ToolFunction => {
+  return {
+    description: tool.description,
+    parameters: tool.inputSchema,
+    invoke: async (invokeParams: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
+      try {
+        const result = await callSatelliteMethod(satelliteId, tool.name, invokeParams.uiLink, invokeParams.params)
+        return await toToolResult(result, invokeParams)
+      } catch (error) {
+        return {
+          type: 'error-json',
+          value: { error: String(error) },
+        }
+      }
+    },
+  }
+}
+
 export class SatelliteTool extends SatelliteInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: any) =>
     new SatelliteTool(toolParams, params?.satelliteId || toolParams.id)
@@ -92,30 +113,7 @@ export class SatelliteTool extends SatelliteInterface implements ToolImplementat
     }
 
     return Object.fromEntries(
-      conn.tools.map((tool) => {
-        const fn: ToolFunction = {
-          description: tool.description,
-          parameters: tool.inputSchema,
-          invoke: async (invokeParams: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
-            try {
-              const result = await callSatelliteMethod(
-                this.satelliteId,
-                tool.name,
-                invokeParams.uiLink,
-                invokeParams.params
-              )
-              return await toToolResult(result, invokeParams)
-            } catch (error) {
-              return {
-                type: 'error-json',
-                value: { error: String(error) },
-              }
-            }
-          },
-        }
-
-        return [tool.name, fn]
-      })
+      conn.tools.map((tool) => [tool.name, createSatelliteToolFunction(this.satelliteId, tool)])
     )
   }
 }
