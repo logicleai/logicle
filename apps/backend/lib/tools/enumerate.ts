@@ -57,6 +57,10 @@ export const buildTool = async (
   tool: BuildableTool,
   model: string
 ): Promise<ToolImplementation | undefined> => {
+  // Skip tools that are sourced from satellites — they're loaded via SatelliteTool
+  if (tool.satelliteId) {
+    return undefined
+  }
   const builder = builders[tool.type]
   return await builder?.(tool, tool.configuration, model)
 }
