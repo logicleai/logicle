@@ -6,6 +6,7 @@ import { LanguageModelV3 } from '@ai-sdk/provider'
 import * as anthropic from '@ai-sdk/anthropic'
 import * as openai from '@ai-sdk/openai'
 import * as litellm from '@/lib/chat/litellm'
+import { db } from '@/db/database'
 
 import { ClientSink } from './ClientSink'
 import { ToolUiLinkImpl } from './ToolUiLinkImpl'
@@ -269,11 +270,21 @@ export class ChatAssistant {
     ).flatMap((toolFunctions) => Object.entries(toolFunctions))
     const functions_ = Object.fromEntries(toolFunctionEntries)
 
-    // Load ephemeral satellite tools on-the-fly from active connections
+    // Load ephemeral satellite tools on-the-fly from active connections (skip registered satellites)
     const satelliteHub = await import('@/lib/satellite/hub')
     const connections = satelliteHub.connections
+
+    // Get IDs of registered satellites to filter them out
+    const registeredSatellites = await db
+      .selectFrom('Satellite')
+      .select('id')
+      .where('userId', '=', context.userId)
+      .execute()
+    const registeredIds = new Set(registeredSatellites.map((s) => s.id))
+
     connections.forEach((conn) => {
       if (conn.userId !== context.userId) return
+      if (registeredIds.has(conn.name)) return // Skip registered satellites
       conn.tools.forEach((tool) => {
         functions_[tool.name] = createSatelliteToolFunction(conn.name, tool)
       })
