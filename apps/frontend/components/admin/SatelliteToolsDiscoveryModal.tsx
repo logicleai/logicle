@@ -19,57 +19,21 @@ export function SatelliteToolsDiscoveryModal({
   onSaved,
 }: SatelliteToolsDiscoveryModalProps) {
   const { t } = useTranslation()
-  const [selectedTools, setSelectedTools] = useState<Map<string, Set<string>>>(new Map())
   const [savingFor, setSavingFor] = useState<string | null>(null)
 
-  const toggleTool = (satelliteId: string, toolName: string) => {
-    setSelectedTools((prev) => {
-      const newMap = new Map(prev)
-      const satelliteTools = newMap.get(satelliteId) || new Set()
-      if (satelliteTools.has(toolName)) {
-        satelliteTools.delete(toolName)
-      } else {
-        satelliteTools.add(toolName)
-      }
-      if (satelliteTools.size === 0) {
-        newMap.delete(satelliteId)
-      } else {
-        newMap.set(satelliteId, satelliteTools)
-      }
-      return newMap
-    })
-  }
-
-  const saveTools = async (satelliteId: string) => {
-    const toolNames = selectedTools.get(satelliteId)
-    if (!toolNames || toolNames.size === 0) return
-
-    const satellite = satellites.find((s) => s.satelliteId === satelliteId)
-    if (!satellite) return
-
+  const addSatelliteAsTool = async (satelliteId: string) => {
     setSavingFor(satelliteId)
     try {
-      const toolsToSave = Array.from(toolNames)
-        .map((name) => satellite.tools.find((t) => t.name === name))
-        .filter(Boolean) as typeof satellite.tools
-
-      const response = await post(`/api/me/satellites/${satelliteId}/tools`, {
-        tools: toolsToSave,
-      })
+      const response = await post(`/api/me/satellites/${satelliteId}/tools`, {})
 
       if (response.error) {
         toast.error(response.error.message)
         return
       }
 
-      toast.success(t('tools-saved'))
+      toast.success(t('tool-saved'))
       onSaved(satelliteId)
-      setSelectedTools((prev) => {
-        const newMap = new Map(prev)
-        newMap.delete(satelliteId)
-        return newMap
-      })
-    } catch (err) {
+    } catch {
       toast.error(t('error-saving-tools'))
     } finally {
       setSavingFor(null)
@@ -86,37 +50,29 @@ export function SatelliteToolsDiscoveryModal({
         <div className="space-y-4 max-h-[60vh] overflow-y-auto">
           {satellites.map((satellite) => (
             <div key={satellite.satelliteId} className="border rounded-lg p-4">
-              <h3 className="font-semibold mb-3">{satellite.satelliteName}</h3>
-
-              <div className="space-y-2 mb-4">
-                {satellite.tools.map((tool) => (
-                  <label key={tool.name} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedTools.get(satellite.satelliteId)?.has(tool.name) ?? false}
-                      onChange={() => toggleTool(satellite.satelliteId, tool.name)}
-                    />
-                    <div>
-                      <div className="text-sm font-medium">{tool.name}</div>
-                      {tool.description && (
-                        <div className="text-xs text-gray-500">{tool.description}</div>
-                      )}
-                    </div>
-                  </label>
-                ))}
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold">{satellite.satelliteName}</h3>
+                <Button
+                  onClick={() => addSatelliteAsTool(satellite.satelliteId)}
+                  disabled={savingFor === satellite.satelliteId}
+                  size="small"
+                >
+                  {savingFor === satellite.satelliteId ? t('saving') : t('add-as-tool')}
+                </Button>
               </div>
 
-              <Button
-                onClick={() => saveTools(satellite.satelliteId)}
-                disabled={
-                  !selectedTools.get(satellite.satelliteId) ||
-                  selectedTools.get(satellite.satelliteId)!.size === 0 ||
-                  savingFor === satellite.satelliteId
-                }
-                size="small"
-              >
-                {savingFor === satellite.satelliteId ? t('saving') : t('save-tools')}
-              </Button>
+              {satellite.tools.length > 0 && (
+                <ul className="space-y-1">
+                  {satellite.tools.map((tool) => (
+                    <li key={tool.name} className="text-sm text-gray-600">
+                      <span className="font-medium">{tool.name}</span>
+                      {tool.description && (
+                        <span className="text-gray-400"> — {tool.description}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           ))}
         </div>

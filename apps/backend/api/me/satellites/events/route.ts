@@ -7,21 +7,13 @@ import { Tool } from '@/lib/satellite/types'
 
 export const dynamic = 'force-dynamic'
 
-async function filterNewTools(
-  satelliteId: string,
-  tools: Tool[]
-): Promise<Tool[]> {
-  // Get already saved tool names for this satellite
-  const savedTools = await db
+async function satelliteHasTool(satelliteId: string): Promise<boolean> {
+  const row = await db
     .selectFrom('Tool')
-    .select('name')
+    .select('id')
     .where('satelliteId', '=', satelliteId)
-    .execute()
-
-  const savedNames = new Set(savedTools.map((t) => t.name))
-
-  // Return only tools that haven't been saved yet
-  return tools.filter((tool) => !savedNames.has(tool.name))
+    .executeTakeFirst()
+  return !!row
 }
 
 export async function GET(req: Request) {
@@ -36,10 +28,9 @@ export async function GET(req: Request) {
   const userId = authResult.value.userId
   logger.info(`[SatelliteEvents] SSE connection opened for user ${userId}`)
 
-  // Create SSE response
   const stream = new ReadableStream<string>({
     start(controller) {
-      // Send initial snapshot of discoverable satellites (only new tools)
+      // Send initial snapshot of satellites that don't yet have a Logicle tool
       ;(async () => {
         const discoverableSatellites: Array<{
           satelliteId: string
@@ -48,49 +39,32 @@ export async function GET(req: Request) {
         }> = []
 
         for (const conn of Array.from(hub.connections.values())) {
-          if (conn.userId === userId && conn.tools && conn.tools.length > 0) {
-            const newTools = await filterNewTools(conn.satelliteId, conn.tools)
-            if (newTools.length > 0) {
-              discoverableSatellites.push({
-                satelliteId: conn.satelliteId,
-                satelliteName: conn.name,
-                tools: newTools,
-              })
-            }
+          if (conn.userId === userId && !(await satelliteHasTool(conn.satelliteId))) {
+            discoverableSatellites.push({
+              satelliteId: conn.satelliteId,
+              satelliteName: conn.name,
+              tools: conn.tools,
+            })
           }
         }
 
         if (discoverableSatellites.length > 0) {
-          const discoverableSnapshot = {
-            type: 'discoverable_snapshot',
-            satellites: discoverableSatellites,
-          }
-          controller.enqueue(`data: ${JSON.stringify(discoverableSnapshot)}\n\n`)
+          controller.enqueue(
+            `data: ${JSON.stringify({ type: 'discoverable_snapshot', satellites: discoverableSatellites })}\n\n`
+          )
         }
       })()
 
-      // Subscribe to events and filter new tools
       const unsubscribe = satelliteEventBus.subscribe(userId, async (event: SatelliteEvent) => {
-        // If it's a satellite_connected event, filter new tools only
-        if (event.type === 'satellite_connected' && 'tools' in event && event.tools) {
-          const newTools = await filterNewTools(event.satelliteId, event.tools)
-          if (newTools.length === 0) {
-            // Don't send event if no new tools
+        if (event.type === 'satellite_connected') {
+          // Only forward the event if this satellite doesn't have a tool yet
+          if (await satelliteHasTool(event.satelliteId)) {
             return
           }
-          const filteredEvent = {
-            ...event,
-            tools: newTools,
-          }
-          const data = JSON.stringify(filteredEvent)
-          controller.enqueue(`data: ${data}\n\n`)
-        } else {
-          const data = JSON.stringify(event)
-          controller.enqueue(`data: ${data}\n\n`)
         }
+        controller.enqueue(`data: ${JSON.stringify(event)}\n\n`)
       })
 
-      // Handle client disconnect
       req.signal.addEventListener('abort', () => {
         logger.info(`[SatelliteEvents] SSE connection closed for user ${userId}`)
         unsubscribe()

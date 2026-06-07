@@ -2254,6 +2254,191 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/InsertablePrompt"
+  /api/me/satellites/{id}/api-keys:
+    get:
+      summary: List satellite API keys
+      description: List all API keys for a satellite.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKey"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create satellite API key
+      description: Create a new API key for a satellite.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKey"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label:
+                  type: string
+              additionalProperties: false
+  /api/me/satellites/{id}:
+    get:
+      summary: Get satellite details
+      description: Fetch details for a specific satellite.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Satellite"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete satellite
+      description: Delete a satellite.
+      responses:
+        "204":
+          description: Response
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/me/satellites/{id}/tools:
+    post:
+      summary: Save discovered satellite as a tool
+      description: Create a single Logicle tool for a connected satellite. Fails if
+        the satellite already has a tool.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tool"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+              additionalProperties: false
+  /api/me/satellites/connected:
+    get:
+      summary: List connected satellites
+      description: Get list of currently connected satellites.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    satelliteId:
+                      type: string
+                    satelliteName:
+                      type: string
+                  required:
+                    - satelliteId
+                    - satelliteName
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+  /api/me/satellites:
+    get:
+      summary: List my satellites
+      description: Fetch all satellites owned by the current user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Satellite"
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create a new satellite
+      description: Create a new satellite.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Satellite"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+              additionalProperties: false
   /api/me/secrets/{id}:
     delete:
       summary: Delete user secret
@@ -2355,6 +2540,43 @@ paths:
           $ref: "#/components/responses/Error"
         "500":
           $ref: "#/components/responses/Error"
+  /api/satellites/{id}:
+    get:
+      summary: Get satellite details
+      description: Fetch details for a specific satellite.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Satellite"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete satellite
+      description: Delete a satellite.
+      responses:
+        "204":
+          description: Response
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
   /api/satellites:
     get:
       summary: List satellites
@@ -5674,6 +5896,134 @@ components:
         - name
       additionalProperties: false
       id: InsertablePrompt
+    Satellite:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        userId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - name
+        - userId
+        - createdAt
+        - updatedAt
+      additionalProperties: false
+      id: Satellite
+    ToolSharing:
+      oneOf:
+        - $ref: "#/components/schemas/ToolSharingPrivate"
+        - $ref: "#/components/schemas/ToolSharingPublic"
+        - $ref: "#/components/schemas/ToolSharingWorkspace"
+      id: ToolSharing
+    ToolSharingPrivate:
+      type: object
+      properties:
+        type:
+          type: string
+          const: private
+      required:
+        - type
+      additionalProperties: false
+      id: ToolSharingPrivate
+    ToolSharingPublic:
+      type: object
+      properties:
+        type:
+          type: string
+          const: public
+      required:
+        - type
+      additionalProperties: false
+      id: ToolSharingPublic
+    ToolSharingWorkspace:
+      type: object
+      properties:
+        type:
+          type: string
+          const: workspace
+        workspaces:
+          type: array
+          items:
+            type: string
+      required:
+        - type
+        - workspaces
+      additionalProperties: false
+      id: ToolSharingWorkspace
+    Tool:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        configuration:
+          type: object
+          additionalProperties: {}
+        tags:
+          type: array
+          items:
+            type: string
+        icon:
+          anyOf:
+            - type: string
+            - type: "null"
+        sharing:
+          $ref: "#/components/schemas/ToolSharing"
+        provisioned:
+          type: boolean
+        capability:
+          type: boolean
+        satelliteId:
+          anyOf:
+            - type: string
+            - type: "null"
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        promptFragment:
+          type: string
+      required:
+        - id
+        - type
+        - name
+        - description
+        - configuration
+        - tags
+        - icon
+        - sharing
+        - provisioned
+        - capability
+        - satelliteId
+        - enabled
+        - createdAt
+        - updatedAt
+        - promptFragment
+      additionalProperties: false
+      id: Tool
     UserSecretStatus:
       type: object
       properties:
@@ -5900,101 +6250,6 @@ components:
         - rawMetadata
       additionalProperties: false
       id: InsertableSamlConnection
-    ToolSharing:
-      oneOf:
-        - $ref: "#/components/schemas/ToolSharingPrivate"
-        - $ref: "#/components/schemas/ToolSharingPublic"
-        - $ref: "#/components/schemas/ToolSharingWorkspace"
-      id: ToolSharing
-    ToolSharingPrivate:
-      type: object
-      properties:
-        type:
-          type: string
-          const: private
-      required:
-        - type
-      additionalProperties: false
-      id: ToolSharingPrivate
-    ToolSharingPublic:
-      type: object
-      properties:
-        type:
-          type: string
-          const: public
-      required:
-        - type
-      additionalProperties: false
-      id: ToolSharingPublic
-    ToolSharingWorkspace:
-      type: object
-      properties:
-        type:
-          type: string
-          const: workspace
-        workspaces:
-          type: array
-          items:
-            type: string
-      required:
-        - type
-        - workspaces
-      additionalProperties: false
-      id: ToolSharingWorkspace
-    Tool:
-      type: object
-      properties:
-        id:
-          type: string
-        type:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        configuration:
-          type: object
-          additionalProperties: {}
-        tags:
-          type: array
-          items:
-            type: string
-        icon:
-          anyOf:
-            - type: string
-            - type: "null"
-        sharing:
-          $ref: "#/components/schemas/ToolSharing"
-        provisioned:
-          type: boolean
-        capability:
-          type: boolean
-        createdAt:
-          type: string
-          format: date-time
-          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-        updatedAt:
-          type: string
-          format: date-time
-          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-        promptFragment:
-          type: string
-      required:
-        - id
-        - type
-        - name
-        - description
-        - configuration
-        - tags
-        - icon
-        - sharing
-        - provisioned
-        - capability
-        - createdAt
-        - updatedAt
-        - promptFragment
-      additionalProperties: false
-      id: Tool
     UpdateableTool:
       type: object
       properties:
