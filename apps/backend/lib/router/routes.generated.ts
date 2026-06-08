@@ -76,7 +76,6 @@ export const backendRouteModules = [
   { pathname: '/api/me/prompts/[promptId]', load: () => import('@/backend/api/me/prompts/[promptId]/route') },
   { pathname: '/api/me/prompts', load: () => import('@/backend/api/me/prompts/route') },
   { pathname: '/api/me/satellites/[id]', load: () => import('@/backend/api/me/satellites/[id]/route') },
-  { pathname: '/api/me/satellites/[id]/tools', load: () => import('@/backend/api/me/satellites/[id]/tools/route') },
   { pathname: '/api/me/satellites/connected', load: () => import('@/backend/api/me/satellites/connected/route') },
   { pathname: '/api/me/satellites/events', load: () => import('@/backend/api/me/satellites/events/route') },
   { pathname: '/api/me/satellites', load: () => import('@/backend/api/me/satellites/route') },

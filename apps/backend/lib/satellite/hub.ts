@@ -13,6 +13,8 @@ import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import { findSatelliteAuthByApiKey } from '@/backend/api/utils/auth'
 import { getSatellite } from '@/models/satellite'
+import { createToolWithId, updateToolSatelliteInfo } from '@/models/tool'
+import { db } from '@/db/database'
 import { logger } from '@/lib/logging'
 import { satelliteEventBus } from '@/lib/satellite/events'
 import { nanoid } from 'nanoid'
@@ -91,6 +93,38 @@ const findConnection = (socket: WebSocket) => {
     }
   }
   return null
+}
+
+async function ensureSatelliteTool(userId: string, satelliteId: string, satelliteName: string) {
+  const existing = await db
+    .selectFrom('Tool')
+    .select('id')
+    .where('satelliteId', '=', satelliteId)
+    .executeTakeFirst()
+
+  if (existing) {
+    await updateToolSatelliteInfo(existing.id, satelliteId, true)
+    return
+  }
+
+  const createdTool = await createToolWithId(
+    nanoid(),
+    {
+      name: satelliteName,
+      description: '',
+      type: 'mcp',
+      configuration: {},
+      tags: [],
+      icon: null,
+      sharing: { type: 'private' },
+      promptFragment: '',
+    },
+    false,
+    false,
+    userId
+  )
+
+  await updateToolSatelliteInfo(createdTool.id, satelliteId, true)
 }
 
 export async function handleSatelliteConnection(ws: WebSocket, req: IncomingMessage) {
@@ -184,6 +218,8 @@ async function handleSatelliteMessage(
       logger.info(
         `[SatelliteHub] Satellite connected: "${finalName}" (${satelliteId})`
       )
+
+      await ensureSatelliteTool(userId, satelliteId, finalName)
 
       satelliteEventBus.publish({
         type: 'satellite_connected',

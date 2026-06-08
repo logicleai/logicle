@@ -2,7 +2,6 @@ import { ok, operation, responseSpec } from '@/lib/routes'
 import { getUserSatellites, createSatellite } from '@/models/satellite'
 import { satelliteListItemSchema, satelliteSchema, insertableSatelliteSchema } from '@/types/dto'
 import { hub } from '@/lib/satellite/hub'
-import { db } from '@/db/database'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,15 +13,6 @@ export const GET = operation({
   implementation: async ({ session }) => {
     const satellites = await getUserSatellites(session.userId)
     const connections = Array.from(hub.connections.values()).filter((conn) => conn.userId === session.userId)
-    const tools = await db
-      .selectFrom('Tool')
-      .select(['satelliteId'])
-      .where('satelliteId', 'is not', null)
-      .execute()
-
-    const savedToolSatelliteIds = new Set(
-      tools.flatMap((tool) => (tool.satelliteId ? [tool.satelliteId] : []))
-    )
     const connectionsById = new Map(connections.map((conn) => [conn.satelliteId, conn]))
 
     const registered = satellites.map((satellite) => {
@@ -34,13 +24,6 @@ export const GET = operation({
         connected: !!connection,
         createdAt: satellite.createdAt,
         updatedAt: satellite.updatedAt,
-        discoverableTools:
-          connection && !savedToolSatelliteIds.has(satellite.id)
-            ? connection.tools.map((tool) => ({
-                name: tool.name,
-                description: tool.description || undefined,
-              }))
-            : [],
       }
     })
 
@@ -53,10 +36,6 @@ export const GET = operation({
         connected: true,
         createdAt: conn.connectedAt.toISOString(),
         updatedAt: conn.connectedAt.toISOString(),
-        discoverableTools: conn.tools.map((tool) => ({
-          name: tool.name,
-          description: tool.description || undefined,
-        })),
       }))
 
     return ok([...registered, ...ephemeral])
