@@ -51,7 +51,6 @@ export const connections = hub.connections
 
 interface SatelliteAuthResult {
   userId: string
-  satelliteId?: string // present if registered satellite
 }
 
 export async function checkSatelliteAuthentication(
@@ -69,18 +68,15 @@ export async function checkSatelliteAuthentication(
       return null
     }
 
-    // Check if this is a registered satellite API key
-    if (auth.scope?.startsWith('satelliteId:')) {
-      const satelliteId = auth.scope.substring('satelliteId:'.length)
-      const satellite = await getSatellite(satelliteId)
-      if (!satellite || satellite.userId !== auth.userId) {
-        logger.warn(`[SatelliteHub] Satellite ${satelliteId} not found or unauthorized`)
-        return null
-      }
-      return { userId: auth.userId, satelliteId }
+    if (!auth.scope) {
+      return { userId: auth.userId }
     }
 
-    // Otherwise it's a personal bridge (user API key)
+    if (!auth.scope.includes('satellite:connect')) {
+      logger.warn('[SatelliteHub] API key lacks satellite:connect privilege')
+      return null
+    }
+
     return { userId: auth.userId }
   } catch (e) {
     logger.error('[SatelliteHub] Authentication error:', e)
@@ -115,20 +111,18 @@ export async function handleSatelliteConnection(ws: WebSocket, req: IncomingMess
     return
   }
 
-  const { userId, satelliteId } = auth
-  const mode = satelliteId ? 'registered_satellite' : 'personal'
-  logger.info(`[SatelliteHub] Connection authenticated: mode=${mode}, userId=${userId}${satelliteId ? `, satelliteId=${satelliteId}` : ''}`)
+  const { userId } = auth
+  logger.info(`[SatelliteHub] Connection authenticated: userId=${userId}`)
 
-  ws.on('message', (data) => handleSatelliteMessage(ws, userId, satelliteId, data))
+  ws.on('message', (data) => handleSatelliteMessage(ws, userId, data))
   for (const data of messageQueue) {
-    handleSatelliteMessage(ws, userId, satelliteId, data)
+    handleSatelliteMessage(ws, userId, data)
   }
 }
 
 async function handleSatelliteMessage(
   socket: WebSocket,
   userId: string,
-  authSatelliteId: string | undefined,
   data: WebSocket.RawData
 ) {
   try {
@@ -137,7 +131,7 @@ async function handleSatelliteMessage(
     // Unified register handler for both registered and ephemeral satellites
     if (msg.type === 'register') {
       const registerMsg = msg as RegisterMessage
-      const { name, tools } = registerMsg
+      const { name, tools, satelliteId: requestedSatelliteId } = registerMsg
 
       let conn = findConnection(socket)
       if (conn) {
@@ -152,18 +146,17 @@ async function handleSatelliteMessage(
       let satelliteId: string
       let finalName: string
 
-      if (authSatelliteId) {
-        // Registered satellite - ID comes from API key, use DB name
-        satelliteId = authSatelliteId
-        const satellite = await getSatellite(authSatelliteId)
-        if (!satellite) {
-          logger.warn(`[SatelliteHub] Satellite ${authSatelliteId} not found`)
-          socket.close(1008, 'Satellite not found')
+      if (requestedSatelliteId) {
+        satelliteId = requestedSatelliteId
+        const satellite = await getSatellite(satelliteId)
+        if (!satellite || satellite.userId !== userId) {
+          logger.warn(`[SatelliteHub] Satellite ${satelliteId} not found or unauthorized`)
+          socket.close(1008, 'Satellite not found or unauthorized')
           return
         }
         finalName = satellite.name
       } else {
-        // Ephemeral satellite - generate ID, use provided name
+        // Missing satelliteId means ephemeral mode.
         satelliteId = `ephemeral_${nanoid()}`
         finalName = name
       }

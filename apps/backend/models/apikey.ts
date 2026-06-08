@@ -4,10 +4,31 @@ import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { hashPassword } from '@/lib/auth/password'
 
+function parseApiKeyScope(scope: string | null): dto.ApiKeyScope | null {
+  if (!scope) {
+    return null
+  }
+
+  try {
+    return dto.apiKeyScopeSchema.parse(JSON.parse(scope))
+  } catch {
+    return null
+  }
+}
+
+function serializeApiKeyScope(scope?: dto.ApiKeyScope | null): string | null {
+  if (!scope) {
+    return null
+  }
+
+  return JSON.stringify(scope)
+}
+
 function dbToDto(apiKey: schema.ApiKey) {
   return {
     ...apiKey,
     provisioned: !!apiKey.provisioned,
+    scope: parseApiKeyScope(apiKey.scope),
   }
 }
 
@@ -35,44 +56,14 @@ export const deleteApiKey = async (userId: string, id: string) => {
 }
 
 export const createApiKey = async (userId: string, key: string, data: dto.InsertableUserApiKey) => {
-  return await createApiKeyWithId(
-    nanoid(),
-    key,
-    {
-      userId: userId,
-      ...data,
-    },
-    false,
-    'user'
-  )
-}
-
-export const createSatelliteApiKey = async (userId: string, satelliteId: string, label?: string) => {
-  const secret = nanoid()
-  const hashed = await hashPassword(secret)
-  const apiKey = await createApiKeyWithId(
-    nanoid(),
-    hashed,
-    {
-      userId: userId,
-      description: label || `Satellite: ${satelliteId}`,
-      expiresAt: null,
-    },
-    false,
-    `satelliteId:${satelliteId}`
-  )
-  // Return only the secret; client will combine {id}.{secret}
-  return {
-    ...apiKey,
-    key: secret,
-  }
+  return await createApiKeyWithId(nanoid(), key, { userId: userId, ...data }, false)
 }
 export const createApiKeyWithId = async (
   id: string,
   key: string,
   apiKey: dto.InsertableApiKey,
   provisioned: boolean,
-  scope?: string
+  scope?: dto.ApiKeyScope | null
 ) => {
   await db
     .insertInto('ApiKey')
@@ -83,7 +74,7 @@ export const createApiKeyWithId = async (
       enabled: 1,
       createdAt: new Date().toISOString(),
       provisioned: provisioned ? 1 : 0,
-      scope: scope || null,
+      scope: serializeApiKeyScope(scope),
     })
     .executeTakeFirstOrThrow()
   const created = await getApiKey(id)
@@ -109,6 +100,7 @@ export const updateApiKey = async (
       key,
       id: undefined,
       provisioned: undefined, // protect against malicious API usage
+      scope: data.scope === undefined ? undefined : serializeApiKeyScope(data.scope),
     })
     .where('id', '=', id)
     .execute()

@@ -4,6 +4,19 @@ import bcrypt from 'bcryptjs'
 import { readSessionFromRequest } from '@/lib/auth/session'
 import { type AuthenticatedSession } from '@/types/session'
 import env from '@/lib/env'
+import { apiKeyScopeSchema, type ApiKeyScope } from '@/types/dto'
+
+function parseApiKeyScope(scope: string | null): ApiKeyScope | null {
+  if (!scope) {
+    return null
+  }
+
+  try {
+    return apiKeyScopeSchema.parse(JSON.parse(scope))
+  } catch {
+    return null
+  }
+}
 
 export async function findUserByApiKey(apiKey: string) {
   const keys = apiKey.split('.')
@@ -57,7 +70,7 @@ export async function findSatelliteAuthByApiKey(apiKey: string) {
       if (await bcrypt.compare(secret, row.key)) {
         return {
           userId: row.id,
-          scope: row.scope,
+          scope: parseApiKeyScope(row.scope),
         }
       }
     }
