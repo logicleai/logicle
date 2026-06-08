@@ -5,7 +5,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import { post } from '@/lib/fetch'
-import type { DiscoverableSatellite } from '@/hooks/useDiscoverSatelliteTools'
+
+type DiscoverableSatellite = {
+  satelliteId: string
+  satelliteName: string
+  tools: Array<{
+    name: string
+    description?: string
+    inputSchema?: Record<string, any>
+    outputSchema?: Record<string, any>
+  }>
+}
 
 interface SatelliteToolsDiscoveryModalProps {
   isOpen: boolean

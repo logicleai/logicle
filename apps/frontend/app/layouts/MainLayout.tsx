@@ -13,7 +13,7 @@ import { MessageSquare, Compass, Images } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
-import { useSatelliteDiscovery } from '@/components/providers/SatelliteEventsProvider'
+import { useSatellites } from '@/hooks/satellites'
 import { t } from 'i18next'
 
 export interface Props {
@@ -25,7 +25,8 @@ export interface Props {
 const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }) => {
   const LeftBar = leftBar
   const [showDrawer, setShowDrawer] = useState<boolean>(false)
-  const { discoverableSatellites } = useSatelliteDiscovery()
+  const { data: satellites } = useSatellites()
+  const attentionCount = satellites.filter((satellite) => satellite.discoverableTools.length > 0).length
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
@@ -48,9 +49,9 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
           </Link>
           <Link href="/satellites" title="Satellites" className="relative">
             <IconSatellite size={28}></IconSatellite>
-            {discoverableSatellites.length > 0 && (
+            {attentionCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
-                {discoverableSatellites.length}
+                {attentionCount}
               </span>
             )}
           </Link>
@@ -82,7 +83,8 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
   const pathname = usePathname()
   const layoutconfigContext = useLayoutConfig()
   const hideLeftBar = pathname === '/chat/assistants/select'
-  const { discoverableSatellites } = useSatelliteDiscovery()
+  const { data: satellites } = useSatellites()
+  const attentionCount = satellites.filter((satellite) => satellite.discoverableTools.length > 0).length
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
@@ -111,9 +113,9 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
           </Link>
           <Link href="/satellites" title="Satellites" className="relative">
             <IconSatellite size={28}></IconSatellite>
-            {discoverableSatellites.length > 0 && (
+            {attentionCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
-                {discoverableSatellites.length}
+                {attentionCount}
               </span>
             )}
           </Link>
