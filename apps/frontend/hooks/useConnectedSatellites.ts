@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { get } from '@/lib/fetch'
 
 interface ConnectedSatellite {
   satelliteId: string
@@ -10,6 +11,18 @@ export function useConnectedSatellites() {
 
   useEffect(() => {
     let eventSource: EventSource | null = null
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const response = await get<ConnectedSatellite[]>('/api/me/satellites/connected')
+        if (!cancelled && !response.error) {
+          setConnectedSatellites(response.data ?? [])
+        }
+      } catch (err) {
+        console.error('[ConnectedSatellites] Failed to load initial connections:', err)
+      }
+    })()
 
     try {
       eventSource = new EventSource('/api/me/satellites/events')
@@ -18,10 +31,7 @@ export function useConnectedSatellites() {
         try {
           const data = JSON.parse(event.data)
 
-          if (data.type === 'snapshot') {
-            // Replace entire state with snapshot
-            setConnectedSatellites(data.satellites || [])
-          } else if (data.type === 'satellite_connected') {
+          if (data.type === 'satellite_connected') {
             setConnectedSatellites((prev) => {
               const exists = prev.findIndex((s) => s.satelliteId === data.satelliteId)
               if (exists >= 0) {
@@ -54,6 +64,7 @@ export function useConnectedSatellites() {
     }
 
     return () => {
+      cancelled = true
       if (eventSource) {
         eventSource.close()
       }

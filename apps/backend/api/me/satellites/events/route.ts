@@ -48,20 +48,12 @@ export async function GET(req: Request) {
           }
         }
 
-        if (discoverableSatellites.length > 0) {
-          controller.enqueue(
-            `data: ${JSON.stringify({ type: 'discoverable_snapshot', satellites: discoverableSatellites })}\n\n`
-          )
-        }
+        controller.enqueue(
+          `data: ${JSON.stringify({ type: 'discoverable_snapshot', satellites: discoverableSatellites })}\n\n`
+        )
       })()
 
       const unsubscribe = satelliteEventBus.subscribe(userId, async (event: SatelliteEvent) => {
-        if (event.type === 'satellite_connected') {
-          // Only forward the event if this satellite doesn't have a tool yet
-          if (await satelliteHasTool(event.satelliteId)) {
-            return
-          }
-        }
         controller.enqueue(`data: ${JSON.stringify(event)}\n\n`)
       })
 
