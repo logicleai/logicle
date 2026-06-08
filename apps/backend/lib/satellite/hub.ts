@@ -6,7 +6,6 @@ import {
   Tool,
   ToolCallMessage,
   ToolResultMessage,
-  PublishedCapability,
 } from '@/lib/satellite/types'
 import { ToolUILink } from '@/lib/chat/tools'
 import { IncomingMessage } from 'node:http'
@@ -34,9 +33,6 @@ export interface SatelliteConnection {
       uiLink: ToolUILink
     }
   >
-  manifest?: {
-    capabilities: PublishedCapability[]
-  }
   connectedAt: Date
 }
 

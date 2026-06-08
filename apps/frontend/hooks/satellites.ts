@@ -17,27 +17,42 @@ export function useSatellites() {
 
   useEffect(() => {
     let eventSource: EventSource | null = null
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+    let retryDelay = 1000
 
-    try {
-      eventSource = new EventSource('/api/me/satellites/events')
-      eventSource.addEventListener('message', (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          if (data.type === 'satellite_connected' || data.type === 'satellite_disconnected') {
-            void mutate()
+    function connect() {
+      try {
+        eventSource = new EventSource('/api/me/satellites/events')
+        eventSource.addEventListener('open', () => {
+          retryDelay = 1000
+        })
+        eventSource.addEventListener('message', (event) => {
+          try {
+            const data = JSON.parse(event.data)
+            if (data.type === 'satellite_connected' || data.type === 'satellite_disconnected') {
+              void mutate()
+            }
+          } catch (err) {
+            console.error('[useSatellites] Failed to parse event:', err)
           }
-        } catch (err) {
-          console.error('[useSatellites] Failed to parse event:', err)
-        }
-      })
-      eventSource.addEventListener('error', () => {
-        eventSource?.close()
-      })
-    } catch (err) {
-      console.error('[useSatellites] Failed to connect:', err)
+        })
+        eventSource.addEventListener('error', () => {
+          eventSource?.close()
+          eventSource = null
+          retryTimer = setTimeout(() => {
+            retryDelay = Math.min(retryDelay * 2, 30000)
+            connect()
+          }, retryDelay)
+        })
+      } catch (err) {
+        console.error('[useSatellites] Failed to connect:', err)
+      }
     }
 
+    connect()
+
     return () => {
+      if (retryTimer !== null) clearTimeout(retryTimer)
       eventSource?.close()
     }
   }, [mutate])

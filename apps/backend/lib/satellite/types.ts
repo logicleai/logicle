@@ -45,12 +45,6 @@ export interface ToolOutputMessage {
   }
 }
 
-export interface PublishedCapability {
-  type: 'mcp_tool' | 'llm_model'
-  name: string
-  description: string
-}
-
 export type Message =
   | RegisterMessage
   | RegisteredMessage
