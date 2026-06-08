@@ -54,7 +54,7 @@ import {
 } from './summarizer'
 import { ToolSetupError } from './exceptions'
 import type { Usage } from './usage'
-import { createSatelliteToolFunction } from '../tools/satellite/implementation'
+import { SatelliteTool } from '../tools/satellite/implementation'
 import type { PromptSegment } from './preamble'
 
 // Extract a message from:
@@ -250,10 +250,15 @@ export class ChatAssistant {
     functions: ToolFunctions
     functionToolIdMap: Map<string, string>
   }> {
+    const satelliteHub = await import('@/lib/satellite/hub')
+    const satelliteTools = Array.from(satelliteHub.connections.values())
+      .filter((conn) => conn.userId === context.userId)
+      .map(SatelliteTool.fromConnection)
+
     const functionToolIdMap = new Map<string, string>()
     const toolFunctionEntries = (
       await Promise.all(
-        tools.map(async (tool) => {
+        [...tools, ...satelliteTools].map(async (tool) => {
           try {
             const fns = await tool.functions(llmModel, context)
             for (const fnName of Object.keys(fns)) {
@@ -267,20 +272,8 @@ export class ChatAssistant {
         })
       )
     ).flatMap((toolFunctions) => Object.entries(toolFunctions))
-    const functions_ = Object.fromEntries(toolFunctionEntries)
 
-    // Load satellite tools from active connections (both registered and ephemeral)
-    const satelliteHub = await import('@/lib/satellite/hub')
-    const connections = satelliteHub.connections
-
-    connections.forEach((conn) => {
-      if (conn.userId !== context.userId) return
-      conn.tools.forEach((tool) => {
-        functions_[tool.name] = createSatelliteToolFunction(conn.satelliteId, tool)
-      })
-    })
-
-    return { functions: functions_, functionToolIdMap }
+    return { functions: Object.fromEntries(toolFunctionEntries), functionToolIdMap }
   }
 
   static async build(

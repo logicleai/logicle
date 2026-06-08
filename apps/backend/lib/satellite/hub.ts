@@ -113,8 +113,8 @@ async function ensureSatelliteTool(userId: string, satelliteId: string, satellit
     {
       name: satelliteName,
       description: '',
-      type: 'mcp',
-      configuration: {},
+      type: 'satellite',
+      configuration: { satelliteId },
       tags: [],
       icon: null,
       sharing: { type: 'private' },

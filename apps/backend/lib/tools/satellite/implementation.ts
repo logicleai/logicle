@@ -75,7 +75,7 @@ const toToolResult = async (
   return toolResult
 }
 
-export const createSatelliteToolFunction = (
+const createSatelliteToolFunction = (
   satelliteId: string,
   tool: { name: string; description: string; inputSchema?: any }
 ): ToolFunction => {
@@ -98,7 +98,14 @@ export const createSatelliteToolFunction = (
 
 export class SatelliteTool extends SatelliteInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: any) =>
-    new SatelliteTool(toolParams, params?.satelliteId || toolParams.id)
+    new SatelliteTool(toolParams, params.satelliteId as string)
+
+  static fromConnection(conn: { satelliteId: string; name: string }): SatelliteTool {
+    return new SatelliteTool(
+      { id: conn.satelliteId, provisioned: false, promptFragment: '', name: conn.name },
+      conn.satelliteId
+    )
+  }
 
   constructor(public toolParams: ToolParams, private satelliteId: string) {
     super()
