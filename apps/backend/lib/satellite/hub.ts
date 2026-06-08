@@ -21,6 +21,7 @@ import { nanoid } from 'nanoid'
 
 export interface SatelliteConnection {
   satelliteId: string
+  kind: 'registered' | 'ephemeral'
   name: string
   userId: string
   tools: Tool[]
@@ -204,8 +205,10 @@ async function handleSatelliteMessage(
         existing.pendingCalls.clear()
       }
 
+      const kind: SatelliteConnection['kind'] = requestedSatelliteId ? 'registered' : 'ephemeral'
       const newConn: SatelliteConnection = {
         satelliteId,
+        kind,
         name: finalName,
         userId,
         tools,
@@ -219,7 +222,11 @@ async function handleSatelliteMessage(
         `[SatelliteHub] Satellite connected: "${finalName}" (${satelliteId})`
       )
 
-      await ensureSatelliteTool(userId, satelliteId, finalName)
+      // Ephemeral satellites reconnect with a new generated ID each time; calling
+      // ensureSatelliteTool would insert an orphaned Tool row on every reconnect.
+      if (kind === 'registered') {
+        await ensureSatelliteTool(userId, satelliteId, finalName)
+      }
 
       satelliteEventBus.publish({
         type: 'satellite_connected',

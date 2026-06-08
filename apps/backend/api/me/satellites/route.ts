@@ -28,7 +28,7 @@ export const GET = operation({
     })
 
     const ephemeral = connections
-      .filter((conn) => conn.satelliteId.startsWith('ephemeral_'))
+      .filter((conn) => conn.kind === 'ephemeral')
       .map((conn) => ({
         id: conn.satelliteId,
         name: conn.name,
