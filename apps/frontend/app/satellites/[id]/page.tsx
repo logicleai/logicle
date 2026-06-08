@@ -50,16 +50,12 @@ const SatelliteDetail = () => {
     )
   }
 
-  const isEphemeral = satellite.id.startsWith('ephemeral_')
-
   return (
     <div className="h-full flex flex-col p-6 overflow-y-auto">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{satellite.name}</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            {isEphemeral ? 'Personal Bridge' : 'Registered Satellite'}
-          </p>
+          <p className="text-sm text-gray-600 mt-1">Registered Satellite</p>
         </div>
         <Button variant="ghost" onClick={() => router.back()}>
           {t('back')}
