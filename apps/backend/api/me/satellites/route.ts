@@ -1,17 +1,65 @@
 import { ok, operation, responseSpec } from '@/lib/routes'
 import { getUserSatellites, createSatellite } from '@/models/satellite'
-import { satelliteSchema, insertableSatelliteSchema } from '@/types/dto'
+import { satelliteListItemSchema, satelliteSchema, insertableSatelliteSchema } from '@/types/dto'
+import { hub } from '@/lib/satellite/hub'
+import { db } from '@/db/database'
 
 export const dynamic = 'force-dynamic'
 
 export const GET = operation({
   name: 'List my satellites',
-  description: 'Fetch all satellites owned by the current user.',
+  description: 'Fetch all satellites owned by the current user, merged with live connection state.',
   authentication: 'user',
-  responses: [responseSpec(200, satelliteSchema.array())] as const,
+  responses: [responseSpec(200, satelliteListItemSchema.array())] as const,
   implementation: async ({ session }) => {
     const satellites = await getUserSatellites(session.userId)
-    return ok(satellites)
+    const connections = Array.from(hub.connections.values()).filter((conn) => conn.userId === session.userId)
+    const tools = await db
+      .selectFrom('Tool')
+      .select(['satelliteId'])
+      .where('satelliteId', 'is not', null)
+      .execute()
+
+    const savedToolSatelliteIds = new Set(
+      tools.flatMap((tool) => (tool.satelliteId ? [tool.satelliteId] : []))
+    )
+    const connectionsById = new Map(connections.map((conn) => [conn.satelliteId, conn]))
+
+    const registered = satellites.map((satellite) => {
+      const connection = connectionsById.get(satellite.id)
+      return {
+        id: satellite.id,
+        name: satellite.name,
+        kind: 'registered' as const,
+        connected: !!connection,
+        createdAt: satellite.createdAt,
+        updatedAt: satellite.updatedAt,
+        discoverableTools:
+          connection && !savedToolSatelliteIds.has(satellite.id)
+            ? connection.tools.map((tool) => ({
+                name: tool.name,
+                description: tool.description || undefined,
+              }))
+            : [],
+      }
+    })
+
+    const ephemeral = connections
+      .filter((conn) => conn.satelliteId.startsWith('ephemeral_'))
+      .map((conn) => ({
+        id: conn.satelliteId,
+        name: conn.name,
+        kind: 'ephemeral' as const,
+        connected: true,
+        createdAt: conn.connectedAt.toISOString(),
+        updatedAt: conn.connectedAt.toISOString(),
+        discoverableTools: conn.tools.map((tool) => ({
+          name: tool.name,
+          description: tool.description || undefined,
+        })),
+      }))
+
+    return ok([...registered, ...ephemeral])
   },
 })
 

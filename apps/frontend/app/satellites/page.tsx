@@ -9,8 +9,6 @@ import { delete_, post } from '@/lib/fetch'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import toast from 'react-hot-toast'
 import { useSatellites } from '@/hooks/satellites'
-import { useSatelliteDiscovery } from '@/components/providers/SatelliteEventsProvider'
-import { useConnectedSatellites } from '@/hooks/useConnectedSatellites'
 import * as dto from '@/types/dto'
 import { Link } from '@/components/ui/link'
 
@@ -20,14 +18,18 @@ const MySatellitesPage = () => {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState<string>('')
   const modalContext = useConfirmationContext()
-  const { discoverableSatellites, removeSatellite } = useSatelliteDiscovery()
-  const { connectedSatellites } = useConnectedSatellites()
   const [savingFor, setSavingFor] = useState<string | null>(null)
   const [expandedSatellite, setExpandedSatellite] = useState<string | null>(null)
+  const [ignoredSatellites, setIgnoredSatellites] = useState<Set<string>>(new Set())
 
-  async function onDelete(satellite: dto.Satellite) {
+  async function onDelete(satellite: dto.SatelliteListItem) {
+    if (satellite.kind === 'ephemeral') {
+      toast.error('Ephemeral bridges disappear when the remote connection closes')
+      return
+    }
+
     const result = await modalContext.askConfirmation({
-      title: `${t('remove-satellite')} ${satellite?.name}`,
+      title: `${t('remove-satellite')} ${satellite.name}`,
       message: t('remove-satellite-confirmation'),
       confirmMsg: t('remove-satellite'),
     })
@@ -42,42 +44,40 @@ const MySatellitesPage = () => {
     toast.success(t('satellite-successfully-deleted'))
   }
 
-  const saveOrIgnoreTools = async (satelliteId: string, mode: 'save' | 'ignore') => {
-    const satellite = discoverableSatellites.find((s) => s.satelliteId === satelliteId)
-    if (!satellite) return
-
+  const saveOrIgnoreTools = async (satellite: dto.SatelliteListItem, mode: 'save' | 'ignore') => {
     if (mode === 'ignore') {
-      removeSatellite(satelliteId)
+      setIgnoredSatellites((prev) => new Set(prev).add(satellite.id))
       setExpandedSatellite(null)
       toast.success(t('tools-ignored'))
       return
     }
 
-    setSavingFor(satelliteId)
+    setSavingFor(satellite.id)
     try {
-      const response = await post(`/api/me/satellites/${satelliteId}/tools`, {})
+      const response = await post(`/api/me/satellites/${satellite.id}/tools`, {})
 
       if (response.error) {
         toast.error(response.error.message)
         return
       }
 
-      toast.success(t('tools-saved'))
-      removeSatellite(satelliteId)
+      setIgnoredSatellites((prev) => {
+        const next = new Set(prev)
+        next.delete(satellite.id)
+        return next
+      })
       setExpandedSatellite(null)
-    } catch (err) {
+      toast.success(t('tools-saved'))
+      router.refresh()
+    } catch {
       toast.error(t('error-saving-tools'))
     } finally {
       setSavingFor(null)
     }
   }
 
-  const renderDiscoveryCard = (
-    satelliteId: string,
-    discoverableSat: (typeof discoverableSatellites)[number],
-    tone: 'default' | 'ephemeral'
-  ) => {
-    const isExpanded = expandedSatellite === satelliteId
+  const renderDiscoveryCard = (satellite: dto.SatelliteListItem, tone: 'default' | 'ephemeral') => {
+    const isExpanded = expandedSatellite === satellite.id
     const borderClass = tone === 'ephemeral' ? 'border-blue-200' : 'border-t'
     const buttonClass =
       tone === 'ephemeral'
@@ -91,10 +91,10 @@ const MySatellitesPage = () => {
     return (
       <div className={`mt-4 pt-4 ${borderClass}`}>
         <button
-          onClick={() => setExpandedSatellite(isExpanded ? null : satelliteId)}
+          onClick={() => setExpandedSatellite(isExpanded ? null : satellite.id)}
           className={buttonClass}
         >
-          <span>{discoverableSat.tools.length} exposed capability(s)</span>
+          <span>{satellite.discoverableTools.length} exposed capability(s)</span>
           <span>{isExpanded ? '▼' : '▶'}</span>
         </button>
 
@@ -104,7 +104,7 @@ const MySatellitesPage = () => {
               This connection will be saved as one Logicle tool. The bridge currently exposes:
             </p>
             <div className="mt-3 space-y-2">
-              {discoverableSat.tools.map((tool) => (
+              {satellite.discoverableTools.map((tool) => (
                 <div
                   key={tool.name}
                   className="rounded-lg border border-black/5 bg-white px-3 py-2"
@@ -118,17 +118,17 @@ const MySatellitesPage = () => {
             </div>
             <div className="mt-4 flex gap-2">
               <Button
-                onClick={() => saveOrIgnoreTools(satelliteId, 'save')}
-                disabled={savingFor === satelliteId}
+                onClick={() => saveOrIgnoreTools(satellite, 'save')}
+                disabled={savingFor === satellite.id}
                 size="small"
               >
-                {savingFor === satelliteId ? t('saving') : 'Create Tool'}
+                {savingFor === satellite.id ? t('saving') : 'Create Tool'}
               </Button>
               <Button
-                onClick={() => saveOrIgnoreTools(satelliteId, 'ignore')}
+                onClick={() => saveOrIgnoreTools(satellite, 'ignore')}
                 variant="secondary"
                 size="small"
-                disabled={savingFor === satelliteId}
+                disabled={savingFor === satellite.id}
               >
                 {t('ignore')}
               </Button>
@@ -139,28 +139,18 @@ const MySatellitesPage = () => {
     )
   }
 
-  const filteredSatellites = (satellites ?? []).filter((satellite) => {
-    if (searchTerm.trim().length === 0) return true
-    if (satellite.name.toUpperCase().includes(searchTerm.toUpperCase())) return true
-    return false
+  const visibleSatellites = (satellites ?? []).filter((satellite) => {
+    if (searchTerm.trim().length > 0 && !satellite.name.toUpperCase().includes(searchTerm.toUpperCase())) {
+      return false
+    }
+    if (satellite.discoverableTools.length > 0 && ignoredSatellites.has(satellite.id)) {
+      return false
+    }
+    return true
   })
 
-  const ephemeralConnectedSatellites: dto.Satellite[] = connectedSatellites
-    .filter((satellite) => satellite.satelliteId.startsWith('ephemeral_'))
-    .filter((satellite) => {
-      if (searchTerm.trim().length === 0) return true
-      return satellite.satelliteName.toUpperCase().includes(searchTerm.toUpperCase())
-    })
-    .map((satellite) => ({
-      id: satellite.satelliteId,
-      name: satellite.satelliteName,
-      userId: '',
-      createdAt: '',
-      updatedAt: '',
-    }))
-
-  const registeredSatellites = filteredSatellites.filter((s) => !s.id.startsWith('ephemeral_'))
-  const ephemeralSatellites = ephemeralConnectedSatellites
+  const registeredSatellites = visibleSatellites.filter((s) => s.kind === 'registered')
+  const ephemeralSatellites = visibleSatellites.filter((s) => s.kind === 'ephemeral')
 
   return (
     <div className="h-full flex flex-col p-6">
@@ -195,131 +185,97 @@ const MySatellitesPage = () => {
 
       {!isLoading && !error && (
         <div className="flex-1 overflow-y-auto space-y-6">
-          {/* Registered Satellites Section */}
           {registeredSatellites.length > 0 && (
             <div>
               <h2 className="text-lg font-semibold mb-3 text-gray-700">Registered Satellites</h2>
               <div className="space-y-3">
-                {registeredSatellites.map((satellite) => {
-                  const discoverableSat = discoverableSatellites.find(
-                    (s) => s.satelliteId === satellite.id
-                  )
-                  const connectedSat = connectedSatellites.find(
-                    (s) => s.satelliteId === satellite.id
-                  )
-                  const isConnected = connectedSat !== undefined
-
-                  return (
-                    <div
-                      key={satellite.id}
-                      className="border rounded-lg p-4 hover:shadow-sm transition-shadow"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <Link variant="ghost" href={`/satellites/${satellite.id}`}>
-                              {satellite.name}
-                            </Link>
-                            <span
-                              className={`text-xs px-2 py-1 rounded-full ${
-                                isConnected
-                                  ? 'bg-green-100 text-green-700'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}
-                            >
-                              {isConnected ? '● Connected' : '○ Disconnected'}
-                            </span>
-                          </div>
+                {registeredSatellites.map((satellite) => (
+                  <div
+                    key={satellite.id}
+                    className="border rounded-lg p-4 hover:shadow-sm transition-shadow"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Link variant="ghost" href={`/satellites/${satellite.id}`}>
+                            {satellite.name}
+                          </Link>
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${
+                              satellite.connected
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            {satellite.connected ? '● Connected' : '○ Disconnected'}
+                          </span>
+                        </div>
+                        {satellite.createdAt && (
                           <div className="text-xs text-gray-500 mt-1">
                             {t('created')}: {new Date(satellite.createdAt).toLocaleDateString()}
                           </div>
-                        </div>
-                        <ActionList>
-                          <Action
-                            icon={IconTrash}
-                            onClick={() => onDelete(satellite)}
-                            text={t('remove-satellite')}
-                            destructive={true}
-                          />
-                        </ActionList>
+                        )}
                       </div>
-
-                      {/* Discovery card */}
-                      {discoverableSat && renderDiscoveryCard(satellite.id, discoverableSat, 'default')}
+                      <ActionList>
+                        <Action
+                          icon={IconTrash}
+                          onClick={() => onDelete(satellite)}
+                          text={t('remove-satellite')}
+                          destructive={true}
+                        />
+                      </ActionList>
                     </div>
-                  )
-                })}
+
+                    {satellite.discoverableTools.length > 0 && renderDiscoveryCard(satellite, 'default')}
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Ephemeral Satellites Section */}
           {ephemeralSatellites.length > 0 && (
             <div>
               <h2 className="text-lg font-semibold mb-3 text-gray-700">Personal Bridges</h2>
               <div className="space-y-3">
-                {ephemeralSatellites.map((satellite) => {
-                  const discoverableSat = discoverableSatellites.find(
-                    (s) => s.satelliteId === satellite.id
-                  )
-                  const connectedSat = connectedSatellites.find(
-                    (s) => s.satelliteId === satellite.id
-                  )
-                  const isConnected = connectedSat !== undefined
-
-                  return (
-                    <div
-                      key={satellite.id}
-                      className="border rounded-lg p-4 bg-blue-50 hover:shadow-sm transition-shadow"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{satellite.name}</span>
-                            <span
-                              className={`text-xs px-2 py-1 rounded-full ${
-                                isConnected
-                                  ? 'bg-green-100 text-green-700'
-                                  : 'bg-orange-100 text-orange-700'
-                              }`}
-                            >
-                              {isConnected ? '● Connected' : '⚠ Awaiting connection'}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            Ephemeral connection
-                          </div>
+                {ephemeralSatellites.map((satellite) => (
+                  <div
+                    key={satellite.id}
+                    className="border rounded-lg p-4 bg-blue-50 hover:shadow-sm transition-shadow"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{satellite.name}</span>
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${
+                              satellite.connected
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-orange-100 text-orange-700'
+                            }`}
+                          >
+                            {satellite.connected ? '● Connected' : '⚠ Awaiting connection'}
+                          </span>
                         </div>
-                        <ActionList>
-                          <Action
-                            icon={IconTrash}
-                            onClick={() => onDelete(satellite)}
-                            text={t('remove-satellite')}
-                            destructive={true}
-                          />
-                        </ActionList>
+                        <div className="text-xs text-gray-500 mt-1">Ephemeral connection</div>
                       </div>
-
-                      {/* Discovery card for ephemeral */}
-                      {discoverableSat &&
-                        renderDiscoveryCard(satellite.id, discoverableSat, 'ephemeral')}
-
-                      {!discoverableSat && (
-                        <div className="mt-4 pt-4 border-t border-blue-200">
-                          <p className="text-sm text-gray-600">
-                            Waiting for connection... The bridge will appear here once it connects.
-                          </p>
-                        </div>
-                      )}
                     </div>
-                  )
-                })}
+
+                    {satellite.discoverableTools.length > 0 ? (
+                      renderDiscoveryCard(satellite, 'ephemeral')
+                    ) : (
+                      <div className="mt-4 pt-4 border-t border-blue-200">
+                        <p className="text-sm text-gray-600">
+                          Waiting for connection... The bridge will appear here once it connects.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Empty state */}
-          {!isLoading && filteredSatellites.length === 0 && (
+          {!isLoading && visibleSatellites.length === 0 && (
             <div className="text-center py-12">
               <IconSatellite size={48} className="mx-auto text-gray-300 mb-4" />
               <p className="text-gray-500">{t('no-satellites')}</p>

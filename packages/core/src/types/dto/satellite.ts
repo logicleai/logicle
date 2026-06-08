@@ -9,9 +9,26 @@ export const satelliteSchema = z.object({
   updatedAt: iso8601UtcDateTimeSchema,
 }).meta({ id: 'Satellite' })
 
+export const satelliteCapabilitySchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+})
+
+export const satelliteListItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  kind: z.enum(['registered', 'ephemeral']),
+  connected: z.boolean(),
+  createdAt: iso8601UtcDateTimeSchema.nullable(),
+  updatedAt: iso8601UtcDateTimeSchema.nullable(),
+  discoverableTools: z.array(satelliteCapabilitySchema),
+}).meta({ id: 'SatelliteListItem' })
+
 export const insertableSatelliteSchema = z.object({
   name: z.string(),
 })
 
 export type Satellite = z.infer<typeof satelliteSchema>
+export type SatelliteCapability = z.infer<typeof satelliteCapabilitySchema>
+export type SatelliteListItem = z.infer<typeof satelliteListItemSchema>
 export type InsertableSatellite = z.infer<typeof insertableSatelliteSchema>

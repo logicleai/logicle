@@ -2,10 +2,8 @@
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { Column, SimpleTable, column } from '@/components/ui/tables'
-import { Button } from '@/components/ui/button'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { AdminPage } from '../components/AdminPage'
-import toast from 'react-hot-toast'
 import { useSatellites } from '@/hooks/satellites'
 import * as dto from '@/types/dto'
 import { Link } from '@/components/ui/link'
@@ -22,14 +20,10 @@ const AdminSatellitesPage = () => {
     return false
   })
 
-  const registeredSatellites = filteredSatellites.filter(
-    (s) => !s.id.startsWith('ephemeral_')
-  )
-  const ephemeralSatellites = filteredSatellites.filter((s) =>
-    s.id.startsWith('ephemeral_')
-  )
+  const registeredSatellites = filteredSatellites.filter((s) => s.kind === 'registered')
+  const ephemeralSatellites = filteredSatellites.filter((s) => s.kind === 'ephemeral')
 
-  const columns: Column<dto.Satellite>[] = [
+  const columns: Column<dto.SatelliteListItem>[] = [
     column(t('name'), (satellite) => (
       <Link variant="ghost" href={`/satellites/${satellite.id}`}>
         {satellite.name}
@@ -37,11 +31,11 @@ const AdminSatellitesPage = () => {
     )),
     column('Type', (satellite) => (
       <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-        {satellite.id.startsWith('ephemeral_') ? 'Personal Bridge' : 'Registered'}
+        {satellite.kind === 'ephemeral' ? 'Personal Bridge' : 'Registered'}
       </span>
     )),
     column(t('created'), (satellite) => (
-      <span>{new Date(satellite.createdAt).toLocaleDateString()}</span>
+      <span>{satellite.createdAt ? new Date(satellite.createdAt).toLocaleDateString() : 'Live only'}</span>
     )),
   ]
 

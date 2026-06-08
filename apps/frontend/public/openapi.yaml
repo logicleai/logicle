@@ -2350,7 +2350,8 @@ paths:
   /api/me/satellites:
     get:
       summary: List my satellites
-      description: Fetch all satellites owned by the current user.
+      description: Fetch all satellites owned by the current user, merged with live
+        connection state.
       responses:
         "200":
           description: Response
@@ -2359,7 +2360,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Satellite"
+                  $ref: "#/components/schemas/SatelliteListItem"
       security:
         - bearerAuth: []
     post:
@@ -5983,6 +5984,54 @@ components:
         - promptFragment
       additionalProperties: false
       id: Tool
+    SatelliteListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+            - registered
+            - ephemeral
+        connected:
+          type: boolean
+        createdAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+            - type: "null"
+        updatedAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+            - type: "null"
+        discoverableTools:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+            required:
+              - name
+            additionalProperties: false
+      required:
+        - id
+        - name
+        - kind
+        - connected
+        - createdAt
+        - updatedAt
+        - discoverableTools
+      additionalProperties: false
+      id: SatelliteListItem
     UserSecretStatus:
       type: object
       properties:
