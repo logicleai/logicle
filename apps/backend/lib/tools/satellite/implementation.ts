@@ -10,12 +10,12 @@ import {
 } from '@/lib/chat/tools'
 import { SatelliteInterface } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
-import { connections, callSatelliteMethod } from '@/lib/satellite/hub'
 import { saveFile } from '@/backend/lib/tools/file-output-normalization'
 import { normalizeMcpToolResult } from '@/backend/lib/tools/file-output-normalization'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
 
 const toToolResult = async (
-  result: Awaited<ReturnType<typeof callSatelliteMethod>>,
+  result: CallToolResult,
   invokeParams: ToolInvokeParams
 ): Promise<dto.ToolCallResultOutput> => {
   const { content, structuredContent } = result
@@ -84,6 +84,7 @@ const createSatelliteToolFunction = (
     parameters: tool.inputSchema,
     invoke: async (invokeParams: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
       try {
+        const { callSatelliteMethod } = await import('@/lib/satellite/hub')
         const result = await callSatelliteMethod(satelliteId, tool.name, invokeParams.uiLink, invokeParams.params)
         return await toToolResult(result, invokeParams)
       } catch (error) {
@@ -114,6 +115,7 @@ export class SatelliteTool extends SatelliteInterface implements ToolImplementat
   supportedMedia = []
 
   functions = async (_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> => {
+    const { connections } = await import('@/lib/satellite/hub')
     const conn = connections.get(this.satelliteId)
     if (!conn) {
       return {}
