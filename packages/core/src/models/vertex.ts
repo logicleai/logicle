@@ -110,7 +110,7 @@ export const gemini25ProModel: LlmModel = {
 
 export const gemini30ProModel: LlmModel = {
   id: 'gemini-3.0-pro',
-  model: 'gemini-3-pro-preview',
+  model: 'gemini-3.1-pro-preview',
   name: 'Gemini 3.0 Pro',
   description:
     "Google's most intelligent model family to date, built on a foundation of state-of-the-art reasoning",
@@ -177,9 +177,9 @@ export const gemini35FlashModel: LlmModel = {
 }
 
 export const geminiProLatest: LlmModel = {
-  ...gemini30ProModel,
+  ...gemini31ProModel,
   id: 'gemini-pro-latest',
-  name: 'Gemini pro latest (3.0)',
+  name: 'Gemini pro latest (3.1)',
   tags: ['latest'],
 }
 
