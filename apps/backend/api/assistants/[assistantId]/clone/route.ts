@@ -4,7 +4,7 @@ import {
   assistantSharingData,
   assistantVersionEnabledTools,
   assistantVersionFiles,
-  createAssistant,
+  createAssistantWithId,
   getAssistant,
   getAssistantVersion,
 } from '@/models/assistant'
@@ -12,6 +12,7 @@ import { getImageAsDataUri } from '@/models/images'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 import { cloneFilesForOwner } from '@/models/file'
+import { nanoid } from 'nanoid'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,10 +45,11 @@ export const POST = operation({
       return forbidden(`Assistant is not published`)
     }
 
+    const newAssistantId = nanoid()
     const originalFiles = await assistantVersionFiles(assistantVersion.id)
     const clonedFileIds = await cloneFilesForOwner({
       fileIds: originalFiles.map((file) => file.id),
-      owner: { ownerType: 'USER', ownerId: session.userId },
+      owner: { ownerType: 'ASSISTANT', ownerId: newAssistantId },
     })
     const clonedFiles = originalFiles.map((file) => ({
       ...file,
@@ -66,7 +68,7 @@ export const POST = operation({
         ? JSON.parse(assistantVersion.subAssistants)
         : undefined,
     }
-    const created = await createAssistant(assistantDraft, session.userId)
+    const created = await createAssistantWithId(newAssistantId, assistantDraft, session.userId, false)
     return ok(created, 201)
   },
 })
