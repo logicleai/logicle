@@ -4,7 +4,7 @@ import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { hashPassword } from '@/lib/auth/password'
 
-function parseApiKeyScope(scope: string | null): dto.ApiKeyScope | null {
+export function parseApiKeyScope(scope: string | null): dto.ApiKeyScope | null {
   if (!scope) {
     return null
   }
