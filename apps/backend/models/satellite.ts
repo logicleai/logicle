@@ -22,6 +22,11 @@ export const getSatellite = async (id: string): Promise<dto.Satellite | undefine
   return result ? dbToDto(result) : undefined
 }
 
+export const getAllSatellites = async (): Promise<dto.Satellite[]> => {
+  const result = await db.selectFrom('Satellite').selectAll().orderBy('createdAt', 'desc').execute()
+  return result.map(dbToDto)
+}
+
 export const getUserSatellites = async (userId: string): Promise<dto.Satellite[]> => {
   const result = await db
     .selectFrom('Satellite')

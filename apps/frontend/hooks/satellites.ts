@@ -65,6 +65,26 @@ export function useSatellites() {
   }
 }
 
+export function useAdminSatellites() {
+  const { data, error, isLoading, mutate } = useSWR(
+    '/api/satellites',
+    async (url) => {
+      const response = await get(url)
+      if (response.error) {
+        throw new Error(response.error.message)
+      }
+      return response.data as dto.SatelliteListItem[]
+    }
+  )
+
+  return {
+    data: data || [],
+    error: error?.message || null,
+    isLoading,
+    mutate,
+  }
+}
+
 export function useSatellite(id: string) {
   const { data, error, isLoading, mutate } = useSWR(
     id ? `/api/me/satellites/${id}` : null,

@@ -6,12 +6,12 @@ export const dynamic = 'force-dynamic'
 
 export const GET = operation({
   name: 'Get satellite details',
-  description: 'Fetch details for a specific satellite.',
-  authentication: 'user',
+  description: 'Admin: fetch details for any satellite.',
+  authentication: 'admin',
   responses: [responseSpec(200, satelliteSchema), errorSpec(404)] as const,
-  implementation: async ({ session, params }) => {
+  implementation: async ({ params }) => {
     const satellite = await getSatellite(params.id)
-    if (!satellite || satellite.userId !== session.userId) {
+    if (!satellite) {
       return notFound()
     }
     return ok(satellite)
@@ -20,15 +20,15 @@ export const GET = operation({
 
 export const DELETE = operation({
   name: 'Delete satellite',
-  description: 'Delete a satellite.',
-  authentication: 'user',
+  description: 'Admin: delete any satellite.',
+  authentication: 'admin',
   responses: [responseSpec(204), errorSpec(404)] as const,
-  implementation: async ({ session, params }) => {
+  implementation: async ({ params }) => {
     const satellite = await getSatellite(params.id)
-    if (!satellite || satellite.userId !== session.userId) {
+    if (!satellite) {
       return notFound()
     }
-    await deleteSatellite(params.id, session.userId)
+    await deleteSatellite(params.id, satellite.userId)
     return noBody()
   },
 })

@@ -4,13 +4,13 @@ import { useState } from 'react'
 import { Column, SimpleTable, column } from '@/components/ui/tables'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { AdminPage } from '../components/AdminPage'
-import { useSatellites } from '@/hooks/satellites'
+import { useAdminSatellites } from '@/hooks/satellites'
 import * as dto from '@/types/dto'
 import { Link } from '@/components/ui/link'
 
 const AdminSatellitesPage = () => {
   const { t } = useTranslation()
-  const { isLoading, error, data: satellites } = useSatellites()
+  const { isLoading, error, data: satellites } = useAdminSatellites()
   const [searchTerm, setSearchTerm] = useState<string>('')
 
   const filteredSatellites = (satellites ?? []).filter((satellite) => {

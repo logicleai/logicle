@@ -1,37 +1,41 @@
 import { ok, operation, responseSpec } from '@/lib/routes'
-import * as satelliteHub from '@/lib/satellite/hub'
-import { UserRole } from '@/types/dto'
-import { z } from 'zod'
+import { hub } from '@/lib/satellite/hub'
+import { getAllSatellites } from '@/models/satellite'
+import { satelliteListItemSchema } from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
 export const GET = operation({
-  name: 'List satellites',
-  description: 'List satellite connections.',
-  authentication: 'user',
-  responses: [
-    responseSpec(
-      200,
-      z
-        .object({
-          satelliteId: z.string(),
-          name: z.string(),
-          userId: z.string(),
-          tools: z.array(z.any()),
-        })
-        .array()
-    ),
-  ] as const,
-  implementation: async ({ session }) => {
-    const isAdmin = session.userRole === UserRole.ADMIN
-    const result = Array.from(satelliteHub.connections.values())
-      .filter((conn) => isAdmin || conn.userId === session.userId)
+  name: 'List all satellites',
+  description: 'Admin: list all registered satellites and live ephemeral connections.',
+  authentication: 'admin',
+  responses: [responseSpec(200, satelliteListItemSchema.array())] as const,
+  implementation: async () => {
+    const satellites = await getAllSatellites()
+    const connectionsById = new Map(
+      Array.from(hub.connections.values()).map((conn) => [conn.satelliteId, conn])
+    )
+
+    const registered = satellites.map((satellite) => ({
+      id: satellite.id,
+      name: satellite.name,
+      kind: 'registered' as const,
+      connected: connectionsById.has(satellite.id),
+      createdAt: satellite.createdAt,
+      updatedAt: satellite.updatedAt,
+    }))
+
+    const ephemeral = Array.from(hub.connections.values())
+      .filter((conn) => conn.kind === 'ephemeral')
       .map((conn) => ({
-        satelliteId: conn.satelliteId,
+        id: conn.satelliteId,
         name: conn.name,
-        userId: conn.userId,
-        tools: conn.tools,
+        kind: 'ephemeral' as const,
+        connected: true,
+        createdAt: conn.connectedAt.toISOString(),
+        updatedAt: conn.connectedAt.toISOString(),
       }))
-    return ok(result)
+
+    return ok([...registered, ...ephemeral])
   },
 })

@@ -2459,7 +2459,7 @@ paths:
   /api/satellites/{id}:
     get:
       summary: Get satellite details
-      description: Fetch details for a specific satellite.
+      description: "Admin: fetch details for any satellite."
       responses:
         "200":
           description: Response
@@ -2479,7 +2479,7 @@ paths:
         - bearerAuth: []
     delete:
       summary: Delete satellite
-      description: Delete a satellite.
+      description: "Admin: delete any satellite."
       responses:
         "204":
           description: Response
@@ -2495,8 +2495,8 @@ paths:
         - bearerAuth: []
   /api/satellites:
     get:
-      summary: List satellites
-      description: List satellite connections.
+      summary: List all satellites
+      description: "Admin: list all registered satellites and live ephemeral connections."
       responses:
         "200":
           description: Response
@@ -2505,23 +2505,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    satelliteId:
-                      type: string
-                    name:
-                      type: string
-                    userId:
-                      type: string
-                    tools:
-                      type: array
-                      items: {}
-                  required:
-                    - satelliteId
-                    - name
-                    - userId
-                    - tools
-                  additionalProperties: false
+                  $ref: "#/components/schemas/SatelliteListItem"
       security:
         - bearerAuth: []
   /api/settings:
