@@ -148,6 +148,7 @@ async function checkWebSocketHandshake() {
         'Connection: Upgrade\r\n' +
         `Sec-WebSocket-Key: ${key}\r\n` +
         'Sec-WebSocket-Version: 13\r\n' +
+        'Sec-WebSocket-Protocol: logicle-satellite-v1\r\n' +
         '\r\n'
       socket.write(req)
     })
@@ -172,7 +173,7 @@ async function checkWebSocketHandshake() {
 async function checkSatelliteRejectsUnauthenticated() {
   const wsUrl = baseUrl.replace(/^http/, 'ws') + '/api/rpc'
   await new Promise<void>((resolve, reject) => {
-    const ws = new WebSocket(wsUrl)
+    const ws = new WebSocket(wsUrl, 'logicle-satellite-v1')
     const timeout = setTimeout(() => {
       ws.terminate()
       reject(new Error('Satellite unauthenticated rejection timed out'))
