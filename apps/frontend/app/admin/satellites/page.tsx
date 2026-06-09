@@ -25,7 +25,7 @@ const AdminSatellitesPage = () => {
 
   const columns: Column<dto.SatelliteListItem>[] = [
     column(t('name'), (satellite) => (
-      <Link variant="ghost" href={`/satellites/${satellite.id}`}>
+      <Link variant="ghost" href={`/admin/satellites/${satellite.id}`}>
         {satellite.name}
       </Link>
     )),
