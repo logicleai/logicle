@@ -43,6 +43,8 @@ import * as m20260506AssistantHidden from './migrations/20260506-assistant_hidde
 import * as m20260508RenameGeminiProvider from './migrations/20260508-rename-gemini-provider'
 import * as m20260519MessageAuditTokenDetails from './migrations/20260519-message_audit_token_details'
 import * as m202605192FileOrigin from './migrations/20260519.2-file_origin'
+import * as m20260603Satellites from './migrations/20260603-satellites'
+import * as m202606031ToolEnabled from './migrations/20260603.1-tool-enabled'
 
 import type { MigrationWithDialect } from './migrations'
 
@@ -90,4 +92,6 @@ export const migrationModules: Record<string, MigrationWithDialect> = {
   '20260508-rename-gemini-provider': m20260508RenameGeminiProvider,
   '20260519-message_audit_token_details': m20260519MessageAuditTokenDetails,
   '20260519.2-file_origin': m202605192FileOrigin,
+  '20260603-satellites': m20260603Satellites,
+  '20260603.1-tool-enabled': m202606031ToolEnabled,
 }

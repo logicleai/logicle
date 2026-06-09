@@ -3,7 +3,6 @@ import Navbar, { NavEntry } from '@/components/ui/navbar'
 import { useTranslation } from 'react-i18next'
 import { Environment, useEnvironment } from '../context/environmentProvider'
 import { MainLayout } from '../layouts/MainLayout'
-
 const navEntries = (env: Environment) => {
   const entries: NavEntry[] = []
   entries.push({
@@ -35,6 +34,11 @@ const navEntries = (env: Environment) => {
   })
 
   entries.push({
+    title: 'satellites',
+    href: '/admin/satellites',
+  })
+
+  entries.push({
     title: 'SSO',
     href: '/admin/sso',
   })
@@ -57,6 +61,7 @@ const Sidebar = ({ title, navEntries }: { title: string; navEntries: NavEntry[] 
 export default function AdminLayout({ children }) {
   const { t } = useTranslation()
   const environment = useEnvironment()
+
   return (
     <MainLayout
       leftBar={<Sidebar title={t('administrator-settings')} navEntries={navEntries(environment)} />}

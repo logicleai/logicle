@@ -25,6 +25,7 @@ import { DummyTool } from './dummy/implementation'
 import { SubAssistantTool } from './subassistant/implementation'
 import { db } from 'db/database'
 import { AudioTranscription } from './audio_transcription/implementation'
+import { SatelliteTool } from './satellite/implementation'
 
 const builders: Record<string, ToolBuilder> = {
   [AudioTranscription.toolName]: AudioTranscription.builder,
@@ -33,6 +34,7 @@ const builders: Record<string, ToolBuilder> = {
   [GoogleImageGeneratorPlugin.toolName]: GoogleImageGeneratorPlugin.builder,
   [TogetherImageGeneratorPlugin.toolName]: TogetherImageGeneratorPlugin.builder,
   [ReplicateImageGeneratorPlugin.toolName]: ReplicateImageGeneratorPlugin.builder,
+  [SatelliteTool.toolName]: SatelliteTool.builder,
   [FileManagerPlugin.toolName]: FileManagerPlugin.builder,
   [OpenApiPlugin.toolName]: OpenApiPlugin.builder,
   [McpPlugin.toolName]: McpPlugin.builder,
@@ -115,10 +117,18 @@ export const buildSubAssistantTool = async (
   if (entries.length === 0) return undefined
 
   const assistantList = entries
-    .map((e) => `- id: ${e.id}, name: ${e.name}${e.description ? `, description: ${e.description}` : ''}`)
+    .map(
+      (e) =>
+        `- id: ${e.id}, name: ${e.name}${e.description ? `, description: ${e.description}` : ''}`
+    )
     .join('\n')
   const promptFragment = `\nYou have access to the following sub-assistants that you can invoke as tools:\n${assistantList}\nWhen the user references an assistant by name (e.g. @name), map it to the corresponding id.\n`
-  const toolParams = { id: 'subassistant', provisioned: false, promptFragment, name: 'invoke_assistant' }
+  const toolParams = {
+    id: 'subassistant',
+    provisioned: false,
+    promptFragment,
+    name: 'invoke_assistant',
+  }
   return new SubAssistantTool(toolParams, entries)
 }
 
@@ -128,9 +138,9 @@ export const availableToolsFiltered = async (
   subAssistantIds?: string[]
 ) => {
   const tools = await getToolsFiltered(ids)
-  const implementations = (
-    await Promise.all(tools.map((t) => buildTool(t, model)))
-  ).filter((t) => t !== undefined) as ToolImplementation[]
+  const implementations = (await Promise.all(tools.map((t) => buildTool(t, model)))).filter(
+    (t) => t !== undefined
+  ) as ToolImplementation[]
 
   if (subAssistantIds && subAssistantIds.length > 0) {
     const subTool = await buildSubAssistantTool(subAssistantIds)

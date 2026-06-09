@@ -31,6 +31,8 @@ export const toolSchema = z.object({
   sharing: sharing2Schema,
   provisioned: z.boolean(),
   capability: z.boolean(),
+  satelliteId: z.string().nullable(),
+  enabled: z.boolean(),
   createdAt: iso8601UtcDateTimeSchema,
   updatedAt: iso8601UtcDateTimeSchema,
   promptFragment: z.string(),
@@ -42,6 +44,8 @@ export const insertableToolSchema = toolSchema.omit({
   createdAt: true,
   updatedAt: true,
   capability: true,
+  satelliteId: true,
+  enabled: true,
 }).meta({ id: 'InsertableTool' })
 
 export const updateableToolSchema = insertableToolSchema

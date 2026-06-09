@@ -2254,6 +2254,107 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/InsertablePrompt"
+  /api/me/satellites/{id}:
+    get:
+      summary: Get satellite details
+      description: Fetch details for a specific satellite.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Satellite"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete satellite
+      description: Delete a satellite.
+      responses:
+        "204":
+          description: Response
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+  /api/me/satellites/connected:
+    get:
+      summary: List connected satellites
+      description: Get list of currently connected satellites.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    satelliteId:
+                      type: string
+                    satelliteName:
+                      type: string
+                  required:
+                    - satelliteId
+                    - satelliteName
+                  additionalProperties: false
+      security:
+        - bearerAuth: []
+  /api/me/satellites:
+    get:
+      summary: List my satellites
+      description: Fetch all satellites owned by the current user, merged with live
+        connection state.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SatelliteListItem"
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create a new satellite
+      description: Create a new satellite.
+      responses:
+        "201":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Satellite"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+              additionalProperties: false
   /api/me/secrets/{id}:
     delete:
       summary: Delete user secret
@@ -2355,10 +2456,47 @@ paths:
           $ref: "#/components/responses/Error"
         "500":
           $ref: "#/components/responses/Error"
+  /api/satellites/{id}:
+    get:
+      summary: Get satellite details
+      description: "Admin: fetch details for any satellite."
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Satellite"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Delete satellite
+      description: "Admin: delete any satellite."
+      responses:
+        "204":
+          description: Response
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
   /api/satellites:
     get:
-      summary: List satellites
-      description: List satellite connections.
+      summary: List all satellites
+      description: "Admin: list all registered satellites and live ephemeral connections."
       responses:
         "200":
           description: Response
@@ -2367,20 +2505,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    userId:
-                      type: string
-                    tools:
-                      type: array
-                      items: {}
-                  required:
-                    - name
-                    - userId
-                    - tools
-                  additionalProperties: false
+                  $ref: "#/components/schemas/SatelliteListItem"
       security:
         - bearerAuth: []
   /api/settings:
@@ -4976,6 +5101,12 @@ components:
           type: number
         provisioned:
           type: boolean
+        scope:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: "null"
       required:
         - id
         - key
@@ -4997,6 +5128,12 @@ components:
             - type: string
               format: date-time
               pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+            - type: "null"
+        scope:
+          anyOf:
+            - type: array
+              items:
+                type: string
             - type: "null"
       required:
         - description
@@ -5671,6 +5808,66 @@ components:
         - name
       additionalProperties: false
       id: InsertablePrompt
+    Satellite:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        userId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - name
+        - userId
+        - createdAt
+        - updatedAt
+      additionalProperties: false
+      id: Satellite
+    SatelliteListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+            - registered
+            - ephemeral
+        connected:
+          type: boolean
+        createdAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+            - type: "null"
+        updatedAt:
+          anyOf:
+            - type: string
+              format: date-time
+              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+            - type: "null"
+      required:
+        - id
+        - name
+        - kind
+        - connected
+        - createdAt
+        - updatedAt
+      additionalProperties: false
+      id: SatelliteListItem
     UserSecretStatus:
       type: object
       properties:
@@ -5966,6 +6163,12 @@ components:
           type: boolean
         capability:
           type: boolean
+        satelliteId:
+          anyOf:
+            - type: string
+            - type: "null"
+        enabled:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -5987,6 +6190,8 @@ components:
         - sharing
         - provisioned
         - capability
+        - satelliteId
+        - enabled
         - createdAt
         - updatedAt
         - promptFragment

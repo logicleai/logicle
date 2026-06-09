@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 import {
   Message,
+  RegisterMessage,
   RegisteredMessage,
   Tool,
   ToolCallMessage,
@@ -9,10 +10,17 @@ import {
 import { ToolUILink } from '@/lib/chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
-import { authenticateWithAuthorizationHeader } from '@/backend/api/utils/auth'
+import { findSatelliteAuthByApiKey } from '@/backend/api/utils/auth'
+import { getSatellite } from '@/models/satellite'
+import { createToolWithId, updateToolSatelliteInfo } from '@/models/tool'
+import { db } from '@/db/database'
 import { logger } from '@/lib/logging'
+import { satelliteEventBus } from '@/lib/satellite/events'
+import { nanoid } from 'nanoid'
 
 export interface SatelliteConnection {
+  satelliteId: string
+  kind: 'registered' | 'ephemeral'
   name: string
   userId: string
   tools: Tool[]
@@ -25,6 +33,7 @@ export interface SatelliteConnection {
       uiLink: ToolUILink
     }
   >
+  connectedAt: Date
 }
 
 export type SatelliteHub = {
@@ -39,15 +48,37 @@ export const hub: SatelliteHub = {
 
 export const connections = hub.connections
 
-export async function checkAuthentication(authorization: string): Promise<string | null> {
+interface SatelliteAuthResult {
+  userId: string
+}
+
+export async function checkSatelliteAuthentication(
+  authorization: string
+): Promise<SatelliteAuthResult | null> {
   try {
-    const authResult = await authenticateWithAuthorizationHeader(authorization)
-    if (!authResult.success) {
+    if (!authorization.startsWith('Bearer ')) {
+      logger.warn('[SatelliteHub] Invalid auth header format')
+      return null
+    }
+    const apiKey = authorization.substring(7)
+    const auth = await findSatelliteAuthByApiKey(apiKey)
+    if (!auth) {
       logger.warn('[SatelliteHub] Authentication failed')
       return null
     }
-    return authResult.value.userId
-  } catch (_e) {
+
+    if (!auth.scope) {
+      return { userId: auth.userId }
+    }
+
+    if (!auth.scope.includes('satellite:connect')) {
+      logger.warn('[SatelliteHub] API key lacks satellite:connect privilege')
+      return null
+    }
+
+    return { userId: auth.userId }
+  } catch (e) {
+    logger.error('[SatelliteHub] Authentication error:', e)
     return null
   }
 }
@@ -61,6 +92,38 @@ const findConnection = (socket: WebSocket) => {
   return null
 }
 
+async function ensureSatelliteTool(userId: string, satelliteId: string, satelliteName: string) {
+  const existing = await db
+    .selectFrom('Tool')
+    .select('id')
+    .where('satelliteId', '=', satelliteId)
+    .executeTakeFirst()
+
+  if (existing) {
+    await updateToolSatelliteInfo(existing.id, satelliteId, true)
+    return
+  }
+
+  const createdTool = await createToolWithId(
+    nanoid(),
+    {
+      name: satelliteName,
+      description: '',
+      type: 'satellite',
+      configuration: { satelliteId },
+      tags: [],
+      icon: null,
+      sharing: { type: 'private' },
+      promptFragment: '',
+    },
+    false,
+    false,
+    userId
+  )
+
+  await updateToolSatelliteInfo(createdTool.id, satelliteId, true)
+}
+
 export async function handleSatelliteConnection(ws: WebSocket, req: IncomingMessage) {
   // Attach listeners immediately so messages sent by the client right after the
   // handshake are not dropped while the async auth check is in flight.
@@ -70,50 +133,112 @@ export async function handleSatelliteConnection(ws: WebSocket, req: IncomingMess
   ws.on('close', () => handleSatelliteClose(ws))
   ws.on('error', (err) => logger.error('[SatelliteHub] error:', err))
 
-  const userId = await checkAuthentication(req.headers.authorization ?? '')
+  const auth = await checkSatelliteAuthentication(req.headers.authorization ?? '')
   ws.off('message', bufferMessage)
 
-  if (!userId) {
+  if (!auth) {
     logger.warn('[SatelliteHub] Connection rejected: not authenticated')
     ws.close(1008, 'Not authenticated')
     return
   }
 
-  logger.info('[SatelliteHub] Connection authenticated')
+  const { userId } = auth
+  logger.info(`[SatelliteHub] Connection authenticated: userId=${userId}`)
+
   ws.on('message', (data) => handleSatelliteMessage(ws, userId, data))
   for (const data of messageQueue) {
     handleSatelliteMessage(ws, userId, data)
   }
 }
 
-async function handleSatelliteMessage(socket: WebSocket, userId: string, data: WebSocket.RawData) {
+async function handleSatelliteMessage(
+  socket: WebSocket,
+  userId: string,
+  data: WebSocket.RawData
+) {
   try {
     const msg = JSON.parse(String(data)) as Message
+
+    // Unified register handler for both registered and ephemeral satellites
     if (msg.type === 'register') {
-      const { name, tools } = msg
-      const existing = connections.get(name)
+      const registerMsg = msg as RegisterMessage
+      const { name, tools, satelliteId: requestedSatelliteId } = registerMsg
+
+      let conn = findConnection(socket)
+      if (conn) {
+        // Already connected - treat as an update
+        conn.tools = tools
+        logger.info(
+          `[SatelliteHub] "${conn.name}" (${conn.satelliteId}) updated tools`
+        )
+        return
+      }
+
+      let satelliteId: string
+      let finalName: string
+
+      if (requestedSatelliteId) {
+        satelliteId = requestedSatelliteId
+        const satellite = await getSatellite(satelliteId)
+        if (!satellite || satellite.userId !== userId) {
+          logger.warn(`[SatelliteHub] Satellite ${satelliteId} not found or unauthorized`)
+          socket.close(1008, 'Satellite not found or unauthorized')
+          return
+        }
+        finalName = satellite.name
+      } else {
+        // Missing satelliteId means ephemeral mode.
+        satelliteId = `ephemeral_${nanoid()}`
+        finalName = name
+      }
+
+      // Replace existing connection with same ID
+      const existing = connections.get(satelliteId)
       if (existing && existing.socket !== socket) {
         for (const { reject } of existing.pendingCalls.values()) {
           reject(new Error('Satellite replaced by a new connection'))
         }
         existing.pendingCalls.clear()
       }
-      const newConn = {
-        name,
+
+      const kind: SatelliteConnection['kind'] = requestedSatelliteId ? 'registered' : 'ephemeral'
+      const newConn: SatelliteConnection = {
+        satelliteId,
+        kind,
+        name: finalName,
         userId,
         tools,
         socket,
         pendingCalls: new Map(),
+        connectedAt: new Date(),
       }
-      connections.set(name, newConn)
+
+      connections.set(satelliteId, newConn)
       logger.info(
-        `[SatelliteHub] "${name}" registered methods: ${tools.map((t) => t.name).join(', ')}`
+        `[SatelliteHub] Satellite connected: "${finalName}" (${satelliteId})`
       )
-      const registered: RegisteredMessage = {
-        type: 'registered',
-        name,
+
+      // Ephemeral satellites reconnect with a new generated ID each time; calling
+      // ensureSatelliteTool would insert an orphaned Tool row on every reconnect.
+      if (kind === 'registered') {
+        await ensureSatelliteTool(userId, satelliteId, finalName)
       }
-      socket.send(JSON.stringify(registered))
+
+      satelliteEventBus.publish({
+        type: 'satellite_connected',
+        userId,
+        satelliteId,
+        satelliteName: finalName,
+        tools,
+        timestamp: new Date().toISOString(),
+      })
+
+      const response: RegisteredMessage = {
+        type: 'registered',
+        satelliteId,
+        name: finalName,
+      }
+      socket.send(JSON.stringify(response))
       return
     }
 
@@ -157,12 +282,21 @@ function handleSatelliteClose(socket: WebSocket) {
     return
   }
 
-  connections.delete(conn.name)
+  connections.delete(conn.satelliteId)
   for (const { reject } of conn.pendingCalls.values()) {
     reject(new Error('Satellite disconnected'))
   }
   conn.pendingCalls.clear()
-  logger.info(`[SatelliteHub] Satellite disconnected: ${conn.name}`)
+  logger.info(`[SatelliteHub] Satellite disconnected: ${conn.name} (${conn.satelliteId})`)
+
+  // Publish disconnection event
+  satelliteEventBus.publish({
+    type: 'satellite_disconnected',
+    userId: conn.userId,
+    satelliteId: conn.satelliteId,
+    satelliteName: conn.name,
+    timestamp: new Date().toISOString(),
+  })
 }
 
 /**
@@ -170,18 +304,18 @@ function handleSatelliteClose(socket: WebSocket) {
  * Used by your Next server code.
  */
 export function callSatelliteMethod(
-  satelliteName: string,
+  satelliteId: string,
   method: string,
   uiLink: ToolUILink,
   params: unknown
 ): Promise<CallToolResult> {
-  const conn = connections.get(satelliteName)
+  const conn = connections.get(satelliteId)
   if (!conn) {
-    throw new Error(`Satellite "${satelliteName}" is not connected`)
+    throw new Error(`Satellite "${satelliteId}" is not connected`)
   }
   const tool = conn.tools.find((t) => t.name === method)
   if (!tool) {
-    throw new Error(`Satellite "${satelliteName}" does not expose method "${method}"`)
+    throw new Error(`Satellite "${satelliteId}" does not expose method "${method}"`)
   }
 
   const id = String(hub.nextCallId++)

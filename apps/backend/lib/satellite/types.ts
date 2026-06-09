@@ -11,12 +11,14 @@ export interface Tool {
 
 export interface RegisterMessage {
   type: 'register'
+  satelliteId?: string
   name: string
   tools: Tool[]
 }
 
 export interface RegisteredMessage {
   type: 'registered'
+  satelliteId: string
   name: string
 }
 

@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { iso8601UtcDateTimeSchema } from './common'
 
+export const apiKeyScopeSchema = z.array(z.string())
+
 export const apiKeySchema = z.object({
   id: z.string(),
   key: z.string(),
@@ -10,6 +12,7 @@ export const apiKeySchema = z.object({
   expiresAt: iso8601UtcDateTimeSchema.nullable(),
   enabled: z.number(),
   provisioned: z.boolean(),
+  scope: apiKeyScopeSchema.nullable().optional(),
 }).meta({ id: 'ApiKey' })
 
 export const insertableApiKeySchema = apiKeySchema.omit({
@@ -25,5 +28,6 @@ export const insertableUserApiKeySchema = insertableApiKeySchema.omit({
 }).meta({ id: 'InsertableUserApiKey' })
 
 export type ApiKey = z.infer<typeof apiKeySchema>
+export type ApiKeyScope = z.infer<typeof apiKeyScopeSchema>
 export type InsertableApiKey = z.infer<typeof insertableApiKeySchema>
 export type InsertableUserApiKey = z.infer<typeof insertableUserApiKeySchema>

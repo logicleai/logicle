@@ -22,6 +22,8 @@ import {
   ReplicateImageGeneratorPluginParams,
   ReplicateImageGeneratorSchema,
   ReplicateImageGeneratorPluginInterface,
+  SatelliteInterface,
+  SatelliteSchema,
   TogetherImageGeneratorPluginInterface,
 } from '@/lib/tools/schemas'
 import { OpenApiInterface } from '@/lib/tools/schemas'
@@ -75,6 +77,8 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
     return WebSearchSchema
   } else if (type === McpInterface.toolName) {
     return mcpPluginSchema
+  } else if (type === SatelliteInterface.toolName) {
+    return SatelliteSchema
   } else if (type === OpenApiInterface.toolName) {
     const apiKeyProps = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
     return z.object({
@@ -109,7 +113,9 @@ const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
     tags: z.string().array(),
     promptFragment: z.string(),
     configuration: configurationSchema(type, apiKeys),
-    files: z.array(z.object({ id: z.string(), name: z.string(), type: z.string(), size: z.number() })),
+    files: z.array(
+      z.object({ id: z.string(), name: z.string(), type: z.string(), size: z.number() })
+    ),
   })
 
   const configFiles = Array.isArray(tool.configuration?.files)

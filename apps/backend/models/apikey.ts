@@ -2,11 +2,33 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
+import { hashPassword } from '@/lib/auth/password'
+
+export function parseApiKeyScope(scope: string | null): dto.ApiKeyScope | null {
+  if (!scope) {
+    return null
+  }
+
+  try {
+    return dto.apiKeyScopeSchema.parse(JSON.parse(scope))
+  } catch {
+    return null
+  }
+}
+
+function serializeApiKeyScope(scope?: dto.ApiKeyScope | null): string | null {
+  if (!scope) {
+    return null
+  }
+
+  return JSON.stringify(scope)
+}
 
 function dbToDto(apiKey: schema.ApiKey) {
   return {
     ...apiKey,
     provisioned: !!apiKey.provisioned,
+    scope: parseApiKeyScope(apiKey.scope),
   }
 }
 
@@ -34,21 +56,14 @@ export const deleteApiKey = async (userId: string, id: string) => {
 }
 
 export const createApiKey = async (userId: string, key: string, data: dto.InsertableUserApiKey) => {
-  return await createApiKeyWithId(
-    nanoid(),
-    key,
-    {
-      userId: userId,
-      ...data,
-    },
-    false
-  )
+  return await createApiKeyWithId(nanoid(), key, { userId: userId, ...data }, false)
 }
 export const createApiKeyWithId = async (
   id: string,
   key: string,
   apiKey: dto.InsertableApiKey,
-  provisioned: boolean
+  provisioned: boolean,
+  scope?: dto.ApiKeyScope | null
 ) => {
   await db
     .insertInto('ApiKey')
@@ -59,6 +74,7 @@ export const createApiKeyWithId = async (
       enabled: 1,
       createdAt: new Date().toISOString(),
       provisioned: provisioned ? 1 : 0,
+      scope: serializeApiKeyScope(scope),
     })
     .executeTakeFirstOrThrow()
   const created = await getApiKey(id)
@@ -84,6 +100,7 @@ export const updateApiKey = async (
       key,
       id: undefined,
       provisioned: undefined, // protect against malicious API usage
+      scope: data.scope === undefined ? undefined : serializeApiKeyScope(data.scope),
     })
     .where('id', '=', id)
     .execute()

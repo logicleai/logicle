@@ -4,6 +4,7 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconMenu2,
+  IconSatellite,
 } from '@tabler/icons-react'
 import Link from 'next/link'
 import React, { useState } from 'react'
@@ -42,6 +43,9 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
           </Link>
           <Link href="/images">
             <Images size={28}></Images>
+          </Link>
+          <Link href="/satellites" title="Satellites" className="relative">
+            <IconSatellite size={28}></IconSatellite>
           </Link>
         </div>
         <div>
@@ -96,6 +100,9 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
           </Link>
           <Link title={t('images')} href="/images">
             <Images size={28}></Images>
+          </Link>
+          <Link href="/satellites" title="Satellites" className="relative">
+            <IconSatellite size={28}></IconSatellite>
           </Link>
         </div>
         <div>

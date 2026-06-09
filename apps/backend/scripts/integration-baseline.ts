@@ -111,6 +111,7 @@ async function login(email, password) {
  */
 async function openSatelliteConnection(
   bearerToken: string,
+  satelliteId: string,
   satelliteName: string
 ): Promise<() => void> {
   const wsUrl = baseUrl.replace(/^http/, 'ws') + '/api/rpc'
@@ -125,6 +126,7 @@ async function openSatelliteConnection(
       ws.send(
         JSON.stringify({
           type: 'register',
+          satelliteId,
           name: satelliteName,
           tools: [{ name: 'echo', description: 'Echo input back' }],
         })
@@ -134,7 +136,11 @@ async function openSatelliteConnection(
     ws.on('message', (data) => {
       try {
         const msg = JSON.parse(String(data))
-        if (msg.type === 'registered' && msg.name === satelliteName) {
+        if (
+          msg.type === 'registered' &&
+          msg.name === satelliteName &&
+          msg.satelliteId === satelliteId
+        ) {
           clearTimeout(timeout)
           resolve(() => ws.close())
         }
@@ -194,9 +200,25 @@ async function main() {
     })
     const apiKeyJson = parseJson(apiKeyCreated.text, '/api/users/{id}/apiKeys POST')
     const bearerToken = `${apiKeyJson.id}.${apiKeyJson.key}`
+    const satelliteCreated = await request('POST', '/api/tools', {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: {
+        type: 'satellite',
+        name: `Integration Satellite ${runId}`,
+        description: 'Integration test satellite tool',
+        tags: [],
+        icon: null,
+        configuration: {},
+        promptFragment: '',
+        sharing: { type: 'public' },
+      },
+    })
+    const satelliteToolId = parseJson(satelliteCreated.text, '/api/tools POST (satellite)')
+      .id as string
     const satelliteName = `integration-sat-${runId}`
 
-    const close = await openSatelliteConnection(bearerToken, satelliteName)
+    const close = await openSatelliteConnection(bearerToken, satelliteToolId, satelliteName)
 
     // Give the server a tick to process the register message
     await new Promise((resolve) => setTimeout(resolve, 100))
@@ -206,12 +228,13 @@ async function main() {
       headers: sameOriginHeaders,
     })
     const satellites = parseJson(satellitesRes.text, '/api/satellites GET') as {
+      satelliteId: string
       name: string
       tools: unknown[]
     }[]
-    const registered = satellites.find((s) => s.name === satelliteName)
+    const registered = satellites.find((s) => s.satelliteId === satelliteToolId)
     if (!registered) {
-      throw new Error(`Satellite "${satelliteName}" not found in /api/satellites after register`)
+      throw new Error(`Satellite "${satelliteToolId}" not found in /api/satellites after register`)
     }
     if (!registered.tools.some((t: any) => t.name === 'echo')) {
       throw new Error('Registered satellite is missing expected tool "echo"')
@@ -227,9 +250,9 @@ async function main() {
     const satellitesAfterJson = parseJson(
       satellitesAfter.text,
       '/api/satellites GET after disconnect'
-    ) as { name: string }[]
-    if (satellitesAfterJson.some((s) => s.name === satelliteName)) {
-      throw new Error(`Satellite "${satelliteName}" still present in /api/satellites after close`)
+    ) as { satelliteId: string }[]
+    if (satellitesAfterJson.some((s) => s.satelliteId === satelliteToolId)) {
+      throw new Error(`Satellite "${satelliteToolId}" still present in /api/satellites after close`)
     }
   } else {
     console.log('Integration: satellite WS skipped (set ENABLE_APIKEYS=1 to enable)')
