@@ -195,6 +195,101 @@ async function checkSatelliteRejectsUnauthenticated() {
   })
 }
 
+/**
+ * Create a satellite + API key, connect with the token, send a register message,
+ * and verify the hub replies with a `registered` message.
+ */
+async function checkRegisteredSatelliteConnect(runId: string) {
+  const satelliteCreated = await request('POST', '/api/me/satellites', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: { name: `Smoke Satellite ${runId}` },
+  })
+  const satelliteId = (parseJson(satelliteCreated.text, '/api/me/satellites POST') as { id: string }).id
+
+  const apiKeyCreated = await request('POST', '/api/me/apikeys', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      description: `Smoke satellite key ${runId}`,
+      scope: ['satellite:connect'],
+      expiresAt: null,
+    },
+  })
+  const { id: keyId, key: keySecret } = parseJson(apiKeyCreated.text, '/api/me/apikeys POST') as {
+    id: string
+    key: string
+  }
+  const bearerToken = `${keyId}.${keySecret}`
+
+  const wsUrl = baseUrl.replace(/^http/, 'ws') + '/api/rpc'
+  await new Promise<void>((resolve, reject) => {
+    const ws = new WebSocket(wsUrl, 'logicle-satellite-v1', {
+      headers: { Authorization: `Bearer ${bearerToken}` },
+    })
+    const timeout = setTimeout(() => {
+      ws.terminate()
+      reject(new Error('Registered satellite connect timed out'))
+    }, 8000)
+
+    ws.on('open', () => {
+      ws.send(
+        JSON.stringify({
+          type: 'register',
+          satelliteId,
+          name: `Smoke Satellite ${runId}`,
+          tools: [],
+        })
+      )
+    })
+
+    ws.on('message', (data) => {
+      clearTimeout(timeout)
+      let msg: { type?: string; satelliteId?: string }
+      try {
+        msg = JSON.parse(String(data))
+      } catch {
+        ws.terminate()
+        reject(new Error(`Registered satellite: invalid JSON from hub: ${data}`))
+        return
+      }
+      if (msg.type !== 'registered') {
+        ws.terminate()
+        reject(new Error(`Registered satellite: expected type "registered", got "${msg.type}"`))
+        return
+      }
+      if (msg.satelliteId !== satelliteId) {
+        ws.terminate()
+        reject(
+          new Error(
+            `Registered satellite: satelliteId mismatch — expected "${satelliteId}", got "${msg.satelliteId}"`
+          )
+        )
+        return
+      }
+      ws.close(1000)
+      resolve()
+    })
+
+    ws.on('error', (err) => {
+      clearTimeout(timeout)
+      reject(new Error(`Registered satellite WS error: ${err.message}`))
+    })
+
+    ws.on('close', (code) => {
+      if (code !== 1000) {
+        clearTimeout(timeout)
+        reject(new Error(`Registered satellite: unexpected close code ${code}`))
+      }
+    })
+  })
+
+  await request('DELETE', `/api/me/satellites/${satelliteId}`, {
+    expectedStatus: 204,
+    headers: sameOriginHeaders,
+  })
+}
+
 async function main() {
   console.log('Smoke: health endpoint')
   const health = await request('GET', '/api/health', { expectedStatus: 200 })
@@ -387,6 +482,9 @@ async function main() {
 
   console.log('Smoke: satellite /api/rpc rejects unauthenticated connection')
   await checkSatelliteRejectsUnauthenticated()
+
+  console.log('Smoke: registered satellite connects, registers, and receives registered ack')
+  await checkRegisteredSatelliteConnect(runId)
 
   const elapsedSec = Math.floor((Date.now() - startedAt) / 1000)
   console.log(`Smoke + baseline integration checks passed in ${elapsedSec}s.`)
