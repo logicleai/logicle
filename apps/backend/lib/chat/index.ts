@@ -252,7 +252,7 @@ export class ChatAssistant {
   }> {
     const satelliteHub = await import('@/lib/satellite/hub')
     const satelliteTools = Array.from(satelliteHub.connections.values())
-      .filter((conn) => conn.userId === context.userId)
+      .filter((conn) => conn.kind === 'ephemeral' && conn.userId === context.userId)
       .map(SatelliteTool.fromConnection)
 
     const functionToolIdMap = new Map<string, string>()
