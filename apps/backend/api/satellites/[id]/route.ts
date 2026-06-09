@@ -1,4 +1,4 @@
-import { ok, operation, responseSpec, errorSpec, notFound } from '@/lib/routes'
+import { ok, noBody, operation, responseSpec, errorSpec, notFound } from '@/lib/routes'
 import { getSatellite, deleteSatellite } from '@/models/satellite'
 import { satelliteSchema } from '@/types/dto'
 
@@ -29,6 +29,6 @@ export const DELETE = operation({
       return notFound()
     }
     await deleteSatellite(params.id, session.userId)
-    return ok(null, 204)
+    return noBody()
   },
 })
