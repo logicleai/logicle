@@ -60,8 +60,8 @@ export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }:
   const [sorting, setSorting] = useState<SortingState>([])
   const tableColumns = useMemo<ColumnDef<T, any>[]>(
     () =>
-      columns.map((col) => ({
-        id: col.name,
+      columns.map((col, index) => ({
+        id: col.name || `col-${index}`,
         accessorFn: col.accessorFn,
         meta: { thClass: col.thClass },
         header: ({ column }) => (

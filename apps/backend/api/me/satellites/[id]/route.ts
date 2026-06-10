@@ -1,6 +1,6 @@
 import { ok, noBody, operation, responseSpec, errorSpec, notFound } from '@/lib/routes'
-import { getSatellite, deleteSatellite } from '@/models/satellite'
-import { satelliteSchema } from '@/types/dto'
+import { getSatellite, deleteSatellite, updateSatellite } from '@/models/satellite'
+import { satelliteSchema, updateableSatelliteSchema } from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,5 +30,21 @@ export const DELETE = operation({
     }
     await deleteSatellite(params.id, session.userId)
     return noBody()
+  },
+})
+
+export const PATCH = operation({
+  name: 'Update satellite',
+  description: 'Update a satellite.',
+  authentication: 'user',
+  requestBodySchema: updateableSatelliteSchema,
+  responses: [responseSpec(200, satelliteSchema), errorSpec(404)] as const,
+  implementation: async ({ session, params, body }) => {
+    const satellite = await getSatellite(params.id)
+    if (!satellite || satellite.userId !== session.userId) {
+      return notFound()
+    }
+    const updatedSatellite = await updateSatellite(params.id, session.userId, body)
+    return ok(updatedSatellite)
   },
 })

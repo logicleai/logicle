@@ -186,6 +186,9 @@ const env = {
     enable: process.env.ENABLE_APIKEYS === '1',
     enableUi: process.env.ENABLE_APIKEYS_UI === '1',
   },
+  satellites: {
+    enableUi: process.env.ENABLE_SATELLITES_UI !== '0',
+  },
   promptCaching: {
     anthropic: {
       preamble: parseAnthropicCacheMode(process.env.PROMPT_CACHE_ANTHROPIC_PREAMBLE, '1h'),

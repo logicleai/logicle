@@ -22,6 +22,9 @@ export const insertableSatelliteSchema = z.object({
   name: z.string(),
 })
 
+export const updateableSatelliteSchema = insertableSatelliteSchema.partial()
+
 export type Satellite = z.infer<typeof satelliteSchema>
 export type SatelliteListItem = z.infer<typeof satelliteListItemSchema>
 export type InsertableSatellite = z.infer<typeof insertableSatelliteSchema>
+export type UpdateableSatellite = z.infer<typeof updateableSatelliteSchema>
