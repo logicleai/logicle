@@ -192,13 +192,12 @@ async function handleSatelliteMessage(
         finalName = name
       }
 
-      // Replace existing connection with same ID
+      // Reject if another connection is already using this satelliteId
       const existing = connections.get(satelliteId)
       if (existing && existing.socket !== socket) {
-        for (const { reject } of existing.pendingCalls.values()) {
-          reject(new Error('Satellite replaced by a new connection'))
-        }
-        existing.pendingCalls.clear()
+        logger.warn(`[SatelliteHub] Satellite ${satelliteId} already connected, rejecting duplicate`)
+        socket.close(1008, 'Satellite already connected')
+        return
       }
 
       const kind: SatelliteConnection['kind'] = requestedSatelliteId ? 'registered' : 'ephemeral'

@@ -250,6 +250,30 @@ describe('register message', () => {
     expect(connections.get('sat-1')!.tools).toEqual([{ name: 'b' }])
   })
 
+  test('rejects duplicate registration for an already-connected satelliteId', async () => {
+    mockFindSatelliteAuthByApiKey.mockResolvedValue(validAuth())
+    mockGetSatellite.mockResolvedValue(validSatellite('sat-1'))
+
+    // First satellite connects successfully
+    const ws1 = new MockWebSocket()
+    await handleSatelliteConnection(ws1 as any, makeReq('Bearer valid-key'))
+    ws1.emit('message', JSON.stringify({ type: 'register', satelliteId: 'sat-1', name: 'sat', tools: [] }))
+    await flushAsyncWork()
+    expect(connections.has('sat-1')).toBe(true)
+    expect(connections.get('sat-1')!.socket).toBe(ws1)
+
+    // Second satellite with same id is rejected
+    const ws2 = new MockWebSocket()
+    await handleSatelliteConnection(ws2 as any, makeReq('Bearer valid-key'))
+    ws2.emit('message', JSON.stringify({ type: 'register', satelliteId: 'sat-1', name: 'sat', tools: [] }))
+    await flushAsyncWork()
+
+    expect(ws2.closeCode).toBe(1008)
+    expect(ws2.closeReason).toBe('Satellite already connected')
+    // First connection is untouched
+    expect(connections.get('sat-1')!.socket).toBe(ws1)
+  })
+
   test('rejects registration for unknown satellite id', async () => {
     mockFindSatelliteAuthByApiKey.mockResolvedValue(validAuth())
     mockGetSatellite.mockResolvedValue(undefined)
