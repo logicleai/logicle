@@ -31,7 +31,7 @@ async function deriveSessionKeyDirect(
 }
 
 // Minimum bytes needed to contain the PGP SKESK header (v4 iterated S2K ≈ 18B)
-// plus the start of the following SEIPD packet header. 64B is a comfortable margin.
+// plus the start of the following SEIPD packet header.
 const MIN_HEADER_BYTES = 64
 const MAX_HEADER_BYTES = 512
 
@@ -64,7 +64,6 @@ export class PgpEncryptingStorage extends BaseStorage {
   ): Promise<ReadableStream<Uint8Array>> {
     const innerStream = await this.innerStorage.readStream(path, encrypted, options)
     if (!encrypted) return innerStream
-
     // Accumulate chunks until we have enough bytes to parse the SKESK header.
     // Storage backends may return arbitrarily small initial chunks (e.g. an
     // in-memory stream that yields one byte at a time), so we cannot assume
@@ -82,6 +81,12 @@ export class PgpEncryptingStorage extends BaseStorage {
     initialReader.releaseLock()
 
     if (bufferedSize === 0) throw new Error(`PGP stream for ${path} is empty`)
+
+    if (bufferedSize < MIN_HEADER_BYTES) {
+      throw new Error(
+        `PGP stream for ${path} ended before enough header bytes were available (${bufferedSize} < ${MIN_HEADER_BYTES})`
+      )
+    }
 
     // Build a header slice (up to MAX_HEADER_BYTES) from the buffered chunks.
     const headerBuf = new Uint8Array(Math.min(bufferedSize, MAX_HEADER_BYTES))
@@ -101,6 +106,10 @@ export class PgpEncryptingStorage extends BaseStorage {
         ? s2kWorker.deriveSessionKey(headerBuf, this.passPhrase)
         : deriveSessionKeyDirect(headerBuf, this.passPhrase)
       ).catch((error) => {
+        console.error('[PgpEncryptingStorage] readStream: session key derivation failed', {
+          path,
+          error: error instanceof Error ? error.message : String(error),
+        })
         this.sessionKeyCache.delete(path)
         throw error
       })
