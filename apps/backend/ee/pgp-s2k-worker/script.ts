@@ -1,6 +1,6 @@
 import { parentPort } from 'worker_threads'
 import * as openpgp from 'openpgp'
-import { patchSkeskPackets } from './streaming-s2k'
+import { patchSkeskPackets } from './streaming-s2k.ts'
 
 if (!parentPort) throw new Error('pgp-s2k worker script must run inside a Worker thread')
 
@@ -23,9 +23,7 @@ parentPort.on('message', async (msg: Request) => {
       },
     })
     const message = await openpgp.readMessage({ binaryMessage: stream })
-
     patchSkeskPackets(message)
-
     const [sk] = await openpgp.decryptSessionKeys({ message, passwords: [msg.passphrase] })
     parentPort!.postMessage({
       id: msg.id,
@@ -34,6 +32,10 @@ parentPort.on('message', async (msg: Request) => {
       data: Array.from(sk.data),
     })
   } catch (e) {
+    console.error('[pgp-s2k-worker] Request failed', {
+      id: msg.id,
+      error: e instanceof Error ? e.message : String(e),
+    })
     parentPort!.postMessage({
       id: msg.id,
       ok: false,

@@ -36,7 +36,9 @@ export async function bootstrapBackendRuntime() {
 
   setFileAnalyzerRuntime(new WorkerRuntime(getLogger()))
   setTokenizerWorker(new TokenizerWorkerRuntime())
+  console.info('[PgpS2kWorkerRuntime] Initializing')
   setPgpS2kWorker(new PgpS2kWorkerRuntime())
+  console.info('[PgpS2kWorkerRuntime] Installed')
 
   if (env.search.meiliHost) {
     startSearchWorker()

@@ -1,7 +1,12 @@
 import { logger } from '@/lib/logging'
 import { type FileDbRow } from '@/backend/models/file'
 import { getFileWithId } from '@/models/file'
-import { getFileAnalysis, completeFileAnalysis, failFileAnalysis, inferFileAnalysisKind } from '@/models/fileAnalysis'
+import {
+  getFileAnalysis,
+  completeFileAnalysis,
+  failFileAnalysis,
+  inferFileAnalysisKind,
+} from '@/models/fileAnalysis'
 import type * as dto from '@/types/dto/file-analysis'
 import type { AnalyzerPayload } from '@logicle/file-analyzer'
 import { getFileAnalyzerRuntime } from '@/lib/file-analysis/runtime'
@@ -71,20 +76,23 @@ class FileAnalysisRuntime {
       }
 
       kind = inferFileAnalysisKind(file.type)
-      logger.info('File analysis runtime: starting analysis', { fileId, mimeType: file.type })
+      logger.info('File analysis: starting', { fileId, mimeType: file.type })
 
       const { storage } = await import('@/lib/storage')
       const buffer = await storage.readBuffer(file.path, !!file.encrypted)
       const payload = await getFileAnalyzerRuntime().analyzeBuffer(buffer, file.type)
+      logger.info('File analysis: complete', { fileId, kind: payload.kind })
       const extractedText = payload.extractedText
 
       let extractedTextPath: string | null = null
       if (extractedText) {
         extractedTextPath = `${file.path}.analysis-v${fileAnalyzerVersion}.txt`
-        await storage.writeBuffer(extractedTextPath, Buffer.from(extractedText, 'utf-8'), !!file.encrypted)
+        await storage.writeBuffer(
+          extractedTextPath,
+          Buffer.from(extractedText, 'utf-8'),
+          !!file.encrypted
+        )
       }
-
-      logger.info('File analysis runtime: status -> ready', { fileId, kind: payload.kind })
       await completeFileAnalysis(
         fileId,
         serializeAnalysisPayload(payload, extractedTextPath),
@@ -147,7 +155,10 @@ export const readExtractedTextFromAnalysis = async (
   }
   try {
     const { storage } = await import('@/lib/storage')
-    const textBuffer = await storage.readBuffer(analysis.payload.extractedTextPath, !!file.encrypted)
+    const textBuffer = await storage.readBuffer(
+      analysis.payload.extractedTextPath,
+      !!file.encrypted
+    )
     return textBuffer.toString('utf-8')
   } catch (error) {
     logger.warn('File analysis runtime: failed reading extracted text sidecar', {
@@ -165,13 +176,12 @@ export const isReadyFileAnalysis = (
 
 export const isCompletedFileAnalysis = (
   analysis: dto.FileAnalysis | undefined
-): analysis is CompletedFileAnalysis => analysis?.status === 'ready' || analysis?.status === 'failed'
+): analysis is CompletedFileAnalysis =>
+  analysis?.status === 'ready' || analysis?.status === 'failed'
 
 // Ensures an up-to-date analysis row exists in DB for a file (triggering analysis if
 // needed and waiting for it to complete) then returns the analysis.
-export const ensureFileAnalysis = async (
-  file: FileDbRow
-): Promise<CompletedFileAnalysis> => {
+export const ensureFileAnalysis = async (file: FileDbRow): Promise<CompletedFileAnalysis> => {
   let analysis = await getFileAnalysis(file.id)
   if (!analysis || analysis.analyzerVersion < fileAnalyzerVersion) {
     // No up-to-date analysis: wait for analysis to complete fully (no timeout) so the

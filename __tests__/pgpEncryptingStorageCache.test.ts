@@ -104,4 +104,17 @@ describe('PgpEncryptingStorage session key promise cache failure handling', () =
     expect(readMessageMock).toHaveBeenCalledTimes(1)
     expect(decryptMock).toHaveBeenCalledTimes(1)
   })
+
+  test('buffers the full available header window before deriving the session key', async () => {
+    const deriveSessionKey = vi.fn().mockResolvedValue(makeSessionKey())
+    setPgpS2kWorker({ deriveSessionKey } as any)
+
+    const payload = new Uint8Array(128).map((_, index) => index + 1)
+    const storage = await PgpEncryptingStorage.create(new StaticStorage(payload), 'passphrase')
+
+    await expect(storage.readStream('file-c', true)).resolves.toBeInstanceOf(ReadableStream)
+
+    expect(deriveSessionKey).toHaveBeenCalledTimes(1)
+    expect(deriveSessionKey.mock.calls[0]?.[0]).toEqual(payload)
+  })
 })
