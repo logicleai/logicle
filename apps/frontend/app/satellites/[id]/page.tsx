@@ -1,37 +1,18 @@
 'use client'
 import { useTranslation } from 'react-i18next'
 import { useRouter, useParams } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import toast from 'react-hot-toast'
-import { get } from '@/lib/fetch'
-import * as dto from '@/types/dto'
+import { useSatellite } from '@/hooks/satellites'
+import { SatelliteDialog } from '../components/SatelliteDialog'
 
 const SatelliteDetail = () => {
   const { t } = useTranslation()
   const params = useParams()
   const router = useRouter()
   const satelliteId = params.id as string
-
-  const [satellite, setSatellite] = useState<dto.Satellite | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    void loadSatellite()
-  }, [satelliteId])
-
-  async function loadSatellite() {
-    try {
-      const response = await get(`/api/me/satellites/${satelliteId}`)
-      if (response.error) {
-        toast.error(response.error.message)
-        return
-      }
-      setSatellite(response.data as dto.Satellite)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data: satellite, isLoading: loading } = useSatellite(satelliteId)
+  const [renamingSatellite, setRenamingSatellite] = useState(false)
 
   if (loading) {
     return (
@@ -57,9 +38,14 @@ const SatelliteDetail = () => {
           <h1 className="text-2xl font-bold">{satellite.name}</h1>
           <p className="text-sm text-gray-600 mt-1">Registered Satellite</p>
         </div>
-        <Button variant="ghost" onClick={() => router.back()}>
-          {t('back')}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setRenamingSatellite(true)}>
+            {t('rename')}
+          </Button>
+          <Button variant="ghost" onClick={() => router.back()}>
+            {t('back')}
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-lg p-4">
@@ -78,6 +64,13 @@ const SatelliteDetail = () => {
           </div>
         </div>
       </div>
+      {renamingSatellite && (
+        <SatelliteDialog
+          mode="rename"
+          satellite={satellite}
+          onClose={() => setRenamingSatellite(false)}
+        />
+      )}
     </div>
   )
 }

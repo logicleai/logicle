@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 import { t } from 'i18next'
+import { useEnvironment } from '../context/environmentProvider'
 
 export interface Props {
   leftBar?: JSX.Element
@@ -24,6 +25,7 @@ export interface Props {
 const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }) => {
   const LeftBar = leftBar
   const [showDrawer, setShowDrawer] = useState<boolean>(false)
+  const environment = useEnvironment()
   return (
     <main
       className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
@@ -44,9 +46,11 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
           <Link href="/images">
             <Images size={28}></Images>
           </Link>
-          <Link href="/satellites" title="Satellites" className="relative">
-            <IconSatellite size={28}></IconSatellite>
-          </Link>
+          {environment.enableSatellitesUi && (
+            <Link href="/satellites" title="Satellites" className="relative">
+              <IconSatellite size={28}></IconSatellite>
+            </Link>
+          )}
         </div>
         <div>
           <AppMenu />
@@ -74,6 +78,7 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
 const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
   const pathname = usePathname()
   const layoutconfigContext = useLayoutConfig()
+  const environment = useEnvironment()
   const hideLeftBar = pathname === '/chat/assistants/select'
   return (
     <main
@@ -101,9 +106,11 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
           <Link title={t('images')} href="/images">
             <Images size={28}></Images>
           </Link>
-          <Link href="/satellites" title="Satellites" className="relative">
-            <IconSatellite size={28}></IconSatellite>
-          </Link>
+          {environment.enableSatellitesUi && (
+            <Link href="/satellites" title="Satellites" className="relative">
+              <IconSatellite size={28}></IconSatellite>
+            </Link>
+          )}
         </div>
         <div>
           <AppMenu />

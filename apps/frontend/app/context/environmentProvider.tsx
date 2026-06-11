@@ -13,6 +13,7 @@ export type Environment = {
   enableSignup: boolean
   enableAutoSummary: boolean
   enableApiKeysUi: boolean
+  enableSatellitesUi: boolean
   enableChatSharing: boolean
   enableChatFolders: boolean
   enableShowToolResult: boolean
