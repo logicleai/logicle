@@ -9,6 +9,7 @@ import {
   ToolParams,
 } from '@/lib/chat/tools'
 import { SatelliteInterface } from '@/lib/tools/schemas'
+import { UserVisibleError } from '@/backend/lib/chat/exceptions'
 import { LlmModel } from '@/lib/chat/models'
 import { saveFile } from '@/backend/lib/tools/file-output-normalization'
 import { normalizeMcpToolResult } from '@/backend/lib/tools/file-output-normalization'
@@ -118,7 +119,7 @@ export class SatelliteTool extends SatelliteInterface implements ToolImplementat
     const { connections } = await import('@/lib/satellite/hub')
     const conn = connections.get(this.satelliteId)
     if (!conn) {
-      return {}
+      throw new UserVisibleError(`Satellite "${this.toolParams.name}" is currently offline`)
     }
 
     return Object.fromEntries(

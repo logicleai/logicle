@@ -31,7 +31,7 @@ import {
 
 export { fillTemplate } from './preamble'
 export type { PromptSegment } from './preamble'
-export { ToolSetupError } from './exceptions'
+export { ToolSetupError, UserVisibleError } from './exceptions'
 export type { Usage } from './usage'
 
 import {
@@ -52,7 +52,7 @@ import {
   computeSafeSummary,
   findReasonableSummarizationBackend,
 } from './summarizer'
-import { ToolSetupError } from './exceptions'
+import { ToolSetupError, UserVisibleError } from './exceptions'
 import type { Usage } from './usage'
 import { SatelliteTool } from '../tools/satellite/implementation'
 import type { PromptSegment } from './preamble'
@@ -114,12 +114,6 @@ export class ChatAbortedError extends Error {
   }
 }
 
-export class UserVisibleError extends Error {
-  constructor(message: string, options?: ErrorOptions) {
-    super(message, options)
-    this.name = 'UserVisibleError'
-  }
-}
 
 class ClientSinkImpl implements ClientSink {
   clientGone: boolean = false
@@ -153,8 +147,9 @@ export class ChatAssistant {
   updateChatTitle: (title: string) => Promise<void>
   debug: boolean
   llmModelCapabilities: LlmModelCapabilities
-  functions: Promise<ToolFunctions>
-  functionToolIdMap: Promise<Map<string, string>>
+  functions: ToolFunctions
+  functionToolIdMap: Map<string, string>
+  setupError: string | undefined
 
   constructor(
     private providerConfig: ProviderConfig,
@@ -163,19 +158,12 @@ export class ChatAssistant {
     private tools: ToolImplementation[],
     private options: Options,
     private parameters: Record<string, ParameterValueAndDescription>,
-    private knowledge: dto.AssistantFile[]
+    private knowledge: dto.AssistantFile[],
+    computed: { functions: ToolFunctions; functionToolIdMap: Map<string, string>; setupError: string | undefined }
   ) {
-    const computed = ChatAssistant.computeFunctions(tools, llmModel, {
-      userId: options.user,
-      assistantId: assistantParams.assistantId,
-      rootOwner: options.rootOwner
-        ? options.rootOwner
-        : options.conversationId
-        ? { type: 'CHAT', id: options.conversationId }
-        : undefined,
-    })
-    this.functions = computed.then((r) => r.functions)
-    this.functionToolIdMap = computed.then((r) => r.functionToolIdMap)
+    this.functions = computed.functions
+    this.functionToolIdMap = computed.functionToolIdMap
+    this.setupError = computed.setupError
     this.llmModel = llmModel
     this.llmModelCapabilities = this.llmModel.capabilities
     this.saveMessage = options.saveMessage || (async () => {})
@@ -250,6 +238,7 @@ export class ChatAssistant {
   ): Promise<{
     functions: ToolFunctions
     functionToolIdMap: Map<string, string>
+    setupError: string | undefined
   }> {
     const satelliteHub = await import('@/lib/satellite/hub')
     const satelliteTools = Array.from(satelliteHub.connections.values())
@@ -259,16 +248,16 @@ export class ChatAssistant {
     const toolFunctionGroups = await Promise.all(
       [...tools, ...satelliteTools].map(async (tool) => {
         try {
-          return {
-            tool,
-            functions: await tool.functions(llmModel, context),
-          }
+          return { tool, functions: await tool.functions(llmModel, context), error: undefined }
         } catch (e) {
           logger.error(`Failed setting up tool "${tool.toolParams.name}"`, e)
-          return { tool, functions: {} }
+          const message = e instanceof UserVisibleError ? e.message : `Tool "${tool.toolParams.name}" could not be initialized`
+          return { tool, functions: {} as ToolFunctions, error: message }
         }
       })
     )
+
+    const setupError = toolFunctionGroups.find((g) => g.error)?.error
 
     const functionToolIdMap = new Map<string, string>()
     const usedFunctionNames = new Set<string>()
@@ -282,7 +271,7 @@ export class ChatAssistant {
       return Object.entries(fns)
     })
 
-    return { functions: Object.fromEntries(toolFunctionEntries), functionToolIdMap }
+    return { functions: Object.fromEntries(toolFunctionEntries), functionToolIdMap, setupError }
   }
 
   static async build(
@@ -305,6 +294,15 @@ export class ChatAssistant {
       )
     }
     tools = await ChatAssistant.withBuiltinTools(tools, llmModel)
+    const computed = await ChatAssistant.computeFunctions(tools, llmModel, {
+      userId: options.user,
+      assistantId: assistantParams.assistantId,
+      rootOwner: options.rootOwner
+        ? options.rootOwner
+        : options.conversationId
+        ? { type: 'CHAT', id: options.conversationId }
+        : undefined,
+    })
     return new ChatAssistant(
       providerConfig,
       assistantParams,
@@ -312,7 +310,8 @@ export class ChatAssistant {
       tools,
       options,
       parameters,
-      files
+      files,
+      computed
     )
   }
 
@@ -336,7 +335,7 @@ export class ChatAssistant {
   }
 
   async createAiTools(): Promise<Record<string, ai.Tool> | undefined> {
-    const functions = await this.functions
+    const functions = this.functions
     if (Object.keys(functions).length === 0) return undefined
     return Object.fromEntries(
       (Object.entries(functions) as Array<[string, ToolFunction | ToolNative]>).map(
@@ -568,7 +567,7 @@ export class ChatAssistant {
       messages: llmMessages,
       tools: this.llmModelCapabilities.function_calling ? { ...tools } : undefined,
       toolChoice:
-        this.llmModelCapabilities.function_calling && Object.keys(await this.functions).length !== 0
+        this.llmModelCapabilities.function_calling && Object.keys(this.functions).length !== 0
           ? 'auto'
           : undefined,
       temperature: modelSupportsReasoning(this.llmModel)
@@ -765,7 +764,7 @@ export class ChatAssistant {
     chatState: ChatState,
     toolUILink: ToolUILink
   ): Promise<dto.ToolCallResultOutput> {
-    const functionDef = (await this.functions)[toolCall.toolName]
+    const functionDef = (this.functions)[toolCall.toolName]
     if (!functionDef) {
       return { type: 'error-text', value: `No such function: ${functionDef}` }
     } else if (!toolCallAuthResponse.allow) {
@@ -808,6 +807,18 @@ export class ChatAssistant {
   }
 
   async invokeLlmAndProcessResponse(chatState: ChatState, clientSink: ClientSink) {
+    const setupError = this.setupError
+    if (setupError) {
+      const assistantMessage = chatState.appendMessage(chatState.createEmptyAssistantMsg())
+      clientSink.enqueue({ type: 'message', msg: assistantMessage })
+      const errorPart: dto.ErrorPart = { type: 'error', error: setupError }
+      chatState.applyStreamPart({ type: 'part', part: errorPart })
+      clientSink.enqueue({ type: 'part', part: errorPart })
+      const updatedMsg = chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
+      await this.saveMessage(updatedMsg)
+      return
+    }
+
     const generateSummary =
       !this.options.disableAutoSummary &&
       env.chat.autoSummary.enable &&
@@ -833,7 +844,7 @@ export class ChatAssistant {
         ) {
           // do nothing
         } else if (chunk.type === 'tool-call') {
-          const toolId = (await this.functionToolIdMap).get(chunk.toolName)
+          const toolId = (this.functionToolIdMap).get(chunk.toolName)
           const googleMeta = chunk.providerMetadata?.google ?? chunk.providerMetadata?.vertex
           const thoughtSignature =
             typeof googleMeta?.thoughtSignature === 'string'
@@ -978,6 +989,7 @@ export class ChatAssistant {
       const historySnapshot = chatState.chatHistory
       const assistantResponse = chatState.appendMessage(chatState.createEmptyAssistantMsg())
       clientSink.enqueue({ type: 'message', msg: assistantResponse })
+
       let usage: Usage | undefined
       try {
         const responseStream = await this.invokeLlm(historySnapshot)
@@ -1000,11 +1012,10 @@ export class ChatAssistant {
           clientSink.enqueue({ type: 'part', part: errorPart })
         } else {
           this.logInternalError(chatState, 'LLM invocation failure', e)
-          const message = e instanceof UserVisibleError ? e.message : 'Internal error'
-          clientSink.enqueue({ type: 'part', part: { type: 'error', error: message } })
+          clientSink.enqueue({ type: 'part', part: { type: 'error', error: 'Internal error' } })
           chatState.applyStreamPart({
             type: 'part',
-            part: { type: 'error', error: message },
+            part: { type: 'error', error: 'Internal error' },
           })
         }
       } finally {
@@ -1013,7 +1024,7 @@ export class ChatAssistant {
         await this.saveMessage(updatedAssistantResponse, usage)
       }
 
-      const functions = await this.functions
+      const functions = this.functions
       const updatedAssistantResponse =
         chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
       const nonNativeToolCalls = updatedAssistantResponse.parts
