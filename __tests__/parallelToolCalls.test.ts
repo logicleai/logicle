@@ -128,10 +128,6 @@ function makeAssistant(tools: Record<string, ToolFunction>) {
   vi
     .spyOn(ChatAssistant, 'createLanguageModel')
     .mockReturnValue({ provider: 'openai.chat' } as unknown as LanguageModelV3)
-  vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
-    functions: tools,
-    functionToolIdMap: new Map(),
-  })
 
   const assistantParams: AssistantParams = {
     model: 'gpt-4',
@@ -165,7 +161,8 @@ function makeAssistant(tools: Record<string, ToolFunction>) {
     [],
     { user: 'user-1' },
     {},
-    []
+    [],
+    { functions: tools, functionToolIdMap: new Map(), setupError: undefined }
   )
 }
 
@@ -403,7 +400,6 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'openai.responses',
     } as unknown as LanguageModelV3)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
     const testableAssistant = asTestableAssistant(assistant)
@@ -418,7 +414,6 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'openai.responses',
     } as unknown as LanguageModelV3)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
     const testableAssistant = asTestableAssistant(assistant)
@@ -433,7 +428,6 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'anthropic.messages',
     } as unknown as LanguageModelV3)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
     const testableAssistant = asTestableAssistant(assistant)
@@ -449,7 +443,6 @@ describe('providerOptions: ENABLE_PARALLEL_TOOL_CALLS controls what is advertise
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'anthropic.messages',
     } as unknown as LanguageModelV3)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({ functions: {}, functionToolIdMap: new Map() })
 
     const assistant = makeAssistant({})
     const testableAssistant = asTestableAssistant(assistant)
@@ -470,10 +463,6 @@ describe('providerOptions: Gemini thinking config is forwarded', () => {
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'google.generative-ai',
     } as unknown as LanguageModelV3)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
-      functions: {},
-      functionToolIdMap: new Map(),
-    })
 
     const assistant = makeAssistant({})
     const testableAssistant = asTestableAssistant(assistant)
@@ -493,10 +482,6 @@ describe('providerOptions: Gemini thinking config is forwarded', () => {
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'google.generative-ai',
     } as unknown as LanguageModelV3)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
-      functions: {},
-      functionToolIdMap: new Map(),
-    })
 
     const assistant = makeAssistant({})
     const testableAssistant = asTestableAssistant(assistant)
@@ -520,10 +505,6 @@ describe('providerOptions: Gemini thinking config is forwarded', () => {
     vi.spyOn(ChatAssistant, 'createLanguageModel').mockReturnValue({
       provider: 'vertex',
     } as unknown as LanguageModelV3)
-    vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
-      functions: {},
-      functionToolIdMap: new Map(),
-    })
 
     const assistant = makeAssistant({})
     const testableAssistant = asTestableAssistant(assistant)

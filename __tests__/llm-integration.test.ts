@@ -176,7 +176,7 @@ function makeAssistant(
     tokenLimit: 4096,
     reasoning_effort: null,
   }
-  return new ChatAssistant(config, assistantParams, model, tools, { user: 'test-user' }, {}, [])
+  return new ChatAssistant(config, assistantParams, model, tools, { user: 'test-user' }, {}, [], { functions: {}, functionToolIdMap: new Map(), setupError: undefined })
 }
 
 async function runChat(assistant: ChatAssistant, content: string): Promise<TestSink> {

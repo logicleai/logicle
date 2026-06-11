@@ -113,7 +113,7 @@ const makeChatAssistant = (overrides: Partial<InstanceType<typeof ChatAssistant>
     parameters: {},
     knowledge: [],
     options: { user: 'u1' },
-    functions: Promise.resolve({}),
+    functions: {},
     debug: false,
     providerConfig: { providerType: 'openai' },
     languageModel: { provider: 'openai.responses' },
@@ -130,10 +130,6 @@ const makeRealAssistant = () => {
   vi
     .spyOn(ChatAssistant, 'createLanguageModel')
     .mockReturnValue({ provider: 'openai.responses' } as unknown as LanguageModelV3)
-  vi.spyOn(ChatAssistant, 'computeFunctions').mockResolvedValue({
-    functions: {},
-    functionToolIdMap: new Map(),
-  })
   return new ChatAssistant(
     { providerType: 'openai', apiKey: 'k', provisioned: false } as unknown as ProviderConfig,
     { assistantId: 'a1', model: 'gpt-4', systemPrompt: '', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
@@ -141,7 +137,8 @@ const makeRealAssistant = () => {
     [],
     { user: 'u1' },
     {},
-    []
+    [],
+    { functions: {}, functionToolIdMap: new Map(), setupError: undefined }
   )
 }
 
@@ -563,7 +560,7 @@ describe('ChatAssistant.createLanguageModel', () => {
 
 describe('ChatAssistant.createAiTools', () => {
   test('returns undefined when there are no functions', async () => {
-    const assistant = makeChatAssistant({ functions: Promise.resolve({}) })
+    const assistant = makeChatAssistant({ functions: {} })
     const tools = await assistant.createAiTools()
     expect(tools).toBeUndefined()
   })
@@ -574,7 +571,7 @@ describe('ChatAssistant.createAiTools', () => {
       parameters: { type: 'object', properties: {}, required: [] } as any,
       invoke: vi.fn(),
     }
-    const assistant = makeChatAssistant({ functions: Promise.resolve({ myTool: fn }) })
+    const assistant = makeChatAssistant({ functions: { myTool: fn } })
     const tools = await assistant.createAiTools()
     expect(tools).toBeDefined()
     expect(tools!.myTool).toMatchObject({ description: 'Does stuff' })
@@ -587,14 +584,14 @@ describe('ChatAssistant.createAiTools', () => {
       id: 'anthropic.web_search_preview',
       args: {},
     }
-    const assistant = makeChatAssistant({ functions: Promise.resolve({ webSearch: fn }) })
+    const assistant = makeChatAssistant({ functions: { webSearch: fn } })
     const tools = await assistant.createAiTools()
     expect(tools!.webSearch).toMatchObject({ type: 'provider', id: 'anthropic.web_search_preview' })
   })
 
   test('maps ToolFunction with undefined parameters to z.any() schema', async () => {
     const fn: ToolFunction = { description: 'No schema', invoke: vi.fn() }
-    const assistant = makeChatAssistant({ functions: Promise.resolve({ noSchema: fn }) })
+    const assistant = makeChatAssistant({ functions: { noSchema: fn } })
     const tools = await assistant.createAiTools()
     expect(tools!.noSchema.inputSchema).toBeDefined()
   })
@@ -612,7 +609,7 @@ describe('ChatAssistant.invokeFunctionByName', () => {
     ({ toolCallId: 'tc1', toolName: name, args: {} }) as unknown as dto.ToolCall
 
   test('returns error when function not found', async () => {
-    const assistant = makeChatAssistant({ functions: Promise.resolve({}) })
+    const assistant = makeChatAssistant({ functions: {} })
     const chatState = { chatHistory: [makeUserMsg()] } as any
     const result = await assistant.invokeFunctionByName(makeToolCall('unknown'), makeUserResponse(true), chatState, {} as any)
     expect(result.type).toBe('error-text')
@@ -620,7 +617,7 @@ describe('ChatAssistant.invokeFunctionByName', () => {
 
   test('returns error when user denied', async () => {
     const fn: ToolFunction = { description: 'Test', invoke: vi.fn() }
-    const assistant = makeChatAssistant({ functions: Promise.resolve({ myTool: fn }) })
+    const assistant = makeChatAssistant({ functions: { myTool: fn } })
     const chatState = { chatHistory: [makeUserMsg()] } as any
     const result = await assistant.invokeFunctionByName(makeToolCall(), makeUserResponse(false), chatState, {} as any)
     expect(result.type).toBe('error-text')
@@ -629,7 +626,7 @@ describe('ChatAssistant.invokeFunctionByName', () => {
 
   test('returns error for provider-type tool', async () => {
     const fn: ToolNative = { type: 'provider', id: 'anthropic.web_search', args: {} }
-    const assistant = makeChatAssistant({ functions: Promise.resolve({ myTool: fn }) })
+    const assistant = makeChatAssistant({ functions: { myTool: fn } })
     const chatState = { chatHistory: [makeUserMsg()] } as any
     const result = await assistant.invokeFunctionByName(makeToolCall(), makeUserResponse(true), chatState, {} as any)
     expect(result.type).toBe('error-text')
@@ -639,7 +636,7 @@ describe('ChatAssistant.invokeFunctionByName', () => {
   test('invokes function when found and allowed', async () => {
     const invokeResult: dto.ToolCallResultOutput = { type: 'content', value: [{ type: 'text', text: 'ok' }] }
     const fn: ToolFunction = { description: 'Test', invoke: vi.fn().mockResolvedValue(invokeResult) }
-    const assistant = makeChatAssistant({ functions: Promise.resolve({ myTool: fn }) })
+    const assistant = makeChatAssistant({ functions: { myTool: fn } })
     const chatState = { chatHistory: [makeUserMsg()], conversationId: 'c1' } as any
     const result = await assistant.invokeFunctionByName(makeToolCall(), makeUserResponse(true), chatState, { attachments: [] } as any)
     expect(result).toEqual(invokeResult)

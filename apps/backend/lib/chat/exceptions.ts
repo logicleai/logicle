@@ -14,3 +14,10 @@ export class ToolSetupError extends Error {
     this.toolName = toolName
   }
 }
+
+export class UserVisibleError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'UserVisibleError'
+  }
+}
