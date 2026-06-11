@@ -75,7 +75,7 @@ describe('Google native search compatibility', () => {
       { userId: 'u1', assistantId: 'a1' }
     )
 
-    expect(functions.regular_function).toBeDefined()
+    expect(functions['regular-tool__regular_function']).toBeDefined()
     expect(functions.google_search).toBeDefined()
   })
 
@@ -98,7 +98,7 @@ describe('Google native search compatibility', () => {
       { userId: 'u1', assistantId: 'a1' }
     )
 
-    expect(functions.regular_function).toBeDefined()
+    expect(functions['regular-tool__regular_function']).toBeDefined()
     expect(functions.google_search).toBeDefined()
   })
 
