@@ -120,6 +120,7 @@ const env = {
       clientCacheTtlSeconds: parseOptionalInt(process.env.MCP_CLIENT_CACHE_TTL_SECONDS) ?? 300,
       clientCacheMaxItems: parseOptionalInt(process.env.MCP_CLIENT_CACHE_MAX_ITEMS) ?? 100,
     },
+    prefixFunctionNames: process.env.PREFIX_FUNCTION_NAMES !== '0',
   },
   providers: {
     openai: {},

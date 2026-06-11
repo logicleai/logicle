@@ -56,6 +56,7 @@ import { ToolSetupError } from './exceptions'
 import type { Usage } from './usage'
 import { SatelliteTool } from '../tools/satellite/implementation'
 import type { PromptSegment } from './preamble'
+import { prefixToolFunctionNames } from './toolFunctionNames'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -255,23 +256,31 @@ export class ChatAssistant {
       .filter((conn) => conn.kind === 'ephemeral' && conn.userId === context.userId)
       .map(SatelliteTool.fromConnection)
 
-    const functionToolIdMap = new Map<string, string>()
-    const toolFunctionEntries = (
-      await Promise.all(
-        [...tools, ...satelliteTools].map(async (tool) => {
-          try {
-            const fns = await tool.functions(llmModel, context)
-            for (const fnName of Object.keys(fns)) {
-              functionToolIdMap.set(fnName, tool.toolParams.id)
-            }
-            return fns
-          } catch (e) {
-            logger.error(`Failed setting up tool "${tool.toolParams.name}"`, e)
-            return {}
+    const toolFunctionGroups = await Promise.all(
+      [...tools, ...satelliteTools].map(async (tool) => {
+        try {
+          return {
+            tool,
+            functions: await tool.functions(llmModel, context),
           }
-        })
-      )
-    ).flatMap((toolFunctions) => Object.entries(toolFunctions))
+        } catch (e) {
+          logger.error(`Failed setting up tool "${tool.toolParams.name}"`, e)
+          return { tool, functions: {} }
+        }
+      })
+    )
+
+    const functionToolIdMap = new Map<string, string>()
+    const usedFunctionNames = new Set<string>()
+    const toolFunctionEntries = toolFunctionGroups.flatMap(({ tool, functions }) => {
+      const fns = env.tools.prefixFunctionNames
+        ? prefixToolFunctionNames(functions, tool.toolParams.name, usedFunctionNames)
+        : functions
+      for (const fnName of Object.keys(fns)) {
+        functionToolIdMap.set(fnName, tool.toolParams.id)
+      }
+      return Object.entries(fns)
+    })
 
     return { functions: Object.fromEntries(toolFunctionEntries), functionToolIdMap }
   }

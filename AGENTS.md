@@ -64,7 +64,7 @@ The repository is structured as:
 - Use Markdown headings with this structure (in order): `## Summary`, optional additional `##` sections as needed (for example `## Details`, `## Breaking changes`, `## Migration`, `## Risks`), and `## Tests`.
 - In `## Summary`, use a short paragraph that describes the final merged result at a high level, including the user-visible or operational impact when relevant.
 - In follow-up sections, use concise bullet points (`- ...`), one change, risk, or note per bullet.
-- PR text must describe the net result after merge, not commit history, chronology, or intermediate refactors.
+- PR text must describe the net result after merge, not commit history, chronology, or intermediate refactors. Always derive the description from `git diff main...HEAD` — never from the conversation or the sequence of commits on the branch.
 - In `## Tests`, list the exact validation already performed (commands run, scope, and outcome). This section records what was done, not future instructions. Use bullet points, not checkboxes. If tests were not run, simply skip the section.
 - Use inline code formatting for env vars, flags, endpoints, and commands (for example `ENABLE_CSRF_PROTECTION`, `npm run check-types`).
 
