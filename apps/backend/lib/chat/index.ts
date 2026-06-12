@@ -692,12 +692,14 @@ export class ChatAssistant {
       }
       await this.invokeLlmAndProcessResponse(chatState, clientSink)
     } catch (error) {
-      if (!this.isAbortedError(error)) {
-        this.logInternalError(chatState, 'LLM invocation failure', error)
-      }
       if (this.isAbortedError(error)) {
         throw new ChatAbortedError()
       }
+      this.logInternalError(chatState, 'LLM invocation failure', error)
+      // Always surface a terminal error part: a silently closed stream leaves
+      // the client spinner running forever.
+      const message = error instanceof UserVisibleError ? error.message : 'Internal error'
+      clientSink.enqueue({ type: 'part', part: { type: 'error', error: message } })
     }
   }
 
@@ -712,6 +714,8 @@ export class ChatAssistant {
         } catch (error) {
           if (!this.isAbortedError(error)) {
             this.logInternalError(new ChatState(chatHistory), 'LLM invocation failure', error)
+            const message = error instanceof UserVisibleError ? error.message : 'Internal error'
+            clientSink.enqueue({ type: 'part', part: { type: 'error', error: message } })
           }
         } finally {
           streamController.close()
@@ -1027,14 +1031,16 @@ export class ChatAssistant {
       const functions = this.functions
       const updatedAssistantResponse =
         chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
-      const nonNativeToolCalls = updatedAssistantResponse.parts
-        .filter((b) => b.type === 'tool-call')
-        .filter((toolCall) => {
-          const implementation = functions[toolCall.toolName]
-          if (!implementation) throw new Error(`No such function: ${toolCall.toolName}`)
-          return implementation.type !== 'provider'
-        })
-      if (nonNativeToolCalls.length === 0) {
+      const toolCallParts = updatedAssistantResponse.parts.filter((b) => b.type === 'tool-call')
+      // Calls to functions we don't know (e.g. a stale name replayed from an old
+      // conversation) get a synthetic error result instead of failing the run,
+      // so the LLM can see the mistake and retry with a valid name.
+      const unknownToolCalls = toolCallParts.filter((toolCall) => !functions[toolCall.toolName])
+      const nonNativeToolCalls = toolCallParts.filter((toolCall) => {
+        const implementation = functions[toolCall.toolName]
+        return implementation !== undefined && implementation.type !== 'provider'
+      })
+      if (nonNativeToolCalls.length === 0 && unknownToolCalls.length === 0) {
         complete = true
         break
       }
@@ -1102,6 +1108,23 @@ export class ChatAssistant {
       // All tool calls cleared — execute them in parallel.
       const toolMessage = chatState.appendMessage(chatState.createToolMsg())
       clientSink.enqueue({ type: 'message', msg: toolMessage })
+
+      for (const toolCall of unknownToolCalls) {
+        logger.warn(`LLM called unknown function "${toolCall.toolName}"`)
+        const part: dto.ToolCallResultPart = {
+          type: 'tool-result',
+          toolCallId: toolCall.toolCallId,
+          toolName: toolCall.toolName,
+          result: {
+            type: 'error-text',
+            value: `No such function: ${toolCall.toolName}. Available functions: ${Object.keys(
+              functions
+            ).join(', ')}`,
+          },
+        }
+        chatState.applyStreamPart({ type: 'part', part })
+        clientSink.enqueue({ type: 'part', part })
+      }
 
       const executeToolCall = async (toolCall: dto.ToolCallPart) => {
         this.throwIfAborted()

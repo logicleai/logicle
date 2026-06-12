@@ -26,6 +26,8 @@ import { SubAssistantTool } from './subassistant/implementation'
 import { db } from 'db/database'
 import { AudioTranscription } from './audio_transcription/implementation'
 import { SatelliteTool } from './satellite/implementation'
+import { OfficeQuickJsTool } from './office.quickjs/implementation'
+import { OfficeQuickJsInterface } from '@/lib/tools/schemas'
 
 const builders: Record<string, ToolBuilder> = {
   [AudioTranscription.toolName]: AudioTranscription.builder,
@@ -43,6 +45,9 @@ const builders: Record<string, ToolBuilder> = {
   [TimeOfDay.toolName]: TimeOfDay.builder,
   [WebSearch.toolName]: WebSearch.builder,
   [DummyTool.toolName]: DummyTool.builder,
+  [OfficeQuickJsTool.toolName]: OfficeQuickJsTool.builder,
+  // Legacy name kept so tools provisioned before the docx→office rename keep working
+  'docx.quickjs': OfficeQuickJsTool.builder,
 
   // Provider specific tools
   [AnthropicWebSearch.toolName]: AnthropicWebSearch.builder,
@@ -72,6 +77,19 @@ export const availableTools = async (model: string) => {
   ).filter((t) => !(t === undefined)) as ToolImplementation[]
 }
 
+const builtinBuilders: Array<() => ToolImplementation> = [
+  () =>
+    new OfficeQuickJsTool(
+      {
+        id: OfficeQuickJsInterface.toolName,
+        name: OfficeQuickJsInterface.toolName,
+        provisioned: true,
+        promptFragment: '',
+      },
+      {}
+    ),
+]
+
 export const availableToolsForAssistantVersion = async (
   assistantVersionId: string,
   model: string
@@ -84,6 +102,8 @@ export const availableToolsForAssistantVersion = async (
       })
     )
   ).filter((t) => !(t === undefined)) as ToolImplementation[]
+
+  implementations.push(...builtinBuilders.map((b) => b()))
 
   // Build virtual sub-assistant tools from subAssistants field
   const assistantVersionRow = await db

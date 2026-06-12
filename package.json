@@ -128,6 +128,7 @@
     "iron-session": "^8.0.4",
     "javascript-time-ago": "^2.5.11",
     "js-tiktoken": "^1.0.8",
+    "quickjs-emscripten": "^0.32.0",
     "json-schema": "^0.4.0",
     "jsonwebtoken": "^9.0.3",
     "katex": "^0.16.21",

@@ -237,3 +237,9 @@ export type WebSearchParams = z.infer<typeof WebSearchSchema>
 export class WebSearchInterface {
   static toolName = 'websearch'
 }
+
+export const OfficeQuickJsSchema = z.object({}).strict()
+export type OfficeQuickJsParams = z.infer<typeof OfficeQuickJsSchema>
+export class OfficeQuickJsInterface {
+  static toolName = 'office.quickjs'
+}
