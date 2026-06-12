@@ -2,10 +2,14 @@ import useSWR from 'swr'
 import { useEffect } from 'react'
 import { get } from '@/lib/fetch'
 import * as dto from '@/types/dto'
+import { mutate } from 'swr'
+
+const MY_SATELLITES_URL = '/api/me/satellites'
+const ADMIN_SATELLITES_URL = '/api/satellites'
 
 export function useSatellites() {
   const { data, error, isLoading, mutate } = useSWR(
-    '/api/me/satellites',
+    MY_SATELLITES_URL,
     async (url) => {
       const response = await get(url)
       if (response.error) {
@@ -67,7 +71,7 @@ export function useSatellites() {
 
 export function useAdminSatellites() {
   const { data, error, isLoading, mutate } = useSWR(
-    '/api/satellites',
+    ADMIN_SATELLITES_URL,
     async (url) => {
       const response = await get(url)
       if (response.error) {
@@ -83,6 +87,14 @@ export function useAdminSatellites() {
     isLoading,
     mutate,
   }
+}
+
+export function mutateSatellites() {
+  return mutate(MY_SATELLITES_URL)
+}
+
+export function mutateAdminSatellites() {
+  return mutate(ADMIN_SATELLITES_URL)
 }
 
 export function useSatellite(id: string) {

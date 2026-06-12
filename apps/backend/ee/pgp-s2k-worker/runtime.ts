@@ -18,6 +18,7 @@ export class PgpS2kWorkerRuntime {
     const isDev = process.env.NODE_ENV !== 'production'
     const scriptPath = this.resolveScriptPath(isDev)
     const execArgv = isDev ? ['--import', 'tsx'] : []
+    console.info('[PgpS2kWorkerRuntime] Starting worker', { isDev, scriptPath })
 
     this.worker = new Worker(scriptPath, { execArgv, name: 'pgp-s2k' })
 
@@ -39,11 +40,15 @@ export class PgpS2kWorkerRuntime {
     )
 
     this.worker.on('error', (err) => {
+      console.error('[PgpS2kWorkerRuntime] Worker error', {
+        error: err instanceof Error ? err.message : String(err),
+      })
       for (const { reject } of this.pending.values()) reject(err)
       this.pending.clear()
     })
 
     this.worker.on('exit', (code) => {
+      console.info('[PgpS2kWorkerRuntime] Worker exit', { code })
       if (code !== 0) {
         for (const { reject } of this.pending.values()) {
           reject(new Error(`PGP S2K worker exited with code ${code}`))

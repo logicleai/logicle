@@ -120,6 +120,7 @@ const env = {
       clientCacheTtlSeconds: parseOptionalInt(process.env.MCP_CLIENT_CACHE_TTL_SECONDS) ?? 300,
       clientCacheMaxItems: parseOptionalInt(process.env.MCP_CLIENT_CACHE_MAX_ITEMS) ?? 100,
     },
+    prefixFunctionNames: process.env.PREFIX_FUNCTION_NAMES !== '0',
   },
   providers: {
     openai: {},
@@ -185,6 +186,9 @@ const env = {
   apiKeys: {
     enable: process.env.ENABLE_APIKEYS === '1',
     enableUi: process.env.ENABLE_APIKEYS_UI === '1',
+  },
+  satellites: {
+    enableUi: process.env.ENABLE_SATELLITES_UI !== '0',
   },
   promptCaching: {
     anthropic: {
