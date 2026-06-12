@@ -3,6 +3,7 @@ import type { FileDbRow } from '@/backend/models/file'
 import { findExtractor, genericTextExtractor } from '.'
 import { storage } from '../storage'
 import { ensureFileAnalysisForFile, readExtractedTextFromAnalysis } from '@/lib/file-analysis'
+import { logger } from '@/lib/logging'
 
 const cacheSizeInMb = 100
 
@@ -34,9 +35,19 @@ export const cachingExtractor = {
     if (!extractor) {
       return undefined
     }
-    const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
-    const text = await extractor(fileContent)
-    cache.set(fileEntry.path, text)
-    return text
+    try {
+      const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+      const text = await extractor(fileContent)
+      cache.set(fileEntry.path, text)
+      return text
+    } catch (error) {
+      logger.warn('File text extraction failed; continuing without extracted text', {
+        fileId: fileEntry.id,
+        fileName: fileEntry.name,
+        fileType: fileEntry.type,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      return undefined
+    }
   },
 }
