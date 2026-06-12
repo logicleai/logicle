@@ -238,8 +238,8 @@ export class WebSearchInterface {
   static toolName = 'websearch'
 }
 
-export const DocxQuickJsSchema = z.object({}).strict()
-export type DocxQuickJsParams = z.infer<typeof DocxQuickJsSchema>
-export class DocxQuickJsInterface {
-  static toolName = 'docx.quickjs'
+export const OfficeQuickJsSchema = z.object({}).strict()
+export type OfficeQuickJsParams = z.infer<typeof OfficeQuickJsSchema>
+export class OfficeQuickJsInterface {
+  static toolName = 'office.quickjs'
 }

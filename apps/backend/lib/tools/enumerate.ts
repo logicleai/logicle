@@ -26,8 +26,8 @@ import { SubAssistantTool } from './subassistant/implementation'
 import { db } from 'db/database'
 import { AudioTranscription } from './audio_transcription/implementation'
 import { SatelliteTool } from './satellite/implementation'
-import { DocxQuickJsTool } from './docx.quickjs/implementation'
-import { DocxQuickJsInterface } from '@/lib/tools/schemas'
+import { OfficeQuickJsTool } from './office.quickjs/implementation'
+import { OfficeQuickJsInterface } from '@/lib/tools/schemas'
 
 const builders: Record<string, ToolBuilder> = {
   [AudioTranscription.toolName]: AudioTranscription.builder,
@@ -45,7 +45,9 @@ const builders: Record<string, ToolBuilder> = {
   [TimeOfDay.toolName]: TimeOfDay.builder,
   [WebSearch.toolName]: WebSearch.builder,
   [DummyTool.toolName]: DummyTool.builder,
-  [DocxQuickJsTool.toolName]: DocxQuickJsTool.builder,
+  [OfficeQuickJsTool.toolName]: OfficeQuickJsTool.builder,
+  // Legacy name kept so tools provisioned before the docx→office rename keep working
+  'docx.quickjs': OfficeQuickJsTool.builder,
 
   // Provider specific tools
   [AnthropicWebSearch.toolName]: AnthropicWebSearch.builder,
@@ -77,8 +79,13 @@ export const availableTools = async (model: string) => {
 
 const builtinBuilders: Array<() => ToolImplementation> = [
   () =>
-    new DocxQuickJsTool(
-      { id: DocxQuickJsInterface.toolName, name: DocxQuickJsInterface.toolName, provisioned: true, promptFragment: '' },
+    new OfficeQuickJsTool(
+      {
+        id: OfficeQuickJsInterface.toolName,
+        name: OfficeQuickJsInterface.toolName,
+        provisioned: true,
+        promptFragment: '',
+      },
       {}
     ),
 ]
