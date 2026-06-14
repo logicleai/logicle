@@ -200,10 +200,39 @@ async function convertMcpSpecToToolFunctions(
           const errorMessage = e instanceof Error ? e.message : 'MCP tool invocation failed'
           return { type: 'error-text' as const, value: errorMessage }
         }
+        // Resolve resource_link items by fetching their bytes via resources/read,
+        // converting them into embedded resources that normalizeMcpToolResult can save.
+        if (Array.isArray(result?.content)) {
+          result = {
+            ...result,
+            content: await Promise.all(
+              result.content.map(async (item: any) => {
+                if (item?.type !== 'resource_link' || typeof item.uri !== 'string') return item
+                try {
+                  const read = await clientToUse.readResource({ uri: item.uri })
+                  const contents = read.contents?.[0]
+                  if (contents && 'blob' in contents && contents.blob) {
+                    return {
+                      type: 'resource',
+                      resource: { uri: item.uri, blob: contents.blob, mimeType: contents.mimeType ?? item.mimeType, name: item.name },
+                    }
+                  }
+                  if (contents && 'text' in contents && contents.text !== undefined) {
+                    return { type: 'text', text: contents.text }
+                  }
+                } catch (e) {
+                  logger.warn(`Failed to resolve MCP resource_link ${item.uri}`, e)
+                }
+                return item
+              })
+            ),
+          }
+        }
         return await normalizeMcpToolResult(result, invokeParams)
       },
     }
   }
+
   return result
 }
 
