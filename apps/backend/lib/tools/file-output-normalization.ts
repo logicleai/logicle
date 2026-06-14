@@ -56,9 +56,12 @@ export const saveFile = async (
   })
 }
 
+type ReadResourceFn = (uri: string) => Promise<{ blob?: string; text?: string; mimeType?: string } | undefined>
+
 export const normalizeMcpToolResult = async (
   result: any,
-  params: Pick<ToolInvokeParams, 'rootOwner' | 'conversationId' | 'userId' | 'assistantId'>
+  params: Pick<ToolInvokeParams, 'rootOwner' | 'conversationId' | 'userId' | 'assistantId'>,
+  readResource?: ReadResourceFn
 ): Promise<dto.ToolCallResultOutput> => {
   const contentParts: Extract<dto.ToolCallResultOutput, { type: 'content' }>['value'] = []
   for (const item of Array.isArray(result?.content) ? result.content : []) {
@@ -75,6 +78,28 @@ export const normalizeMcpToolResult = async (
       })
       contentParts.push(persisted)
       continue
+    }
+    if (item?.type === 'resource_link' && typeof item.uri === 'string' && readResource) {
+      try {
+        const contents = await readResource(item.uri)
+        if (contents?.blob) {
+          const persisted = await saveFile({
+            ...params,
+            content: Buffer.from(contents.blob, 'base64'),
+            mimeType: contents.mimeType ?? item.mimeType ?? defaultMimeType,
+            nameHint: item.name,
+            source: 'MCP',
+          })
+          contentParts.push(persisted)
+          continue
+        }
+        if (contents?.text !== undefined) {
+          contentParts.push({ type: 'text', text: contents.text })
+          continue
+        }
+      } catch (e) {
+        logger.warn(`Failed to resolve MCP resource_link ${item.uri}`, e)
+      }
     }
     if (item?.type === 'resource' && typeof item.resource?.blob === 'string') {
       const persisted = await saveFile({
