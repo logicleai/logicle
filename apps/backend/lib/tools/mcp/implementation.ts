@@ -200,10 +200,14 @@ async function convertMcpSpecToToolFunctions(
           const errorMessage = e instanceof Error ? e.message : 'MCP tool invocation failed'
           return { type: 'error-text' as const, value: errorMessage }
         }
-        return await normalizeMcpToolResult(result, invokeParams)
+        return await normalizeMcpToolResult(result, invokeParams, async (uri) => {
+          const read = await clientToUse.readResource({ uri })
+          return read.contents?.[0] as { blob?: string; text?: string; mimeType?: string } | undefined
+        })
       },
     }
   }
+
   return result
 }
 
