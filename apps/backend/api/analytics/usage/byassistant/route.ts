@@ -106,7 +106,7 @@ export const GET = operation({
       )
     }
 
-    const result = (await usageQuery.execute()).map((row) => ({
+    const rows = (await usageQuery.execute()).map((row) => ({
       start: row.start,
       end: row.end,
       id: row.id ?? null,
@@ -115,12 +115,27 @@ export const GET = operation({
       tokens: Number(row.tokens ?? 0),
     }))
 
+    const populatedStarts = new Set(rows.map((r) => r.start))
+    const filledRows = [
+      ...rows,
+      ...buckets
+        .filter((b) => !populatedStarts.has(formatDateTime(b.start)))
+        .map((b) => ({
+          start: formatDateTime(b.start),
+          end: formatDateTime(b.end),
+          id: null,
+          name: null,
+          messages: 0,
+          tokens: 0,
+        })),
+    ]
+
     return ok({
       period: range.period,
       granularity: range.granularity,
       from: formatDateTime(range.start),
       to: formatDateTime(range.end),
-      rows: result,
+      rows: filledRows,
     })
   },
 })
