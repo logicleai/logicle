@@ -56,6 +56,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       : { state: 'usable' as const }
   const userAssistant = {
     ...assistant,
+    id: assistant.assistantId,
     lastUsed: '',
     pinned: false,
     sharing: [],
