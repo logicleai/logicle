@@ -2,6 +2,7 @@ import { hashPassword } from '@/lib/auth/password'
 import { db } from '@/db/database'
 import { forbidden, noBody, notFound, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { getUserById } from '@/models/user'
+import { deleteUserSessionsByAuthMethod } from '@/models/session'
 import { adminChangePasswordRequestSchema } from '@/types/dto'
 
 export const PUT = operation({
@@ -25,6 +26,7 @@ export const PUT = operation({
       .set({ password: await hashPassword(newPassword) })
       .where('id', '=', params.userId)
       .execute()
+    await deleteUserSessionsByAuthMethod(params.userId, 'password')
     return noBody()
   },
 })
@@ -43,6 +45,7 @@ export const DELETE = operation({
       return forbidden("Can't modify a provisioned user")
     }
     await db.updateTable('User').set({ password: null }).where('id', '=', params.userId).execute()
+    await deleteUserSessionsByAuthMethod(params.userId, 'password')
     return noBody()
   },
 })
