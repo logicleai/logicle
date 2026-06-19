@@ -115,6 +115,7 @@ describe('apps/backend/lib/templates', () => {
 
     const { expandEnv } = await import('@/backend/lib/templates')
 
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal string testing env var expansion
     expect(expandEnv('token=${API_KEY};missing=${NOT_DEFINED}')).toBe(
       'token=secret-value;missing='
     )
@@ -138,10 +139,13 @@ describe('apps/backend/lib/templates', () => {
 
     const { resolveToolSecretReference } = await import('@/backend/lib/templates')
 
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal string testing secret reference syntax
     await expect(resolveToolSecretReference('tool-1', '${secret.api-key}')).resolves.toBe(
       'resolved-secret'
     )
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal string testing secret reference syntax
     await expect(resolveToolSecretReference('tool-1', '${secret.api-key}')).resolves.toBe(
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal string testing secret reference syntax
       '${secret.api-key}'
     )
     expect(getToolSecretValue).toHaveBeenNthCalledWith(1, 'tool-1', 'api-key')
