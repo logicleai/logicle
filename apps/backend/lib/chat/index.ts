@@ -23,7 +23,6 @@ import { claudeThinkingBudgetTokens } from '@/lib/chat/models/anthropic'
 import { llmModels } from '@/lib/models'
 import { z } from 'zod/v4'
 import { ParameterValueAndDescription } from '@/models/user'
-import { nanoid } from 'nanoid'
 import {
   prepareConversationCostPlan,
   selectOptimalHistoryStartIndex,
