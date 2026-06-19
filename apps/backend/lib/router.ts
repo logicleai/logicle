@@ -159,6 +159,7 @@ export async function handleApiRequest(req: IncomingMessage, res: ServerResponse
 async function sendWebResponse(res: ServerResponse, response: Response) {
   res.statusCode = response.status
   res.statusMessage = response.statusText
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
 
   const setCookieHeaders =
     typeof response.headers.getSetCookie === 'function' ? response.headers.getSetCookie() : []
