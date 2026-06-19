@@ -131,7 +131,7 @@ function firstCookiePair(setCookie: string) {
   return setCookie.split(';', 1)[0]
 }
 
-function mergeResponseCookies(currentCookieHeader: string | undefined, response: Response) {
+function _mergeResponseCookies(currentCookieHeader: string | undefined, response: Response) {
   const cookies = parseCookieHeader(currentCookieHeader ?? null)
   const setCookies =
     typeof response.headers.getSetCookie === 'function'

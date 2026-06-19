@@ -10,7 +10,7 @@ describe('lib/const', () => {
   test('DEFAULT_TEMPERATURE is a number', async () => {
     const { DEFAULT_TEMPERATURE } = await import('@/lib/const')
     expect(typeof DEFAULT_TEMPERATURE).toBe('number')
-    expect(isNaN(DEFAULT_TEMPERATURE)).toBe(false)
+    expect(Number.isNaN(DEFAULT_TEMPERATURE)).toBe(false)
   })
 })
 

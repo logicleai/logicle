@@ -45,12 +45,12 @@ describe('sanitizeAndTransform', () => {
 
   test('recurses into plain objects', () => {
     const result = sanitizeAndTransform({ key: 'value' }) as Record<string, unknown>
-    expect(result['key']).toBe('value')
+    expect(result.key).toBe('value')
   })
 
   test('truncates strings inside objects', () => {
     const result = sanitizeAndTransform({ msg: 'x'.repeat(100) }, 3) as Record<string, unknown>
-    expect(result['msg']).toBe('xxx')
+    expect(result.msg).toBe('xxx')
   })
 
   test('passes through null', () => {
@@ -67,15 +67,15 @@ describe('sanitizeAndTransform', () => {
 
   test('handles circular references without throwing', () => {
     const obj: Record<string, unknown> = { a: 1 }
-    obj['self'] = obj
+    obj.self = obj
     const result = sanitizeAndTransform(obj) as Record<string, unknown>
-    expect(result['a']).toBe(1)
-    expect(result['self']).toBeUndefined()
+    expect(result.a).toBe(1)
+    expect(result.self).toBeUndefined()
   })
 
   test('handles deeply nested objects', () => {
     const result = sanitizeAndTransform({ a: { b: { c: 'deep' } } }) as Record<string, unknown>
-    expect((result['a'] as Record<string, unknown>)['b']).toEqual({ c: 'deep' })
+    expect((result.a as Record<string, unknown>).b).toEqual({ c: 'deep' })
   })
 })
 
@@ -99,7 +99,7 @@ describe('smartStringify', () => {
 
   test('handles circular references without throwing', () => {
     const obj: Record<string, unknown> = { a: 1 }
-    obj['self'] = obj
+    obj.self = obj
     const result = JSON.parse(smartStringify(obj))
     expect(result.a).toBe(1)
     expect(result.self).toBeUndefined()

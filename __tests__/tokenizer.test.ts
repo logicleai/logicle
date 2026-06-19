@@ -22,7 +22,7 @@ const approxModel: LlmModel = {
 }
 
 // A model with explicit tokenizer override
-const overrideModel: LlmModel = { ...approxModel, tokenizer: 'approx_4chars' }
+const _overrideModel: LlmModel = { ...approxModel, tokenizer: 'approx_4chars' }
 
 const base = { conversationId: 'c1', sentAt: '2024-01-01T00:00:00.000Z', parent: null }
 
