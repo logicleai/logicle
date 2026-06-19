@@ -86,6 +86,17 @@ export const deleteUserSessionById = async (userId: string, sessionId: string) =
     .execute()
 }
 
+export const deleteUserSessionsByAuthMethod = async (
+  userId: string,
+  authMethod: schema.Session['authMethod']
+) => {
+  await db
+    .deleteFrom('Session')
+    .where('userId', '=', userId)
+    .where('authMethod', '=', authMethod)
+    .execute()
+}
+
 export const updateSessionActivity = async (
   sessionId: string,
   data: { lastSeenAt: Date; userAgent?: string | null; ipAddress?: string | null }
