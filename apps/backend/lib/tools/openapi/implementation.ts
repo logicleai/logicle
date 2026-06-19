@@ -268,7 +268,7 @@ function convertOpenAPIOperationToToolFunction(
             persisted,
           ],
         }
-      } else if (contentType && contentType.startsWith('application/json')) {
+      } else if (contentType?.startsWith('application/json')) {
         return { type: 'json', value: (await response.json()) as JSONValue }
       } else if (contentType && !contentType.startsWith('text/')) {
         const body = await response.blob()

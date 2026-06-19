@@ -37,7 +37,7 @@ function linesToText (lineItems, disableInlineFormats) {
         closeFormat()
       }
 
-      if (i > 0 && !(wordType && wordType.attachWithoutWhitespace) && !isPunctationCharacter(word.string)) {
+      if (i > 0 && !(wordType?.attachWithoutWhitespace) && !isPunctationCharacter(word.string)) {
         text += ' '
       }
 

@@ -87,7 +87,7 @@ module.exports = class DetectHeaders extends ToLineItemTransformation {
     var smallesHeadlineLevel = 1
     parseResult.pages.forEach(page => {
       page.items.forEach(item => {
-        if (item.type && item.type.headline) {
+        if (item.type?.headline) {
           smallesHeadlineLevel = Math.max(smallesHeadlineLevel, item.type.headlineLevel)
         }
       })
@@ -100,7 +100,7 @@ module.exports = class DetectHeaders extends ToLineItemTransformation {
           if (!item.type &&
               item.height === mostUsedHeight &&
               item.font !== mostUsedFont &&
-              (!lastItem || lastItem.y < item.y || (lastItem.type && lastItem.type.headline) || (lastItem.y - item.y > mostUsedDistance * 2)) &&
+              (!lastItem || lastItem.y < item.y || (lastItem.type?.headline) || (lastItem.y - item.y > mostUsedDistance * 2)) &&
               item.text() === item.text().toUpperCase()
           ) {
             detectedHeaders++
