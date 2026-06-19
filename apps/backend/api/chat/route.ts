@@ -1,7 +1,6 @@
 import { createChatRunEventsResponse } from '@/backend/lib/chat/chatRunEventsResponse'
 import { isStartRunSuccess, startServerChatRun } from '@/backend/lib/chat/startServerChatRun'
 import { conflict, error, operation, responseSpec, errorSpec } from '@/lib/routes'
-import * as dto from '@/types/dto'
 import { messageSchema } from '@/types/dto'
 
 export const POST = operation({

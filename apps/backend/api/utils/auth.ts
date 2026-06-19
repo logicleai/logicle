@@ -54,7 +54,7 @@ export async function findSatelliteAuthByApiKey(apiKey: string) {
       ])
       .where('ApiKey.id', '=', id)
       .executeTakeFirst()
-    if (row && row.userEnabled && row.enabled && (!row.expiresAt || row.expiresAt > new Date().toISOString())) {
+    if (row?.userEnabled && row.enabled && (!row.expiresAt || row.expiresAt > new Date().toISOString())) {
       if (await bcrypt.compare(secret, row.key)) {
         return {
           userId: row.id,

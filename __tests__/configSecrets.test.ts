@@ -21,6 +21,7 @@ test('extractSecretsFromConfig captures MCP OAuth clientSecret', () => {
   expect(sanitizedConfig).toMatchObject({
     authentication: {
       type: 'oauth',
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal string for secret reference syntax
       clientSecret: '${secret.clientSecret}',
     },
   })

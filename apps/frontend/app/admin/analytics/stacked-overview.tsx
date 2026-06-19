@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { OTHER_COLOR, OTHER_KEY, buildColorMap } from './colors'
+import { OTHER_COLOR, OTHER_KEY, } from './colors'
 
 interface StackedOverviewProps {
   query: string

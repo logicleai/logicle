@@ -1,4 +1,4 @@
-import { parentPort } from 'worker_threads'
+import { parentPort } from 'node:worker_threads'
 import { getEncoding, type Tiktoken } from 'js-tiktoken'
 
 if (!parentPort) throw new Error('tokenizer worker script must run inside a Worker thread')

@@ -76,7 +76,7 @@ async function request(method: string, path: string, opts: RequestOptions = {}) 
   setCookiesFromResponse(res.headers)
   const text = await res.text()
 
-  if (allowStatus && allowStatus.includes(res.status)) {
+  if (allowStatus?.includes(res.status)) {
     return { res, text }
   }
 

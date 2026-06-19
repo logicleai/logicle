@@ -71,7 +71,7 @@ module.exports = class RemoveRepetitiveElements extends ToLineItemTransformation
     // now annoate all removed items
     var removedHeader = 0
     var removedFooter = 0
-    parseResult.pages.forEach((page, i) => {
+    parseResult.pages.forEach((_page, i) => {
       if (minLineHashRepetitions[pageStore[i].minLineHash] >= Math.max(3, parseResult.pages.length * 2 / 3)) {
         pageStore[i].minElements.forEach(item => {
           item.annotation = REMOVED_ANNOTATION

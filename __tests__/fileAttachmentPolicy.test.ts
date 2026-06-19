@@ -10,7 +10,6 @@ import {
 import type { CompletedFileAnalysis } from '@/lib/file-analysis'
 import { claude35SonnetModel } from '@/lib/chat/models/anthropic'
 import { gpt35Model } from '@/lib/chat/models/openai'
-import type * as dto from '@/types/dto'
 
 const pdfFile = { id: 'pdf-1', name: 'example.pdf', type: 'application/pdf' }
 const pdfReadyAnalysis: CompletedFileAnalysis = {

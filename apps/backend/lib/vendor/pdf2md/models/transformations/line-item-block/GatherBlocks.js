@@ -51,12 +51,12 @@ module.exports = class GatherBlocks extends ToLineItemBlockTransformation {
 }
 
 function shouldFlushBlock (stashedBlock, item, minX, mostUsedDistance) {
-  if (stashedBlock.type && stashedBlock.type.mergeFollowingNonTypedItems && !item.type) {
+  if (stashedBlock.type?.mergeFollowingNonTypedItems && !item.type) {
     return false
   }
   const lastItem = stashedBlock.items[stashedBlock.items.length - 1]
   const hasBigDistance = bigDistance(lastItem, item, minX, mostUsedDistance)
-  if (stashedBlock.type && stashedBlock.type.mergeFollowingNonTypedItemsWithSmallDistance && !item.type && !hasBigDistance) {
+  if (stashedBlock.type?.mergeFollowingNonTypedItemsWithSmallDistance && !item.type && !hasBigDistance) {
     return false
   }
   if (item.type !== stashedBlock.type) {

@@ -2,7 +2,6 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
-import { hashPassword } from '@/lib/auth/password'
 
 export function parseApiKeyScope(scope: string | null): dto.ApiKeyScope | null {
   if (!scope) {

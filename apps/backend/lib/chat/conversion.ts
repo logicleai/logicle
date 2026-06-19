@@ -10,7 +10,6 @@ import { LlmModelCapabilities } from '@/lib/chat/models'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import env from '@/lib/env'
 import {
-  acceptableImageTypes,
   canSendAsNativeFile,
   canSendAsNativeImage,
   resolvePdfNativeAttachmentDecision,
@@ -18,7 +17,6 @@ import {
 import {
   projectMessageForEstimation,
   projectedToolResultAttachedFilesDescriptor,
-  projectedAssistantToolCallPayload,
 } from './message-projection'
 
 // LiteLLM does not support binary attachments inside tool results. Detect this by inspecting

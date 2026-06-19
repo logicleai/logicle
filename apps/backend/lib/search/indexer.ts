@@ -11,7 +11,7 @@ import { logger } from '../logging.ts'
 const BATCH_SIZE = Number(process.env.HEAL_BATCH_SIZE ?? 500)
 const SLEEP_MS = Number(process.env.SEARCH_SYNC_SLEEP_MS ?? 2_000)
 
-export let stopRequested = false
+export const stopRequested = false
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))

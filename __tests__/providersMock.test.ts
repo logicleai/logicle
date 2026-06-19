@@ -35,7 +35,7 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 function sseResponse(events: string[]) {
-  const body = events.map((e) => `data: ${e}\n\n`).join('') + 'data: [DONE]\n\n'
+  const body = `${events.map((e) => `data: ${e}\n\n`).join('')}data: [DONE]\n\n`
   return new Response(body, {
     status: 200,
     headers: { 'content-type': 'text/event-stream' },

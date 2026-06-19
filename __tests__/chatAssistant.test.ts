@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type * as dto from '@/types/dto'
 import type { ToolFunction, ToolImplementation, ToolNative } from '@/lib/chat/tools'
 import type { LlmModel } from '@/lib/chat/models'
-import type { ClientSink } from '@/backend/lib/chat/ClientSink'
 
 // ---- Module mocks (must be hoisted before imports) ----
 
@@ -442,7 +441,7 @@ describe('ChatAssistant.createLanguageModelBasic', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     const makeModel = (name: string) => ({ provider: name })
-    const makeProvider = (modelFn: string) => (model: string) => makeModel(model)
+    const makeProvider = (_modelFn: string) => (model: string) => makeModel(model)
     mockCreateOpenAI.mockReturnValue({ responses: makeProvider('openai') })
     mockCreateAnthropic.mockReturnValue({ languageModel: makeProvider('anthropic') })
     mockCreateGoogleGenerativeAI.mockReturnValue({ languageModel: makeProvider('gemini') })
@@ -729,7 +728,7 @@ describe('ChatAssistant.computeSafeSummary', () => {
   })
 
   test('stops at newline before truncation', async () => {
-    const result = await assistant.computeSafeSummary('short\n' + 'a'.repeat(200))
+    const result = await assistant.computeSafeSummary(`short\n${'a'.repeat(200)}`)
     expect(result).toBe('short')
   })
 })

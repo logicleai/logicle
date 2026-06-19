@@ -16,11 +16,9 @@ import { parseDocument } from 'yaml'
 import { expandEnv } from 'templates'
 import { parseMultipart } from '@mjackson/multipart-parser'
 import JacksonHeaders from '@mjackson/headers'
-import { nanoid } from 'nanoid'
 import winston from 'winston'
 import { ToolFunctionSchemaParams } from '@/lib/tools/openapi-types'
 import { Body, BodyHandler, findBodyHandler } from './body'
-import { storage } from '@/lib/storage'
 import { fetch, Agent } from 'undici'
 import { JSONSchema7 } from 'json-schema'
 import { JSONValue } from 'ai'
@@ -270,7 +268,7 @@ function convertOpenAPIOperationToToolFunction(
             persisted,
           ],
         }
-      } else if (contentType && contentType.startsWith('application/json')) {
+      } else if (contentType?.startsWith('application/json')) {
         return { type: 'json', value: (await response.json()) as JSONValue }
       } else if (contentType && !contentType.startsWith('text/')) {
         const body = await response.blob()

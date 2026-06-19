@@ -1,4 +1,4 @@
-import { parentPort } from 'worker_threads'
+import { parentPort } from 'node:worker_threads'
 import * as openpgp from 'openpgp'
 import { patchSkeskPackets } from './streaming-s2k.ts'
 

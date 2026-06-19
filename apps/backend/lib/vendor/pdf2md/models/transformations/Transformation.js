@@ -18,7 +18,7 @@ module.exports = class Transformation {
   }
 
   // Transform an incoming ParseResult into an outgoing ParseResult
-  transform (parseResult /*: ParseResult */) /*: ParseResult */ { // eslint-disable-line no-unused-vars
+  transform (_parseResult /*: ParseResult */) /*: ParseResult */ { // eslint-disable-line no-unused-vars
     throw new TypeError('Do not call abstract method foo from child.')
   }
 

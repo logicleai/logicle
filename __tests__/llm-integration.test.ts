@@ -50,7 +50,7 @@ import { GoogleAiStudioWebSearch } from '@/backend/lib/tools/google_ai_studio.we
 import { OpenaiWebSearch } from '@/backend/lib/tools/openai.web_search/implementation'
 import type { ClientSink } from '@/backend/lib/chat/ClientSink'
 import type { LlmModel } from '@/lib/chat/models'
-import type { ToolFunctionContext, ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
+import type { ToolFunctions, ToolImplementation, ToolParams } from '@/lib/chat/tools'
 import type { ProviderConfig } from '@/types/provider'
 
 const ENABLED = process.env.RUN_LLM_INTEGRATION === '1'

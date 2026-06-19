@@ -11,7 +11,7 @@ const jsonHeaders = {
   'sec-fetch-site': 'same-origin',
 }
 
-const sameOriginHeaders = {
+const _sameOriginHeaders = {
   'sec-fetch-site': 'same-origin',
 }
 
@@ -174,7 +174,7 @@ type ConfiguredProvider = {
   backendBody: (runId: string, key: string, endpoint?: string) => Record<string, unknown>
 }
 
-async function createAssistantConversation(backendId, model, runId, label) {
+async function createAssistantConversation(backendId, model, _runId, label) {
   const assistantCreated = await request('POST', '/api/assistants', {
     expectedStatus: 201,
     headers: jsonHeaders,

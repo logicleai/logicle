@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import type { ToolFunction, ToolInvokeParams } from '@/lib/chat/tools'
+import type { ToolInvokeParams } from '@/lib/chat/tools'
 
 const executeTakeFirst = vi.fn()
 const extractFromFile = vi.fn()
