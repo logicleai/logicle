@@ -27,7 +27,7 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const lastWarningStateRef = useRef<boolean | undefined>(undefined)
   const { t } = useTranslation()
-  const userProfile = useUserProfile()
+  const _userProfile = useUserProfile()
   const [isDragActive, setIsDragActive] = useState(false)
   const draggingUploadIdRef = useRef<string | null>(null)
 

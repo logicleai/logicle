@@ -11,7 +11,7 @@ const jsonHeaders = {
   'sec-fetch-site': 'same-origin',
 }
 
-const sameOriginHeaders = {
+const _sameOriginHeaders = {
   'sec-fetch-site': 'same-origin',
 }
 
