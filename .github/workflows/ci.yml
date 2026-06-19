@@ -102,6 +102,7 @@ jobs:
     needs: unit-tests
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    continue-on-error: true
     concurrency:
       group: pages
       cancel-in-progress: true
