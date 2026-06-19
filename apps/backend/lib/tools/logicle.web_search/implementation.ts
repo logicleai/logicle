@@ -20,7 +20,7 @@ export class LogicleCloudWebSearch
   }
 
   isModelSupported(model: LlmModel): boolean {
-    return model.provider == 'logiclecloud' && model.capabilities.web_search === true
+    return model.provider === 'logiclecloud' && model.capabilities.web_search === true
   }
 
   async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {

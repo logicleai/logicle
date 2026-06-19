@@ -16,7 +16,7 @@ export class AnthropicWebSearch extends AnthropicWebSearchInterface implements T
   }
 
   isModelSupported(model: LlmModel): boolean {
-    return model.owned_by == 'anthropic' && model.capabilities.web_search === true
+    return model.owned_by === 'anthropic' && model.capabilities.web_search === true
   }
 
   async functions(_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> {
