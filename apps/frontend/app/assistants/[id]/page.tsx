@@ -516,7 +516,7 @@ const AssistantPage = () => {
       </div>
       <div className={`flex-1 min-h-0 grid grid-cols-2 overflow-hidden`}>
         <AssistantForm
-          key={`${assistant.id}-${formResetKey}`}
+          key={`${assistant.assistantId}-${formResetKey}`}
           assistant={assistant}
           onPublish={onPublish}
           onChange={onChange}
