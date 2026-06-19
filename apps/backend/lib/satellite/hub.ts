@@ -164,7 +164,7 @@ async function handleSatelliteMessage(
       const registerMsg = msg as RegisterMessage
       const { name, tools, satelliteId: requestedSatelliteId } = registerMsg
 
-      let conn = findConnection(socket)
+      const conn = findConnection(socket)
       if (conn) {
         // Already connected - treat as an update
         conn.tools = tools
