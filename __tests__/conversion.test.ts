@@ -59,7 +59,7 @@ const pdfFile = {
   type: 'application/pdf',
   size: 123,
   createdAt: new Date().toISOString(),
-  encrypted: 0 as const,
+  encryption: null,
 }
 
 describe('dtoFileToLlmFilePart', () => {
@@ -160,7 +160,7 @@ describe('dtoFileToLlmFilePart', () => {
       data: Buffer.from('pdf-bytes').toString('base64'),
       mediaType: pdfFile.type,
     })
-    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, false)
+    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, null)
   })
 })
 
@@ -258,7 +258,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
       ],
     })
     expect(getFileWithId).toHaveBeenCalledWith(pdfFile.id)
-    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, false)
+    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, null)
   })
 
   test('eagerly injects tool-result PDFs', async () => {
@@ -352,7 +352,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
       ],
     })
     expect(getFileWithId).toHaveBeenCalledWith(pdfFile.id)
-    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, false)
+    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, null)
   })
 
   test('keeps tool-result file attachments as descriptor-only for litellm even when eager injection is on', async () => {

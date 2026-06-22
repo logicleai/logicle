@@ -2,6 +2,8 @@ import { ProviderType } from '@/types/provider'
 
 export const reasoningEffortValues = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const
 export type ReasoningEffort = (typeof reasoningEffortValues)[number]
+export const fileEncryptionValues = ['pgp', 'aead'] as const
+export type FileEncryption = (typeof fileEncryptionValues)[number]
 
 enum WorkspaceRole {
   ADMIN = 'ADMIN',
@@ -126,7 +128,7 @@ export interface FileBlob {
   path: string
   type: string
   size: number
-  encrypted: 0 | 1
+  encryption: FileEncryption | null
   createdAt: string
 }
 

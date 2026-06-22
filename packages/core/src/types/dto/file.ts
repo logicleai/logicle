@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { iso8601UtcDateTimeSchema } from './common'
 
+export const fileEncryptionSchema = z.enum(['pgp', 'aead']).nullable()
+
 export const fileOwnerSchema = z.object({
   ownerType: z.enum(['USER', 'CHAT', 'ASSISTANT', 'TOOL']),
   ownerId: z.string(),
@@ -13,7 +15,7 @@ export const fileSchema = z.object({
   type: z.string(),
   size: z.number(),
   createdAt: iso8601UtcDateTimeSchema,
-  encrypted: z.union([z.literal(0), z.literal(1)]),
+  encryption: fileEncryptionSchema,
 }).meta({ id: 'File' })
 
 export const fileDetailsSchema = z.object({
@@ -29,7 +31,7 @@ export const fileDetailsSchema = z.object({
     .object({
       id: z.string(),
       size: z.number(),
-      encrypted: z.union([z.literal(0), z.literal(1)]),
+      encryption: fileEncryptionSchema,
       contentHash: z.string(),
       createdAt: iso8601UtcDateTimeSchema,
     })
@@ -40,7 +42,7 @@ export const insertableFileSchema = fileSchema
   .omit({
     id: true,
     createdAt: true,
-    encrypted: true,
+    encryption: true,
     path: true,
   })
   .extend({

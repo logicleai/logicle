@@ -1,6 +1,7 @@
 import http from 'node:http'
 import https from 'node:https'
 import { BaseStorage } from './api'
+import type { StorageEncryption, StorageReadOptions } from './api'
 import { logger } from '@/lib/logging'
 import { Upload } from '@aws-sdk/lib-storage'
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
@@ -34,7 +35,11 @@ export class S3Storage extends BaseStorage {
     this.hostName = `${this.bucketName}.s3.${this.region}.amazonaws.com`
   }
 
-  async writeStream(path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+  async writeStream(
+    path: string,
+    stream: ReadableStream<Uint8Array>,
+    _encryption: StorageEncryption
+  ): Promise<void> {
     try {
       const upload = new Upload({
         client: this.s3Client,
@@ -81,13 +86,17 @@ export class S3Storage extends BaseStorage {
 
   async readStream(
     path: string,
-    _encrypted?: boolean,
-    _options?: { expectedSizeBytes?: number; bypassCache?: boolean }
+    _encryption: StorageEncryption,
+    options?: StorageReadOptions
   ): Promise<ReadableStream<Uint8Array>> {
     try {
       const params = {
         Bucket: this.bucketName, // Replace with your bucket name
         Key: path, // The path to the object
+        Range:
+          typeof options?.rangeStart === 'number' || typeof options?.rangeEnd === 'number'
+            ? `bytes=${options?.rangeStart ?? 0}-${options?.rangeEnd ?? ''}`
+            : undefined,
       }
       const command = new GetObjectCommand(params)
       const response = await this.s3Client.send(command)

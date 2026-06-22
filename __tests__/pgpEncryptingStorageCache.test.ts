@@ -68,8 +68,8 @@ describe('PgpEncryptingStorage session key promise cache failure handling', () =
       'passphrase'
     )
 
-    await expect(storage.readStream('file-a', true)).rejects.toThrow('s2k failed')
-    await expect(storage.readStream('file-a', true)).resolves.toBeInstanceOf(ReadableStream)
+    await expect(storage.readStream('file-a', 'pgp')).rejects.toThrow('s2k failed')
+    await expect(storage.readStream('file-a', 'pgp')).resolves.toBeInstanceOf(ReadableStream)
 
     expect(deriveSessionKey).toHaveBeenCalledTimes(2)
     expect(readMessageMock).toHaveBeenCalledTimes(1)
@@ -90,8 +90,8 @@ describe('PgpEncryptingStorage session key promise cache failure handling', () =
       'passphrase'
     )
 
-    const firstRead = storage.readStream('file-b', true)
-    const secondRead = storage.readStream('file-b', true)
+    const firstRead = storage.readStream('file-b', 'pgp')
+    const secondRead = storage.readStream('file-b', 'pgp')
     rejectFirst(new Error('shared failure'))
 
     const [firstResult, secondResult] = await Promise.allSettled([firstRead, secondRead])
@@ -99,7 +99,7 @@ describe('PgpEncryptingStorage session key promise cache failure handling', () =
     expect(secondResult.status).toBe('rejected')
     expect(deriveSessionKey).toHaveBeenCalledTimes(1)
 
-    await expect(storage.readStream('file-b', true)).resolves.toBeInstanceOf(ReadableStream)
+    await expect(storage.readStream('file-b', 'pgp')).resolves.toBeInstanceOf(ReadableStream)
     expect(deriveSessionKey).toHaveBeenCalledTimes(2)
     expect(readMessageMock).toHaveBeenCalledTimes(1)
     expect(decryptMock).toHaveBeenCalledTimes(1)
@@ -112,7 +112,7 @@ describe('PgpEncryptingStorage session key promise cache failure handling', () =
     const payload = new Uint8Array(128).map((_, index) => index + 1)
     const storage = await PgpEncryptingStorage.create(new StaticStorage(payload), 'passphrase')
 
-    await expect(storage.readStream('file-c', true)).resolves.toBeInstanceOf(ReadableStream)
+    await expect(storage.readStream('file-c', 'pgp')).resolves.toBeInstanceOf(ReadableStream)
 
     expect(deriveSessionKey).toHaveBeenCalledTimes(1)
     expect(deriveSessionKey.mock.calls[0]?.[0]).toEqual(payload)

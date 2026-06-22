@@ -140,7 +140,7 @@ export class CodeInterpreter
       if (!fileEntry) {
         return { type: 'error-text', value: `File not found: ${fileId}` }
       }
-      const content = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+      const content = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
       const upload = await toFile(content, file.path, { type: fileEntry.type })
       const created = await client.containers.files.create(containerId, { file: upload })
       results.push({

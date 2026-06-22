@@ -232,7 +232,7 @@ describe('PUT /api/files/:fileId/content', () => {
         path: 'canonical.txt',
         type: 'text/plain',
         size: 100,
-        encrypted: 0,
+        encryption: null,
         createdAt: new Date().toISOString(),
       })
       .execute()

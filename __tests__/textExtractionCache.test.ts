@@ -35,7 +35,7 @@ describe('cachingExtractor', () => {
       type: 'application/pdf',
       size: 123,
       createdAt: new Date().toISOString(),
-      encrypted: 0 as const,
+      encryption: null,
       ownerType: 'USER' as const,
       ownerId: 'u1',
       origin: null,
@@ -85,7 +85,7 @@ describe('cachingExtractor', () => {
       type: 'text/plain',
       size: 12,
       createdAt: new Date().toISOString(),
-      encrypted: 0 as const,
+      encryption: null,
       ownerType: 'USER' as const,
       ownerId: 'u1',
       origin: null,
@@ -102,7 +102,7 @@ describe('cachingExtractor', () => {
 
     expect(text).toBe('fallback text')
     expect(findExtractor).toHaveBeenCalledWith('text/plain')
-    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, false)
+    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, null)
     expect(extractor).toHaveBeenCalledWith(Buffer.from('raw file'))
   })
 
@@ -115,7 +115,7 @@ describe('cachingExtractor', () => {
       type: 'text/plain',
       size: 12,
       createdAt: new Date().toISOString(),
-      encrypted: 0 as const,
+      encryption: null,
       ownerType: 'USER' as const,
       ownerId: 'u1',
       origin: null,
@@ -148,7 +148,7 @@ describe('cachingExtractor', () => {
 
     expect(text).toBe('fallback after sidecar miss')
     expect(findExtractor).toHaveBeenCalledWith('text/plain')
-    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, false)
+    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, null)
     expect(extractor).toHaveBeenCalledWith(Buffer.from('raw file'))
   })
 })

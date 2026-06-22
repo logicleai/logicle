@@ -52,7 +52,7 @@ describe('finalizeUploadedFile', () => {
       path: 'new-id-file.pdf',
       type: 'application/pdf',
       size: 10,
-      encrypted: 0 as const,
+      encryption: null,
       createdAt: '2026-01-01T00:00:00.000Z',
     }
 
@@ -75,7 +75,7 @@ describe('finalizeUploadedFile', () => {
       filePath: 'new-id-file.pdf',
       fileType: 'application/pdf',
       fileSize: 10,
-      fileEncrypted: 0,
+      fileEncrypted: null,
       contentHash: 'abc123',
     })
 
@@ -92,7 +92,7 @@ describe('finalizeUploadedFile', () => {
       path: 'canonical.txt',
       type: 'text/plain',
       size: 4,
-      encrypted: 0 as const,
+      encryption: null,
       createdAt: '2026-01-01T00:00:00.000Z',
     }
 
@@ -114,7 +114,7 @@ describe('finalizeUploadedFile', () => {
       filePath: 'new-id-file.pdf',
       fileType: 'text/plain',
       fileSize: 4,
-      fileEncrypted: 0,
+      fileEncrypted: null,
       contentHash: 'abc123',
     })
 
@@ -138,17 +138,27 @@ describe('materializeFile deduplication', () => {
       type: 'application/pdf',
       size: 11,
       createdAt: '2026-01-01T00:00:00.000Z',
-      encrypted: 0 as const,
+      encryption: null,
       fileBlobId: 'test-id',
     }
 
     selectFromMock
       .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder(undefined)) })
-      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder({
-        id: 'test-id', contentHash: 'newhash', path: 'test-id-doc-pdf', type: 'application/pdf', size: 11, encrypted: 0, createdAt: '2026-01-01T00:00:00.000Z'
-      })) })
+      .mockReturnValueOnce({
+        select: vi.fn(() =>
+          makeSelectFirstBuilder({
+            id: 'test-id',
+            contentHash: 'newhash',
+            path: 'test-id-doc-pdf',
+            type: 'application/pdf',
+            size: 11,
+            encryption: null,
+            createdAt: '2026-01-01T00:00:00.000Z',
+          })
+        ),
+      })
       .mockReturnValueOnce({ selectAll: vi.fn(() => ({ where: vi.fn(() => ({ executeTakeFirst: vi.fn().mockResolvedValue(createdFile) })) })) })
-      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder({ size: 11, encrypted: 0 })) })
+      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder({ size: 11, encryption: null })) })
 
     storageWriteBufferMock.mockResolvedValue(undefined)
 
@@ -186,7 +196,7 @@ describe('materializeFile deduplication', () => {
       path: 'blob-1-photo-png',
       type: 'image/png',
       size: 5,
-      encrypted: 0 as const,
+      encryption: null,
       createdAt: '2026-01-01T00:00:00.000Z',
     }
 
@@ -197,14 +207,14 @@ describe('materializeFile deduplication', () => {
       type: blob.type,
       size: blob.size,
       createdAt: '2026-01-01T00:00:00.000Z',
-      encrypted: 0 as const,
+      encryption: null,
       fileBlobId: blob.id,
     }
 
     selectFromMock
       .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder(blob)) })
       .mockReturnValueOnce({ selectAll: vi.fn(() => ({ where: vi.fn(() => ({ executeTakeFirst: vi.fn().mockResolvedValue(createdFile) })) })) })
-      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder({ size: 5, encrypted: 0 })) })
+      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder({ size: 5, encryption: null })) })
 
     transactionMock.mockImplementation(async (fn: (trx: any) => Promise<void>) => {
       const trx = {
@@ -232,7 +242,7 @@ describe('materializeFile deduplication', () => {
       path: 'canonical-photo-png',
       type: 'image/png',
       size: 5,
-      encrypted: 0 as const,
+      encryption: null,
       createdAt: '2026-01-01T00:00:00.000Z',
     }
     const createdFile = {
@@ -242,7 +252,7 @@ describe('materializeFile deduplication', () => {
       type: blob.type,
       size: blob.size,
       createdAt: '2026-01-01T00:00:00.000Z',
-      encrypted: 0 as const,
+      encryption: null,
       fileBlobId: blob.id,
     }
 
@@ -250,7 +260,7 @@ describe('materializeFile deduplication', () => {
       .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder(undefined)) })
       .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder(blob)) })
       .mockReturnValueOnce({ selectAll: vi.fn(() => ({ where: vi.fn(() => ({ executeTakeFirst: vi.fn().mockResolvedValue(createdFile) })) })) })
-      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder({ size: 5, encrypted: 0 })) })
+      .mockReturnValueOnce({ select: vi.fn(() => makeSelectFirstBuilder({ size: 5, encryption: null })) })
 
     storageWriteBufferMock.mockResolvedValue(undefined)
     storageRmMock.mockResolvedValue(undefined)

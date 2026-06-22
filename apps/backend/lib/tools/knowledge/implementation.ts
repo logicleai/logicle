@@ -32,7 +32,7 @@ const fetchFileEntry = (id: string): Promise<FileDbRow | undefined> =>
       'File.createdAt as createdAt',
       'File.fileBlobId as fileBlobId',
       'FileBlob.size as size',
-      'FileBlob.encrypted as encrypted',
+      'FileBlob.encryption as encryption',
     ])
     .where('File.id', '=', `${id}`)
     .executeTakeFirst() as Promise<FileDbRow | undefined>

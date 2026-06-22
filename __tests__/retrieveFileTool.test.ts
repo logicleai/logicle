@@ -46,7 +46,7 @@ describe('file-manager read_file', () => {
       name: 'note.txt',
       type: 'text/plain',
       path: 'files/note.txt',
-      encrypted: 0,
+      encryption: null,
       size: 10,
     }
     executeTakeFirst.mockResolvedValue(fileEntry)
@@ -78,7 +78,7 @@ describe('file-manager read_file', () => {
       name: 'bin.dat',
       type: 'application/octet-stream',
       path: 'files/bin.dat',
-      encrypted: 1,
+      encryption: 'pgp',
       size: 3,
     }
     executeTakeFirst.mockResolvedValue(fileEntry)
@@ -101,7 +101,7 @@ describe('file-manager read_file', () => {
     })
 
     expect(result).toEqual({ type: 'text', value: Buffer.from([1, 2, 3]).toString('base64') })
-    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, true)
+    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, 'pgp')
   })
 
   test('denies read_file when the caller cannot access the file', async () => {
@@ -110,7 +110,7 @@ describe('file-manager read_file', () => {
       name: 'private.txt',
       type: 'text/plain',
       path: 'files/private.txt',
-      encrypted: 0,
+      encryption: null,
       size: 10,
     }
     executeTakeFirst.mockResolvedValue(fileEntry)

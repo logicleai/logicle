@@ -79,7 +79,7 @@ class FileAnalysisRuntime {
       logger.info('File analysis: starting', { fileId, mimeType: file.type })
 
       const { storage } = await import('@/lib/storage')
-      const buffer = await storage.readBuffer(file.path, !!file.encrypted)
+      const buffer = await storage.readBuffer(file.path, file.encryption)
       const payload = await getFileAnalyzerRuntime().analyzeBuffer(buffer, file.type)
       logger.info('File analysis: complete', { fileId, kind: payload.kind })
       const extractedText = payload.extractedText
@@ -90,7 +90,7 @@ class FileAnalysisRuntime {
         await storage.writeBuffer(
           extractedTextPath,
           Buffer.from(extractedText, 'utf-8'),
-          !!file.encrypted
+          file.encryption
         )
       }
       await completeFileAnalysis(
@@ -157,7 +157,7 @@ export const readExtractedTextFromAnalysis = async (
     const { storage } = await import('@/lib/storage')
     const textBuffer = await storage.readBuffer(
       analysis.payload.extractedTextPath,
-      !!file.encrypted
+      file.encryption
     )
     return textBuffer.toString('utf-8')
   } catch (error) {

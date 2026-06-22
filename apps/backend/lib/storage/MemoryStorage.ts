@@ -1,4 +1,5 @@
 import { BaseStorage } from './api'
+import type { StorageEncryption, StorageReadOptions } from './api'
 import { bufferToReadableStream } from './utils'
 
 export class MemoryStorage extends BaseStorage {
@@ -10,13 +11,19 @@ export class MemoryStorage extends BaseStorage {
 
   async readStream(
     path: string,
-    _encrypted?: boolean,
-    _options?: { expectedSizeBytes?: number; bypassCache?: boolean }
+    _encryption: StorageEncryption,
+    options?: StorageReadOptions
   ): Promise<ReadableStream<Uint8Array>> {
-    return bufferToReadableStream(this.map[path])
+    const buffer = this.map[path]
+    if (typeof options?.rangeStart === 'number' || typeof options?.rangeEnd === 'number') {
+      const start = options.rangeStart ?? 0
+      const end = options.rangeEnd === undefined ? buffer.length : options.rangeEnd + 1
+      return bufferToReadableStream(buffer.subarray(start, end))
+    }
+    return bufferToReadableStream(buffer)
   }
 
-  async writeStream(path: string, stream: ReadableStream<Uint8Array>) {
+  async writeStream(path: string, stream: ReadableStream<Uint8Array>, _encryption: StorageEncryption) {
     const chunks: Buffer[] = []
     const reader = stream.getReader()
     for (;;) {

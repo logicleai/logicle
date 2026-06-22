@@ -3,6 +3,7 @@ import type { FileDbRow } from '@/backend/models/file'
 import type { FileOwnerType } from '@/db/schema'
 import env from '@/lib/env'
 import { storage } from '@/lib/storage'
+import { getConfiguredFileEncryption, isFileEncrypted } from '@/lib/storage/encryption'
 import { nanoid } from 'nanoid'
 import { createHash } from 'node:crypto'
 
@@ -32,11 +33,11 @@ const getFileWithId = async (id: string): Promise<FileDbRow | undefined> => {
   const blob = row.fileBlobId
     ? await db
         .selectFrom('FileBlob')
-        .select(['size', 'encrypted'])
+        .select(['size', 'encryption'])
         .where('id', '=', row.fileBlobId)
         .executeTakeFirst()
     : undefined
-  return { ...row, size: blob?.size, encrypted: blob?.encrypted }
+  return { ...row, size: blob?.size, encryption: blob?.encryption ?? null }
 }
 
 /**
@@ -51,12 +52,13 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<Fi
   const storagePath = `${blobId}-${sanitizePathSegment(params.name)}`
   let fileBlob = await db
     .selectFrom('FileBlob')
-    .select(['id', 'contentHash', 'path', 'type', 'size', 'encrypted', 'createdAt'])
+    .select(['id', 'contentHash', 'path', 'type', 'size', 'encryption', 'createdAt'])
     .where('contentHash', '=', contentHash)
     .executeTakeFirst()
 
   if (!fileBlob) {
-    await storage.writeBuffer(storagePath, Buffer.from(params.content), env.fileStorage.encryptFiles)
+    const fileEncryption = getConfiguredFileEncryption()
+    await storage.writeBuffer(storagePath, Buffer.from(params.content), fileEncryption)
 
     await db
       .insertInto('FileBlob')
@@ -66,7 +68,7 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<Fi
         path: storagePath,
         type: params.mimeType,
         size: params.content.byteLength,
-        encrypted: env.fileStorage.encryptFiles ? 1 : 0,
+        encryption: fileEncryption,
         createdAt: timestamp,
       })
       .onConflict((oc) => oc.columns(['contentHash']).doNothing())
@@ -74,7 +76,7 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<Fi
 
     fileBlob = await db
       .selectFrom('FileBlob')
-      .select(['id', 'contentHash', 'path', 'type', 'size', 'encrypted', 'createdAt'])
+      .select(['id', 'contentHash', 'path', 'type', 'size', 'encryption', 'createdAt'])
       .where('contentHash', '=', contentHash)
       .executeTakeFirst()
 
@@ -101,7 +103,7 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<Fi
         size: fileBlob.size,
         uploaded: 1,
         createdAt: timestamp,
-        encrypted: fileBlob.encrypted,
+        encrypted: isFileEncrypted(fileBlob.encryption) ? 1 : 0,
         fileBlobId: fileBlob.id,
         ownerType: params.owner.ownerType,
         ownerId: params.owner.ownerId,

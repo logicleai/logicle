@@ -271,7 +271,7 @@ async function convertMcpSpecToToolFunctions(
           if (!fileEntry) {
             return { type: 'error-text' as const, value: `File not found: ${fileId}` }
           }
-          const fileBytes = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+          const fileBytes = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
           const { file_id: _ignored, ...restParams } = callArgs
           callArgs = {
             ...restParams,

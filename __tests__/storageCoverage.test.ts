@@ -3,7 +3,6 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { AesEncryptingStorage } from '@/ee/AesEncryptingStorage'
 import { CachingStorage } from '@/lib/storage/CachingStorage'
 import { MemoryStorage } from '@/lib/storage/MemoryStorage'
 import { bufferToReadableStream, collectStreamToBuffer } from '@/lib/storage/utils'
@@ -23,7 +22,7 @@ afterEach(() => {
 describe('apps/backend/lib/storage/MemoryStorage', () => {
   test('removes stored buffers', async () => {
     const storage = new MemoryStorage()
-    await storage.writeBuffer('test', Buffer.from('value'), false)
+    await storage.writeBuffer('test', Buffer.from('value'), null)
 
     await storage.rm('test')
 
@@ -100,7 +99,7 @@ describe('backpressure', () => {
     vi.spyOn(inner_storage, 'readStream').mockResolvedValue(inner)
 
     const cachingStorage = new CachingStorage(inner_storage, 10)
-    const out = await cachingStorage.readStream('x', false)
+    const out = await cachingStorage.readStream('x', null)
     const reader = out.getReader()
 
     // Yield without reading — inner stream must not have been pre-drained
@@ -113,26 +112,6 @@ describe('backpressure', () => {
     await reader.cancel()
   })
 
-  test('AesEncryptingStorage does not consume inner stream until consumer reads', async () => {
-    const chunks = Array.from({ length: 10 }, (_, i) => new Uint8Array(16).fill(i))
-    const { stream: inner, pullCount } = makeCountedStream(chunks)
-
-    const inner_storage = new MemoryStorage()
-    vi.spyOn(inner_storage, 'readStream').mockResolvedValue(inner)
-
-    const aesStorage = await AesEncryptingStorage.create(inner_storage, 'key')
-    const out = await aesStorage.readStream('path', true)
-    const reader = out.getReader()
-
-    // Yield without reading
-    await new Promise<void>((r) => setImmediate(r))
-    expect(pullCount()).toBeLessThan(chunks.length)
-
-    const first = await reader.read()
-    expect(first.done).toBe(false)
-
-    await reader.cancel()
-  })
 })
 
 describe('apps/backend/lib/storage/FsStorage constructor and logging', () => {
@@ -167,35 +146,11 @@ describe('apps/backend/lib/storage/FsStorage constructor and logging', () => {
     const storage = new FsStorage(tempDir)
     const payload = Buffer.alloc(1024 * 1024 + 5, 8)
 
-    await storage.writeStream('large.bin', bufferToReadableStream(payload))
+    await storage.writeStream('large.bin', bufferToReadableStream(payload), null)
 
     expect(debugSpy).toHaveBeenCalledWith(`Read ${1024 * 1024}`)
     expect(debugSpy).toHaveBeenCalledWith(`Total read = ${payload.length}`)
     await fs.promises.rm(tempDir, { recursive: true, force: true })
-  })
-})
-
-describe('apps/backend/ee/AesEncryptingStorage', () => {
-  test('delegates rm to inner storage', async () => {
-    const inner = new MemoryStorage()
-    const rmSpy = vi.spyOn(inner, 'rm')
-    const storage = await AesEncryptingStorage.create(inner, password)
-
-    await storage.rm('path-to-remove')
-
-    expect(rmSpy).toHaveBeenCalledWith('path-to-remove')
-  })
-
-  test('surfaces stream failures from encrypted processing', async () => {
-    const storage = await AesEncryptingStorage.create(new MemoryStorage(), password)
-    const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        controller.enqueue(new Uint8Array([1, 2, 3]))
-        controller.error(new Error('boom'))
-      },
-    })
-
-    await expect(storage.writeStream('boom', stream, true)).rejects.toThrow('boom')
   })
 })
 
@@ -258,7 +213,7 @@ describe('apps/backend/lib/storage/S3Storage', () => {
       },
     })
 
-    await storage.writeStream('file.bin', bufferToReadableStream(Buffer.from('data')))
+    await storage.writeStream('file.bin', bufferToReadableStream(Buffer.from('data')), null)
     expect(uploadCalls[0]).toMatchObject({
       client: { send },
       params: {
@@ -271,7 +226,7 @@ describe('apps/backend/lib/storage/S3Storage', () => {
     expect(info).toHaveBeenCalledWith('Successfully uploaded file.bin to bucket bucket-name')
 
     done.mockRejectedValueOnce(new Error('upload failed'))
-    await expect(storage.writeStream('broken.bin', bufferToReadableStream(Buffer.from('x')))).rejects.toThrow(
+    await expect(storage.writeStream('broken.bin', bufferToReadableStream(Buffer.from('x')), null)).rejects.toThrow(
       'upload failed'
     )
     expect(info).toHaveBeenCalledWith(
@@ -306,29 +261,44 @@ describe('apps/backend/lib/storage/S3Storage', () => {
         transformToWebStream: vi.fn().mockReturnValue(webStream),
       },
     })
-    await expect(collectStreamToBuffer(await storage.readStream('read.bin'))).resolves.toEqual(
+    await expect(collectStreamToBuffer(await storage.readStream('read.bin', null))).resolves.toEqual(
       Buffer.from('downloaded')
     )
 
+    const rangeWebStream = bufferToReadableStream(Buffer.from('nged'))
+    send.mockResolvedValueOnce({
+      Body: {
+        transformToWebStream: vi.fn().mockReturnValue(rangeWebStream),
+      },
+    })
+    await expect(
+      collectStreamToBuffer(await storage.readStream('range.bin', null, { rangeStart: 2, rangeEnd: 5 }))
+    ).resolves.toEqual(Buffer.from('nged'))
+    expect(send.mock.calls.at(-1)?.[0].params).toMatchObject({
+      Bucket: 'bucket-name',
+      Key: 'range.bin',
+      Range: 'bytes=2-5',
+    })
+
     send.mockResolvedValueOnce({ Body: undefined })
-    await expect(storage.readStream('nobody.bin')).rejects.toThrow('Failed reading S3 object nobody.bin: No body')
+    await expect(storage.readStream('nobody.bin', null)).rejects.toThrow('Failed reading S3 object nobody.bin: No body')
     expect(error).toHaveBeenCalledWith('Failed reading S3 object', expect.any(Error))
 
     const readError = new Error('read failed')
     send.mockRejectedValueOnce(readError)
-    await expect(storage.readStream('broken-read.bin')).rejects.toThrow('read failed')
+    await expect(storage.readStream('broken-read.bin', null)).rejects.toThrow('read failed')
     expect(error).toHaveBeenCalledWith('Failed reading S3 object', readError)
   })
 })
 
 describe('apps/backend/lib/storage/index', () => {
-  test('builds fs+aes+caching storage from env', async () => {
+  test('builds fs+pgp+caching storage from env', async () => {
     vi.doMock('@/lib/env', () => ({
       default: {
         fileStorage: {
           location: '/tmp/storage',
           cacheSizeInMb: 4,
-          encryptionProvider: 'aes',
+          encryptionProvider: 'pgp',
           encryptionKey: 'secret',
         },
       },
@@ -336,9 +306,9 @@ describe('apps/backend/lib/storage/index', () => {
 
     const cachingInstances: any[] = []
     const fsInstances: any[] = []
-    const aesInstances: any[] = []
+    const pgpInstances: any[] = []
     const fakeFsStorage = { kind: 'fs' }
-    const fakeAesStorage = { kind: 'aes' }
+    const fakePgpStorage = { kind: 'pgp' }
 
     vi.doMock('@/lib/storage/FsStorage', () => ({
       FsStorage: vi.fn().mockImplementation((location) => {
@@ -346,16 +316,16 @@ describe('apps/backend/lib/storage/index', () => {
         return fakeFsStorage
       }),
     }))
-    vi.doMock('@/ee/AesEncryptingStorage', () => ({
-      AesEncryptingStorage: {
+    vi.doMock('@/ee/PgpEncryptingStorage', () => ({
+      PgpEncryptingStorage: {
         create: vi.fn().mockImplementation(async (storage, key) => {
-          aesInstances.push({ storage, key })
-          return fakeAesStorage
+          pgpInstances.push({ storage, key })
+          return fakePgpStorage
         }),
       },
     }))
-    vi.doMock('@/ee/PgpEncryptingStorage', () => ({
-      PgpEncryptingStorage: {
+    vi.doMock('@/ee/AeadEncryptingStorage', () => ({
+      AeadEncryptingStorage: {
         create: vi.fn(),
       },
     }))
@@ -373,8 +343,8 @@ describe('apps/backend/lib/storage/index', () => {
     const module = await import('@/backend/lib/storage')
 
     expect(fsInstances).toEqual(['/tmp/storage'])
-    expect(aesInstances).toEqual([{ storage: fakeFsStorage, key: 'secret' }])
-    expect(cachingInstances).toEqual([{ kind: 'cache', storage: fakeAesStorage, size: 4 }])
+    expect(pgpInstances).toEqual([{ storage: fakeFsStorage, key: 'secret' }])
+    expect(cachingInstances).toEqual([{ kind: 'cache', storage: fakePgpStorage, size: 4 }])
     expect(module.storage).toEqual(cachingInstances[0])
   })
 
@@ -409,8 +379,8 @@ describe('apps/backend/lib/storage/index', () => {
         }),
       },
     }))
-    vi.doMock('@/ee/AesEncryptingStorage', () => ({
-      AesEncryptingStorage: {
+    vi.doMock('@/ee/AeadEncryptingStorage', () => ({
+      AeadEncryptingStorage: {
         create: vi.fn(),
       },
     }))
@@ -428,13 +398,69 @@ describe('apps/backend/lib/storage/index', () => {
     expect(module.storage).toEqual(fakePgpStorage)
   })
 
+  test('builds fs+pgp+aead storage from env', async () => {
+    vi.doMock('@/lib/env', () => ({
+      default: {
+        fileStorage: {
+          location: '/tmp/storage',
+          cacheSizeInMb: 0,
+          encryptionProvider: 'aead',
+          encryptionKey: 'secret',
+        },
+      },
+    }))
+
+    const fsInstances: any[] = []
+    const pgpInstances: any[] = []
+    const aeadInstances: any[] = []
+    const fakeFsStorage = { kind: 'fs' }
+    const fakePgpStorage = { kind: 'pgp' }
+    const fakeAeadStorage = { kind: 'aead' }
+
+    vi.doMock('@/lib/storage/FsStorage', () => ({
+      FsStorage: vi.fn().mockImplementation((location) => {
+        fsInstances.push(location)
+        return fakeFsStorage
+      }),
+    }))
+    vi.doMock('@/ee/PgpEncryptingStorage', () => ({
+      PgpEncryptingStorage: {
+        create: vi.fn().mockImplementation(async (storage, key) => {
+          pgpInstances.push({ storage, key })
+          return fakePgpStorage
+        }),
+      },
+    }))
+    vi.doMock('@/ee/AeadEncryptingStorage', () => ({
+      AeadEncryptingStorage: {
+        create: vi.fn().mockImplementation(async (storage, key) => {
+          aeadInstances.push({ storage, key })
+          return fakeAeadStorage
+        }),
+      },
+    }))
+    vi.doMock('@/lib/storage/CachingStorage', () => ({
+      CachingStorage: vi.fn(),
+    }))
+    vi.doMock('@/lib/storage/S3Storage', () => ({
+      S3Storage: vi.fn(),
+    }))
+
+    const module = await import('@/backend/lib/storage')
+
+    expect(fsInstances).toEqual(['/tmp/storage'])
+    expect(pgpInstances).toEqual([{ storage: fakeFsStorage, key: 'secret' }])
+    expect(aeadInstances).toEqual([{ storage: fakePgpStorage, key: 'secret' }])
+    expect(module.storage).toEqual(fakeAeadStorage)
+  })
+
   test('throws for missing storage location', async () => {
     vi.doMock('@/lib/env', () => ({
       default: {
         fileStorage: {
           location: '',
           cacheSizeInMb: 0,
-          encryptionProvider: 'aes',
+          encryptionProvider: 'pgp',
           encryptionKey: 'secret',
         },
       },

@@ -1,5 +1,6 @@
 import { db } from '@/db/database'
 import { storage } from '@/lib/storage'
+import { isFileEncrypted, type StoredFileEncryption } from '@/lib/storage/encryption'
 import { nanoid } from 'nanoid'
 
 /**
@@ -13,7 +14,7 @@ export const finalizeUploadedFile = async (params: {
   filePath: string
   fileType: string
   fileSize: number
-  fileEncrypted: 0 | 1
+  fileEncrypted: StoredFileEncryption | null
   contentHash: string
 }): Promise<void> => {
   const timestamp = new Date().toISOString()
@@ -27,7 +28,7 @@ export const finalizeUploadedFile = async (params: {
       path: params.filePath,
       type: params.fileType,
       size: params.fileSize,
-      encrypted: params.fileEncrypted,
+      encryption: params.fileEncrypted,
       createdAt: timestamp,
     })
     .onConflict((oc) => oc.columns(['contentHash']).doNothing())
@@ -52,7 +53,7 @@ export const finalizeUploadedFile = async (params: {
       path: blob.path,
       type: blob.type,
       size: blob.size,
-      encrypted: blob.encrypted,
+      encrypted: isFileEncrypted(blob.encryption) ? 1 : 0,
     } as any)
     .where('id', '=', params.fileId)
     .execute()

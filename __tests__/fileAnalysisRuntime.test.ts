@@ -52,7 +52,7 @@ const fileEntry = {
   size: 123,
   fileBlobId: 'blob-1',
   createdAt: new Date().toISOString(),
-  encrypted: 0 as const,
+  encryption: null,
 }
 
 const readyAnalysis: dto.FileAnalysis = {
@@ -227,11 +227,11 @@ describe('fileAnalysis runtime helpers', () => {
     const { fileAnalysisRuntime } = await import('@/lib/file-analysis')
     await fileAnalysisRuntime.submit(fileEntry.id)
 
-    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, false)
+    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, null)
     expect(writeBuffer).toHaveBeenCalledWith(
       `${fileEntry.path}.analysis-v1.txt`,
       Buffer.from('hello world', 'utf-8'),
-      false
+      null
     )
     expect(completeFileAnalysis).toHaveBeenCalledWith(
       fileEntry.id,

@@ -8,6 +8,7 @@ import { finalizeUploadedFile } from '@/backend/lib/files/upload-dedup'
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import env from '@/lib/env'
+import { getConfiguredFileEncryption } from '@/lib/storage/encryption'
 
 
 // A synchronized tee, i.e. faster reader has to wait
@@ -104,7 +105,7 @@ export const PUT = operation({
     )
 
     try {
-      await storage.writeStream(file.path, hashingStream, env.fileStorage.encryptFiles)
+      await storage.writeStream(file.path, hashingStream, getConfiguredFileEncryption())
     } catch (e) {
       if (clientDisconnected) {
         logger.error('Upload aborted by user')
@@ -121,7 +122,7 @@ export const PUT = operation({
       filePath: file.path,
       fileType: file.type,
       fileSize: byteSize,
-      fileEncrypted: env.fileStorage.encryptFiles ? 1 : 0,
+      fileEncrypted: getConfiguredFileEncryption(),
       contentHash,
     })
 
@@ -139,7 +140,7 @@ export const PUT = operation({
         'File.createdAt as createdAt',
         'File.fileBlobId as fileBlobId',
         'FileBlob.size as size',
-        'FileBlob.encrypted as encrypted',
+        'FileBlob.encryption as encryption',
       ])
       .where('File.id', '=', params.fileId)
       .executeTakeFirst()
@@ -158,7 +159,7 @@ export const GET = operation({
     const file = await db
       .selectFrom('File')
       .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
-      .select(['File.path as path', 'File.type as type', 'FileBlob.size as size', 'FileBlob.encrypted as encrypted'])
+      .select(['File.path as path', 'File.type as type', 'FileBlob.size as size', 'FileBlob.encryption as encryption'])
       .where('File.id', '=', params.fileId)
       .executeTakeFirst()
     if (!file) {
@@ -167,7 +168,7 @@ export const GET = operation({
     if (!(await canAccessFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
       return forbidden()
     }
-    const fileContent = await storage.readStream(file.path, !!file.encrypted, {
+    const fileContent = await storage.readStream(file.path, file.encryption, {
       expectedSizeBytes: file.size ?? undefined,
     })
     return new Response(fileContent, {

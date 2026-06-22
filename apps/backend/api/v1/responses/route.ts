@@ -176,7 +176,7 @@ export const POST = operation({
                   }
                   const fileContent = await storage.readBuffer(
                     fileEntry.path,
-                    !!fileEntry.encrypted
+                    fileEntry.encryption
                   )
                   if (fileEntry.type.startsWith('image/')) {
                     response.parts.push({

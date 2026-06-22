@@ -245,7 +245,7 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     if (!fileEntry) {
       throw new Error(`Tool invocation required non existing file: ${fileId}`)
     }
-    const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
     return {
       data: Buffer.from(ensureABView(fileContent)),
       fileName: fileEntry.name || 'upload.png',

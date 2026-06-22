@@ -1,5 +1,5 @@
 import { LRUCache } from 'lru-cache'
-import { Storage, BaseStorage, StorageReadOptions } from './api'
+import { Storage, BaseStorage, StorageReadOptions, StorageEncryption } from './api'
 import { bufferToReadableStream } from './utils'
 import { logger } from '@/lib/logging'
 
@@ -21,11 +21,13 @@ export class CachingStorage extends BaseStorage {
 
   async readStream(
     path: string,
-    encrypted: boolean,
+    encrypted: StorageEncryption,
     options?: StorageReadOptions
   ): Promise<ReadableStream<Uint8Array>> {
     const shouldBypassCache =
       options?.bypassCache === true ||
+      typeof options?.rangeStart === 'number' ||
+      typeof options?.rangeEnd === 'number' ||
       (typeof options?.expectedSizeBytes === 'number' &&
         options.expectedSizeBytes > this.maxCacheableItemSizeBytes)
     if (shouldBypassCache) {
@@ -40,7 +42,11 @@ export class CachingStorage extends BaseStorage {
     return this.sendToCacheStream(path, innerStream)
   }
 
-  writeStream(path: string, stream: ReadableStream<Uint8Array>, encrypted: boolean): Promise<void> {
+  writeStream(
+    path: string,
+    stream: ReadableStream<Uint8Array>,
+    encrypted: StorageEncryption
+  ): Promise<void> {
     const cacheWritingStream = this.sendToCacheStream(path, stream)
     return this.innerStorage.writeStream(path, cacheWritingStream, encrypted)
   }

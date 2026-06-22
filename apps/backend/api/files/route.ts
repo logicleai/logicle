@@ -4,6 +4,7 @@ import { canAccess } from '@/backend/lib/files/authorization'
 import { addFile } from '@/models/file'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
+import { getConfiguredFileEncryption } from '@/lib/storage/encryption'
 
 export const POST = operation({
   name: 'Create file',
@@ -18,7 +19,8 @@ export const POST = operation({
     if (!(await canAccess({ userId: session.userId, userRole: session.userRole }, owner.ownerType, owner.ownerId))) {
       return forbidden()
     }
-    const created = await addFile(bodyWithoutOwner, path, env.fileStorage.encryptFiles, owner)
+    const fileEncryption = getConfiguredFileEncryption()
+    const created = await addFile(bodyWithoutOwner, path, fileEncryption, owner)
     return ok(
       {
         id: created.id,
@@ -27,7 +29,7 @@ export const POST = operation({
         type: created.type,
         size: created.size ?? body.size,
         createdAt: created.createdAt,
-        encrypted: created.encrypted ?? (env.fileStorage.encryptFiles ? 1 : 0),
+        encryption: created.encryption ?? fileEncryption,
       },
       201
     )

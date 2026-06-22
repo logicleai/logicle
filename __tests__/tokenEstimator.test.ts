@@ -79,7 +79,7 @@ const makePdfFile = (id: string) => ({
   type: 'application/pdf',
   size: 123,
   createdAt: new Date().toISOString(),
-  encrypted: 0 as const,
+  encryption: null,
 })
 
 const makeImageFile = (id: string) => ({
@@ -90,7 +90,7 @@ const makeImageFile = (id: string) => ({
   type: 'image/png',
   size: 456,
   createdAt: new Date().toISOString(),
-  encrypted: 0 as const,
+  encryption: null,
 })
 
 const countUserAttachmentDescriptorTokens = (model: Parameters<typeof countTextForModel>[0], attachments: dto.Attachment[]) =>
@@ -742,7 +742,7 @@ describe('estimateInputTokens', () => {
           size: 20,
           fileBlobId: `blob-${fileId}`,
           createdAt: new Date().toISOString(),
-          encrypted: 0 as const,
+          encryption: null,
         }
       }
       return makePdfFile(fileId)
@@ -930,7 +930,7 @@ describe('estimateInputTokens', () => {
       size: 20,
       fileBlobId: 'blob-text-attachment',
       createdAt: new Date().toISOString(),
-      encrypted: 0 as const,
+      encryption: null,
     }
     getFileWithId.mockResolvedValue(file)
     extractFromFile.mockResolvedValue('notes attachment text')
