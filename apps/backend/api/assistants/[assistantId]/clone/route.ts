@@ -7,6 +7,7 @@ import {
   createAssistantWithId,
   getAssistant,
   getAssistantVersion,
+  parseContextCompression,
 } from '@/models/assistant'
 import { getImageAsDataUri } from '@/models/images'
 import { getUserWorkspaceMemberships } from '@/models/user'
@@ -67,9 +68,7 @@ export const POST = operation({
       subAssistants: assistantVersion.subAssistants
         ? JSON.parse(assistantVersion.subAssistants)
         : undefined,
-      contextCompression: assistantVersion.contextCompression
-        ? (JSON.parse(assistantVersion.contextCompression) as dto.ContextCompressionConfig)
-        : null,
+      contextCompression: parseContextCompression(assistantVersion.contextCompression),
     }
     const created = await createAssistantWithId(newAssistantId, assistantDraft, session.userId, false)
     return ok(created, 201)

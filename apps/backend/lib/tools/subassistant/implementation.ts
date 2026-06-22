@@ -10,6 +10,7 @@ import {
   canUserAccessAssistant,
   getPublishedAssistantVersion,
   assistantVersionFiles,
+  parseContextCompression,
 } from '@/models/assistant'
 import { db } from 'db/database'
 import { logger } from '@/lib/logging'
@@ -120,9 +121,7 @@ export class SubAssistantTool implements ToolImplementation {
                 | 'medium'
                 | 'high'
                 | null,
-              contextCompression: assistantVersion.contextCompression
-                ? (JSON.parse(assistantVersion.contextCompression) as import('@/types/dto').ContextCompressionConfig)
-                : null,
+              contextCompression: parseContextCompression(assistantVersion.contextCompression),
             }
 
             // Pass the parent conversationId and rootOwner so that any files
