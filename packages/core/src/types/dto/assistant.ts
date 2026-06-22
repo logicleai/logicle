@@ -30,6 +30,18 @@ export const sharingSchema = z
   .discriminatedUnion('type', [allSharingSchema, workspaceSharingSchema])
   .meta({ id: 'AssistantSharing' })
 
+export const contextCompressionPresetSchema = z.enum(['conservative', 'aggressive'])
+export type ContextCompressionPreset = z.infer<typeof contextCompressionPresetSchema>
+
+export const contextCompressionConfigSchema = z
+  .object({
+    preset: contextCompressionPresetSchema,
+    triggerAtTokens: z.number().int().positive().optional(),
+  })
+  .nullable()
+
+export type ContextCompressionConfig = z.infer<typeof contextCompressionConfigSchema>
+
 /** Matches your AssistantVersion interface */
 export const assistantVersionSchema = z
   .object({
@@ -45,6 +57,7 @@ export const assistantVersionSchema = z
     temperature: z.number(),
     tokenLimit: z.number(),
     reasoning_effort: z.enum(['none', 'minimal', 'low', 'medium', 'high', 'xhigh']).nullable(),
+    contextCompression: contextCompressionConfigSchema,
     tags: z.string(),
     prompts: z.string(),
     createdAt: iso8601UtcDateTimeSchema,

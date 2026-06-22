@@ -67,6 +67,9 @@ export const POST = operation({
       subAssistants: assistantVersion.subAssistants
         ? JSON.parse(assistantVersion.subAssistants)
         : undefined,
+      contextCompression: assistantVersion.contextCompression
+        ? (JSON.parse(assistantVersion.contextCompression) as dto.ContextCompressionConfig)
+        : null,
     }
     const created = await createAssistantWithId(newAssistantId, assistantDraft, session.userId, false)
     return ok(created, 201)

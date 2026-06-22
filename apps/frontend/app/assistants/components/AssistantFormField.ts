@@ -12,6 +12,15 @@ export const modelSchema = z.object({
   backendId: z.string(),
 })
 
+export const contextCompressionPresetSchema = z.enum(['conservative', 'aggressive'])
+
+export const contextCompressionConfigSchema = z
+  .object({
+    preset: contextCompressionPresetSchema,
+    triggerAtTokens: z.number().int().positive().optional(),
+  })
+  .nullable()
+
 export const formSchema = z.object({
   name: z.string().min(2, { message: 'name must be at least 2 characters.' }),
   iconUri: z.string().nullable(),
@@ -21,6 +30,7 @@ export const formSchema = z.object({
   reasoning_effort: z.enum(['none', 'minimal', 'low', 'medium', 'high', 'xhigh']).nullable(),
   tokenLimit: z.coerce.number().min(256),
   temperature: z.coerce.number().min(0).max(1),
+  contextCompression: contextCompressionConfigSchema,
   tools: z.string().array(),
   files: fileSchema.array(),
   tags: z.string().array(),

@@ -3,6 +3,15 @@ import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { dtoMessageFromDbMessage } from './utils'
 
+function parseContextCompression(raw: string | null | undefined): dto.ContextCompressionConfig {
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as dto.ContextCompressionConfig
+  } catch {
+    return null
+  }
+}
+
 export const createConversation = async (
   ownerId: string,
   conversation: dto.InsertableConversation
@@ -64,6 +73,7 @@ export const getConversationWithBackendAssistant = async (
       'AssistantVersion.model as assistantModel',
       'AssistantVersion.temperature as assistantTemperature',
       'AssistantVersion.reasoning_effort as assistantReasoningEffort',
+      'AssistantVersion.contextCompression as assistantContextCompression',
       'Assistant.deleted as assistantDeleted',
       'Backend.id as backendId',
       'Backend.provisioned as backendProvisioned',
@@ -82,6 +92,7 @@ export const getConversationWithBackendAssistant = async (
     assistantModel,
     assistantTemperature,
     assistantReasoningEffort,
+    assistantContextCompression,
     assistantDeleted,
     backendId,
     backendProvisioned,
@@ -100,6 +111,7 @@ export const getConversationWithBackendAssistant = async (
       model: assistantModel,
       temperature: assistantTemperature,
       reasoning_effort: assistantReasoningEffort,
+      contextCompression: parseContextCompression(assistantContextCompression),
       deleted: assistantDeleted,
     },
     backend: {

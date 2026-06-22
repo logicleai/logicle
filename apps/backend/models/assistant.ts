@@ -14,6 +14,19 @@ import {
 } from '@/lib/userSecrets/constants'
 import { getMcpToolAvailability } from '@/lib/tools/schemas'
 
+function parseContextCompression(raw: string | null | undefined): dto.ContextCompressionConfig {
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as dto.ContextCompressionConfig
+  } catch {
+    return null
+  }
+}
+
+function serializeContextCompression(config: dto.ContextCompressionConfig): string | null {
+  return config ? JSON.stringify(config) : null
+}
+
 function toAssistantFileAssociation(
   assistantVersionId: string,
   files: dto.AssistantFile[]
@@ -78,6 +91,7 @@ export const getAssistantVersions = async (
     const { draftVersionId, publishedVersionId, ...props } = r
     return {
       ...props,
+      contextCompression: parseContextCompression(props.contextCompression),
       published: publishedVersionId === props.id,
       current: draftVersionId === props.id,
     }
@@ -95,6 +109,7 @@ export const getAssistantDraft = async (
     owner: assistant.owner,
     provisioned: !!assistant.provisioned,
     hidden: !!assistant.hidden,
+    contextCompression: parseContextCompression(assistantWithoutImage.contextCompression),
     iconUri: assistantVersion.imageId ? `/api/images/${assistantVersion.imageId}` : null,
     tools: await assistantVersionEnabledTools(assistantVersion.id),
     files: await assistantVersionFiles(assistantVersion.id),
@@ -442,6 +457,7 @@ export const createAssistantWithId = async (
     prompts: JSON.stringify(assistant.prompts),
     subAssistants: dtoSubAssistants ? JSON.stringify(dtoSubAssistants) : null,
     imageId: imageId,
+    contextCompression: serializeContextCompression(assistant.contextCompression),
   }
 
   await db
@@ -639,6 +655,10 @@ export const updateAssistantVersion = async (
     prompts: JSON.stringify(assistant.prompts),
     subAssistants:
       dtoSubAssistants !== undefined ? JSON.stringify(dtoSubAssistants) : undefined,
+    contextCompression:
+      assistant.contextCompression !== undefined
+        ? serializeContextCompression(assistant.contextCompression)
+        : undefined,
   }
   return db
     .updateTable('AssistantVersion')

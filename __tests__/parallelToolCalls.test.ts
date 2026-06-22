@@ -136,6 +136,7 @@ function makeAssistant(tools: Record<string, ToolFunction>) {
     temperature: 0,
     tokenLimit: 4096,
     reasoning_effort: null,
+    contextCompression: null,
   }
   const llmModel: LlmModel = {
     id: 'gpt-4',
