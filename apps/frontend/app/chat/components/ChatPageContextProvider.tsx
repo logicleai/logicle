@@ -230,6 +230,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
             })
           )
           void mutate('/api/conversations')
+          void mutate('/api/me/token-rate-limit')
         },
         onFailed(error) {
           if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {

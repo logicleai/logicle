@@ -2441,6 +2441,20 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/InsertableUserSecret"
+  /api/me/token-rate-limit:
+    get:
+      summary: Get token rate limit status
+      description: Returns the current token usage window and rate limit status for
+        the calling user.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenRateLimit"
+      security:
+        - bearerAuth: []
   /api/me/tools:
     get:
       summary: List tools for user
@@ -6023,6 +6037,45 @@ components:
         - value
       additionalProperties: false
       id: InsertableUserSecret
+    TokenRateLimit:
+      anyOf:
+        - type: object
+          properties:
+            enabled:
+              type: boolean
+              const: true
+            accumulated:
+              type: number
+              description: Tokens used in the current window.
+            threshold:
+              type: number
+              description: Token threshold for the window.
+            windowStart:
+              type: string
+              description: ISO timestamp of the current window start.
+            windowEnd:
+              type: string
+              description: ISO timestamp when the current window expires.
+            exceeded:
+              type: boolean
+              description: Whether accumulated tokens have reached the threshold.
+          required:
+            - enabled
+            - accumulated
+            - threshold
+            - windowStart
+            - windowEnd
+            - exceeded
+          additionalProperties: false
+        - type: object
+          properties:
+            enabled:
+              type: boolean
+              const: false
+          required:
+            - enabled
+          additionalProperties: false
+      id: TokenRateLimit
     AssistantTool:
       type: object
       properties:
