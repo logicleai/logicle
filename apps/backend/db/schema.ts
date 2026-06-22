@@ -390,6 +390,12 @@ export interface TurnMemory {
   createdAt: string
 }
 
+export interface UserTokenWindow {
+  userId: string
+  tokenWindowStart: string
+  tokenWindowAccumulated: number
+}
+
 export interface DB {
   Account: Account
   ApiKey: ApiKey
@@ -426,4 +432,5 @@ export interface DB {
   User: User
   Parameter: Parameter
   UserParameterValue: UserParameterValue
+  UserTokenWindow: UserTokenWindow
 }

@@ -204,6 +204,10 @@ const env = {
     meiliHost: process.env.MEILI_HOST,
     meiliApiKey: process.env.MEILI_API_KEY,
   },
+  rateLimit: {
+    windowSeconds: parseOptionalInt(process.env.RATE_LIMIT_WINDOW_SECONDS),
+    windowTokens: parseOptionalInt(process.env.RATE_LIMIT_WINDOW_TOKENS),
+  },
   textConversion: {
     xlsx: {
       favourExcelJs: process.env.FAVOUR_EXCELJS === '1',

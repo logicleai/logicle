@@ -81,6 +81,7 @@ export const backendRouteModules = [
   { pathname: '/api/me/satellites', load: () => import('@/backend/api/me/satellites/route') },
   { pathname: '/api/me/secrets/[id]', load: () => import('@/backend/api/me/secrets/[id]/route') },
   { pathname: '/api/me/secrets', load: () => import('@/backend/api/me/secrets/route') },
+  { pathname: '/api/me/token-rate-limit', load: () => import('@/backend/api/me/token-rate-limit/route') },
   { pathname: '/api/me/tools', load: () => import('@/backend/api/me/tools/route') },
   { pathname: '/api/oauth/oidc', load: () => import('@/backend/api/oauth/oidc/route') },
   { pathname: '/api/oauth/saml', load: () => import('@/backend/api/oauth/saml/route') },

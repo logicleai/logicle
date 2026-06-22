@@ -15,7 +15,7 @@ import { ConversationWithMessages } from '@/lib/chat/types'
 import { ImageEditorModal } from './ImageEditorModal'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
-import { getActiveChatRun, startChatRun, stopChatRun, subscribeToChatRun } from '@/services/chat'
+import { getActiveChatRun, getTokenRateLimit, startChatRun, stopChatRun, subscribeToChatRun } from '@/services/chat'
 import { createConversation, getConversation, getConversationMessages } from '@/services/conversation'
 import { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
@@ -52,6 +52,11 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
   })
 
   const [imageEditorState, setImageEditorState] = useState<ImageEditorState | null>(null)
+  const [tokenRateLimit, setTokenRateLimit] = useState<dto.TokenRateLimit | null>(null)
+
+  useEffect(() => {
+    void getTokenRateLimit().then((r) => r.data && setTokenRateLimit(r.data))
+  }, [])
 
   const openImageEditor = useCallback(
     (attachment: dto.Attachment, options?: { conversationId?: string; startNewChat?: boolean }) => {
@@ -230,6 +235,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
             })
           )
           void mutate('/api/conversations')
+          void getTokenRateLimit().then((r) => r.data && setTokenRateLimit(r.data))
         },
         onFailed(error) {
           if (abortController.signal.aborted || subscriptionNonceRef.current !== nonce) {
@@ -496,6 +502,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         requestStopActiveRun,
         setSideBarContent,
         openImageEditor,
+        tokenRateLimit,
       }}
     >
       {children}

@@ -24,6 +24,7 @@ export * from './dto/session'
 export * from './dto/usersecret'
 export * from './dto/tokenestimate'
 export * from './dto/docx-export'
+export * from './dto/tokenratelimit'
 
 export interface Account {
   access_token: string | null

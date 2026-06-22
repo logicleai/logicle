@@ -5,7 +5,8 @@ import ChatPageContext from '@/app/chat/components/context'
 import { ChatInputOrApiKey } from './ChatInputOrApiKey'
 import { groupMessages } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { IconArrowDown } from '@tabler/icons-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { IconArrowDown, IconAlertTriangle } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
 import { MessageGroup } from './MessageGroup'
@@ -39,6 +40,7 @@ export const Chat = ({
     state: { selectedConversation, chatStatus, sideBarContent },
     sendMessage,
     setSideBarContent,
+    tokenRateLimit,
   } = useContext(ChatPageContext)
 
   const { t } = useTranslation()
@@ -152,6 +154,17 @@ export const Chat = ({
             </div>
           )}
         </ScrollArea>
+        {tokenRateLimit?.enabled && tokenRateLimit.exceeded && (
+          <Alert variant="destructive" className="rounded-none border-x-0">
+            <IconAlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {t('rate_limit_exceeded_warning', {
+                defaultValue:
+                  'You have reached your token usage limit for this period. Your messages may be restricted.',
+              })}
+            </AlertDescription>
+          </Alert>
+        )}
         <ChatInputOrApiKey
           assistant={assistant}
           chatInput={chatInput}

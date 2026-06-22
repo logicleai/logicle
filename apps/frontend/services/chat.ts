@@ -113,6 +113,10 @@ export const stopChatRun = async (runId: string) => {
   return await post<dto.ChatRun>(`/api/chat/runs/${runId}/stop`)
 }
 
+export const getTokenRateLimit = async () => {
+  return await get<dto.TokenRateLimit>('/api/me/token-rate-limit')
+}
+
 export const subscribeToChatRun = async ({
   runId,
   afterSequence = 0,
