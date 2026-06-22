@@ -48,7 +48,6 @@ export interface ChatPageContextProps {
     attachment: dto.Attachment,
     options?: { conversationId?: string; startNewChat?: boolean }
   ) => void
-  tokenRateLimit?: dto.TokenRateLimit | null
 }
 
 const ChatPageContext = createContext<ChatPageContextProps>(undefined!)

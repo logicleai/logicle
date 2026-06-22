@@ -7,6 +7,7 @@ import { Red_Hat_Display } from 'next/font/google'
 import { Environment, EnvironmentProvider } from './context/environmentProvider'
 import env from '@/lib/env'
 import UserProfileProvider from '@/components/providers/userProfileContext'
+import TokenRateLimitProvider from '@/components/providers/tokenRateLimitContext'
 import SessionRefreshProvider from '@/components/providers/SessionRefreshProvider'
 import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
 import { ChatPageContextProvider } from './chat/components/ChatPageContextProvider'
@@ -109,15 +110,17 @@ export default async function RootLayout({
             <ConfirmationModalContextProvider>
               <Toaster toastOptions={{ duration: 4000 }} />
               <UserProfileProvider>
-                <ClientI18nProvider brand={brand}>
-                  <EnvironmentProvider value={environment}>
-                    <SessionRefreshProvider>
-                      <ActiveWorkspaceProvider>
-                        <ChatPageContextProvider>{children}</ChatPageContextProvider>
-                      </ActiveWorkspaceProvider>
-                    </SessionRefreshProvider>
-                  </EnvironmentProvider>
-                </ClientI18nProvider>
+                <TokenRateLimitProvider>
+                  <ClientI18nProvider brand={brand}>
+                    <EnvironmentProvider value={environment}>
+                      <SessionRefreshProvider>
+                        <ActiveWorkspaceProvider>
+                          <ChatPageContextProvider>{children}</ChatPageContextProvider>
+                        </ActiveWorkspaceProvider>
+                      </SessionRefreshProvider>
+                    </EnvironmentProvider>
+                  </ClientI18nProvider>
+                </TokenRateLimitProvider>
               </UserProfileProvider>
             </ConfirmationModalContextProvider>
           </LayoutConfigProvider>

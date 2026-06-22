@@ -14,6 +14,9 @@ import * as dto from '@/types/dto'
 import { useEnvironment } from '../context/environmentProvider'
 import { useTranslation } from 'react-i18next'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
+import { useTokenRateLimit } from '@/components/providers/tokenRateLimitContext'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { IconAlertTriangle } from '@tabler/icons-react'
 
 const deriveChatTitle = (msg: string) => {
   return msg.length > 30 ? `${msg.substring(0, 30)}...` : msg
@@ -49,6 +52,7 @@ const StartChat = () => {
   useEffect(() => {})
 
   const { t } = useTranslation()
+  const tokenRateLimit = useTokenRateLimit()
 
   const router = useRouter()
 
@@ -112,6 +116,17 @@ const StartChat = () => {
           textareaRef?.current?.focus()
         }}
       ></StartChatFromHere>
+      {tokenRateLimit?.enabled && tokenRateLimit.exceeded && (
+        <Alert variant="destructive" className="rounded-none border-x-0">
+          <IconAlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {t('rate_limit_exceeded_warning', {
+              defaultValue:
+                'You have reached your token usage limit for this period. Your messages may be restricted.',
+            })}
+          </AlertDescription>
+        </Alert>
+      )}
       <ChatInputOrApiKey
         // Force remount when assistant changes so input/upload local state resets to the selected assistant.
         key={assistantId}

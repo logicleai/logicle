@@ -12,6 +12,7 @@ import { useChatInput } from '@/components/providers/localstoragechatstate'
 import { MessageGroup } from './MessageGroup'
 import { ConversationSidebar } from './ConversationSidebar'
 import { useTranslation } from 'react-i18next'
+import { useTokenRateLimit } from '@/components/providers/tokenRateLimitContext'
 
 export interface ChatProps {
   assistant: dto.AssistantIdentification & {
@@ -40,8 +41,8 @@ export const Chat = ({
     state: { selectedConversation, chatStatus, sideBarContent },
     sendMessage,
     setSideBarContent,
-    tokenRateLimit,
   } = useContext(ChatPageContext)
+  const tokenRateLimit = useTokenRateLimit()
 
   const { t } = useTranslation()
   const [chatInput, setChatInput] = useChatInput(selectedConversation?.id ?? '')
