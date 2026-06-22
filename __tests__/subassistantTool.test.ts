@@ -83,6 +83,14 @@ vi.mock('@/models/assistant', () => ({
   canUserAccessAssistant: mockCanUserAccessAssistant,
   getPublishedAssistantVersion: mockGetPublishedAssistantVersion,
   assistantVersionFiles: mockAssistantVersionFiles,
+  parseContextCompression: (raw: string | null | undefined) => {
+    if (!raw) return null
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return null
+    }
+  },
 }))
 
 vi.mock('@/backend/lib/tools/enumerate', () => ({

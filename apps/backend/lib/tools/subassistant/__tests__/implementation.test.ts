@@ -17,6 +17,14 @@ vi.mock('@/models/assistant', () => ({
     reasoning_effort: null,
   }),
   assistantVersionFiles: vi.fn().mockResolvedValue([]),
+  parseContextCompression: (raw: string | null | undefined) => {
+    if (!raw) return null
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return null
+    }
+  },
 }))
 
 vi.mock('db/database', () => ({
