@@ -20,6 +20,13 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('warnings', 'text', (col) => col.notNull())
     .addColumn('createdAt', 'timestamp', (col) => col.notNull())
     .execute()
+
+  await db.schema
+    .createIndex('TurnMemory_conversationId_userMessageId_unique')
+    .unique()
+    .on('TurnMemory')
+    .columns(['conversationId', 'userMessageId'])
+    .execute()
 }
 
 export async function down(db: Kysely<any>): Promise<void> {

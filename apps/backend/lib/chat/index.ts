@@ -245,9 +245,14 @@ export class ChatAssistant {
       temperature: source.temperature,
       tokenLimit: source.tokenLimit,
       reasoning_effort: source.reasoning_effort,
-      contextCompression: typeof source.contextCompression === 'string'
-        ? (JSON.parse(source.contextCompression) as dto.ContextCompressionConfig)
-        : (source.contextCompression ?? null),
+      contextCompression: (() => {
+        if (typeof source.contextCompression !== 'string') return source.contextCompression ?? null
+        try {
+          return JSON.parse(source.contextCompression) as dto.ContextCompressionConfig
+        } catch {
+          return null
+        }
+      })(),
     }
   }
 

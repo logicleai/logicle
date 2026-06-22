@@ -43,6 +43,7 @@ export const saveTurnMemory = async (params: SaveTurnMemoryParams): Promise<void
       warnings: JSON.stringify(params.warnings),
       createdAt: new Date().toISOString(),
     })
+    .onConflict((oc) => oc.doNothing())
     .execute()
 }
 
