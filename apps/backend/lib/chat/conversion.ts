@@ -13,7 +13,7 @@ import {
   canSendAsNativeImage,
   resolvePdfNativeAttachmentDecision,
 } from './file-attachment-policy'
-import { projectMessageForEstimation, projectedToolResultAttachedFilesDescriptor } from './message-projection'
+import { projectMessageForEstimation, fileDescriptorText } from './message-projection'
 
 // LiteLLM does not support binary attachments inside tool results. Detect this by inspecting
 // the AI SDK provider string rather than storing the limitation in model capabilities.
@@ -174,37 +174,22 @@ export const dtoMessageToLlmMessage = async (
           case 'error-text':
             return output
           case 'content': {
-            const files = output.value.filter((v) => v.type === 'file')
-            const description = projectedToolResultAttachedFilesDescriptor(files)
-            const outputs = await Promise.all(
-              output.value.map(async (v) => {
-                switch (v.type) {
-                  case 'text':
-                    return v
-                  case 'file': {
-                    const fileEntry = await getFileWithId(v.id)
-                    if (!fileEntry) {
-                      throw new Error(`Can't find entry for attachment ${v.id}`)
-                    }
-                    return dtoFileToToolResultOutputPart(fileEntry, capabilities, providerName)
-                  }
+            const parts: Awaited<ReturnType<typeof dtoFileToToolResultOutputPart>>[] = []
+            let fileOrdinal = 0
+            for (const v of output.value) {
+              if (v.type === 'text') {
+                parts.push(v)
+              } else {
+                const fileEntry = await getFileWithId(v.id)
+                if (!fileEntry) {
+                  throw new Error(`Can't find entry for attachment ${v.id}`)
                 }
-              })
-            )
-            return {
-              type: 'content',
-              value: [
-                ...(files.length === 0
-                  ? []
-                  : [
-                      {
-                        type: 'text' as const,
-                        text: JSON.stringify(description),
-                      },
-                    ]),
-                ...outputs,
-              ],
-            } satisfies ToolCallResultOutput
+                fileOrdinal++
+                parts.push({ type: 'text', text: fileDescriptorText(v.name, v.id, v.mimetype, v.size, fileOrdinal, 'Attachment') })
+                parts.push(await dtoFileToToolResultOutputPart(fileEntry, capabilities, providerName))
+              }
+            }
+            return { type: 'content', value: parts } satisfies ToolCallResultOutput
           }
         }
       } else {

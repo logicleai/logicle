@@ -18,17 +18,6 @@ export const fileDescriptorText = (
   return `${label} ${ordinal}: ${displayName} (id ${id}, ${mimetype}, ${size} bytes)`
 }
 
-export const projectedToolResultAttachedFilesDescriptor = (
-  files: Array<{ id: string; name: string; size: number; mimetype: string }>
-) => ({
-  attached_files: files.map((f) => ({
-    id: f.id,
-    name: f.name,
-    size: f.size,
-    mimetype: f.mimetype,
-  })),
-})
-
 export const userMessageMetadataText = (message: dto.UserMessage): string | undefined =>
   message.metadata
     ? `Message metadata (system-use): ${JSON.stringify(message.metadata)}`
