@@ -36,7 +36,6 @@ import type * as ai from 'ai'
 import { buildEstimatedPreambleSegments, preparePreamblePlan, PreamblePlan } from '@/backend/lib/chat/preamble'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
 import { projectMessageForEstimation, fileDescriptorText } from '@/backend/lib/chat/message-projection'
-import { projectedToolResultAttachedFilesDescriptor } from '@/backend/lib/chat/message-projection'
 import env from '@/lib/env'
 
 // --- File token cache -----------------------------------------------------------
@@ -294,19 +293,18 @@ const estimateToolResultOutputTokens = async (
       return countTextTokensCached(model, JSON.stringify(output.value), stats)
     case 'content': {
       let tokens = 0
-      const files = output.value.filter((item) => item.type === 'file')
-      if (files.length > 0) {
-        tokens += await countTextTokensCached(
-          model,
-          JSON.stringify(projectedToolResultAttachedFilesDescriptor(files)),
-          stats
-        )
-      }
+      let fileOrdinal = 0
       for (const item of output.value) {
         if (item.type === 'text') {
           tokens += await countTextTokensCached(model, item.text, stats)
           continue
         }
+        fileOrdinal++
+        tokens += await countTextTokensCached(
+          model,
+          fileDescriptorText(item.name, item.id, item.mimetype, item.size, fileOrdinal, 'Attachment'),
+          stats
+        )
         tokens += await estimateAttachmentTokens(
           model,
           { id: item.id, mimetype: item.mimetype, name: item.name, size: item.size },
@@ -382,7 +380,7 @@ const estimateDtoMessageTokens = async (
   onDetail?: (part: dto.TokenDetailPart) => void
 ): Promise<number> => {
   const algorithm = tokenizerForModel(model)
-  const projected = projectMessageForEstimation(message, env.knowledge.intersperseFileMetadata)
+  const projected = projectMessageForEstimation(message)
   if (projected.role === 'ignored') return 0
   let tokens = 0
   for (const item of projected.items) {
@@ -583,11 +581,8 @@ export const estimatePreambleTokensFromPlan = async ({
       const fileEntry = await estimateKnowledgeFileTokens(
         entry.fileId, entry.fileName, entry.mimetype, entry.partIndex, messageParts, model, stats
       )
-      let entryTokens = fileEntry.tokens
-      if (plan.intersperseFileMetadata) {
-        const descText = fileDescriptorText(entry.fileName, entry.fileId, entry.mimetype, entry.size, ordinal0 + 1, 'Knowledge')
-        entryTokens += await countTextTokensCached(model, descText, stats)
-      }
+      const descText = fileDescriptorText(entry.fileName, entry.fileId, entry.mimetype, entry.size, ordinal0 + 1, 'Knowledge')
+      let entryTokens = fileEntry.tokens + await countTextTokensCached(model, descText, stats)
       knowledgeTokens += entryTokens
       collector?.addPreamblePart({
         type: 'knowledge_file',

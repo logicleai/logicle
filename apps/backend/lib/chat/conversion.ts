@@ -8,16 +8,12 @@ import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
 import { LlmModelCapabilities } from '@/lib/chat/models'
 import { cachingExtractor } from '@/lib/textextraction/cache'
-import env from '@/lib/env'
 import {
   canSendAsNativeFile,
   canSendAsNativeImage,
   resolvePdfNativeAttachmentDecision,
 } from './file-attachment-policy'
-import {
-  projectMessageForEstimation,
-  projectedToolResultAttachedFilesDescriptor,
-} from './message-projection'
+import { projectMessageForEstimation, fileDescriptorText } from './message-projection'
 
 // LiteLLM does not support binary attachments inside tool results. Detect this by inspecting
 // the AI SDK provider string rather than storing the limitation in model capabilities.
@@ -164,8 +160,7 @@ export const dtoMessageToLlmMessage = async (
   capabilities: LlmModelCapabilities,
   providerName: string
 ): Promise<ai.ModelMessage | undefined> => {
-  const intersperseFileMetadata = env.knowledge.intersperseFileMetadata
-  const projected = projectMessageForEstimation(m, intersperseFileMetadata)
+  const projected = projectMessageForEstimation(m)
   if (projected.role === 'ignored') return undefined
   if (projected.role === 'tool') {
     const results = projected.items.filter((item) => item.kind === 'tool_result')
@@ -179,37 +174,22 @@ export const dtoMessageToLlmMessage = async (
           case 'error-text':
             return output
           case 'content': {
-            const files = output.value.filter((v) => v.type === 'file')
-            const description = projectedToolResultAttachedFilesDescriptor(files)
-            const outputs = await Promise.all(
-              output.value.map(async (v) => {
-                switch (v.type) {
-                  case 'text':
-                    return v
-                  case 'file': {
-                    const fileEntry = await getFileWithId(v.id)
-                    if (!fileEntry) {
-                      throw new Error(`Can't find entry for attachment ${v.id}`)
-                    }
-                    return dtoFileToToolResultOutputPart(fileEntry, capabilities, providerName)
-                  }
+            const parts: Awaited<ReturnType<typeof dtoFileToToolResultOutputPart>>[] = []
+            let fileOrdinal = 0
+            for (const v of output.value) {
+              if (v.type === 'text') {
+                parts.push(v)
+              } else {
+                const fileEntry = await getFileWithId(v.id)
+                if (!fileEntry) {
+                  throw new Error(`Can't find entry for attachment ${v.id}`)
                 }
-              })
-            )
-            return {
-              type: 'content',
-              value: [
-                ...(files.length === 0
-                  ? []
-                  : [
-                      {
-                        type: 'text' as const,
-                        text: JSON.stringify(description),
-                      },
-                    ]),
-                ...outputs,
-              ],
-            } satisfies ToolCallResultOutput
+                fileOrdinal++
+                parts.push({ type: 'text', text: fileDescriptorText(v.name, v.id, v.mimetype, v.size, fileOrdinal, 'Attachment') })
+                parts.push(await dtoFileToToolResultOutputPart(fileEntry, capabilities, providerName))
+              }
+            }
+            return { type: 'content', value: parts } satisfies ToolCallResultOutput
           }
         }
       } else {
@@ -282,44 +262,20 @@ export const dtoMessageToLlmMessage = async (
   const message: ai.ModelMessage = { role: 'user', content: '' }
   const attachments = projected.items.filter((item) => item.kind === 'attachment')
   if (attachments.length !== 0) {
-    if (intersperseFileMetadata) {
-      // Interspersed: process projected items in order so each descriptor immediately
-      // precedes the corresponding file part.
-      const parts: Array<ai.TextPart | ai.ImagePart | ai.FilePart> = []
-      for (const item of projected.items) {
-        if (item.kind === 'text') {
-          parts.push({ type: 'text', text: item.text })
-        } else if (item.kind === 'attachment') {
-          const fileEntry = await getFileWithId(item.attachment.id)
-          if (!fileEntry) {
-            logger.warn(`Can't find entry for attachment ${item.attachment.id}`)
-            continue
-          }
-          parts.push(await dtoFileToLlmFilePart(fileEntry, capabilities))
+    const parts: Array<ai.TextPart | ai.ImagePart | ai.FilePart> = []
+    for (const item of projected.items) {
+      if (item.kind === 'text') {
+        parts.push({ type: 'text', text: item.text })
+      } else if (item.kind === 'attachment') {
+        const fileEntry = await getFileWithId(item.attachment.id)
+        if (!fileEntry) {
+          logger.warn(`Can't find entry for attachment ${item.attachment.id}`)
+          continue
         }
+        parts.push(await dtoFileToLlmFilePart(fileEntry, capabilities))
       }
-      message.content = parts
-    } else {
-      // Classic: all text parts first, then all file parts appended at the end.
-      const messageParts: typeof message.content = []
-      for (const item of projected.items) {
-        if (item.kind !== 'text') continue
-        messageParts.push({ type: 'text', text: item.text })
-      }
-      const fileParts = (
-        await Promise.all(
-          attachments.map(async (item) => {
-            const fileEntry = await getFileWithId(item.attachment.id)
-            if (!fileEntry) {
-              logger.warn(`Can't find entry for attachment ${item.attachment.id}`)
-              return undefined
-            }
-            return await dtoFileToLlmFilePart(fileEntry, capabilities)
-          })
-        )
-      ).filter((a) => a !== undefined)
-      message.content = [...messageParts, ...fileParts]
     }
+    message.content = parts
   } else {
     const textItems = projected.items.filter((item) => item.kind === 'text')
     const messageParts: typeof message.content = []

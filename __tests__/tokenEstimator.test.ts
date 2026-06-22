@@ -5,7 +5,7 @@ import { gpt35Model, gpt41Model, gpt41MiniModel } from '@/lib/chat/models/openai
 import { countTextForModel, countTextWithTokenizer } from '@/lib/chat/tokenizer'
 import { normalizeExtractedText } from '@/backend/lib/chat/pdf-token-estimator'
 import { estimateNativeImageTokensFromDimensions } from '@/backend/lib/chat/image-token-estimator'
-import { projectedToolResultAttachedFilesDescriptor } from '@/backend/lib/chat/message-projection'
+import { fileDescriptorText } from '@/backend/lib/chat/message-projection'
 
 // Regression helpers — intentionally NOT delegating to the implementation so that bugs in
 // resolvePdfEstimatorModel() or predictPdfTokenCount() are caught by the tests.
@@ -94,16 +94,17 @@ const makeImageFile = (id: string) => ({
   encryption: null,
 })
 
-const countUserAttachmentDescriptorTokens = (model: Parameters<typeof countTextForModel>[0], attachments: dto.Attachment[]) =>
-  countTextForModel(
-    model,
-    `The user has attached the following files to this chat: \n${JSON.stringify(attachments)}`
-  )
-
-const countToolResultAttachedFilesDescriptorTokens = (
+const countFileDescriptorTokens = (
   model: Parameters<typeof countTextForModel>[0],
   files: Array<{ id: string; name: string; mimetype: string; size: number }>
-) => countTextForModel(model, JSON.stringify(projectedToolResultAttachedFilesDescriptor(files)))
+) =>
+  files.reduce(
+    (sum, f, i) => sum + countTextForModel(model, fileDescriptorText(f.name, f.id, f.mimetype, f.size, i + 1, 'Attachment')),
+    0
+  )
+
+const countUserAttachmentDescriptorTokens = countFileDescriptorTokens
+const countToolResultAttachedFilesDescriptorTokens = countFileDescriptorTokens
 
 describe('estimateInputTokens', () => {
   beforeEach(async () => {
@@ -1651,7 +1652,7 @@ describe('estimateInputTokens', () => {
     const preambleModule = await import('@/backend/lib/chat/preamble')
     vi.spyOn(preambleModule, 'preparePreamblePlan').mockResolvedValue({
       systemPromptMessage: { role: 'system', content: 'system' },
-      knowledgeFileEntries: [{ fileId, fileName: file.name, mimetype: file.type, size: file.size, partIndex: 0 }],
+      knowledgeFileEntries: [{ fileId, fileName: file.name, mimetype: file.type, size: file.size, partIndex: 1 }],
     })
     vi.spyOn(preambleModule, 'renderPreamblePlan')
 
@@ -1665,7 +1666,8 @@ describe('estimateInputTokens', () => {
     })
 
     const expectedText = `Here is the text content of the file "${file.name}" with id ${file.id}\nknowledge text fallback content`
-    expect(result).toBe(countTextForModel(gpt35Model, 'system') + countTextForModel(gpt35Model, expectedText))
+    const expectedDescriptor = countTextForModel(gpt35Model, fileDescriptorText(file.name, fileId, file.type, file.size, 1, 'Knowledge'))
+    expect(result).toBe(countTextForModel(gpt35Model, 'system') + expectedDescriptor + countTextForModel(gpt35Model, expectedText))
     expect(preambleModule.renderPreamblePlan).not.toHaveBeenCalled()
     expect(readBuffer).not.toHaveBeenCalled()
   })

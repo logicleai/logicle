@@ -18,6 +18,7 @@ import {
   setTokenizerCounter,
 } from '@/backend/lib/chat/prompt-token-counter'
 import { dtoMessageToLlmMessage } from '@/backend/lib/chat/conversion'
+import { fileDescriptorText } from '@/backend/lib/chat/message-projection'
 import type { LlmModel } from '@/lib/chat/models'
 
 const fakeModel = {
@@ -113,17 +114,8 @@ describe('countModelMessageTokens', () => {
 
     expect(tokens).toBe(
       JSON.stringify({ toolCallId: 'call_456', toolName: 'GenerateImage' }).length +
-        JSON.stringify({
-          attached_files: [
-            {
-              id: imageFile.id,
-              name: imageFile.name,
-              size: imageFile.size,
-              mimetype: imageFile.type,
-            },
-          ],
-        }).length +
         'The tool displayed 1 images.'.length +
+        fileDescriptorText(imageFile.name, imageFile.id, imageFile.type, imageFile.size, 1, 'Attachment').length +
         placeholderText.length
     )
     expect(mockEstimateNativeImageTokens).not.toHaveBeenCalled()

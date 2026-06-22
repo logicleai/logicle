@@ -48,7 +48,6 @@ export type PreamblePlan = {
   systemPromptMessage: ai.SystemModelMessage
   knowledgePrompt?: string
   knowledgeFileEntries?: KnowledgeFileEntry[]
-  intersperseFileMetadata?: boolean
   materializeKnowledgeSegment?: () => Promise<{
     message: ai.UserModelMessage
     analysisFileIds: string[]
@@ -153,25 +152,20 @@ export async function preparePreamblePlan({
   }
   const { loadKnowledgeFilePart } = await import('@/backend/lib/tools/knowledge/implementation')
 
-  const intersperse = env.knowledge.intersperseFileMetadata
-
-  const knowledgePrompt = intersperse
-    ? `Assistant knowledge files are embedded in this conversation, each preceded by a brief descriptor.\n${knowledgeFileSelectionNotice}`
-    : `More files are available as assistant knowledge. These files can be retrieved or processed by function calls referring to their id.\nHere is the assistant knowledge:\n${JSON.stringify(knowledge)}\n${knowledgeFileSelectionNotice}`
+  const knowledgePrompt = `Assistant knowledge files are embedded in this conversation, each preceded by a brief descriptor.\n${knowledgeFileSelectionNotice}`
 
   const knowledgeFileEntries: KnowledgeFileEntry[] = knowledge.map((k, index) => ({
     fileId: k.id,
     fileName: k.name,
     mimetype: k.type,
     size: k.size,
-    partIndex: intersperse ? index * 2 + 1 : index,
+    partIndex: index * 2 + 1,
   }))
 
   return {
     systemPromptMessage,
     knowledgePrompt,
     knowledgeFileEntries,
-    intersperseFileMetadata: intersperse || undefined,
     // Limit concurrency to avoid saturating the libuv thread pool and the Node.js microtask queue
     // when an assistant has many knowledge files — unbounded Promise.all causes multi-second stalls.
     materializeKnowledgeSegment: async () => {
@@ -180,9 +174,7 @@ export async function preparePreamblePlan({
         indexed,
         async ({ k, i }) => ({
           fileId: k.id,
-          descriptor: intersperse
-            ? fileDescriptorText(k.name, k.id, k.type, k.size, i + 1, 'Knowledge')
-            : null,
+          descriptor: fileDescriptorText(k.name, k.id, k.type, k.size, i + 1, 'Knowledge'),
           content: await loadKnowledgeFilePart(k, llmModel),
         }),
         8
@@ -190,7 +182,7 @@ export async function preparePreamblePlan({
       const parts: (ai.TextPart | ai.ImagePart | ai.FilePart)[] = []
       const analysisFileIds: string[] = []
       for (const { fileId, descriptor, content } of loaded) {
-        if (descriptor) parts.push({ type: 'text', text: descriptor })
+        parts.push({ type: 'text', text: descriptor })
         parts.push(content)
         if (content.type === 'file') analysisFileIds.push(fileId)
       }
