@@ -4,6 +4,13 @@ import { FormField, FormItem } from '@/components/ui/form'
 import { UseFormReturn } from 'react-hook-form'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { FormFields } from './AssistantFormField'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface Props {
   className: string
@@ -13,6 +20,7 @@ interface Props {
 
 export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
   const { t } = useTranslation()
+  const compression = form.watch('contextCompression')
 
   return (
     <ScrollArea className={className} style={{ display: visible ? undefined : 'none' }}>
@@ -48,6 +56,57 @@ export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="contextCompression"
+          render={({ field }) => (
+            <FormItem label={t('context-compression')} title={t('context-compression-help')}>
+              <Select
+                value={field.value?.preset ?? 'none'}
+                onValueChange={(v) => {
+                  if (v === 'none') {
+                    field.onChange(null)
+                  } else {
+                    field.onChange({
+                      preset: v,
+                      triggerAtTokens: field.value?.triggerAtTokens,
+                    })
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t('context-compression-off')}</SelectItem>
+                  <SelectItem value="conservative">{t('context-compression-conservative')}</SelectItem>
+                  <SelectItem value="aggressive">{t('context-compression-aggressive')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
+        {compression && (
+          <FormField
+            control={form.control}
+            name="contextCompression"
+            render={({ field }) => (
+              <FormItem label={t('context-compression-trigger')} title={t('context-compression-trigger-help')}>
+                <NumberInput
+                  mode="integer"
+                  placeholder={t('context-compression-trigger-placeholder')}
+                  value={field.value?.triggerAtTokens ?? ''}
+                  onChange={(v) => {
+                    field.onChange({
+                      preset: field.value?.preset ?? 'conservative',
+                      triggerAtTokens: v === '' ? undefined : Number(v),
+                    })
+                  }}
+                />
+              </FormItem>
+            )}
+          />
+        )}
       </div>
     </ScrollArea>
   )

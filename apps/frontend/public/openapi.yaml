@@ -3387,6 +3387,23 @@ components:
                 - high
                 - xhigh
             - type: "null"
+        contextCompression:
+          anyOf:
+            - type: object
+              properties:
+                preset:
+                  type: string
+                  enum:
+                    - conservative
+                    - aggressive
+                triggerAtTokens:
+                  type: integer
+                  exclusiveMinimum: 0
+                  maximum: 9007199254740991
+              required:
+                - preset
+              additionalProperties: false
+            - type: "null"
         tags:
           type: string
         prompts:
@@ -3415,6 +3432,7 @@ components:
         - temperature
         - tokenLimit
         - reasoning_effort
+        - contextCompression
         - tags
         - prompts
         - createdAt
@@ -3512,6 +3530,23 @@ components:
                 - high
                 - xhigh
             - type: "null"
+        contextCompression:
+          anyOf:
+            - type: object
+              properties:
+                preset:
+                  type: string
+                  enum:
+                    - conservative
+                    - aggressive
+                triggerAtTokens:
+                  type: integer
+                  exclusiveMinimum: 0
+                  maximum: 9007199254740991
+              required:
+                - preset
+              additionalProperties: false
+            - type: "null"
         createdAt:
           type: string
           format: date-time
@@ -3567,6 +3602,7 @@ components:
         - temperature
         - tokenLimit
         - reasoning_effort
+        - contextCompression
         - createdAt
         - updatedAt
         - owner
@@ -3612,6 +3648,24 @@ components:
                 - medium
                 - high
                 - xhigh
+            - type: "null"
+        contextCompression:
+          default: null
+          anyOf:
+            - type: object
+              properties:
+                preset:
+                  type: string
+                  enum:
+                    - conservative
+                    - aggressive
+                triggerAtTokens:
+                  type: integer
+                  exclusiveMinimum: 0
+                  maximum: 9007199254740991
+              required:
+                - preset
+              additionalProperties: false
             - type: "null"
         tools:
           type: array
@@ -3705,6 +3759,24 @@ components:
                 - high
                 - xhigh
             - type: "null"
+        contextCompression:
+          default: null
+          anyOf:
+            - type: object
+              properties:
+                preset:
+                  type: string
+                  enum:
+                    - conservative
+                    - aggressive
+                triggerAtTokens:
+                  type: integer
+                  exclusiveMinimum: 0
+                  maximum: 9007199254740991
+              required:
+                - preset
+              additionalProperties: false
+            - type: "null"
         tools:
           type: array
           items:
@@ -3738,6 +3810,7 @@ components:
         - temperature
         - tokenLimit
         - reasoning_effort
+        - contextCompression
         - tools
         - files
         - tags

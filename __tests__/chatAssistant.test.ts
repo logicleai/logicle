@@ -131,7 +131,7 @@ const makeRealAssistant = () => {
     .mockReturnValue({ provider: 'openai.responses' } as unknown as LanguageModelV3)
   return new ChatAssistant(
     { providerType: 'openai', apiKey: 'k', provisioned: false } as unknown as ProviderConfig,
-    { assistantId: 'a1', model: 'gpt-4', systemPrompt: '', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
+    { assistantId: 'a1', model: 'gpt-4', systemPrompt: '', temperature: 0, tokenLimit: 1000, reasoning_effort: null, contextCompression: null },
     makeFakeLlmModel(),
     [],
     { user: 'u1' },
@@ -362,6 +362,7 @@ describe('ChatAssistant.build', () => {
           temperature: 0,
           tokenLimit: 1000,
           reasoning_effort: null,
+          contextCompression: null,
         },
         {},
         [],
@@ -384,7 +385,7 @@ const attachmentSystemPrompt = `
 describe('ChatAssistant.computeSystemPrompt', () => {
   test('no tools: system prompt + attachment notice, nothing else', async () => {
     const result = await ChatAssistant.computeSystemPrompt(
-      { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'Be helpful', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
+      { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'Be helpful', temperature: 0, tokenLimit: 1000, reasoning_effort: null, contextCompression: null },
       [],
       {}
     )
@@ -394,7 +395,7 @@ describe('ChatAssistant.computeSystemPrompt', () => {
 
   test('empty system prompt: only attachment notice', async () => {
     const result = await ChatAssistant.computeSystemPrompt(
-      { assistantId: 'a1', model: 'gpt-4', systemPrompt: '', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
+      { assistantId: 'a1', model: 'gpt-4', systemPrompt: '', temperature: 0, tokenLimit: 1000, reasoning_effort: null, contextCompression: null },
       [],
       {}
     )
@@ -404,7 +405,7 @@ describe('ChatAssistant.computeSystemPrompt', () => {
   test('tool fragments appended after attachment notice, joined without separator', async () => {
     const tools = [makeToolImpl('fragment-a'), makeToolImpl('fragment-b')]
     const result = await ChatAssistant.computeSystemPrompt(
-      { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'Base', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
+      { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'Base', temperature: 0, tokenLimit: 1000, reasoning_effort: null, contextCompression: null },
       tools,
       {}
     )
@@ -414,7 +415,7 @@ describe('ChatAssistant.computeSystemPrompt', () => {
   test('empty tool fragments are excluded', async () => {
     const tools = [makeToolImpl(''), makeToolImpl('non-empty'), makeToolImpl('')]
     const result = await ChatAssistant.computeSystemPrompt(
-      { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'S', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
+      { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'S', temperature: 0, tokenLimit: 1000, reasoning_effort: null, contextCompression: null },
       tools,
       {}
     )
@@ -423,7 +424,7 @@ describe('ChatAssistant.computeSystemPrompt', () => {
 
   test('applies template substitution from parameters', async () => {
     const result = await ChatAssistant.computeSystemPrompt(
-      { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'Hello {{ user }}', temperature: 0, tokenLimit: 1000, reasoning_effort: null },
+      { assistantId: 'a1', model: 'gpt-4', systemPrompt: 'Hello {{ user }}', temperature: 0, tokenLimit: 1000, reasoning_effort: null, contextCompression: null },
       [],
       { user: { value: 'Alice', defaultValue: '', description: 'user' } } as any
     )
