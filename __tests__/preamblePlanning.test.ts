@@ -50,7 +50,7 @@ describe('preamble planning and rendering', () => {
     })
 
     expect(plan.knowledgeFileEntries).toEqual([
-      { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', size: 1, partIndex: 0 },
+      { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', size: 1, partIndex: 1 },
     ])
     expect(mockLoadKnowledgeFilePart).not.toHaveBeenCalled()
   })
@@ -70,7 +70,7 @@ describe('preamble planning and rendering', () => {
     expect(segments).toHaveLength(2)
     expect(segments[1]?.message).toEqual({ role: 'user', content: [] })
     expect(segments[1]?.knowledgeFileEntries).toEqual([
-      { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', size: 1, partIndex: 0 },
+      { fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', size: 1, partIndex: 1 },
     ])
     expect(mockLoadKnowledgeFilePart).not.toHaveBeenCalled()
   })
@@ -91,7 +91,10 @@ describe('preamble planning and rendering', () => {
     expect(mockLoadKnowledgeFilePart).toHaveBeenCalledTimes(1)
     expect(segments[1]?.message).toEqual({
       role: 'user',
-      content: [{ type: 'text', text: 'knowledge content' }],
+      content: [
+        { type: 'text', text: 'Knowledge 1: k1.png (id k1, image/png, 1 bytes)' },
+        { type: 'text', text: 'knowledge content' },
+      ],
     })
   })
 

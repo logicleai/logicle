@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type { LlmModelCapabilities } from '@/lib/chat/models'
 import type * as dto from '@/types/dto'
+import { fileDescriptorText } from '@/backend/lib/chat/message-projection'
 
 const ensureFileAnalysis = vi.fn()
 const readBuffer = vi.fn()
@@ -240,16 +241,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
             value: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  attached_files: [
-                    {
-                      id: pdfFile.id,
-                      name: pdfFile.name,
-                      size: pdfFile.size,
-                      mimetype: pdfFile.type,
-                    },
-                  ],
-                }),
+                text: fileDescriptorText(pdfFile.name, pdfFile.id, pdfFile.type, pdfFile.size, 1, 'Attachment'),
               },
               { type: 'file-data', data: Buffer.from('pdf-bytes').toString('base64'), mediaType: pdfFile.type },
             ],
@@ -330,16 +322,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
             value: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  attached_files: [
-                    {
-                      id: pdfFile.id,
-                      name: pdfFile.name,
-                      size: pdfFile.size,
-                      mimetype: pdfFile.type,
-                    },
-                  ],
-                }),
+                text: fileDescriptorText(pdfFile.name, pdfFile.id, pdfFile.type, pdfFile.size, 1, 'Attachment'),
               },
               {
                 type: 'file-data',
@@ -423,16 +406,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
             value: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  attached_files: [
-                    {
-                      id: pdfFile.id,
-                      name: pdfFile.name,
-                      size: pdfFile.size,
-                      mimetype: pdfFile.type,
-                    },
-                  ],
-                }),
+                text: fileDescriptorText(pdfFile.name, pdfFile.id, pdfFile.type, pdfFile.size, 1, 'Attachment'),
               },
               {
                 type: 'text',
@@ -496,16 +470,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
             value: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  attached_files: [
-                    {
-                      id: pdfFile.id,
-                      name: pdfFile.name,
-                      size: pdfFile.size,
-                      mimetype: pdfFile.type,
-                    },
-                  ],
-                }),
+                text: fileDescriptorText(pdfFile.name, pdfFile.id, pdfFile.type, pdfFile.size, 1, 'Attachment'),
               },
               {
                 type: 'text',
@@ -577,16 +542,7 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
             value: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  attached_files: [
-                    {
-                      id: imageFile.id,
-                      name: imageFile.name,
-                      size: imageFile.size,
-                      mimetype: imageFile.type,
-                    },
-                  ],
-                }),
+                text: fileDescriptorText(imageFile.name, imageFile.id, imageFile.type, imageFile.size, 1, 'Attachment'),
               },
               {
                 type: 'text',
@@ -665,9 +621,7 @@ describe('dtoMessageToLlmMessage contract', () => {
         { type: 'text', text: 'hello' },
         {
           type: 'text',
-          text: `The user has attached the following files to this chat: \n${JSON.stringify([
-            { id: imageFile.id, name: imageFile.name, mimetype: imageFile.type, size: imageFile.size },
-          ])}`,
+          text: fileDescriptorText(imageFile.name, imageFile.id, imageFile.type, imageFile.size, 1, 'Attachment'),
         },
         {
           type: 'image',
