@@ -1,11 +1,11 @@
 /**
- * Tests for the INTERSPERSE_FILE_METADATA feature (issue #251).
+ * Tests for interspersed file metadata (issue #251).
  *
  * Covers:
  *  - fileDescriptorText: all naming/fallback rules
- *  - projectMessageForEstimation: classic vs interspersed projection
- *  - dtoMessageToLlmMessage: content ordering in interspersed mode
- *  - preparePreamblePlan: knowledge segment structure in interspersed mode
+ *  - projectMessageForEstimation: interspersed projection
+ *  - dtoMessageToLlmMessage: content ordering
+ *  - preparePreamblePlan: knowledge segment structure
  *  - Token estimation alignment for user attachments and knowledge files
  */
 import { beforeEach, describe, expect, test, vi } from 'vitest'
@@ -147,74 +147,9 @@ describe('fileDescriptorText', () => {
 })
 
 // ---------------------------------------------------------------------------
-// 2. projectMessageForEstimation — classic mode (intersperseFileMetadata=false)
+// 2. projectMessageForEstimation
 // ---------------------------------------------------------------------------
-describe('projectMessageForEstimation — classic mode', () => {
-  beforeEach(() => {
-    vi.resetModules()
-    vi.clearAllMocks()
-  })
-
-  test('single attachment: global descriptor then attachment item', async () => {
-    const { projectMessageForEstimation } = await import('@/backend/lib/chat/message-projection')
-    const msg: dto.UserMessage = {
-      id: 'm1',
-      conversationId: 'c1',
-      parent: null,
-      sentAt: new Date().toISOString(),
-      citations: [],
-      role: 'user',
-      content: 'hello',
-      attachments: [{ id: 'img-1', name: 'screenshot.png', mimetype: 'image/png', size: 9321 }],
-    }
-    const projection = projectMessageForEstimation(msg, false)
-    expect(projection.role).toBe('user')
-    const textItems = projection.items.filter((i) => i.kind === 'text')
-    const attachmentItems = projection.items.filter((i) => i.kind === 'attachment')
-    // One content text + one global descriptor text
-    expect(textItems).toHaveLength(2)
-    expect(textItems[0]).toMatchObject({ source: 'content', text: 'hello' })
-    expect(textItems[1]).toMatchObject({ source: 'attachment_descriptor' })
-    expect(asText(textItems[1]).text).toContain('screenshot.png')
-    // Attachments come last
-    expect(attachmentItems).toHaveLength(1)
-    const lastItem = projection.items[projection.items.length - 1]
-    expect(lastItem?.kind).toBe('attachment')
-  })
-
-  test('two attachments: single global descriptor, attachments appended in order', async () => {
-    const { projectMessageForEstimation } = await import('@/backend/lib/chat/message-projection')
-    const msg: dto.UserMessage = {
-      id: 'm2',
-      conversationId: 'c1',
-      parent: null,
-      sentAt: new Date().toISOString(),
-      citations: [],
-      role: 'user',
-      content: '',
-      attachments: [
-        { id: 'img-1', name: 'a.png', mimetype: 'image/png', size: 100 },
-        { id: 'img-2', name: 'b.jpg', mimetype: 'image/jpeg', size: 200 },
-      ],
-    }
-    const projection = projectMessageForEstimation(msg, false)
-    const descriptorItems = projection.items.filter(
-      (i) => i.kind === 'text' && i.source === 'attachment_descriptor'
-    )
-    const attachmentItems = projection.items.filter((i) => i.kind === 'attachment')
-    // One aggregated descriptor
-    expect(descriptorItems).toHaveLength(1)
-    // Both attachments in order
-    expect(attachmentItems).toHaveLength(2)
-    expect(attachmentItems[0]).toMatchObject({ attachment: { id: 'img-1' } })
-    expect(attachmentItems[1]).toMatchObject({ attachment: { id: 'img-2' } })
-  })
-})
-
-// ---------------------------------------------------------------------------
-// 3. projectMessageForEstimation — interspersed mode (intersperseFileMetadata=true)
-// ---------------------------------------------------------------------------
-describe('projectMessageForEstimation — interspersed mode', () => {
+describe('projectMessageForEstimation', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
@@ -232,7 +167,7 @@ describe('projectMessageForEstimation — interspersed mode', () => {
       content: 'check this',
       attachments: [{ id: 'img-1', name: 'screenshot.png', mimetype: 'image/png', size: 9321 }],
     }
-    const projection = projectMessageForEstimation(msg, true)
+    const projection = projectMessageForEstimation(msg)
     // Items should be: [content text, descriptor text, attachment]
     expect(projection.items).toHaveLength(3)
     expect(projection.items[0]).toMatchObject({ kind: 'text', source: 'content', text: 'check this' })
@@ -256,7 +191,7 @@ describe('projectMessageForEstimation — interspersed mode', () => {
         { id: 'img-2', name: 'b.jpg', mimetype: 'image/jpeg', size: 200 },
       ],
     }
-    const projection = projectMessageForEstimation(msg, true)
+    const projection = projectMessageForEstimation(msg)
     // Items: [desc1, att1, desc2, att2] (no content text since content='')
     expect(projection.items).toHaveLength(4)
     expect(projection.items[0]).toMatchObject({ kind: 'text', source: 'attachment_descriptor' })
@@ -281,7 +216,7 @@ describe('projectMessageForEstimation — interspersed mode', () => {
       content: '',
       attachments: [{ id: 'paste-1', name: '', mimetype: 'image/png', size: 50000 }],
     }
-    const projection = projectMessageForEstimation(msg, true)
+    const projection = projectMessageForEstimation(msg)
     expect(asText(projection.items[0]).text).toContain('pasted image')
     expect(asText(projection.items[0]).text).toContain('id paste-1')
   })
@@ -298,11 +233,11 @@ describe('projectMessageForEstimation — interspersed mode', () => {
       content: '',
       attachments: [{ id: 'paste-2', name: '', mimetype: 'application/pdf', size: 10000 }],
     }
-    const projection = projectMessageForEstimation(msg, true)
+    const projection = projectMessageForEstimation(msg)
     expect(asText(projection.items[0]).text).toContain('Attachment 1: pasted (id paste-2')
   })
 
-  test('no attachments: behaves identically in both modes', async () => {
+  test('no attachments: no descriptor items emitted', async () => {
     const { projectMessageForEstimation } = await import('@/backend/lib/chat/message-projection')
     const msg: dto.UserMessage = {
       id: 'm7',
@@ -314,25 +249,22 @@ describe('projectMessageForEstimation — interspersed mode', () => {
       content: 'no files here',
       attachments: [],
     }
-    const classic = projectMessageForEstimation(msg, false)
-    const interspersed = projectMessageForEstimation(msg, true)
-    expect(classic.items).toEqual(interspersed.items)
+    const projection = projectMessageForEstimation(msg)
+    expect(projection.items).toHaveLength(1)
+    expect(projection.items[0]).toMatchObject({ kind: 'text', source: 'content' })
   })
 })
 
 // ---------------------------------------------------------------------------
-// 4. dtoMessageToLlmMessage — interspersed mode content ordering
+// 3. dtoMessageToLlmMessage — content ordering
 // ---------------------------------------------------------------------------
-describe('dtoMessageToLlmMessage — interspersed mode', () => {
+describe('dtoMessageToLlmMessage', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
   })
 
   test('image: descriptor text precedes image part', async () => {
-    vi.doMock('@/lib/env', () => ({
-      default: { knowledge: { intersperseFileMetadata: true } },
-    }))
     getFileWithId.mockResolvedValue(pngFile)
     readBuffer.mockResolvedValue(Buffer.from('png-bytes'))
 
@@ -365,9 +297,6 @@ describe('dtoMessageToLlmMessage — interspersed mode', () => {
   })
 
   test('two images: two descriptor+image pairs', async () => {
-    vi.doMock('@/lib/env', () => ({
-      default: { knowledge: { intersperseFileMetadata: true } },
-    }))
     getFileWithId
       .mockResolvedValueOnce(pngFile)
       .mockResolvedValueOnce(jpgFile)
@@ -403,48 +332,7 @@ describe('dtoMessageToLlmMessage — interspersed mode', () => {
     expect(parts[3]).toMatchObject({ type: 'image' })
   })
 
-  test('classic mode (intersperseFileMetadata=false): text first then images', async () => {
-    vi.doMock('@/lib/env', () => ({
-      default: { knowledge: { intersperseFileMetadata: false } },
-    }))
-    getFileWithId
-      .mockResolvedValueOnce(pngFile)
-      .mockResolvedValueOnce(jpgFile)
-    readBuffer.mockResolvedValue(Buffer.from('img-bytes'))
-
-    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
-    const msg = await dtoMessageToLlmMessage(
-      {
-        id: 'u3',
-        conversationId: 'c1',
-        parent: null,
-        sentAt: new Date().toISOString(),
-        citations: [],
-        role: 'user',
-        content: 'hi',
-        attachments: [
-          { id: pngFile.id, name: pngFile.name, mimetype: pngFile.type, size: pngFile.size },
-          { id: jpgFile.id, name: jpgFile.name, mimetype: jpgFile.type, size: jpgFile.size },
-        ],
-      },
-      visionCapabilities,
-      'openai.chat'
-    )
-
-    const parts = msg!.content as Array<{ type: string; text?: string }>
-    // Classic: [content text, global descriptor, img1, img2]
-    expect(parts).toHaveLength(4)
-    expect(parts[0]).toMatchObject({ type: 'text', text: 'hi' })
-    expect(parts[1]).toMatchObject({ type: 'text' })
-    expect(parts[1]!.text).toContain('The user has attached')
-    expect(parts[2]).toMatchObject({ type: 'image' })
-    expect(parts[3]).toMatchObject({ type: 'image' })
-  })
-
-  test('interspersed: text fallback file gets descriptor before text content', async () => {
-    vi.doMock('@/lib/env', () => ({
-      default: { knowledge: { intersperseFileMetadata: true } },
-    }))
+  test('text fallback file gets descriptor before text content', async () => {
     getFileWithId.mockResolvedValue(pdfFile)
     extractFromFile.mockResolvedValue('pdf text content')
 
@@ -473,10 +361,7 @@ describe('dtoMessageToLlmMessage — interspersed mode', () => {
     expect(parts[1]!.text).toContain('pdf text content')
   })
 
-  test('missing file entry is skipped with a warning (interspersed mode)', async () => {
-    vi.doMock('@/lib/env', () => ({
-      default: { knowledge: { intersperseFileMetadata: true } },
-    }))
+  test('missing file entry is skipped with a warning', async () => {
     // First file OK, second not found
     getFileWithId
       .mockResolvedValueOnce(pngFile)
@@ -503,17 +388,15 @@ describe('dtoMessageToLlmMessage — interspersed mode', () => {
     )
 
     const parts = msg!.content as Array<{ type: string }>
-    // Descriptor for first + image for first; descriptor for second emitted but file skipped
-    // Items: [desc1, img1, desc2] — second descriptor is still emitted, file part is omitted
     expect(parts.some((p) => p.type === 'image')).toBe(true)
     expect(warn).toHaveBeenCalled()
   })
 })
 
 // ---------------------------------------------------------------------------
-// 5. preparePreamblePlan — knowledge segment in interspersed mode
+// 4. preparePreamblePlan — knowledge segment
 // ---------------------------------------------------------------------------
-describe('preparePreamblePlan — interspersed knowledge mode', () => {
+describe('preparePreamblePlan — knowledge', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
@@ -532,10 +415,10 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
 
   const assistantParams = { systemPrompt: 'You are helpful.' }
 
-  test('interspersed: knowledgePrompt does not contain JSON file listing', async () => {
+  test('knowledgePrompt does not contain JSON file listing', async () => {
     vi.doMock('@/lib/env', () => ({
       default: {
-        knowledge: { sendInPrompt: true, intersperseFileMetadata: true, alwaysConvertToText: true },
+        knowledge: { sendInPrompt: true, alwaysConvertToText: true },
       },
     }))
     const mockLoadKnowledgeFilePart = vi.fn().mockResolvedValue({ type: 'text', text: 'extracted' })
@@ -557,21 +440,18 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
       knowledge: knowledgeFiles,
     })
 
-    expect(plan.intersperseFileMetadata).toBe(true)
     expect(plan.knowledgePrompt).toBeDefined()
-    // No JSON dump of the file list
     expect(plan.knowledgePrompt).not.toContain('"handbook.pdf"')
     expect(plan.knowledgePrompt).not.toContain(JSON.stringify(knowledgeFiles))
     expect(plan.knowledgeFileEntries).toHaveLength(2)
-    // size is present in each entry
     expect(plan.knowledgeFileEntries![0]!.size).toBe(123456)
     expect(plan.knowledgeFileEntries![1]!.size).toBe(78900)
   })
 
-  test('interspersed: materializeKnowledgeSegment returns [descriptor, content] pairs', async () => {
+  test('materializeKnowledgeSegment returns [descriptor, content] pairs', async () => {
     vi.doMock('@/lib/env', () => ({
       default: {
-        knowledge: { sendInPrompt: true, intersperseFileMetadata: true, alwaysConvertToText: true },
+        knowledge: { sendInPrompt: true, alwaysConvertToText: true },
       },
     }))
     const mockLoadKnowledgeFilePart = vi.fn()
@@ -608,74 +488,10 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
     expect(parts[3]).toMatchObject({ type: 'text', text: 'photo text' })
   })
 
-  test('classic: knowledgePrompt contains JSON file listing', async () => {
+  test('no knowledge files → empty plan', async () => {
     vi.doMock('@/lib/env', () => ({
       default: {
-        knowledge: { sendInPrompt: true, intersperseFileMetadata: false, alwaysConvertToText: true },
-      },
-    }))
-    const mockLoadKnowledgeFilePart = vi.fn().mockResolvedValue({ type: 'text', text: 'x' })
-    vi.doMock('@/backend/lib/tools/knowledge/implementation', () => ({
-      loadKnowledgeFilePart: mockLoadKnowledgeFilePart,
-      KnowledgePlugin: class {
-        toolParams = { promptFragment: '' }
-        supportedMedia = []
-        functions = async () => ({})
-      },
-    }))
-
-    const { preparePreamblePlan } = await import('@/backend/lib/chat/preamble')
-    const plan = await preparePreamblePlan({
-      assistantParams,
-      llmModel: makeLlmModel(noVisionCapabilities) as any,
-      tools: [],
-      parameters: {},
-      knowledge: knowledgeFiles,
-    })
-
-    expect(plan.intersperseFileMetadata).toBeUndefined()
-    expect(plan.knowledgePrompt).toContain('"handbook.pdf"')
-  })
-
-  test('classic: materializeKnowledgeSegment returns flat file parts (no descriptors)', async () => {
-    vi.doMock('@/lib/env', () => ({
-      default: {
-        knowledge: { sendInPrompt: true, intersperseFileMetadata: false, alwaysConvertToText: true },
-      },
-    }))
-    const mockLoadKnowledgeFilePart = vi.fn()
-      .mockResolvedValueOnce({ type: 'text', text: 'handbook text' })
-      .mockResolvedValueOnce({ type: 'text', text: 'photo text' })
-    vi.doMock('@/backend/lib/tools/knowledge/implementation', () => ({
-      loadKnowledgeFilePart: mockLoadKnowledgeFilePart,
-      KnowledgePlugin: class {
-        toolParams = { promptFragment: '' }
-        supportedMedia = []
-        functions = async () => ({})
-      },
-    }))
-
-    const { preparePreamblePlan } = await import('@/backend/lib/chat/preamble')
-    const plan = await preparePreamblePlan({
-      assistantParams,
-      llmModel: makeLlmModel(noVisionCapabilities) as any,
-      tools: [],
-      parameters: {},
-      knowledge: knowledgeFiles,
-    })
-
-    const rendered = await plan.materializeKnowledgeSegment!()
-    const parts = rendered!.message.content as Array<{ type: string; text?: string }>
-    // Classic: just [content1, content2] — no descriptor text parts
-    expect(parts).toHaveLength(2)
-    expect(parts[0]).toMatchObject({ type: 'text', text: 'handbook text' })
-    expect(parts[1]).toMatchObject({ type: 'text', text: 'photo text' })
-  })
-
-  test('no knowledge files → empty plan regardless of mode', async () => {
-    vi.doMock('@/lib/env', () => ({
-      default: {
-        knowledge: { sendInPrompt: true, intersperseFileMetadata: true, alwaysConvertToText: true },
+        knowledge: { sendInPrompt: true, alwaysConvertToText: true },
       },
     }))
     vi.doMock('@/backend/lib/tools/knowledge/implementation', () => ({
@@ -700,10 +516,10 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
     expect(plan.materializeKnowledgeSegment).toBeUndefined()
   })
 
-  test('ordinals are 1-based and sequential for knowledge files', async () => {
+  test('ordinals are 1-based and sequential', async () => {
     vi.doMock('@/lib/env', () => ({
       default: {
-        knowledge: { sendInPrompt: true, intersperseFileMetadata: true, alwaysConvertToText: true },
+        knowledge: { sendInPrompt: true, alwaysConvertToText: true },
       },
     }))
     const mockLoadKnowledgeFilePart = vi.fn().mockResolvedValue({ type: 'text', text: '' })
@@ -740,7 +556,7 @@ describe('preparePreamblePlan — interspersed knowledge mode', () => {
 })
 
 // ---------------------------------------------------------------------------
-// 6. Edge cases for projectMessageForEstimation — non-user messages unchanged
+// 5. Edge cases — non-user messages unaffected
 // ---------------------------------------------------------------------------
 describe('projectMessageForEstimation — non-user messages', () => {
   beforeEach(() => {
@@ -748,7 +564,7 @@ describe('projectMessageForEstimation — non-user messages', () => {
     vi.clearAllMocks()
   })
 
-  test('assistant messages are unaffected by intersperseFileMetadata flag', async () => {
+  test('assistant messages produce no attachment items', async () => {
     const { projectMessageForEstimation } = await import('@/backend/lib/chat/message-projection')
     const msg: dto.AssistantMessage = {
       id: 'a1',
@@ -759,12 +575,11 @@ describe('projectMessageForEstimation — non-user messages', () => {
       role: 'assistant',
       parts: [{ type: 'text', text: 'hi' }],
     }
-    const classic = projectMessageForEstimation(msg, false)
-    const interspersed = projectMessageForEstimation(msg, true)
-    expect(classic.items).toEqual(interspersed.items)
+    const projection = projectMessageForEstimation(msg)
+    expect(projection.items.every((i) => i.kind !== 'attachment')).toBe(true)
   })
 
-  test('user-request role is ignored in both modes', async () => {
+  test('user-request role is ignored', async () => {
     const { projectMessageForEstimation } = await import('@/backend/lib/chat/message-projection')
     const msg = {
       id: 'ur1',
@@ -776,7 +591,6 @@ describe('projectMessageForEstimation — non-user messages', () => {
       content: 'hi',
       attachments: [],
     } as unknown as dto.Message
-    expect(projectMessageForEstimation(msg, false).role).toBe('ignored')
-    expect(projectMessageForEstimation(msg, true).role).toBe('ignored')
+    expect(projectMessageForEstimation(msg).role).toBe('ignored')
   })
 })

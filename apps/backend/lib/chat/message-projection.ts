@@ -34,11 +34,6 @@ export const userMessageMetadataText = (message: dto.UserMessage): string | unde
     ? `Message metadata (system-use): ${JSON.stringify(message.metadata)}`
     : undefined
 
-export const userAttachmentDescriptorText = (message: dto.UserMessage): string | undefined =>
-  message.attachments.length === 0
-    ? undefined
-    : `The user has attached the following files to this chat: \n${JSON.stringify(message.attachments)}`
-
 export const shouldIncludeAssistantReasoningPart = (part: dto.ReasoningPart): boolean =>
   Boolean(part.reasoning_signature)
 
@@ -84,8 +79,7 @@ export type ProjectedMessageForEstimation =
   | { role: 'ignored'; items: [] }
 
 export const projectMessageForEstimation = (
-  message: dto.Message,
-  intersperseFileMetadata = false
+  message: dto.Message
 ): ProjectedMessageForEstimation => {
   if (message.role === 'user-request' || message.role === 'user-response') {
     return { role: 'ignored', items: [] }
@@ -95,30 +89,14 @@ export const projectMessageForEstimation = (
     const metadataText = userMessageMetadataText(message)
     if (metadataText) items.push({ kind: 'text', text: metadataText, source: 'metadata' })
     if (message.content.length !== 0) items.push({ kind: 'text', text: message.content, source: 'content' })
-    if (intersperseFileMetadata) {
-      // Interspersed: emit (descriptor text, attachment) pairs in order
-      message.attachments.forEach((attachment, index) => {
-        items.push({
-          kind: 'text',
-          text: fileDescriptorText(attachment.name, attachment.id, attachment.mimetype, attachment.size, index + 1, 'Attachment'),
-          source: 'attachment_descriptor',
-        })
-        items.push({ kind: 'attachment', attachment })
+    message.attachments.forEach((attachment, index) => {
+      items.push({
+        kind: 'text',
+        text: fileDescriptorText(attachment.name, attachment.id, attachment.mimetype, attachment.size, index + 1, 'Attachment'),
+        source: 'attachment_descriptor',
       })
-    } else {
-      // Classic: one aggregated descriptor block, then all file parts
-      const attachmentDescriptorText = userAttachmentDescriptorText(message)
-      if (attachmentDescriptorText) {
-        items.push({
-          kind: 'text',
-          text: attachmentDescriptorText,
-          source: 'attachment_descriptor',
-        })
-      }
-      for (const attachment of message.attachments) {
-        items.push({ kind: 'attachment', attachment })
-      }
-    }
+      items.push({ kind: 'attachment', attachment })
+    })
     return { role: 'user', items }
   }
   if (message.role === 'assistant') {
