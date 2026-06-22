@@ -3650,6 +3650,7 @@ components:
                 - xhigh
             - type: "null"
         contextCompression:
+          default: null
           anyOf:
             - type: object
               properties:
@@ -3759,6 +3760,7 @@ components:
                 - xhigh
             - type: "null"
         contextCompression:
+          default: null
           anyOf:
             - type: object
               properties:

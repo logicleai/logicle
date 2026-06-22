@@ -2,7 +2,6 @@ import * as ai from 'ai'
 import * as dto from '@/types/dto'
 import { LanguageModelV3 } from '@ai-sdk/provider'
 import { logger } from '@/lib/logging'
-import { saveTurnMemory } from '@/models/turn-memory'
 import { findReasonableSummarizationBackend } from './summarizer'
 
 interface DurableFact {
@@ -106,6 +105,7 @@ export async function distillAndSaveTurn({
   toolMessages: dto.ToolMessage[]
   currentLanguageModel: LanguageModelV3
 }): Promise<void> {
+  const { saveTurnMemory } = await import('@/models/turn-memory')
   try {
     const languageModel =
       (await findReasonableSummarizationBackend()) ?? currentLanguageModel
@@ -130,7 +130,7 @@ export async function distillAndSaveTurn({
     const memory = parseTurnMemoryOutput(jsonText.trim())
     if (!memory) {
       logger.warn('Turn memory distillation produced unparseable output', { conversationId })
-      await saveFallbackTurnMemory(conversationId, userMessage, finalAnswer)
+      await saveFallbackTurnMemory(saveTurnMemory, conversationId, userMessage, finalAnswer)
       return
     }
 
@@ -141,11 +141,12 @@ export async function distillAndSaveTurn({
     })
   } catch (err) {
     logger.error('Turn memory distillation failed', { conversationId, err })
-    await saveFallbackTurnMemory(conversationId, userMessage, finalAnswer)
+    await saveFallbackTurnMemory(saveTurnMemory, conversationId, userMessage, finalAnswer)
   }
 }
 
 async function saveFallbackTurnMemory(
+  saveTurnMemory: (typeof import('@/models/turn-memory'))['saveTurnMemory'],
   conversationId: string,
   userMessage: dto.UserMessage,
   finalAnswer: string

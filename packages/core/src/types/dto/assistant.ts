@@ -109,6 +109,9 @@ export const insertableAssistantDraftSchema = assistantDraftSchema
     assistantId: true,
     pendingChanges: true,
   })
+  .extend({
+    contextCompression: contextCompressionConfigSchema.optional().default(null),
+  })
   .meta({ id: 'InsertableAssistantDraft' })
 
 export const updateableAssistantDraftSchema = insertableAssistantDraftSchema

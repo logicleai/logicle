@@ -1,5 +1,4 @@
 import * as dto from '@/types/dto'
-import { getTurnMemoriesForConversation } from '@/models/turn-memory'
 
 /**
  * When context compression is active, replaces old-turn tool messages with
@@ -19,6 +18,7 @@ export async function compactHistoricalToolResultsForPrompt(
 ): Promise<dto.Message[]> {
   if (!conversationId) return messages
 
+  const { getTurnMemoriesForConversation } = await import('@/models/turn-memory')
   const turnMemories = await getTurnMemoriesForConversation(conversationId)
   const memoryByUserMessageId = new Map(turnMemories.map((m) => [m.userMessageId, m]))
 
