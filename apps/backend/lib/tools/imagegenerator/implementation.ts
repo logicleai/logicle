@@ -134,7 +134,7 @@ export class ImageGeneratorPlugin
       throw new Error(`Tool invocation required non existing file: ${fileId}`)
     }
     // FIXME: doing an unsafe cast. There should be no problems with node
-    const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
     const blob = new Blob([ensureABView(fileContent)], { type: fileEntry.type })
     return new File([blob], 'upload.png', { type: fileEntry.type })
   }

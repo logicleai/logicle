@@ -87,7 +87,7 @@ describe('file orphan cleanup', () => {
   })
 
   test('delete mode removes orphan blobs first then file rows', async () => {
-    const orphanCandidates = [{ id: 'file-1', path: 'p/1', encrypted: 0 as const }]
+    const orphanCandidates = [{ id: 'file-1', path: 'p/1', encryption: null }]
     const fileSelectExecuteMock = vi.fn().mockResolvedValue(orphanCandidates)
     const fileLimitMock = vi.fn(() => ({ execute: fileSelectExecuteMock }))
     const fileWhere2Mock = vi.fn(() => ({ limit: fileLimitMock }))
@@ -125,7 +125,7 @@ describe('file orphan cleanup', () => {
   })
 
   test('delete mode never deletes files that gained ownership', async () => {
-    const orphanCandidates = [{ id: 'file-2', path: 'p/2', encrypted: 0 as const }]
+    const orphanCandidates = [{ id: 'file-2', path: 'p/2', encryption: null }]
     const fileSelectExecuteMock = vi.fn().mockResolvedValue(orphanCandidates)
     const fileLimitMock = vi.fn(() => ({ execute: fileSelectExecuteMock }))
     const fileWhere2Mock = vi.fn(() => ({ limit: fileLimitMock }))

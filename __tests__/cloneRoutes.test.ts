@@ -88,7 +88,7 @@ async function insertUploadedFile(params: {
       path: `files/${params.id}-${fileName}`,
       type: mimeType,
       size: 123,
-      encrypted: 0,
+      encryption: null,
       createdAt: new Date().toISOString(),
     })
     .execute()

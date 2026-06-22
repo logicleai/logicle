@@ -142,7 +142,7 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
 
     const expectedSizeBytes =
       typeof fileEntry.size === 'number' && Number.isFinite(fileEntry.size) ? fileEntry.size : undefined
-    const fileContent = await storage.readStream(fileEntry.path, !!fileEntry.encrypted, {
+    const fileContent = await storage.readStream(fileEntry.path, fileEntry.encryption, {
       expectedSizeBytes,
     })
     const headers = await this.getHeaders()

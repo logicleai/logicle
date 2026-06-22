@@ -2,15 +2,7 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { dtoMessageFromDbMessage } from './utils'
-
-function parseContextCompression(raw: string | null | undefined): dto.ContextCompressionConfig {
-  if (!raw) return null
-  try {
-    return JSON.parse(raw) as dto.ContextCompressionConfig
-  } catch {
-    return null
-  }
-}
+import { parseContextCompression } from './assistant'
 
 export const createConversation = async (
   ownerId: string,

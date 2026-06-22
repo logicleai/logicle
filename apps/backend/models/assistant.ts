@@ -14,7 +14,7 @@ import {
 } from '@/lib/userSecrets/constants'
 import { getMcpToolAvailability } from '@/lib/tools/schemas'
 
-function parseContextCompression(raw: string | null | undefined): dto.ContextCompressionConfig {
+export function parseContextCompression(raw: string | null | undefined): dto.ContextCompressionConfig {
   if (!raw) return null
   try {
     return JSON.parse(raw) as dto.ContextCompressionConfig

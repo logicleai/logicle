@@ -1,4 +1,4 @@
-import { Storage, BaseStorage, StorageReadOptions } from '@/lib/storage/api'
+import { Storage, BaseStorage, StorageReadOptions, StorageEncryption } from '@/lib/storage/api'
 import * as openpgp from 'openpgp'
 import { LRUCache } from 'lru-cache'
 import type { PgpS2kWorkerRuntime } from './pgp-s2k-worker/runtime'
@@ -9,6 +9,10 @@ let s2kWorker: PgpS2kWorkerRuntime | null = null
 
 export function setPgpS2kWorker(worker: PgpS2kWorkerRuntime) {
   s2kWorker = worker
+}
+
+function isPgp(encrypted: StorageEncryption): boolean {
+  return encrypted === 'pgp'
 }
 
 // Direct (same-thread) fallback used when the worker is not running (e.g. tests).
@@ -59,11 +63,15 @@ export class PgpEncryptingStorage extends BaseStorage {
 
   async readStream(
     path: string,
-    encrypted: boolean,
+    encrypted: StorageEncryption,
     options?: StorageReadOptions
   ): Promise<ReadableStream<Uint8Array>> {
+    if (!isPgp(encrypted)) return this.innerStorage.readStream(path, encrypted, options)
+    if (typeof options?.rangeStart === 'number' || typeof options?.rangeEnd === 'number') {
+      throw new Error('Legacy PGP encrypted blobs do not support range reads')
+    }
+
     const innerStream = await this.innerStorage.readStream(path, encrypted, options)
-    if (!encrypted) return innerStream
     // Accumulate chunks until we have enough bytes to parse the SKESK header.
     // Storage backends may return arbitrarily small initial chunks (e.g. an
     // in-memory stream that yields one byte at a time), so we cannot assume
@@ -148,9 +156,9 @@ export class PgpEncryptingStorage extends BaseStorage {
   async writeStream(
     path: string,
     stream: ReadableStream<Uint8Array>,
-    encrypted: boolean
+    encrypted: StorageEncryption
   ): Promise<void> {
-    if (encrypted) {
+    if (isPgp(encrypted)) {
       stream = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: stream }),
         passwords: [this.passPhrase],

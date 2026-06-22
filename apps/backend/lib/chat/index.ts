@@ -1204,7 +1204,10 @@ export class ChatAssistant {
     if (this.assistantParams.contextCompression && this.options.conversationId) {
       const turnMessages = chatState.chatHistory.slice(historyLengthAtTurnStart)
       if (shouldDistillTurn(turnMessages)) {
-        const userMessage = chatState.chatHistory[historyLengthAtTurnStart - 1]
+        const userMessage = chatState.chatHistory
+          .slice(0, historyLengthAtTurnStart)
+          .reverse()
+          .find((m): m is dto.UserMessage => m.role === 'user')
         const finalAssistantMsg = turnMessages
           .filter((m): m is dto.AssistantMessage => m.role === 'assistant')
           .at(-1)
@@ -1216,7 +1219,7 @@ export class ChatAssistant {
             .filter((p): p is dto.TextPart => p.type === 'text')
             .map((p) => p.text)
             .join('') ?? ''
-        if (userMessage?.role === 'user' && finalAnswer && toolMessages.length > 0) {
+        if (userMessage && toolMessages.length > 0) {
           void distillAndSaveTurn({
             conversationId: this.options.conversationId,
             userMessage,

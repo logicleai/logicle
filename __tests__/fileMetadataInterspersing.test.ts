@@ -64,7 +64,7 @@ const pngFile = {
   type: 'image/png',
   size: 9321,
   createdAt: new Date().toISOString(),
-  encrypted: 0 as const,
+  encryption: null,
 }
 
 const jpgFile = {
@@ -88,7 +88,7 @@ const pdfFile = {
   type: 'application/pdf',
   size: 248731,
   createdAt: new Date().toISOString(),
-  encrypted: 0 as const,
+  encryption: null,
 }
 
 // ---------------------------------------------------------------------------

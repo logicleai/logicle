@@ -28,7 +28,7 @@ describe('cachingExtractor', () => {
       path: '/tmp/file-1.pptx',
       name: 'corrupted.pptx',
       type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      encrypted: false,
+      encryption: null,
       fileBlobId: 'blob-1',
     }
 

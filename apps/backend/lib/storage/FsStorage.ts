@@ -2,6 +2,7 @@ import { logger } from '@/lib/logging'
 import { BaseStorage } from './api'
 import fs, { createReadStream } from 'node:fs'
 import { Readable } from 'node:stream'
+import type { StorageEncryption, StorageReadOptions } from './api'
 
 export class FsStorage extends BaseStorage {
   rootPath: string
@@ -24,22 +25,20 @@ export class FsStorage extends BaseStorage {
     await fs.promises.rm(fsPath)
   }
 
-  async readBuffer(path: string) {
-    const fsPath = `${this.rootPath}/${path}`
-    return await fs.promises.readFile(fsPath)
-  }
-
   async readStream(
     path: string,
-    _encrypted?: boolean,
-    _options?: { expectedSizeBytes?: number; bypassCache?: boolean }
+    _encryption: StorageEncryption,
+    options?: StorageReadOptions
   ): Promise<ReadableStream<Uint8Array>> {
     const fsPath = `${this.rootPath}/${path}`
-    const nodeStream = createReadStream(fsPath)
+    const nodeStream = createReadStream(fsPath, {
+      start: options?.rangeStart,
+      end: options?.rangeEnd,
+    })
     return Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>
   }
 
-  async writeStream(path: string, stream: ReadableStream<Uint8Array>) {
+  async writeStream(path: string, stream: ReadableStream<Uint8Array>, _encryption: StorageEncryption) {
     const fullPath = `${this.rootPath}/${path}`
     let readBytes = 0
     let lastNotificationMb = 0

@@ -35,7 +35,7 @@ export const GET = operation({
         'F.createdAt',
         'FB.id as blobId',
         'FB.size as blobSize',
-        'FB.encrypted as blobEncrypted',
+        'FB.encryption as blobEncryption',
         'FB.contentHash as blobContentHash',
         'FB.createdAt as blobCreatedAt',
         'U.name as userOwnerName',
@@ -70,11 +70,11 @@ export const GET = operation({
         ownerName,
       },
       blob:
-        file.blobId && file.blobSize !== null && file.blobEncrypted !== null && file.blobContentHash
+        file.blobId && file.blobSize !== null && file.blobEncryption !== null && file.blobContentHash
           ? {
               id: file.blobId,
               size: file.blobSize,
-              encrypted: file.blobEncrypted,
+              encryption: file.blobEncryption,
               contentHash: file.blobContentHash,
               createdAt: file.blobCreatedAt ?? file.createdAt,
             }

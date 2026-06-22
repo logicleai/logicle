@@ -23,7 +23,7 @@ vi.mock('@/models/file', () => ({
       name: isPdf ? `mock-${id}.pdf` : isImage ? `mock-${id}.png` : `mock-${id}.txt`,
       type: isPdf ? 'application/pdf' : isImage ? 'image/png' : 'text/plain',
       path: '/tmp/mock-file.txt',
-      encrypted: false,
+      encryption: null,
       size: 12,
     }
   },

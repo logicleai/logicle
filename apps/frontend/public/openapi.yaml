@@ -5081,12 +5081,13 @@ components:
                   type: string
                 size:
                   type: number
-                encrypted:
+                encryption:
                   anyOf:
-                    - type: number
-                      const: 0
-                    - type: number
-                      const: 1
+                    - type: string
+                      enum:
+                        - pgp
+                        - aead
+                    - type: "null"
                 contentHash:
                   type: string
                 createdAt:
@@ -5096,7 +5097,7 @@ components:
               required:
                 - id
                 - size
-                - encrypted
+                - encryption
                 - contentHash
                 - createdAt
               additionalProperties: false
@@ -5163,12 +5164,13 @@ components:
           type: string
           format: date-time
           pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-        encrypted:
+        encryption:
           anyOf:
-            - type: number
-              const: 0
-            - type: number
-              const: 1
+            - type: string
+              enum:
+                - pgp
+                - aead
+            - type: "null"
       required:
         - id
         - name
@@ -5176,7 +5178,7 @@ components:
         - type
         - size
         - createdAt
-        - encrypted
+        - encryption
       additionalProperties: false
       id: File
     ApiKey:

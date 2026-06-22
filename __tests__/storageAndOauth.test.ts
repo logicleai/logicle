@@ -30,9 +30,9 @@ describe('apps/backend/lib/storage/FsStorage', () => {
     const filePath = 'nested/test.txt'
     await fs.mkdir(path.join(tempDir, 'nested'), { recursive: true })
 
-    await storage.writeStream(filePath, bufferToReadableStream(Buffer.from('hello world')))
-    await expect(storage.readBuffer(filePath)).resolves.toEqual(Buffer.from('hello world'))
-    await expect(collectStreamToBuffer(await storage.readStream(filePath))).resolves.toEqual(
+    await storage.writeStream(filePath, bufferToReadableStream(Buffer.from('hello world')), null)
+    await expect(storage.readBuffer(filePath, null)).resolves.toEqual(Buffer.from('hello world'))
+    await expect(collectStreamToBuffer(await storage.readStream(filePath, null))).resolves.toEqual(
       Buffer.from('hello world')
     )
 
@@ -55,7 +55,7 @@ describe('apps/backend/lib/storage/FsStorage', () => {
       },
     })
 
-    await expect(storage.writeStream(filePath, failingStream)).rejects.toThrow('stream exploded')
+    await expect(storage.writeStream(filePath, failingStream, null)).rejects.toThrow('stream exploded')
     await expect(fs.stat(path.join(tempDir, filePath))).rejects.toThrow()
 
     await fs.rm(tempDir, { recursive: true, force: true })

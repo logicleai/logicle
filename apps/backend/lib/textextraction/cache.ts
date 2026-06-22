@@ -36,7 +36,7 @@ export const cachingExtractor = {
       return undefined
     }
     try {
-      const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+      const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
       const text = await extractor(fileContent)
       cache.set(fileEntry.path, text)
       return text

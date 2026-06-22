@@ -39,14 +39,14 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
     const blob = file.fileBlobId
       ? await db
           .selectFrom('FileBlob')
-          .select(['size', 'encrypted'])
+          .select(['size', 'encryption'])
           .where('id', '=', file.fileBlobId)
           .executeTakeFirst()
       : undefined
     return {
       ...file,
       size: blob?.size ?? (file as any).size,
-      encrypted: blob?.encrypted ?? (file as any).encrypted,
+      encryption: blob?.encryption ?? (file as any).encryption,
     } as FileDbRow
   }
 
@@ -127,7 +127,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
             value: extractedText,
           }
         }
-        const bytes = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+        const bytes = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
         return {
           type: 'text',
           value: bytes.toString('base64'),

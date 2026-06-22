@@ -31,7 +31,7 @@ type ToolCallResultOutput = ai.ToolResultPart['output']
 export const loadImagePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.ImagePart> => {
   let fileContent: Buffer
   try {
-    fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
   } catch (err) {
     throw new UserVisibleError(`File not readable: "${fileEntry.name}" (id: ${fileEntry.id})`, { cause: err })
   }
@@ -45,7 +45,7 @@ export const loadImagePartFromFileEntry = async (fileEntry: FileDbRow): Promise<
 export const loadFilePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.FilePart> => {
   let fileContent: Buffer
   try {
-    fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
   } catch (err) {
     throw new UserVisibleError(`File not readable: "${fileEntry.name}" (id: ${fileEntry.id})`, { cause: err })
   }
@@ -134,7 +134,7 @@ const dtoFileToToolResultOutputPart = async (
     }
   }
   if (canSendAsNativeImage(fileEntry.type, capabilities)) {
-    const data = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    const data = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
     return {
       type: 'image-data',
       data: data.toString('base64'),
@@ -149,7 +149,7 @@ const dtoFileToToolResultOutputPart = async (
         text: pdfFallback.text,
       }
     }
-    const data = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+    const data = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
     return {
       type: 'file-data',
       data: data.toString('base64'),

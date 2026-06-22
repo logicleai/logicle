@@ -268,7 +268,7 @@ async function loadImageData(url: string): Promise<ArrayBuffer> {
     if (!file) {
       throw new Error(`Missing file for DOCX export image: ${fileMatch[1]}`)
     }
-    const data = await storage.readBuffer(file.path, !!file.encrypted)
+    const data = await storage.readBuffer(file.path, file.encryption)
     return Uint8Array.from(data).buffer
   }
 

@@ -102,7 +102,7 @@ async function createFormBody(
       if (!fileEntry) {
         throw new Error(`Tool invocation required non existing file: ${propInvocationValue}`)
       }
-      const fileContent = await storage.readBuffer(fileEntry.path, !!fileEntry.encrypted)
+      const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
       form.append(definedPropertyName, fileContent, {
         filename: fileEntry.name,
       })

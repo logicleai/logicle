@@ -1,7 +1,7 @@
 import env from '@/lib/env'
 import { Storage } from './api'
 import { CachingStorage } from './CachingStorage'
-import { AesEncryptingStorage } from '../../ee/AesEncryptingStorage'
+import { AeadEncryptingStorage } from '../../ee/AeadEncryptingStorage'
 import { FsStorage } from './FsStorage'
 import { S3Storage } from './S3Storage'
 import { PgpEncryptingStorage } from '../../ee/PgpEncryptingStorage'
@@ -26,8 +26,9 @@ async function createStorage(
   encryptionKey: string
 ) {
   let storage: Storage = createBasicStorage(location)
-  if (encryptionProvider === 'aes') {
-    storage = await AesEncryptingStorage.create(storage, encryptionKey)
+  if (encryptionProvider === 'aead') {
+    storage = await PgpEncryptingStorage.create(storage, encryptionKey)
+    storage = await AeadEncryptingStorage.create(storage, encryptionKey)
   } else {
     storage = await PgpEncryptingStorage.create(storage, encryptionKey)
   }
