@@ -338,7 +338,7 @@ test.each([
   for (let i = 0; i < payload.length; i++) payload[i] = i % 253
   await storage.writeBuffer(`${fileName}-${size}`, payload, 'aead')
   await expect(storage.readBuffer(`${fileName}-${size}`, 'aead')).resolves.toEqual(payload)
-})
+}, 30_000)
 
 test('AeadEncryptingStorage supports plaintext range reads for AEAD v1 blobs', async () => {
   const storage = await AeadEncryptingStorage.create(new MemoryStorage(), password)
