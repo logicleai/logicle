@@ -324,12 +324,10 @@ describe('message projection parity', () => {
     const output = toolResultPart?.output
     expect(output && typeof output === 'object' ? (output as any).type : undefined).toBe('content')
     const outputParts = output && typeof output === 'object' && 'value' in output ? (output as any).value : []
-    expect(outputParts[0]).toEqual(
-      expect.objectContaining({
-        type: 'text',
-      })
-    )
-    expect(String(outputParts[0]?.text ?? '')).toContain('"attached_files"')
+    // [text 'summary', descriptor for doc.txt, file part]
+    expect(outputParts[0]).toEqual(expect.objectContaining({ type: 'text', text: 'summary' }))
+    expect(outputParts[1]).toEqual(expect.objectContaining({ type: 'text' }))
+    expect(String(outputParts[1]?.text ?? '')).toContain('doc.txt')
   })
 })
 
