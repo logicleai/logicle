@@ -112,6 +112,7 @@ export const AssistantForm = ({
             .pick({
               tokenLimit: true,
               temperature: true,
+              contextCompression: true,
             })
             .parse(values)
           break

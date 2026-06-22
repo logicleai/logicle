@@ -175,6 +175,7 @@ function makeAssistant(
     temperature: 0,
     tokenLimit: 4096,
     reasoning_effort: null,
+    contextCompression: null,
   }
   return new ChatAssistant(config, assistantParams, model, tools, { user: 'test-user' }, {}, [], { functions: {}, functionToolIdMap: new Map(), setupError: undefined })
 }

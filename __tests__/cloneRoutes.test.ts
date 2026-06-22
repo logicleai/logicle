@@ -109,6 +109,7 @@ const makeDraft = (backendId: string, fileIds: string[]): dto.InsertableAssistan
   temperature: 0,
   tokenLimit: 4096,
   reasoning_effort: null,
+  contextCompression: null,
   tags: [],
   prompts: [],
   tools: [],

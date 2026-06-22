@@ -377,6 +377,7 @@ describe('token invariant for non-file history', () => {
         temperature: 0,
         tokenLimit: 100000,
         reasoning_effort: null,
+        contextCompression: null,
       },
       model: approxModel,
       tools: [],
@@ -437,6 +438,7 @@ describe('token invariant for non-file history', () => {
         temperature: 0,
         tokenLimit: 100000,
         reasoning_effort: null,
+        contextCompression: null,
       },
       model: approxModel,
       tools: [],
@@ -475,6 +477,7 @@ describe('token invariant for non-file history', () => {
         temperature: 0,
         tokenLimit: 100000,
         reasoning_effort: null,
+        contextCompression: null,
       },
       model: parityMediaModel as any,
       tools: [],
@@ -514,6 +517,7 @@ describe('token invariant for non-file history', () => {
         temperature: 0,
         tokenLimit: 100000,
         reasoning_effort: null,
+        contextCompression: null,
       },
       model: parityMediaModel as any,
       tools: [],
@@ -557,6 +561,7 @@ describe('truncation correctness', () => {
     temperature: 0,
     tokenLimit: 100000,
     reasoning_effort: null,
+    contextCompression: null,
   })
 
   const truncateLengthFor = async (systemPrompt: string, tokenLimit: number) => {

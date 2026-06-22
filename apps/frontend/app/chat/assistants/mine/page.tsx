@@ -92,6 +92,7 @@ const MyAssistantPage = () => {
       tags: [],
       prompts: [],
       reasoning_effort: null,
+      contextCompression: null,
     }
     const url = `/api/assistants`
     const response = await post<dto.AssistantWithOwner>(url, newAssistant)

@@ -61,6 +61,7 @@ const assistantParams = {
   temperature: 0,
   tokenLimit: 200000,
   reasoning_effort: null,
+  contextCompression: null,
 } as const
 
 const mockBuildPreambleSegments = async (segments: any[]) => {

@@ -120,6 +120,9 @@ export class SubAssistantTool implements ToolImplementation {
                 | 'medium'
                 | 'high'
                 | null,
+              contextCompression: assistantVersion.contextCompression
+                ? (JSON.parse(assistantVersion.contextCompression) as import('@/types/dto').ContextCompressionConfig)
+                : null,
             }
 
             // Pass the parent conversationId and rootOwner so that any files

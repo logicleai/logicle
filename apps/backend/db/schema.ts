@@ -56,6 +56,7 @@ export interface AssistantVersion {
   temperature: number
   tokenLimit: number
   reasoning_effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | null
+  contextCompression: string | null
   tags: string
   prompts: string
   subAssistants: string | null
@@ -375,6 +376,20 @@ export interface Satellite {
   updatedAt: string
 }
 
+export interface TurnMemory {
+  id: string
+  conversationId: string
+  userMessageId: string
+  userIntent: string
+  answerSummary: string
+  durableFacts: string
+  openQuestions: string
+  decisions: string
+  rehydrationHints: string
+  warnings: string
+  createdAt: string
+}
+
 export interface DB {
   Account: Account
   ApiKey: ApiKey
@@ -405,6 +420,7 @@ export interface DB {
   Property: Property
   Satellite: Satellite
   Session: Session
+  TurnMemory: TurnMemory
   Workspace: Workspace
   WorkspaceMember: WorkspaceMember
   User: User

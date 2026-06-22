@@ -56,6 +56,27 @@ import type { Usage } from './usage'
 import { SatelliteTool } from '../tools/satellite/implementation'
 import type { PromptSegment } from './preamble'
 import { prefixToolFunctionNames } from './toolFunctionNames'
+import { compactHistoricalToolResultsForPrompt } from './tool-result-compaction'
+
+function estimateRawContextTokens(messages: dto.Message[]): number {
+  let chars = 0
+  for (const msg of messages) {
+    if ('content' in msg && typeof (msg as { content?: unknown }).content === 'string') {
+      chars += (msg as { content: string }).content.length
+    }
+    if ('parts' in msg && Array.isArray((msg as { parts?: unknown }).parts)) {
+      for (const part of (msg as { parts: Record<string, unknown>[] }).parts) {
+        if (part['type'] === 'text' && typeof part['text'] === 'string') chars += part['text'].length
+        if (part['type'] === 'tool-result') {
+          const r = part['result'] as Record<string, unknown> | undefined
+          if (r?.['type'] === 'text' && typeof r['value'] === 'string') chars += r['value'].length
+        }
+      }
+    }
+  }
+  return Math.ceil(chars / 4)
+}
+import { distillAndSaveTurn, shouldDistillTurn } from './turn-memory-distiller'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -84,12 +105,13 @@ export interface AssistantParams {
   temperature: number
   tokenLimit: number
   reasoning_effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | null
+  contextCompression: dto.ContextCompressionConfig
 }
 
 export type AssistantParamsSource = Pick<
   AssistantParams,
   'model' | 'systemPrompt' | 'temperature' | 'tokenLimit' | 'reasoning_effort'
-> & { assistantId?: string; id?: string }
+> & { assistantId?: string; id?: string; contextCompression?: dto.ContextCompressionConfig | string | null }
 
 interface Options {
   saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>
@@ -112,7 +134,6 @@ export class ChatAbortedError extends Error {
     this.name = 'ChatAbortedError'
   }
 }
-
 
 class ClientSinkImpl implements ClientSink {
   clientGone: boolean = false
@@ -158,7 +179,11 @@ export class ChatAssistant {
     private options: Options,
     private parameters: Record<string, ParameterValueAndDescription>,
     private knowledge: dto.AssistantFile[],
-    computed: { functions: ToolFunctions; functionToolIdMap: Map<string, string>; setupError: string | undefined }
+    computed: {
+      functions: ToolFunctions
+      functionToolIdMap: Map<string, string>
+      setupError: string | undefined
+    }
   ) {
     this.functions = computed.functions
     this.functionToolIdMap = computed.functionToolIdMap
@@ -220,6 +245,14 @@ export class ChatAssistant {
       temperature: source.temperature,
       tokenLimit: source.tokenLimit,
       reasoning_effort: source.reasoning_effort,
+      contextCompression: (() => {
+        if (typeof source.contextCompression !== 'string') return source.contextCompression ?? null
+        try {
+          return JSON.parse(source.contextCompression) as dto.ContextCompressionConfig
+        } catch {
+          return null
+        }
+      })(),
     }
   }
 
@@ -250,7 +283,10 @@ export class ChatAssistant {
           return { tool, functions: await tool.functions(llmModel, context), error: undefined }
         } catch (e) {
           logger.error(`Failed setting up tool "${tool.toolParams.name}"`, e)
-          const message = e instanceof UserVisibleError ? e.message : `Tool "${tool.toolParams.name}" could not be initialized`
+          const message =
+            e instanceof UserVisibleError
+              ? e.message
+              : `Tool "${tool.toolParams.name}" could not be initialized`
           return { tool, functions: {} as ToolFunctions, error: message }
         }
       })
@@ -521,7 +557,21 @@ export class ChatAssistant {
 
   async invokeLlm(messages: dto.Message[]) {
     this.throwIfAborted()
-    const truncatedChat = await this.truncateChat(messages)
+    const compression = this.assistantParams.contextCompression
+    let promptMessages = messages
+    if (compression) {
+      const shouldCompress =
+        !compression.triggerAtTokens ||
+        estimateRawContextTokens(messages) >= compression.triggerAtTokens
+      if (shouldCompress) {
+        promptMessages = await compactHistoricalToolResultsForPrompt(
+          messages,
+          this.options.conversationId,
+          compression.preset
+        )
+      }
+    }
+    const truncatedChat = await this.truncateChat(promptMessages)
 
     const preambleSegments = await buildPreambleSegments({
       assistantParams: this.assistantParams,
@@ -767,7 +817,7 @@ export class ChatAssistant {
     chatState: ChatState,
     toolUILink: ToolUILink
   ): Promise<dto.ToolCallResultOutput> {
-    const functionDef = (this.functions)[toolCall.toolName]
+    const functionDef = this.functions[toolCall.toolName]
     if (!functionDef) {
       return { type: 'error-text', value: `No such function: ${functionDef}` }
     } else if (!toolCallAuthResponse.allow) {
@@ -847,7 +897,7 @@ export class ChatAssistant {
         ) {
           // do nothing
         } else if (chunk.type === 'tool-call') {
-          const toolId = (this.functionToolIdMap).get(chunk.toolName)
+          const toolId = this.functionToolIdMap.get(chunk.toolName)
           const googleMeta = chunk.providerMetadata?.google ?? chunk.providerMetadata?.vertex
           const thoughtSignature =
             typeof googleMeta?.thoughtSignature === 'string'
@@ -983,6 +1033,7 @@ export class ChatAssistant {
       return usage
     }
 
+    const historyLengthAtTurnStart = chatState.chatHistory.length
     let iterationCount = 0
     let complete = false
     while (!complete) {
@@ -1148,6 +1199,33 @@ export class ChatAssistant {
       await Promise.all(nonNativeToolCalls.map(executeToolCall))
       const updatedToolMessage = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
       await this.saveMessage(updatedToolMessage)
+    }
+
+    if (this.assistantParams.contextCompression && this.options.conversationId) {
+      const turnMessages = chatState.chatHistory.slice(historyLengthAtTurnStart)
+      if (shouldDistillTurn(turnMessages)) {
+        const userMessage = chatState.chatHistory[historyLengthAtTurnStart - 1]
+        const finalAssistantMsg = turnMessages
+          .filter((m): m is dto.AssistantMessage => m.role === 'assistant')
+          .at(-1)
+        const toolMessages = turnMessages.filter(
+          (m): m is dto.ToolMessage => m.role === 'tool'
+        )
+        const finalAnswer =
+          finalAssistantMsg?.parts
+            .filter((p): p is dto.TextPart => p.type === 'text')
+            .map((p) => p.text)
+            .join('') ?? ''
+        if (userMessage?.role === 'user' && finalAnswer && toolMessages.length > 0) {
+          void distillAndSaveTurn({
+            conversationId: this.options.conversationId,
+            userMessage,
+            finalAnswer,
+            toolMessages,
+            currentLanguageModel: this.languageModel,
+          })
+        }
+      }
     }
 
     if (generateSummary) {
