@@ -64,6 +64,7 @@ async function migrateTestDb() {
 
 async function resetTables() {
   await db.deleteFrom('File').execute()
+  await db.deleteFrom('FileBlob').execute()
   await db.deleteFrom('Conversation').execute()
   await db.deleteFrom('AssistantVersion').execute()
   await db.deleteFrom('Assistant').execute()
@@ -367,6 +368,40 @@ describe('POST /api/files', () => {
 
 // ── GET /api/files/:fileId/content ────────────────────────────────────────────
 
+async function insertFileWithBlob(params: {
+  fileId: string
+  blobId: string
+  path: string
+  size: number
+  encryption: 'aead' | 'pgp' | null
+}) {
+  await db
+    .insertInto('FileBlob')
+    .values({
+      id: params.blobId,
+      contentHash: 'a'.repeat(64),
+      path: params.path,
+      type: 'text/plain',
+      size: params.size,
+      encryption: params.encryption,
+      createdAt: new Date().toISOString(),
+    })
+    .execute()
+  await sql`
+    INSERT INTO "File" ("id", "name", "path", "type", "size", "uploaded", "createdAt", "encrypted", "fileBlobId", "ownerType", "ownerId")
+    VALUES (${params.fileId}, ${'test.txt'}, ${params.path}, ${'text/plain'}, ${params.size}, ${0}, ${new Date().toISOString()}, ${0}, ${params.blobId}, ${'USER'}, ${testUserId})
+  `.execute(db)
+}
+
+function makeStream(content: string): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    start(ctrl) {
+      ctrl.enqueue(new TextEncoder().encode(content))
+      ctrl.close()
+    },
+  })
+}
+
 describe('GET /api/files/:fileId/content', () => {
   test('returns 404 when the file does not exist', async () => {
     const response = await contentRoute.GET(
@@ -395,14 +430,7 @@ describe('GET /api/files/:fileId/content', () => {
   test('returns 200 with file content when the user owns the file', async () => {
     await insertFile({ id: 'f-mine', path: 'mine.txt', ownerId: testUserId })
 
-    mocks.readStream.mockResolvedValue(
-      new ReadableStream<Uint8Array>({
-        start(ctrl) {
-          ctrl.enqueue(new TextEncoder().encode('file content'))
-          ctrl.close()
-        },
-      })
-    )
+    mocks.readStream.mockResolvedValue(makeStream('file content'))
 
     const response = await contentRoute.GET(
       new Request('http://localhost/api/files/f-mine/content', {
@@ -414,5 +442,73 @@ describe('GET /api/files/:fileId/content', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('content-type')).toBe('text/plain')
     await expect(response.text()).resolves.toBe('file content')
+  })
+
+  test('returns 200 with Accept-Ranges: bytes for an AEAD file without a Range header', async () => {
+    await insertFileWithBlob({ fileId: 'f-aead', blobId: 'b-aead', path: 'aead.txt', size: 100, encryption: 'aead' })
+    mocks.readStream.mockResolvedValue(makeStream('full content'))
+
+    const response = await contentRoute.GET(
+      new Request('http://localhost/api/files/f-aead/content', {
+        headers: { cookie: sessionCookie },
+      }),
+      { params: Promise.resolve({ fileId: 'f-aead' }) }
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('accept-ranges')).toBe('bytes')
+  })
+
+  test('returns 206 with Content-Range for a valid range request on an AEAD file', async () => {
+    await insertFileWithBlob({ fileId: 'f-aead', blobId: 'b-aead', path: 'aead.txt', size: 100, encryption: 'aead' })
+    mocks.readStream.mockResolvedValue(makeStream('0123456789'))
+
+    const response = await contentRoute.GET(
+      new Request('http://localhost/api/files/f-aead/content', {
+        headers: { cookie: sessionCookie, range: 'bytes=10-19' },
+      }),
+      { params: Promise.resolve({ fileId: 'f-aead' }) }
+    )
+
+    expect(response.status).toBe(206)
+    expect(response.headers.get('content-range')).toBe('bytes 10-19/100')
+    expect(response.headers.get('content-length')).toBe('10')
+    expect(response.headers.get('accept-ranges')).toBe('bytes')
+    expect(mocks.readStream).toHaveBeenCalledWith('aead.txt', 'aead', {
+      expectedSizeBytes: 100,
+      rangeStart: 10,
+      rangeEnd: 19,
+    })
+  })
+
+  test('returns 416 for an unsatisfiable range on an AEAD file', async () => {
+    await insertFileWithBlob({ fileId: 'f-aead', blobId: 'b-aead', path: 'aead.txt', size: 100, encryption: 'aead' })
+
+    const response = await contentRoute.GET(
+      new Request('http://localhost/api/files/f-aead/content', {
+        headers: { cookie: sessionCookie, range: 'bytes=200-299' },
+      }),
+      { params: Promise.resolve({ fileId: 'f-aead' }) }
+    )
+
+    expect(response.status).toBe(416)
+    expect(response.headers.get('content-range')).toBe('bytes */100')
+    expect(mocks.readStream).not.toHaveBeenCalled()
+  })
+
+  test('returns 200 with full content when a Range header is sent for a non-AEAD file', async () => {
+    await insertFileWithBlob({ fileId: 'f-plain', blobId: 'b-plain', path: 'plain.txt', size: 100, encryption: null })
+    mocks.readStream.mockResolvedValue(makeStream('full content'))
+
+    const response = await contentRoute.GET(
+      new Request('http://localhost/api/files/f-plain/content', {
+        headers: { cookie: sessionCookie, range: 'bytes=0-9' },
+      }),
+      { params: Promise.resolve({ fileId: 'f-plain' }) }
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('accept-ranges')).toBe('none')
+    expect(mocks.readStream).toHaveBeenCalledWith('plain.txt', null, { expectedSizeBytes: 100 })
   })
 })
