@@ -169,6 +169,87 @@ describe('apps/backend/ee/PgpEncryptingStorage', () => {
   })
 })
 
+describe('apps/backend/ee/AeadEncryptingStorage', () => {
+  async function makeAead() {
+    const inner = new MemoryStorage()
+    const { AeadEncryptingStorage } = await import('@/ee/AeadEncryptingStorage')
+    const storage = await AeadEncryptingStorage.create(inner, password)
+    return { inner, storage }
+  }
+
+  test('round-trips plaintext without a range', async () => {
+    const { storage } = await makeAead()
+    const plaintext = Buffer.from('hello AEAD world')
+
+    await storage.writeBuffer('f', plaintext, 'aead')
+    const result = await storage.readBuffer('f', 'aead')
+
+    expect(result).toEqual(plaintext)
+  })
+
+  test('returns correct bytes for a sub-range within a single chunk', async () => {
+    const { storage } = await makeAead()
+    const plaintext = Buffer.from('abcdefghijklmnopqrstuvwxyz')
+
+    await storage.writeBuffer('f', plaintext, 'aead')
+    const result = await collectStreamToBuffer(
+      await storage.readStream('f', 'aead', { rangeStart: 5, rangeEnd: 14 })
+    )
+
+    expect(result).toEqual(plaintext.subarray(5, 15))
+  })
+
+  test('returns correct bytes for a range spanning a chunk boundary', async () => {
+    const { storage } = await makeAead()
+    const CHUNK = 1024 * 1024
+    const plaintext = Buffer.alloc(CHUNK + 512, 0xab)
+    // make the two halves distinguishable
+    plaintext.fill(0xcd, CHUNK - 8, CHUNK + 8)
+
+    await storage.writeBuffer('large', plaintext, 'aead')
+
+    const rangeStart = CHUNK - 8
+    const rangeEnd = CHUNK + 7
+    const result = await collectStreamToBuffer(
+      await storage.readStream('large', 'aead', { rangeStart, rangeEnd })
+    )
+
+    expect(result).toEqual(plaintext.subarray(rangeStart, rangeEnd + 1))
+  })
+
+  test('round-trips an empty file', async () => {
+    const { storage } = await makeAead()
+
+    await storage.writeBuffer('empty', Buffer.alloc(0), 'aead')
+    const result = await storage.readBuffer('empty', 'aead')
+
+    expect(result).toEqual(Buffer.alloc(0))
+  })
+
+  test('throws for an out-of-bounds range', async () => {
+    const { storage } = await makeAead()
+    await storage.writeBuffer('f', Buffer.from('hello'), 'aead')
+
+    await expect(
+      storage.readStream('f', 'aead', { rangeStart: 0, rangeEnd: 5 })
+    ).rejects.toThrow(/Invalid AEAD read range/)
+  })
+
+  test('passes range through to inner storage when encryption is null', async () => {
+    const { inner, storage } = await makeAead()
+    const data = Buffer.from('passthrough data')
+    await inner.writeBuffer('raw', data, null)
+    const readStreamSpy = vi.spyOn(inner, 'readStream')
+
+    const result = await collectStreamToBuffer(
+      await storage.readStream('raw', null, { rangeStart: 4, rangeEnd: 11 })
+    )
+
+    expect(result).toEqual(data.subarray(4, 12))
+    expect(readStreamSpy).toHaveBeenCalledWith('raw', null, { rangeStart: 4, rangeEnd: 11 })
+  })
+})
+
 describe('apps/backend/lib/storage/S3Storage', () => {
   test('covers constructor, reads, writes, and error handling', async () => {
     process.env.AWS_DEFAULT_REGION = 'eu-west-1'

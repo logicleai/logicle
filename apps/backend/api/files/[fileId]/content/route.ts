@@ -151,11 +151,30 @@ export const PUT = operation({
   },
 })
 
+function parseRangeHeader(header: string, totalSize: number): { start: number; end: number } | null {
+  const match = /^bytes=(\d*)-(\d*)$/.exec(header)
+  if (!match) return null
+  const [, startStr, endStr] = match
+  if (!startStr && !endStr) return null
+  let start: number
+  let end: number
+  if (!startStr) {
+    const suffix = parseInt(endStr, 10)
+    start = Math.max(0, totalSize - suffix)
+    end = totalSize - 1
+  } else {
+    start = parseInt(startStr, 10)
+    end = endStr ? parseInt(endStr, 10) : totalSize - 1
+  }
+  if (start < 0 || end >= totalSize || start > end) return null
+  return { start, end }
+}
+
 export const GET = operation({
   name: 'Download file content',
   authentication: 'user',
   responses: [responseSpec(200, z.any()), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, session }) => {
+  implementation: async ({ params, headers, session }) => {
     const file = await db
       .selectFrom('File')
       .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
@@ -168,6 +187,35 @@ export const GET = operation({
     if (!(await canAccessFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
       return forbidden()
     }
+
+    const rangeHeader = headers.get('range')
+    const supportsRanges = file.encryption === 'aead'
+
+    if (rangeHeader && supportsRanges && typeof file.size === 'number') {
+      const range = parseRangeHeader(rangeHeader, file.size)
+      if (!range) {
+        return new Response(null, {
+          status: 416,
+          headers: { 'content-range': `bytes */${file.size}` },
+        })
+      }
+      const { start, end } = range
+      const stream = await storage.readStream(file.path, file.encryption, {
+        expectedSizeBytes: file.size,
+        rangeStart: start,
+        rangeEnd: end,
+      })
+      return new Response(stream, {
+        status: 206,
+        headers: {
+          'content-type': file.type,
+          'content-range': `bytes ${start}-${end}/${file.size}`,
+          'content-length': `${end - start + 1}`,
+          'accept-ranges': 'bytes',
+        },
+      })
+    }
+
     const fileContent = await storage.readStream(file.path, file.encryption, {
       expectedSizeBytes: file.size ?? undefined,
     })
@@ -175,6 +223,7 @@ export const GET = operation({
       headers: {
         'content-type': file.type,
         ...(typeof file.size === 'number' ? { 'content-length': `${file.size}` } : {}),
+        'accept-ranges': supportsRanges ? 'bytes' : 'none',
       },
     })
   },
