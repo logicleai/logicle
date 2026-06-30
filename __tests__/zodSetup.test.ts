@@ -8,7 +8,7 @@ describe('zod custom error messages', () => {
     const result = schema.safeParse('')
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe('this-field-is-required')
+      expect(result.error.issues[0].message).toBe('this_field_is_required')
     }
   })
 
@@ -17,7 +17,7 @@ describe('zod custom error messages', () => {
     const result = schema.safeParse('ab')
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe('value-is-too-short')
+      expect(result.error.issues[0].message).toBe('value_is_too_short')
     }
   })
 
@@ -26,7 +26,7 @@ describe('zod custom error messages', () => {
     const result = schema.safeParse('not-an-email')
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe('invalid-value-email')
+      expect(result.error.issues[0].message).toBe('invalid_value_email')
     }
   })
 
@@ -35,7 +35,7 @@ describe('zod custom error messages', () => {
     const result = schema.safeParse('notvalid')
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe('invalid-value-email')
+      expect(result.error.issues[0].message).toBe('invalid_value_email')
     }
   })
 

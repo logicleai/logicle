@@ -100,10 +100,10 @@ describe('apps/backend/lib/properties', () => {
     const { PropertySource } = await import('@/backend/lib/properties')
     const { AppSettingsDefaults } = await import('@/types/settings')
 
-    await expect(PropertySource.getBool('enable-signup')).resolves.toBe(true)
+    await expect(PropertySource.getBool('enable_signup')).resolves.toBe(true)
     await expect(PropertySource.signupEnabled()).resolves.toBe(true)
-    await expect(PropertySource.getBool('enable-signup')).resolves.toBe(false)
-    await expect(PropertySource.getBool('enable-signup')).resolves.toBe(
+    await expect(PropertySource.getBool('enable_signup')).resolves.toBe(false)
+    await expect(PropertySource.getBool('enable_signup')).resolves.toBe(
       AppSettingsDefaults.enable_signup
     )
   })

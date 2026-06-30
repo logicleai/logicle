@@ -35,15 +35,15 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
 
   const environment = useEnvironment()
   const selectedModelId = useWatch({ control: form.control, name: 'model' }).modelId
-  const selectedReasoningEffort = useWatch({ control: form.control, name: 'reasoning-effort' })
+  const selectedReasoningEffort = useWatch({ control: form.control, name: 'reasoning_effort' })
   const selectedModel = environment.models.find((m) => m.id === selectedModelId)
   const supportedReasoningEfforts = selectedModel?.supportedReasoningEfforts ?? []
 
   useEffect(() => {
     if (selectedReasoningEffort && !supportedReasoningEfforts.includes(selectedReasoningEffort)) {
-      form.setError('reasoning-effort', { message: t('reasoning-effort-not-supported') })
+      form.setError('reasoning_effort', { message: t('reasoning-effort-not-supported') })
     } else {
-      form.clearErrors('reasoning-effort')
+      form.clearErrors('reasoning_effort')
     }
   }, [selectedModelId, selectedReasoningEffort])
 
@@ -139,7 +139,7 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
         {(supportedReasoningEfforts.length > 0 || selectedReasoningEffort) && (
           <FormField
             control={form.control}
-            name="reasoning-effort"
+            name="reasoning_effort"
             render={({ field }) => (
               <FormItem label={t('reasoning-effort')}>
                 <Select

@@ -401,7 +401,7 @@ const AssistantPage = () => {
         return t('temperature')
       case 'tokenLimit':
         return t('token-limit')
-      case 'reasoning-effort':
+      case 'reasoning_effort':
         return t('reasoning')
       case 'iconUri':
         return t('assistant-icon')

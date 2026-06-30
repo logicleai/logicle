@@ -10,6 +10,6 @@ export class PropertySource {
   }
 
   static async signupEnabled() {
-    return await PropertySource.getBool('enable-signup')
+    return await PropertySource.getBool('enable_signup')
   }
 }
