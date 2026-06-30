@@ -110,7 +110,7 @@ export interface AssistantParams {
 
 export type AssistantParamsSource = Pick<
   AssistantParams,
-  'model' | 'systemPrompt' | 'temperature' | 'tokenLimit' | 'reasoning_effort'
+  'model' | 'systemPrompt' | 'temperature' | 'tokenLimit' | 'reasoning-effort'
 > & { assistantId?: string; id?: string; contextCompression?: dto.ContextCompressionConfig | string | null }
 
 interface Options {

@@ -62,18 +62,18 @@ const ApiKeyField = ({ backendApiKey, apiKeyValue, onApiKeyChange, field }: ApiK
           <div className="flex items-start space-x-2">
             <RadioGroupItem value="server" id={apiKeySourceServerId} />
             <Label htmlFor={apiKeySourceServerId} className="flex flex-col">
-              <span>{t('api_key_source_server')}</span>
+              <span>{t('api-key-source-server')}</span>
               <span className="text-sm text-muted-foreground">
-                {t('api_key_source_server_description')}
+                {t('api-key-source-server-description')}
               </span>
             </Label>
           </div>
           <div className="flex items-start space-x-2">
             <RadioGroupItem value="user" id={apiKeySourceUserId} />
             <Label htmlFor={apiKeySourceUserId} className="flex flex-col">
-              <span>{t('api_key_source_user')}</span>
+              <span>{t('api-key-source-user')}</span>
               <span className="text-sm text-muted-foreground">
-                {t('api_key_source_user_description')}
+                {t('api-key-source-user-description')}
               </span>
             </Label>
           </div>
@@ -81,7 +81,7 @@ const ApiKeyField = ({ backendApiKey, apiKeyValue, onApiKeyChange, field }: ApiK
       </div>
       {apiKeySource === 'server' && (
         <PasswordInput
-          placeholder={t('api_key_placeholder')}
+          placeholder={t('api-key-placeholder')}
           value={field.value ?? ''}
           onChange={(event) => {
             const nextValue = event.target.value
@@ -129,7 +129,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
         name="name"
         render={({ field }) => (
           <FormItem label={t('name')}>
-            <Input placeholder={t('public_display_name')} {...field} />
+            <Input placeholder={t('public-display-name')} {...field} />
           </FormItem>
         )}
       />
@@ -139,7 +139,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           name="endPoint"
           render={({ field }) => (
             <FormItem label={t('api-endpoint-label')}>
-              <Input placeholder={t('api_endpoint_placeholder')} {...field} />
+              <Input placeholder={t('api-endpoint-placeholder')} {...field} />
             </FormItem>
           )}
         />
@@ -149,7 +149,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
           control={form.control}
           name={'apiKey' as any}
           render={({ field }) => (
-            <FormItem label={t('api_key')}>
+            <FormItem label={t('api-key')}>
               <ApiKeyField
                 backendApiKey={'apiKey' in backend ? backend.apiKey : undefined}
                 apiKeyValue={form.watch('apiKey' as any) as string | undefined}
@@ -170,7 +170,7 @@ const BackendForm: FC<Props> = ({ backend, onSubmit, creating }) => {
             <FormItem label={t('credentials')}>
               <Textarea
                 rows={20}
-                placeholder={t('insert_gcp_credentials_placeholder')}
+                placeholder={t('insert-gcp-credentials-placeholder')}
                 {...field}
               />
             </FormItem>

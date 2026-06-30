@@ -436,7 +436,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
                   variant="ghost"
                   size="icon"
                   type="button"
-                  title={t('copy_to_clipboard')}
+                  title={t('copy-to-clipboard')}
                   className={`${
                     isLast ? 'visible' : 'invisible group-hover:visible'
                   } focus:visible`}
@@ -452,7 +452,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
                   variant="ghost"
                   size="icon"
                   type="button"
-                  title={t('copy_as_text')}
+                  title={t('copy-as-text')}
                   className={`${
                     isLast ? 'visible' : 'invisible group-hover:visible'
                   } focus:visible`}
@@ -461,7 +461,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
                   <IconCopyText
                     size={20}
                     className="opacity-50 hover:opacity-100"
-                    title={t('copy_as_text')}
+                    title={t('copy-as-text')}
                     textLetter={t('text-letter')}
                   />
                 </Button>
@@ -471,7 +471,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
                   variant="ghost"
                   size="icon"
                   type="button"
-                  title={t('try_send_message_again')}
+                  title={t('try-send-message-again')}
                   onClick={onRepeatLastMessage}
                 >
                   <IconRepeat size={20} className={`opacity-50 hover:opacity-100`} />
@@ -482,7 +482,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
                   variant="ghost"
                   size="icon"
                   type="button"
-                  title={t('edit_message')}
+                  title={t('edit-message')}
                   onClick={() => handleEdit()}
                 >
                   <IconEdit size={20} className={`opacity-50 hover:opacity-100`} />
@@ -492,7 +492,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
                 variant="ghost"
                 size="icon"
                 type="button"
-                title={t('feedback_good_response')}
+                title={t('feedback-good-response')}
                 className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
                 onClick={onClickThumbUp}
               >
@@ -509,7 +509,7 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
                 variant="ghost"
                 size="icon"
                 type="button"
-                title={t('feedback_bad_response')}
+                title={t('feedback-bad-response')}
                 className={`${isLast ? 'visible' : 'invisible group-hover:visible'} focus:visible`}
                 onClick={onClickThumbDown}
               >
@@ -548,10 +548,10 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
     <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('feedback_share_title')}</DialogTitle>
+          <DialogTitle>{t('feedback-share-title')}</DialogTitle>
         </DialogHeader>
         <Textarea
-          placeholder={t('feedback_comment_placeholder')}
+          placeholder={t('feedback-comment-placeholder')}
           value={feedbackComment}
           onChange={(e) => setFeedbackComment(e.target.value)}
           rows={4}

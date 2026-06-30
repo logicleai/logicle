@@ -37,7 +37,7 @@ export const UserSelectorDialog = ({ initialUserId, title, onUpdate, onClose }: 
             aria-expanded={open}
             className="justify-between text-body1"
           >
-            {value ? users.find((user) => user.id === value)?.name : t('select_owner_placeholder')}
+            {value ? users.find((user) => user.id === value)?.name : t('select-owner-placeholder')}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -48,8 +48,8 @@ export const UserSelectorDialog = ({ initialUserId, title, onUpdate, onClose }: 
               return 0
             }}
           >
-            <CommandInput placeholder={t('search_placeholder')} />
-            <CommandEmpty>{t('no_such_user')}</CommandEmpty>
+            <CommandInput placeholder={t('search-placeholder')} />
+            <CommandEmpty>{t('no-such-user')}</CommandEmpty>
             <CommandGroup className="max-h-64 overflow-x-hidden overflow-y-auto">
               {users.map((user) => (
                 <CommandItem

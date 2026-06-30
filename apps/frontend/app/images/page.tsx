@@ -32,7 +32,7 @@ export default function ImagesPage() {
                 <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover:visible">
                   <button
                     type="button"
-                    title={t('copy_to_clipboard')}
+                    title={t('copy-to-clipboard')}
                     className="bg-black bg-opacity-30 rounded-md"
                     onClick={() => copyImageUrlToClipboard(`/api/files/${image.id}/content`)}
                   >

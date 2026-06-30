@@ -93,7 +93,7 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
             <Label htmlFor={idPrivate} className="flex flex-col">
               <span>{t('only-me')}</span>
               <span className="text-sm text-muted-foreground">
-                {t('only_you_will_have_access_to_this_tool')}
+                {t('only-you-will-have-access-to-this-tool')}
               </span>
             </Label>
           </div>
@@ -103,9 +103,9 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
               <RadioGroupItem value={WORKSPACE} id={idWorkspace} />
               <div className="flex-1">
                 <Label htmlFor={idWorkspace} className="flex flex-col">
-                  <span>{t('share_with_workspace')}</span>
+                  <span>{t('share-with-workspace')}</span>
                   <span className="text-sm text-muted-foreground mb-2">
-                    {t('share_tool_with_one_or_more_workspaces')}
+                    {t('share-tool-with-one-or-more-workspaces')}
                   </span>
                 </Label>
                 {sharing.type === WORKSPACE && (
@@ -121,7 +121,7 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
                         <div className="flex flex-wrap gap-2">
                           {selectedWorkspaces.length === 0 ? (
                             <span className="px-2 text-muted-foreground">
-                              {t('select_workspaces...')}
+                              {t('select-workspaces')}
                             </span>
                           ) : (
                             selectedWorkspaces.map((workspace) => (
@@ -182,9 +182,9 @@ export const ToolSharingDialog = ({ onClose, sharing, setSharing }: Params) => {
           <div className="flex items-center space-x-2">
             <RadioGroupItem disabled={profile?.role !== 'ADMIN'} value={PUBLIC} id={idPublic} />
             <Label htmlFor={idPublic} className="flex flex-col">
-              <span>{t('everyone_in_the_company')}</span>
+              <span>{t('everyone-in-the-company')}</span>
               <span className="text-sm text-muted-foreground mb-2">
-                {t('everyone_in_the_company_will_be_able_to_use_this_tool')}
+                {t('everyone-in-the-company-will-be-able-to-use-this-tool')}
               </span>
             </Label>
           </div>

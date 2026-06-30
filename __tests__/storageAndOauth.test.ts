@@ -163,7 +163,7 @@ describe('apps/backend/lib/tools/mcp/oauth', () => {
     expect(result.redirectUri).toBe('https://app.example.com/api/mcp/oauth/callback')
     expect(url.origin + url.pathname).toBe('https://issuer.example.com/authorize')
     expect(url.searchParams.get('response_type')).toBe('code')
-    expect(url.searchParams.get('client_id')).toBe('client-123')
+    expect(url.searchParams.get('client-id')).toBe('client-123')
     expect(url.searchParams.get('redirect_uri')).toBe(result.redirectUri)
     expect(url.searchParams.get('state')).toBe('state-123')
     expect(url.searchParams.get('code_challenge')).toBe('challenge-abc')
@@ -196,7 +196,7 @@ describe('apps/backend/lib/tools/mcp/oauth', () => {
         const body = init?.body as URLSearchParams
         expect(body.get('grant_type')).toBe('refresh_token')
         expect(body.get('refresh_token')).toBe('refresh-me')
-        expect(body.get('client_id')).toBe('client-123')
+        expect(body.get('client-id')).toBe('client-123')
         return new Response(
           JSON.stringify({
             access_token: 'fresh-token',

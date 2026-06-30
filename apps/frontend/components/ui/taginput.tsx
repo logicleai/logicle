@@ -137,12 +137,12 @@ const TagInput = ({
               <CommandList className="max-h-60">
                 {canCreate && (
                   <CommandItem onSelect={() => addValue(inputValue)}>
-                    {t('tag_add', { tag: normalizedInput })}
+                    {t('tag-add', { tag: normalizedInput })}
                   </CommandItem>
                 )}
                 {canCreate && hasSuggestions && <CommandSeparator />}
                 {hasSuggestions && (
-                  <CommandGroup heading={t('tag_existing')}>
+                  <CommandGroup heading={t('tag-existing')}>
                     {filteredSuggestions.map((item) => (
                       <CommandItem key={item} onSelect={() => addValue(item)}>
                         {item}
@@ -151,7 +151,7 @@ const TagInput = ({
                   </CommandGroup>
                 )}
                 {!hasSuggestions && !canCreate && (
-                  <CommandEmpty>{t('tag_no_suggestions')}</CommandEmpty>
+                  <CommandEmpty>{t('tag-no-suggestions')}</CommandEmpty>
                 )}
               </CommandList>
             </Command>

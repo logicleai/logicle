@@ -59,7 +59,7 @@ const trackedDraftFields: UpdateableAssistantDraftField[] = [
   'prompts',
   'temperature',
   'tokenLimit',
-  'reasoning_effort',
+  'reasoning-effort',
   'iconUri',
   'subAssistants',
 ]

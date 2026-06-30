@@ -89,9 +89,9 @@ const formatZodIssues = (
           })()
         : undefined
     const details =
-      issue.code === 'invalid_type' && 'expected' in issue && 'received' in issue
+      issue.code === 'invalid-type' && 'expected' in issue && 'received' in issue
         ? `expected ${String(issue.expected)}, received ${String(issue.received)}`
-        : issue.code === 'invalid_value' && 'values' in issue
+        : issue.code === 'invalid-value' && 'values' in issue
         ? `expected one of ${JSON.stringify(issue.values)}`
         : undefined
     const detailText = details ? ` (${details})` : ''

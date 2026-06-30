@@ -70,9 +70,9 @@ export const fetchChatResponse = async (
         if (response.ok && contentType.startsWith('text/event-stream')) {
           return
         } else if (response.status === 403) {
-          throw new BackendError('failed_sending_message_not_authorized')
+          throw new BackendError('failed-sending-message-not-authorized')
         } else {
-          throw new BackendError('failed_sending_message')
+          throw new BackendError('failed-sending-message')
         }
       },
       onclose() {
@@ -92,7 +92,7 @@ export const fetchChatResponse = async (
         {
           ...conversation.messages[lastIndex],
           error: translation(
-            error instanceof BackendError ? error.message : 'chat_response_failure'
+            error instanceof BackendError ? error.message : 'chat-response-failure'
           ),
         },
       ],

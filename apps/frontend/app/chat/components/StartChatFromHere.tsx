@@ -33,7 +33,7 @@ export const StartChatFromHere = ({ assistant, className, onPrompt }: SplashPara
         {assistant.prompts.length === 0 ? (
           <div className="flex flex-col m-auto items-center p-8 border border-primary w-[400px] max-w-[80%]">
             <IconSend size="18"></IconSend>
-            <h2>{t('start_from_here')}</h2>
+            <h2>{t('start-from-here')}</h2>
             <div className="text-center">{assistant.description}</div>
           </div>
         ) : (

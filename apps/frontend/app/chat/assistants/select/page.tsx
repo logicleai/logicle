@@ -103,7 +103,7 @@ const SelectAssistantPage = () => {
       <div className="flex flex-1 h-full w-full justify-center">
         <div className="flex flex-1 flex-col gap-2 max-w-[1440px] w-5/6 px-4 py-6">
           <div className="relative">
-            <h1 className="text-center">{t('select_assistant')}</h1>
+            <h1 className="text-center">{t('select-assistant')}</h1>
             <Button
               className="absolute right-0 top-1/2 -translate-y-1/2"
               onClick={gotoMyAssistants}
@@ -133,7 +133,7 @@ const SelectAssistantPage = () => {
                             onClick={() => setTagsFilter(tag?.key ?? null)}
                           >
                             <span className="flex-1 first-letter:capitalize truncate block overflow-hidden">
-                              {tag?.label ?? t('no_filter')}
+                              {tag?.label ?? t('no-filter')}
                             </span>
                           </button>
                         </RovingFocus.Item>
@@ -164,10 +164,10 @@ const SelectAssistantPage = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="" sideOffset={5}>
                     <DropdownMenuButton icon={IconSortAZ} onClick={() => setOrdering('name')}>
-                      {t('order_by_name')}
+                      {t('order-by-name')}
                     </DropdownMenuButton>
                     <DropdownMenuButton icon={IconClock} onClick={() => setOrdering('lastused')}>
-                      {t('order_by_last_usage')}
+                      {t('order-by-last-usage')}
                     </DropdownMenuButton>
                   </DropdownMenuContent>
                 </DropdownMenu>

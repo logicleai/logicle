@@ -11,10 +11,16 @@ const localesRoot = path.join(repoRoot, 'apps/frontend/locales')
 const ignoredDirs = new Set(['node_modules', '.next', 'dist', 'dist-server', 'coverage', 'locales'])
 
 const sourceExts = new Set(['.ts', '.tsx', '.js', '.jsx'])
+const kebabCaseRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const failUnused = process.argv.includes('--fail-unused')
 const reportUnused = process.argv.includes('--report-unused') || failUnused
+const skipKebab = process.argv.includes('--skip-kebab') || process.argv.includes('--no-kebab')
 
 type LocaleMap = Map<string, Set<string>>
+
+function isKebabCase(key: string): boolean {
+  return kebabCaseRegex.test(key)
+}
 
 function walk(dir: string, onFile: (filePath: string) => void) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
@@ -137,6 +143,10 @@ function main() {
 
   const missingInLocales = [...codeKeys].filter((key) => !allLocaleKeys.has(key))
   const unusedInCode = [...allLocaleKeys].filter((key) => !codeKeys.has(key))
+  const nonConformingLocaleKeys = skipKebab
+    ? []
+    : [...allLocaleKeys].filter((key) => !isKebabCase(key))
+  const nonConformingCodeKeys = skipKebab ? [] : [...codeKeys].filter((key) => !isKebabCase(key))
 
   let hasErrors = false
 
@@ -166,6 +176,22 @@ function main() {
       for (const key of unusedInCode.sort()) {
         console.error(`  - ${key}`)
       }
+    }
+  }
+
+  if (nonConformingLocaleKeys.length > 0) {
+    hasErrors = true
+    console.error(`Locale keys not kebab-case (${nonConformingLocaleKeys.length}):`)
+    for (const key of nonConformingLocaleKeys.sort()) {
+      console.error(`  - ${key}`)
+    }
+  }
+
+  if (nonConformingCodeKeys.length > 0) {
+    hasErrors = true
+    console.error(`Code keys not kebab-case (${nonConformingCodeKeys.length}):`)
+    for (const key of nonConformingCodeKeys.sort()) {
+      console.error(`  - ${key}`)
     }
   }
 

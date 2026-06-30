@@ -170,7 +170,7 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
             initialServerContextTokens={cachedPreviewContextLength}
             onServerContextTokensChange={setCachedPreviewContextLength}
             disabled={sendDisabled}
-            disabledMsg={t('configure_assistant_before_sending_messages')}
+            disabledMsg={t('configure-assistant-before-sending-messages')}
             onSend={(msg) => handleSend({ msg: { ...msg, role: 'user' } })}
           />
           {sendDisabled && <ChatDisclaimer />}

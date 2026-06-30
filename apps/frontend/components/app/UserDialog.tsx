@@ -17,7 +17,7 @@ interface Props {
   onClose: () => void
 }
 
-const tabs = ['profile', 'preferences', 'password', 'app_info', 'parameters', 'api_keys'] as const
+const tabs = ['profile', 'preferences', 'password', 'app-info', 'parameters', 'api-keys'] as const
 type TabId = (typeof tabs)[number]
 
 export const UpdateAccountPanel = ({ className }: { className?: string }) => {
@@ -76,7 +76,7 @@ export const UserDialog = ({ onClose }: Props) => {
               <TabsContent value="password">
                 <UpdatePasswordForm></UpdatePasswordForm>
               </TabsContent>
-              <TabsContent value="app_info">
+              <TabsContent value="app-info">
                 <About></About>
               </TabsContent>
               {userProfile && (
@@ -84,7 +84,7 @@ export const UserDialog = ({ onClose }: Props) => {
                   <ParametersPanel user={userProfile} />
                 </TabsContent>
               )}
-              <TabsContent value="api_keys">
+              <TabsContent value="api-keys">
                 <UserApiKeysPanel />
               </TabsContent>
             </div>

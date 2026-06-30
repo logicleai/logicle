@@ -323,7 +323,7 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
               <IconUpload size={32} />
               <span>
                 <Trans
-                  i18nKey="drop_files_here_or_browse_for_file_upload"
+                  i18nKey="drop-files-here-or-browse-for-file-upload"
                   components={[
                     <Button
                       variant="link"

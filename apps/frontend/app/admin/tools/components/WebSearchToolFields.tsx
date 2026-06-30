@@ -20,9 +20,9 @@ const WebSearchToolFields = ({ form }: Props) => {
         control={form.control}
         name="configuration.apiKey"
         render={({ field }) => (
-          <FormItem label={t('api_key')}>
+          <FormItem label={t('api-key')}>
             <SecretEditor
-              placeholder={t('insert_apikey_placeholder')}
+              placeholder={t('insert-apikey-placeholder')}
               onChange={(value) => field.onChange(value)}
               value={field.value ? (field.value as string) : null}
               disabled={field.disabled}
@@ -34,9 +34,9 @@ const WebSearchToolFields = ({ form }: Props) => {
         control={form.control}
         name="configuration.apiUrl"
         render={({ field }) => (
-          <FormItem label={t('api_url')}>
+          <FormItem label={t('api-url')}>
             <Input
-              placeholder={t('insert_apiurl_or_leave_blank_for_default')}
+              placeholder={t('insert-apiurl-or-leave-blank-for-default')}
               value={typeof field.value === 'string' ? field.value : ''}
               onChange={(evt) => field.onChange(evt.currentTarget.value || null)}
             />

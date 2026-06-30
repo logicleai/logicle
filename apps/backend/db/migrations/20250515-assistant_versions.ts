@@ -46,7 +46,7 @@ async function createAssistantVersionTable(db: Kysely<any>, assistants: any[]) {
     .addColumn('createdAt', 'text', (col) => col.notNull())
     .addColumn('updatedAt', 'text', (col) => col.notNull())
     .addColumn('tags', 'json', (col) => col.notNull())
-    .addColumn('reasoning_effort', 'text')
+    .addColumn('reasoning-effort', 'text')
     .addColumn('prompts', 'json', (col) => col.notNull())
     .addForeignKeyConstraint('fk_AssistantVersion_Backend', ['backendId'], 'Backend', ['id'])
     .addForeignKeyConstraint('fk_AssistantVersion_AssistantId', ['assistantId'], 'Assistant', [

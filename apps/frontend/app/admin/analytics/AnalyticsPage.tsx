@@ -431,7 +431,7 @@ const AnalyticsPage = () => {
                   onValueChange={setAssistantFilter}
                 />
                 <CommandList className="max-h-72">
-                  <CommandEmpty>{t('no_assistants_found')}</CommandEmpty>
+                  <CommandEmpty>{t('no-assistants-found')}</CommandEmpty>
                   <CommandGroup>
                     <CommandItem
                       onSelect={() => {
@@ -489,7 +489,7 @@ const AnalyticsPage = () => {
                   onValueChange={setUserFilter}
                 />
                 <CommandList className="max-h-72">
-                  <CommandEmpty>{t('no_users_found')}</CommandEmpty>
+                  <CommandEmpty>{t('no-users-found')}</CommandEmpty>
                   <CommandGroup>
                     <CommandItem
                       onSelect={() => {

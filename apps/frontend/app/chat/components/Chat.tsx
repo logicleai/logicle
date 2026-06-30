@@ -146,7 +146,7 @@ export const Chat = ({
             <div className="absolute bottom-4 right-1/2">
               <button
                 type="button"
-                title={t('scroll_to_end_of_conversation')}
+                title={t('scroll-to-end-of-conversation')}
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-foreground shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onClick={handleScrollDown}
               >
@@ -159,7 +159,7 @@ export const Chat = ({
           <Alert variant="destructive" className="rounded-none border-x-0">
             <IconAlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              {t('rate_limit_exceeded_warning', {
+              {t('rate-limit-exceeded-warning', {
                 defaultValue:
                   'You have reached your token usage limit for this period. Your messages may be restricted.',
               })}

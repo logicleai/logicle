@@ -22,7 +22,7 @@ const SettingsForm = ({ settings }: Props) => {
   const defaultValues = {}
 
   for (const propName in AppSettingsDefaults) {
-    if (propName === 'enable_signup' && !environment.enableSignup) {
+    if (propName === 'enable-signup' && !environment.enableSignup) {
       continue
     }
     const defaultValue = settings[propName] ?? `${AppSettingsDefaults[propName]}`

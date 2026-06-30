@@ -36,7 +36,7 @@ const ReplicateImageGeneratorToolFields = ({ form }: Props) => {
         render={({ field }) => (
           <FormItem label={t('model')}>
             <Input
-              placeholder={t('replicate_image_model_placeholder')}
+              placeholder={t('replicate-image-model-placeholder')}
               value={typeof field.value === 'string' ? field.value : ''}
               onChange={(evt) => {
                 const nextValue = evt.currentTarget.value.trim()
@@ -50,9 +50,9 @@ const ReplicateImageGeneratorToolFields = ({ form }: Props) => {
         control={form.control}
         name="configuration.input"
         render={({ field }) => (
-          <FormItem label={t('replicate_image_input_label')}>
+          <FormItem label={t('replicate-image-input-label')}>
             <Textarea
-              placeholder={t('replicate_image_input_placeholder')}
+              placeholder={t('replicate-image-input-placeholder')}
               value={inputText}
               onChange={(evt) => {
                 const raw = evt.currentTarget.value.trim()
@@ -76,8 +76,8 @@ const ReplicateImageGeneratorToolFields = ({ form }: Props) => {
         control={form.control}
         name="configuration.apiKey"
         render={({ field }) => (
-          <FormItem label={t('api_key')}>
-            <SecretEditor placeholder={t('insert_apikey_placeholder')} {...field} />
+          <FormItem label={t('api-key')}>
+            <SecretEditor placeholder={t('insert-apikey-placeholder')} {...field} />
           </FormItem>
         )}
       />

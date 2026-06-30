@@ -93,7 +93,7 @@ const SSOPage = () => {
           {!environment.ssoConfigLock && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button>{t('create_connection')}</Button>
+                <Button>{t('create-connection')}</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="" sideOffset={5}>
                 <DropdownMenuButton onClick={() => setShowAddSaml(!showAddSaml)}>

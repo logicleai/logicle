@@ -182,9 +182,9 @@ const tokenRequest = async (
     throw new Error('Missing OAuth clientId')
   }
   if (client.clientSecret) {
-    body.set('client_secret', client.clientSecret)
+    body.set('client-secret', client.clientSecret)
   }
-  body.set('client_id', client.clientId)
+  body.set('client-id', client.clientId)
   if (resource) {
     body.set('resource', resource)
   }
@@ -332,7 +332,7 @@ export const buildMcpOAuthAuthorizeUrl = async (
     const client = await resolveOAuthClient(auth, toolId, serverUrl)
     const url = new URL(resolved.authorizationUrl)
     url.searchParams.set('response_type', 'code')
-    url.searchParams.set('client_id', client.clientId)
+    url.searchParams.set('client-id', client.clientId)
     url.searchParams.set('redirect_uri', redirectUri)
     url.searchParams.set('state', state)
     if (codeChallenge) {

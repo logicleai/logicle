@@ -25,7 +25,7 @@ const CreateWorkspace = ({ onClose }: { onClose: () => void }) => {
 
   const formSchema = z.object({
     name: z.string().min(2, {
-      message: t('workspace_name_min_2_chars'),
+      message: t('workspace-name-min-2-chars'),
     }),
   })
 

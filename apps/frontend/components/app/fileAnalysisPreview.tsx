@@ -11,25 +11,25 @@ const getSummary = (analysis: dto.FileAnalysis, t: TFunction) => {
 
   switch (analysis.payload.kind) {
     case 'pdf':
-      return t('file_analysis_pdf_summary', {
+      return t('file-analysis-pdf-summary', {
         pageCount: analysis.payload.pageCount,
         contentMode: analysis.payload.contentMode,
       })
     case 'image':
-      return t('file_analysis_image_summary', {
+      return t('file-analysis-image-summary', {
         width: analysis.payload.width,
         height: analysis.payload.height,
       })
     case 'spreadsheet':
-      return t('file_analysis_spreadsheet_summary', {
+      return t('file-analysis-spreadsheet-summary', {
         sheetCount: analysis.payload.sheetCount,
       })
     case 'presentation':
-      return t('file_analysis_presentation_summary', {
+      return t('file-analysis-presentation-summary', {
         slideCount: analysis.payload.slideCount,
       })
     case 'word':
-      return t('file_analysis_word_summary', {
+      return t('file-analysis-word-summary', {
         textCharCount: analysis.payload.textCharCount,
       })
     default:
@@ -39,14 +39,14 @@ const getSummary = (analysis: dto.FileAnalysis, t: TFunction) => {
 
 const getStatusLabel = (analysis: dto.FileAnalysis, t: TFunction) => {
   if (analysis.status === 'failed') {
-    return t('file_analysis_failed')
+    return t('file-analysis-failed')
   }
   return null
 }
 
 const getWarning = (analysis: dto.FileAnalysis, t: TFunction) => {
   if (analysis.warnings?.includes('anthropic_pdf_native_page_limit')) {
-    return t('file_analysis_pdf_claude_too_large_warning')
+    return t('file-analysis-pdf-claude-too-large-warning')
   }
   return null
 }

@@ -43,11 +43,11 @@ export const ChatSharingList: React.FC<{ list: ConversationSharing[] }> = ({ lis
   const { t } = useTranslation()
   const env = useEnvironment()
   if (list.length === 0) {
-    return <>{t('conversation_is_not_currently_shared')}</>
+    return <>{t('conversation-is-not-currently-shared')}</>
   } else {
     return (
       <>
-        <div>{t('chat_is_already_shared')}</div>
+        <div>{t('chat-is-already-shared')}</div>
         {list.map((sharing) => {
           return (
             <div key={sharing.id} className="flex">
@@ -71,10 +71,10 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
   const createLink = async () => {
     const response = await post<ConversationSharing>(`/api/conversations/${conversationId}/share`)
     if (response.error) {
-      toast.error(t('failed_creating_link'))
+      toast.error(t('failed-creating-link'))
       return
     }
-    toast.success(t('link_created'))
+    toast.success(t('link-created'))
     await mutate()
   }
   const updateLinks = async () => {
@@ -83,26 +83,26 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
       {}
     )
     if (response.error) {
-      toast.error(t('failed_updating_links'))
+      toast.error(t('failed-updating-links'))
       return
     }
-    toast.success(t('links_updated'))
+    toast.success(t('links-updated'))
     await mutate()
   }
   const unshare = async () => {
     const response = await delete_(`/api/conversations/${conversationId}/share`)
     if (response.error) {
-      toast.error(t('failed_unsharing'))
+      toast.error(t('failed-unsharing'))
       return
     }
-    toast.success(t('conversation_unshared'))
+    toast.success(t('conversation-unshared'))
     await mutate()
   }
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-[48rem] flex flex-col">
         <DialogHeader className="font-bold">
-          <DialogTitle>{t('conversation_sharing')}</DialogTitle>
+          <DialogTitle>{t('conversation-sharing')}</DialogTitle>
         </DialogHeader>
         {isLoading ? (
           'Loading...'
@@ -117,7 +117,7 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
                       await updateLinks()
                     }}
                   >
-                    {t('update_links')}
+                    {t('update-links')}
                   </Button>
                   <Button
                     variant="destructive"
@@ -135,7 +135,7 @@ export const ChatSharingDialog: React.FC<Params> = ({ conversationId, onClose })
                     await createLink()
                   }}
                 >
-                  {t('create_link')}
+                  {t('create-link')}
                 </Button>
               )}
             </div>

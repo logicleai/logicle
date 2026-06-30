@@ -51,7 +51,7 @@ const CreateToolPage = () => {
   return (
     <AdminPage
       headerActions={<Button onClick={() => setSharingDialogVisible(true)}>{t('sharing')}</Button>}
-      title={t('create_tool')}
+      title={t('create-tool')}
     >
       <ToolForm tool={defaultTool} type={type} onSubmit={onSubmit} />
       {sharingDialogVisible && (

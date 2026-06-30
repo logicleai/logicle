@@ -88,7 +88,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
         <div className="flex flex-col flex-1 items-center gap-3">
           <button
             type="button"
-            title={t('show_sidebar')}
+            title={t('show-sidebar')}
             onClick={() => layoutconfigContext.setShowSidebar(!layoutconfigContext.showSidebar)}
           >
             {layoutconfigContext.showSidebar ? (
@@ -97,10 +97,10 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
               <IconLayoutSidebarLeftExpand size={28}></IconLayoutSidebarLeftExpand>
             )}
           </button>
-          <Link title={t('goto_chats')} href="/chat">
+          <Link title={t('goto-chats')} href="/chat">
             <MessageSquare size={28}></MessageSquare>
           </Link>
-          <Link title={t('select_assistant')} href="/chat/assistants/select">
+          <Link title={t('select-assistant')} href="/chat/assistants/select">
             <Compass size={28}></Compass>
           </Link>
           <Link title={t('images')} href="/images">
