@@ -3,7 +3,7 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { BuildableTool, dbToolToBuildableTool } from './tool'
-import { Expression, SqlBool, sql } from 'kysely'
+import { Expression, SqlBool, SqliteAdapter, sql } from 'kysely'
 import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
 import { listUserSecretStatuses } from './userSecrets'
@@ -814,13 +814,17 @@ export const assistantUserData = async (assistantId: string, userId: string) => 
 export const getAssistantParentAssistants = async (
   assistantId: string
 ): Promise<{ id: string; name: string }[]> => {
+  const isSqlite = db.getExecutor().adapter instanceof SqliteAdapter
+  const subAssistantsFilter = isSqlite
+    ? sql<SqlBool>`"AssistantVersion"."subAssistants" LIKE ${`%"${assistantId}"%`}`
+    : sql<SqlBool>`"AssistantVersion"."subAssistants" @> ${JSON.stringify([assistantId])}::jsonb`
   return db
     .selectFrom('Assistant')
     .innerJoin('AssistantVersion', (join) =>
       join.onRef('AssistantVersion.id', '=', 'Assistant.publishedVersionId')
     )
     .select(['Assistant.id', 'AssistantVersion.name'])
-    .where('AssistantVersion.subAssistants', 'like', `%"${assistantId}"%`)
+    .where(subAssistantsFilter)
     .where('Assistant.deleted', '=', 0)
     .execute()
 }
