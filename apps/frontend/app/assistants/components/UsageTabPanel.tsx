@@ -20,11 +20,11 @@ export const UsageTabPanel = ({ visible, className, assistantId }: Props) => {
     <ScrollArea className={className} style={{ display: visible ? undefined : 'none' }}>
       <div className="flex flex-col gap-3 pr-2">
         {parents && parents.length === 0 && (
-          <p className="text-muted-foreground text-sm">{t('assistant_usage_empty')}</p>
+          <p className="text-muted-foreground text-sm">{t('assistant-usage-empty')}</p>
         )}
         {parents && parents.length > 0 && (
           <>
-            <p className="text-muted-foreground text-sm">{t('assistant_usage_used_by')}</p>
+            <p className="text-muted-foreground text-sm">{t('assistant-usage-used-by')}</p>
             <ul className="flex flex-col gap-2">
               {parents.map((parent) => (
                 <li key={parent.id}>

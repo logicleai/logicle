@@ -158,8 +158,8 @@ const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem label={t('create_tool_field_name_label')}>
-            <Input placeholder={t('create_tool_field_name_placeholder')} {...field} />
+          <FormItem label={t('create-tool-field-name-label')}>
+            <Input placeholder={t('create-tool-field-name-placeholder')} {...field} />
           </FormItem>
         )}
       />
@@ -168,7 +168,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
         name="description"
         render={({ field }) => (
           <FormItem label={t('description')}>
-            <Input placeholder={t('create_tool_field_description_placeholder')} {...field} />
+            <Input placeholder={t('create-tool-field-description-placeholder')} {...field} />
           </FormItem>
         )}
       />
@@ -180,7 +180,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
             <TagInput
               value={field.value ?? []}
               onChange={(nextValue) => form.setValue('tags', nextValue)}
-              placeholder={t('insert_a_tag_and_press_enter')}
+              placeholder={t('insert-a-tag-and-press-enter')}
               suggestions={tagSuggestions ?? []}
             />
           </FormItem>
@@ -190,8 +190,8 @@ const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
         control={form.control}
         name="promptFragment"
         render={({ field }) => (
-          <FormItem label={t('prompt_fragment')}>
-            <Textarea placeholder={t('create_tool_field_promptfragment_placeholder')} {...field} />
+          <FormItem label={t('prompt-fragment')}>
+            <Textarea placeholder={t('create-tool-field-promptfragment-placeholder')} {...field} />
           </FormItem>
         )}
       />

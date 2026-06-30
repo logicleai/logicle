@@ -76,13 +76,13 @@ export const CreateApiKeyDialog = ({ onClose }: { onClose: () => void }) => {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-[50%]" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle>{t('create_new_api_key')}</DialogTitle>
+          <DialogTitle>{t('create-new-api-key')}</DialogTitle>
         </DialogHeader>
 
         {createdApiKey ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t('copy_now_your_api_key_you_wont_be_able_to_see_it_again')}
+              {t('copy-now-your-api-key-you-wont-be-able-to-see-it-again')}
             </p>
             <div className="flex gap-2">
               <input
@@ -128,10 +128,10 @@ export const CreateApiKeyDialog = ({ onClose }: { onClose: () => void }) => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectItem value="7">{t('x_days', { count: 7 })}</SelectItem>
-                        <SelectItem value="30">{t('x_days', { count: 30 })}</SelectItem>
-                        <SelectItem value="60">{t('x_days', { count: 60 })}</SelectItem>
-                        <SelectItem value="90">{t('x_days', { count: 90 })}</SelectItem>
+                        <SelectItem value="7">{t('x-days', { count: 7 })}</SelectItem>
+                        <SelectItem value="30">{t('x-days', { count: 30 })}</SelectItem>
+                        <SelectItem value="60">{t('x-days', { count: 60 })}</SelectItem>
+                        <SelectItem value="90">{t('x-days', { count: 90 })}</SelectItem>
                         <SelectItem value="never">{t('never')}</SelectItem>
                       </SelectGroup>
                     </SelectContent>

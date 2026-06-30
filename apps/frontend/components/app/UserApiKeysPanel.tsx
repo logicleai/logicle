@@ -26,8 +26,8 @@ export const UserApiKeysPanel = () => {
   const rows = [...statuses].sort((a, b) => a.label.localeCompare(b.label))
   const handleDelete = async (status: dto.UserSecretStatus) => {
     const confirmed = await modalContext.askConfirmation({
-      title: t('remove_secret_title'),
-      message: t('remove_secret_confirmation', { label: status.label }),
+      title: t('remove-secret-title'),
+      message: t('remove-secret-confirmation', { label: status.label }),
       confirmMsg: t('remove'),
     })
     if (!confirmed) {
@@ -39,14 +39,14 @@ export const UserApiKeysPanel = () => {
       return
     }
     await mutate('/api/me/secrets')
-    toast.success(t('secret_removed'))
+    toast.success(t('secret-removed'))
   }
 
   const columns: Column<dto.UserSecretStatus>[] = [
     column(t('label'), (status) => status.label),
     column(t('type'), (status) => status.type),
     column(t('status'), (status) =>
-      status.readable ? t('secret_configured') : t('secret_unreadable')
+      status.readable ? t('secret-configured') : t('secret-unreadable')
     ),
     column(t('action'), (status) => (
       <Popover>
@@ -67,7 +67,7 @@ export const UserApiKeysPanel = () => {
   ]
 
   if (rows.length === 0) {
-    return <div className="text-sm text-muted-foreground">{t('no_user_secrets')}</div>
+    return <div className="text-sm text-muted-foreground">{t('no-user-secrets')}</div>
   }
 
   return <SimpleTable columns={columns} rows={rows} keygen={(row) => row.context} />

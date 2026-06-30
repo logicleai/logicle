@@ -41,9 +41,9 @@ export const UserSessionsPage = () => {
 
   async function onDelete(sessionItem: dto.SessionSummary) {
     const result = await modalContext.askConfirmation({
-      title: `${t('delete_session')} ${sessionItem.id}`,
-      message: t('delete_session_confirmation'),
-      confirmMsg: t('delete_session'),
+      title: `${t('delete-session')} ${sessionItem.id}`,
+      message: t('delete-session-confirmation'),
+      confirmMsg: t('delete-session'),
     })
     if (!result) return
 
@@ -85,7 +85,7 @@ export const UserSessionsPage = () => {
             onClick={async () => {
               await onDelete(sessionItem)
             }}
-            text={t('delete_session')}
+            text={t('delete-session')}
             destructive={true}
           />
         </ActionList>

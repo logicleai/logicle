@@ -78,7 +78,7 @@ const AuthorizeMessage = ({
     return (
       <div className="flex flex-col gap-2">
         <div className="text-sm">
-          {connected ? t('mcp_auth_connected') : t('mcp_auth_required')}
+          {connected ? t('mcp-auth-connected') : t('mcp-auth-required')}
         </div>
         <div className="flex flex-horz gap-2">
           {connected ? (
@@ -140,8 +140,8 @@ export const ToolCall = ({
     : undefined
   const toolDisplayName = sourceToolName ?? toolCall.toolName
   const triggerLabel = isSubAssistantCall
-    ? `${t('invocation_of_sub_assistant')} ${subAssistantLabel}`
-    : `${t('invocation_of_tool')} ${toolDisplayName}${toolDisplayName !== toolCall.toolName ? ` (${toolCall.toolName})` : ''}`
+    ? `${t('invocation-of-sub-assistant')} ${subAssistantLabel}`
+    : `${t('invocation-of-tool')} ${toolDisplayName}${toolDisplayName !== toolCall.toolName ? ` (${toolCall.toolName})` : ''}`
 
   return (
     <Accordion type="single" collapsible>
@@ -169,7 +169,7 @@ export const ToolCall = ({
                 size="small"
                 onClick={() =>
                   setSideBarContent?.({
-                    title: t('tool_call_result'),
+                    title: t('tool-call-result'),
                     type: 'tool-call-result',
                     toolCallResult: toolCallResult,
                   })

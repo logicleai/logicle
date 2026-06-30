@@ -85,9 +85,9 @@ const OpenApiToolFields = ({ form, apiKeys, setApiKeys }: Props) => {
         control={form.control}
         name="configuration.supportedFormats"
         render={({ field }) => (
-          <FormItem label={t('supported_attachments_mimetypes')}>
+          <FormItem label={t('supported-attachments-mimetypes')}>
             <Input
-              placeholder={t('comma_separated_list_of_mime_types...')}
+              placeholder={t('comma-separated-list-of-mime-types')}
               value={Array.isArray(field.value) ? field.value.join(', ') : field.value ?? ''}
               onChange={(evt) => field.onChange(evt.currentTarget.value)}
             />
@@ -98,7 +98,7 @@ const OpenApiToolFields = ({ form, apiKeys, setApiKeys }: Props) => {
         control={form.control}
         name="configuration.spec"
         render={({ field }) => (
-          <FormItem label={t('openapi_spec')}>
+          <FormItem label={t('openapi-spec')}>
             <CodeMirror
               height="400px"
               value={(field.value ?? '') as string}
@@ -126,7 +126,7 @@ const OpenApiToolFields = ({ form, apiKeys, setApiKeys }: Props) => {
             render={({ field }) => (
               <FormItem label={apiKey}>
                 <SecretEditor
-                  placeholder={t('insert_apikey_placeholder')}
+                  placeholder={t('insert-apikey-placeholder')}
                   onChange={(value) => field.onChange(value)}
                   disabled={field.disabled}
                   value={field.value ? (field.value as string) : null}

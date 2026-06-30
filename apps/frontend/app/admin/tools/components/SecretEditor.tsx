@@ -24,10 +24,10 @@ const getDisplayState = (
   fallbackPlaceholder?: string
 ) => {
   if (typeof value === 'string' && SECRET_REF.test(value)) {
-    return { value: '', placeholder: t('secret_editor_stored_secret') }
+    return { value: '', placeholder: t('secret-editor-stored-secret') }
   }
   if (typeof value === 'string' && REF.test(value)) {
-    return { value: '', placeholder: t('secret_editor_from_env') }
+    return { value: '', placeholder: t('secret-editor-from-env') }
   }
   if (typeof value === 'string' && value.length > 0) {
     return { value: '********', placeholder: undefined }
@@ -74,21 +74,21 @@ export const SecretEditor = ({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-[50%]" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>{t('secret_editor_set_secret')}</DialogTitle>
+            <DialogTitle>{t('secret-editor-set-secret')}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <PasswordInput
               autoComplete="new-password"
-              placeholder={t('secret_editor_new_value')}
+              placeholder={t('secret-editor-new-value')}
               value={nextValue}
               onChange={(evt) => setNextValue(evt.currentTarget.value)}
             />
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setOpen(false)}>
-                {t('secret_editor_cancel')}
+                {t('secret-editor-cancel')}
               </Button>
               <Button onClick={handleSave} disabled={nextValue.length === 0}>
-                {t('secret_editor_save')}
+                {t('secret-editor-save')}
               </Button>
             </div>
           </div>

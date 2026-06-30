@@ -63,7 +63,7 @@ export const AssistantsAdminPage = () => {
           <div className="flex flex-horz gap-2 items-center">
             <AssistantAvatar className="shrink-0" size="default" assistant={assistant} />
             <span>{assistant.name}</span>
-            {assistant.hidden && <Badge variant="secondary">{t('hidden_assistant')}</Badge>}
+            {assistant.hidden && <Badge variant="secondary">{t('hidden-assistant')}</Badge>}
           </div>
         )
       },
@@ -108,7 +108,7 @@ export const AssistantsAdminPage = () => {
             onClick={() => {
               setAssistantSelectingOwner(assistant)
             }}
-            text={t('change_owner')}
+            text={t('change-owner')}
           />
           <Action
             icon={IconTrash}

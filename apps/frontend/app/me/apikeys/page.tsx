@@ -28,9 +28,9 @@ export const UserApiKeysPage = () => {
 
   async function onDelete(apikey: dto.ApiKey) {
     const result = await modalContext.askConfirmation({
-      title: `${t('delete_apikey')} ${apikey?.id}`,
-      message: t('delete_apikey_confirmation'),
-      confirmMsg: t('delete_apikey'),
+      title: `${t('delete-apikey')} ${apikey?.id}`,
+      message: t('delete-apikey-confirmation'),
+      confirmMsg: t('delete-apikey'),
     })
     if (!result) return
 
@@ -54,7 +54,7 @@ export const UserApiKeysPage = () => {
           onClick={async () => {
             await onDelete(apiKey)
           }}
-          text={t('delete_apikey')}
+          text={t('delete-apikey')}
           destructive={true}
         />
       </ActionList>
@@ -68,10 +68,10 @@ export const UserApiKeysPage = () => {
   }
   return (
     <AdminPage
-      title={t('api_keys')}
+      title={t('api-keys')}
       topBar={
         <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-          <Button onClick={() => setShowAddDialog(true)}>{t('create_new_api_key')}</Button>
+          <Button onClick={() => setShowAddDialog(true)}>{t('create-new-api-key')}</Button>
         </SearchBarWithButtonsOnRight>
       }
     >

@@ -43,10 +43,10 @@ export const UpdateMemberRoleDialog = ({ workspaceId, member, onClose }: UpdateM
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent>
-        <DialogHeader className="font-bold">{t('select_role')}</DialogHeader>
+        <DialogHeader className="font-bold">{t('select-role')}</DialogHeader>
         <Select value={role} onValueChange={setRole}>
           <SelectTrigger>
-            <SelectValue placeholder={t('select_role_placeholder')} />
+            <SelectValue placeholder={t('select-role-placeholder')} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -59,7 +59,7 @@ export const UpdateMemberRoleDialog = ({ workspaceId, member, onClose }: UpdateM
           </SelectContent>
         </Select>
         <div>
-          <Button onClick={() => updateRole()}>{t('change_role')}</Button>
+          <Button onClick={() => updateRole()}>{t('change-role')}</Button>
         </div>
       </DialogContent>
     </Dialog>

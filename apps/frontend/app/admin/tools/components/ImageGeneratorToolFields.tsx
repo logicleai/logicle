@@ -80,7 +80,7 @@ const ImageGeneratorToolFields = ({ form, models = legacyImageGeneratorModels }:
           <FormItem label={t('model')}>
             <div ref={imageModelMenuRef} className="relative">
               <Input
-                placeholder={t('image_generator_model_placeholder')}
+                placeholder={t('image-generator-model-placeholder')}
                 value={typeof field.value === 'string' ? field.value : ''}
                 onClick={() => setImageModelMenuOpen(true)}
                 onFocus={() => setImageModelMenuOpen(true)}
@@ -140,8 +140,8 @@ const ImageGeneratorToolFields = ({ form, models = legacyImageGeneratorModels }:
         control={form.control}
         name="configuration.apiKey"
         render={({ field }) => (
-          <FormItem label={t('api_key')}>
-            <SecretEditor placeholder={t('insert_apikey_placeholder')} {...field} />
+          <FormItem label={t('api-key')}>
+            <SecretEditor placeholder={t('insert-apikey-placeholder')} {...field} />
           </FormItem>
         )}
       />

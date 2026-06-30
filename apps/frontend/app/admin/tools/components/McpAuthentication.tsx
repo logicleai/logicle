@@ -43,8 +43,8 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={'none'}>{t('not_authenticated')}</SelectItem>
-          <SelectItem value={'bearer'}>{t('bearer_token')}</SelectItem>
+          <SelectItem value={'none'}>{t('not-authenticated')}</SelectItem>
+          <SelectItem value={'bearer'}>{t('bearer-token')}</SelectItem>
           <SelectItem value={'oauth'}>{t('oauth')}</SelectItem>
         </SelectContent>
       </Select>
@@ -60,7 +60,7 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
       {value.type === 'oauth' && (
         <div className="flex flex-col gap-2">
           <div>
-            <p>{t('client_id')}</p>
+            <p>{t('client-id')}</p>
             <Input
               value={value.clientId}
               autoComplete="off"
@@ -68,14 +68,14 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
             />
           </div>
           <div>
-            <p>{t('client_secret')}</p>
+            <p>{t('client-secret')}</p>
             <SecretEditor
               value={clientSecretValue}
               onChange={(nextValue) => onValueChange({ ...value, clientSecret: nextValue })}
             />
           </div>
           <div>
-            <p>{t('mcp_auth_activation_mode_label')}</p>
+            <p>{t('mcp-auth-activation-mode-label')}</p>
             <Select
               value={value.activationMode ?? 'preflight'}
               onValueChange={(mode) =>
@@ -89,13 +89,13 @@ export const McpAuthentication = ({ value, onValueChange }: Params) => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="preflight">{t('mcp_auth_activation_mode_preflight')}</SelectItem>
-                <SelectItem value="lazy">{t('mcp_auth_activation_mode_lazy')}</SelectItem>
+                <SelectItem value="preflight">{t('mcp-auth-activation-mode-preflight')}</SelectItem>
+                <SelectItem value="lazy">{t('mcp-auth-activation-mode-lazy')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex flex-row items-center gap-2">
-            <span>{t('mcp_prefer_top_level_navigation_label')}</span>
+            <span>{t('mcp-prefer-top-level-navigation-label')}</span>
             <Switch
               className="ml-auto"
               checked={!!value.preferTopLevelNavigation}

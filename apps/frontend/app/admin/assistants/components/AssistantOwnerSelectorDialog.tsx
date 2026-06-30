@@ -27,7 +27,7 @@ export const AssistantOwnerSelectorDialog = ({ assistant, onClose }: Props) => {
   return (
     <UserSelectorDialog
       initialUserId={assistant.owner ?? ''}
-      title={t('select_assistant_owner')}
+      title={t('select-assistant-owner')}
       onClose={onClose}
       onUpdate={updateOwner}
     ></UserSelectorDialog>

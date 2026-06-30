@@ -56,7 +56,7 @@ export const SiblingSwitcher = ({
     <div className={`flex align-center ${className ?? ''}`}>
       <button
         type="button"
-        title={t('previous_message')}
+        title={t('previous-message')}
         disabled={isFirst}
         onClick={() => jumpTo(pos - 1)}
       >
@@ -65,7 +65,7 @@ export const SiblingSwitcher = ({
       <span className="text-sm">{`${pos + 1}/${siblings.length}`}</span>
       <button
         type="button"
-        title={t('next_message')}
+        title={t('next-message')}
         disabled={isLast}
         onClick={() => jumpTo(pos + 1)}
       >

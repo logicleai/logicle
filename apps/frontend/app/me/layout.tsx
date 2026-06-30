@@ -28,7 +28,7 @@ const navEntries = (environment: Environment) => {
   })
   if (environment.enableApiKeysUi) {
     entries.push({
-      title: 'api_keys',
+      title: 'api-keys',
       href: '/me/apikeys',
     })
     entries.push({

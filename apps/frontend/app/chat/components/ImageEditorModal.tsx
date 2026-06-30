@@ -54,7 +54,7 @@ export const ImageEditorModal: FC<Props> = ({ attachment, assistants, onClose, o
       <DialogContent className="inset-0 left-0 top-0 h-[100svh] max-h-[100svh] w-screen max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-none border-0 p-0 gap-0">
         <div className="flex h-full min-h-0 flex-col">
           <div className="flex items-center justify-between border-b px-4 py-3">
-            <h3 className="text-h3">{t('edit_image')}</h3>
+            <h3 className="text-h3">{t('edit-image')}</h3>
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto p-4">
@@ -87,7 +87,7 @@ export const ImageEditorModal: FC<Props> = ({ attachment, assistants, onClose, o
                 </>
               )}
               <Input
-                placeholder={t('edit_image_prompt_placeholder')}
+                placeholder={t('edit-image-prompt-placeholder')}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => {

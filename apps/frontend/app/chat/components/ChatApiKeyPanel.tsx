@@ -37,8 +37,8 @@ interface DialogProps {
 }
 
 const formSchema = z.object({
-  label: z.string().trim().min(1, { message: 'secret_name_required' }),
-  apiKey: z.string().trim().min(1, { message: 'api_key_required' }),
+  label: z.string().trim().min(1, { message: 'secret-name-required' }),
+  apiKey: z.string().trim().min(1, { message: 'api-key-required' }),
 })
 
 type FormFields = z.infer<typeof formSchema>
@@ -48,11 +48,11 @@ const AddCredentialsDialog = ({ backendId, assistantId, backendName, onClose }: 
   const { mutate } = useSWRConfig()
 
   const displayName = backendName
-  const defaultLabel = t('credentials_for_backend_named', { name: displayName })
+  const defaultLabel = t('credentials-for-backend-named', { name: displayName })
 
-  const dialogTitle = t('add_credentials_for_backend_named', { name: displayName })
+  const dialogTitle = t('add-credentials-for-backend-named', { name: displayName })
 
-  const dialogDescription = t('credentials_dialog_description_named', { name: displayName })
+  const dialogDescription = t('credentials-dialog-description-named', { name: displayName })
 
   const form = useForm<FormFields>({
     resolver: zodResolver(formSchema),
@@ -87,7 +87,7 @@ const AddCredentialsDialog = ({ backendId, assistantId, backendName, onClose }: 
     }
     await mutate((key) => typeof key === 'string' && key.startsWith('/api/me/assistants'))
     await mutate('/api/me/secrets')
-    toast.success(t('api_key_saved'))
+    toast.success(t('api-key-saved'))
     onClose()
   }
 
@@ -112,8 +112,8 @@ const AddCredentialsDialog = ({ backendId, assistantId, backendName, onClose }: 
             control={form.control}
             name="apiKey"
             render={({ field }) => (
-              <FormItem label={t('api_key')}>
-                <PasswordInput placeholder={t('api_key_placeholder')} {...field} />
+              <FormItem label={t('api-key')}>
+                <PasswordInput placeholder={t('api-key-placeholder')} {...field} />
               </FormItem>
             )}
           />
@@ -139,7 +139,7 @@ export const ChatApiKeyPanel = ({ backendId, assistantId, backendName }: Props) 
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
-  const panelMessage = t('assistant_requires_api_key_click_named', { name: backendName })
+  const panelMessage = t('assistant-requires-api-key-click-named', { name: backendName })
 
   const openDialog = () => {
     setOpen(true)

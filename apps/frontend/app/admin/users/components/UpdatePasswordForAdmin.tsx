@@ -49,7 +49,7 @@ export const UpdatePasswordForAdmin = ({ user, onClose }: Params) => {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('enter_password')}</DialogTitle>
+          <DialogTitle>{t('enter-password')}</DialogTitle>
         </DialogHeader>
         <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField

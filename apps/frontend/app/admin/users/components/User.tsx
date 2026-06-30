@@ -17,7 +17,7 @@ import toast from 'react-hot-toast'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 
-const tabs = ['settings', 'api_keys'] as const
+const tabs = ['settings', 'api-keys'] as const
 type TabId = (typeof tabs)[number]
 
 const UserCard = ({ user }: { user: dto.AdminUser }) => {
@@ -63,7 +63,7 @@ const UserCard = ({ user }: { user: dto.AdminUser }) => {
             </Prop>
           )
         })}
-        <Prop label={t('auth-methods')}>{user.ssoUser ? t('sso_user') : t('any_available')}</Prop>
+        <Prop label={t('auth-methods')}>{user.ssoUser ? t('sso-user') : t('any-available')}</Prop>
       </PropList>
       <div className="flex flex-horz gap-3">
         <Button variant="primary" onClick={() => setEditingUser(true)}>
@@ -126,7 +126,7 @@ export const User = ({ userId }: { userId: string }) => {
               })}
             </TabsList>
           </Tabs>
-          {activeTab === 'api_keys' && <ApiKeys userId={userId}></ApiKeys>}
+          {activeTab === 'api-keys' && <ApiKeys userId={userId}></ApiKeys>}
           {activeTab === 'settings' && user && <UserCard user={user} />}
         </>
       ) : (

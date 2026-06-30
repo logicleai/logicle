@@ -153,7 +153,7 @@ export const Chatbar = () => {
           }}
         >
           <IconSearch size={16} />
-          <span>{t('search_chats')}</span>
+          <span>{t('search-chats')}</span>
         </Button>
       </div>
 

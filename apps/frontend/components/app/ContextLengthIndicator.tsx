@@ -113,7 +113,7 @@ export const ContextLengthIndicator = ({
               pending ? 'opacity-70' : 'opacity-100',
               className
             )}
-            aria-label={t('context_length')}
+            aria-label={t('context-length')}
           >
             <span aria-hidden className="relative block h-[26px] w-[26px]">
               <svg
@@ -147,7 +147,7 @@ export const ContextLengthIndicator = ({
               </span>
             </span>
             <span className="sr-only">
-              {t('context_length')}: {current.toLocaleString()}
+              {t('context-length')}: {current.toLocaleString()}
               {limit !== undefined ? ` (${percentage}%)` : ''}
               {limit !== undefined ? ` / ${limit.toLocaleString()}` : ''}
             </span>
@@ -155,7 +155,7 @@ export const ContextLengthIndicator = ({
         </TooltipTrigger>
         <TooltipContent className="max-w-72 space-y-1.5 text-xs leading-5">
           <div className="font-medium">
-            {t('context_length')}: {current.toLocaleString()}
+            {t('context-length')}: {current.toLocaleString()}
             {limit !== undefined ? ` / ${limit.toLocaleString()}` : ''}
           </div>
           {details.map((detail) => (

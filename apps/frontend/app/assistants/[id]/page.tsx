@@ -197,12 +197,12 @@ const AssistantPage = () => {
 
     if (changedKeys.length === 0) {
       await askConfirmation({
-        title: t('publish_no_effective_changes_title'),
+        title: t('publish-no-effective-changes-title'),
         message: (
           <div className="space-y-2">
-            <div>{t('publish_no_effective_changes_message')}</div>
+            <div>{t('publish-no-effective-changes-message')}</div>
             <div className="text-sm text-muted-foreground">
-              {t('publish_no_effective_changes_hint')}
+              {t('publish-no-effective-changes-hint')}
             </div>
           </div>
         ),
@@ -213,12 +213,12 @@ const AssistantPage = () => {
     }
 
     const publishConfirmed = await askConfirmation({
-      title: t('publish_changes_title'),
+      title: t('publish-changes-title'),
       message: (
         <div className="space-y-2">
-          <div>{t('publish_changes_message')}</div>
+          <div>{t('publish-changes-message')}</div>
           <div>
-            <div className="font-medium text-foreground">{t('changed_fields_title')}</div>
+            <div className="font-medium text-foreground">{t('changed-fields-title')}</div>
             <ul className="list-disc list-inside">
               {changedLabels.map((label) => (
                 <li key={label}>{label}</li>
@@ -261,17 +261,17 @@ const AssistantPage = () => {
     const currentChangedFieldKeys = await refreshChangedFieldKeys()
     const changedFieldLabels = currentChangedFieldKeys.map((field) => changedFieldLabel(field))
     const confirmed = await askConfirmation({
-      title: t('discard_changes_title'),
+      title: t('discard-changes-title'),
       message: (
         <div className="space-y-2">
           <div>
             {changedFieldLabels.length > 0
-              ? t('discard_changes_message')
-              : t('discard_no_effective_changes_message')}
+              ? t('discard-changes-message')
+              : t('discard-no-effective-changes-message')}
           </div>
           {changedFieldLabels.length > 0 && (
             <div>
-              <div className="font-medium text-foreground">{t('changed_fields_title')}</div>
+              <div className="font-medium text-foreground">{t('changed-fields-title')}</div>
               <ul className="list-disc list-inside">
                 {changedFieldLabels.map((label) => (
                   <li key={label}>{label}</li>
@@ -281,7 +281,7 @@ const AssistantPage = () => {
           )}
         </div>
       ),
-      confirmMsg: t('discard_changes'),
+      confirmMsg: t('discard-changes'),
     })
     if (!confirmed) return
 
@@ -301,7 +301,7 @@ const AssistantPage = () => {
       setSavedAssistantSnapshot(response.data)
       setTooltipChangedFieldKeys([])
       setFormResetKey((value) => value + 1)
-      toast.success(t('changes_discarded'))
+      toast.success(t('changes-discarded'))
     } finally {
       setSaving(false)
     }
@@ -404,9 +404,9 @@ const AssistantPage = () => {
       case 'reasoning_effort':
         return t('reasoning')
       case 'iconUri':
-        return t('assistant_icon')
+        return t('assistant-icon')
       case 'subAssistants':
-        return t('sub_assistants')
+        return t('sub-assistants')
       default:
         return field
     }
@@ -444,14 +444,14 @@ const AssistantPage = () => {
               >
                 <TooltipTrigger asChild>
                   <span className="cursor-help underline decoration-dotted underline-offset-2">
-                    {t('unpublished_edits')}
+                    {t('unpublished-edits')}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-80">
                   <div className="space-y-1">
-                    <div className="font-medium">{t('changed_fields_title')}</div>
+                    <div className="font-medium">{t('changed-fields-title')}</div>
                     {tooltipChangedFieldKeys === null ? (
-                      <div>{t('changed_fields_loading')}</div>
+                      <div>{t('changed-fields-loading')}</div>
                     ) : tooltipChangedFieldKeys.length > 0 ? (
                       <ul className="list-disc list-inside">
                         {tooltipChangedFieldKeys.map((field) => (
@@ -459,7 +459,7 @@ const AssistantPage = () => {
                         ))}
                       </ul>
                     ) : (
-                      <div>{t('no_effective_draft_changes')}</div>
+                      <div>{t('no-effective-draft-changes')}</div>
                     )}
                   </div>
                 </TooltipContent>
@@ -484,10 +484,10 @@ const AssistantPage = () => {
                 disabled={!assistant.pendingChanges || saving}
                 onClick={() => void onCancelChanges()}
               >
-                {t('discard_changes')}
+                {t('discard-changes')}
               </DropdownMenuButton>
               <DropdownMenuButton onClick={() => onChronology()}>
-                {t('version_chronology')}
+                {t('version-chronology')}
               </DropdownMenuButton>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -507,7 +507,7 @@ const AssistantPage = () => {
             onClick={() => void setHidden(!assistant.hidden)}
           >
             {assistant.hidden ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-            <span>{assistant.hidden ? t('hidden_assistant') : t('visible_assistant')}</span>
+            <span>{assistant.hidden ? t('hidden-assistant') : t('visible-assistant')}</span>
           </Button>
           <Button onClick={() => firePublish.current?.()}>
             {<span className="mr-1">{t('publish')}</span>}

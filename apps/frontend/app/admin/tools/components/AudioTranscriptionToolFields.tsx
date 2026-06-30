@@ -21,9 +21,9 @@ const AudioTranscriptionToolFields = ({ form }: Props) => {
         control={form.control}
         name="configuration.apiKey"
         render={({ field }) => (
-          <FormItem label={t('api_key')}>
+          <FormItem label={t('api-key')}>
             <SecretEditor
-              placeholder={t('insert_apikey_placeholder')}
+              placeholder={t('insert-apikey-placeholder')}
               onChange={(value) => field.onChange(value)}
               value={field.value ? (field.value as string) : null}
               disabled={field.disabled}
@@ -35,9 +35,9 @@ const AudioTranscriptionToolFields = ({ form }: Props) => {
         control={form.control}
         name="configuration.apiUrl"
         render={({ field }) => (
-          <FormItem label={t('api_url')}>
+          <FormItem label={t('api-url')}>
             <Input
-              placeholder={t('insert_apiurl_or_leave_blank_for_default')}
+              placeholder={t('insert-apiurl-or-leave-blank-for-default')}
               value={typeof field.value === 'string' ? field.value : ''}
               onChange={(evt) => field.onChange(evt.currentTarget.value || undefined)}
             />
@@ -50,7 +50,7 @@ const AudioTranscriptionToolFields = ({ form }: Props) => {
         render={({ field }) => (
           <FormItem label={t('language')}>
             <Input
-              placeholder={t('audio_transcription_default_language_placeholder')}
+              placeholder={t('audio-transcription-default-language-placeholder')}
               value={typeof field.value === 'string' ? field.value : ''}
               onChange={(evt) => field.onChange(evt.currentTarget.value || undefined)}
             />
@@ -61,7 +61,7 @@ const AudioTranscriptionToolFields = ({ form }: Props) => {
         control={form.control}
         name="configuration.pollIntervalMs"
         render={({ field }) => (
-          <FormItem label={t('audio_transcription_poll_interval_ms')}>
+          <FormItem label={t('audio-transcription-poll-interval-ms')}>
             <Input
               type="number"
               value={typeof field.value === 'number' ? `${field.value}` : ''}
@@ -77,7 +77,7 @@ const AudioTranscriptionToolFields = ({ form }: Props) => {
         control={form.control}
         name="configuration.timeoutMs"
         render={({ field }) => (
-          <FormItem label={t('audio_transcription_timeout_ms')}>
+          <FormItem label={t('audio-transcription-timeout-ms')}>
             <Input
               type="number"
               value={typeof field.value === 'number' ? `${field.value}` : ''}
@@ -94,7 +94,7 @@ const AudioTranscriptionToolFields = ({ form }: Props) => {
         name="configuration.speakerLabels"
         render={({ field }) => (
           <FormItem
-            label={t('audio_transcription_speaker_labels')}
+            label={t('audio-transcription-speaker-labels')}
             className="flex flex-row items-center space-y-0"
           >
             <Switch
@@ -110,12 +110,12 @@ const AudioTranscriptionToolFields = ({ form }: Props) => {
         name="configuration.includeTimestamps"
         render={({ field }) => (
           <FormItem
-            label={t('audio_transcription_include_timestamps')}
+            label={t('audio-transcription-include-timestamps')}
             className="flex flex-row items-center space-y-0"
           >
             <div className="flex w-full items-center gap-3">
               <FormDescription className="text-xs">
-                {t('audio_transcription_include_timestamps_description')}
+                {t('audio-transcription-include-timestamps-description')}
               </FormDescription>
               <Switch
                 className="ml-auto"

@@ -155,7 +155,7 @@ export const UserMessage: FC<UserMessageProps> = ({
                 onClick={editMode === 'branch' ? handleBranchConfirm : handleEditConfirm}
                 disabled={chatStatus.state !== 'idle' || messageContent.trim().length <= 0}
               >
-                {editMode === 'branch' ? t('save_and_submit') : t('save')}
+                {editMode === 'branch' ? t('save-and-submit') : t('save')}
               </Button>
               <Button
                 variant="secondary"
@@ -182,7 +182,7 @@ export const UserMessage: FC<UserMessageProps> = ({
               ></SiblingSwitcher>
               <button
                 type="button"
-                title={t('edit_and_send_message')}
+                title={t('edit-and-send-message')}
                 className="invisible group-hover:visible"
                 onClick={() => setEditMode('branch')}
                 disabled={chatStatus.state !== 'idle'}
@@ -196,7 +196,7 @@ export const UserMessage: FC<UserMessageProps> = ({
               {enableUserMessageEdit && userPreferences.conversationEditing && (
                 <button
                   type="button"
-                  title={t('edit_message')}
+                  title={t('edit-message')}
                   className="invisible group-hover:visible"
                   onClick={() => setEditMode('edit')}
                   disabled={chatStatus.state !== 'idle'}
@@ -207,7 +207,7 @@ export const UserMessage: FC<UserMessageProps> = ({
               {userPreferences.conversationEditing && (
                 <button
                   type="button"
-                  title={t('delete_message')}
+                  title={t('delete-message')}
                   className="invisible group-hover:visible"
                   onClick={handleDelete}
                 >

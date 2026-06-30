@@ -263,8 +263,8 @@ export const ChatInput = ({
       ? (contextEstimate.serverEstimate?.total ?? 0) + localDraftTokens
       : contextEstimate.submittedTotal ?? contextEstimate.serverEstimate?.total ?? 0
   const contextDetails = draftAssistantForEstimate
-    ? [t('context_length_tooltip_assistant_preview')]
-    : [t('context_length_tooltip_chat')]
+    ? [t('context-length-tooltip-assistant-preview')]
+    : [t('context-length-tooltip-chat')]
 
   useEffect(() => {
     if (chatStatus.state === 'idle' && contextEstimate.submittedTotal !== undefined) {
@@ -358,12 +358,12 @@ export const ChatInput = ({
       fileType = mimeTypeOfFile(fileName) ?? fileType
     }
     if (!isMimeTypeAllowed(fileType, supportedMedia)) {
-      toast.error(t('unsupported_file_format'))
+      toast.error(t('unsupported-file-format'))
       return
     }
     if (file.size > environment.maxAttachmentSize) {
       toast.error(
-        `${t('attachment_is_too_big')} (${filesize(file.size)} > ${filesize(
+        `${t('attachment-is-too-big')} (${filesize(file.size)} > ${filesize(
           environment.maxAttachmentSize
         )})`
       )
@@ -556,10 +556,10 @@ export const ChatInput = ({
             )}
             <span>
               {hardLimitReached
-                ? t('chat_hard_message_limit_reached', {
+                ? t('chat-hard-message-limit-reached', {
                     count: environment.hardMessageLimit ?? userMessageCount,
                   })
-                : t('chat_soft_message_limit_warning', {
+                : t('chat-soft-message-limit-warning', {
                     count: environment.softMessageLimit ?? userMessageCount,
                   })}
             </span>

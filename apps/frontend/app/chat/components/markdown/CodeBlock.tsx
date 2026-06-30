@@ -1,9 +1,4 @@
-import {
-  IconCheck,
-  IconClipboard,
-  IconDownload,
-  IconTextWrap,
-} from '@tabler/icons-react'
+import { IconCheck, IconClipboard, IconDownload, IconTextWrap } from '@tabler/icons-react'
 import { FC, memo, useEffect, useState } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
@@ -74,7 +69,7 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
           <div className="flex items-center">
             <button
               type="button"
-              title={wrapLongLines ? t('disable_word_wrap') : t('enable_word_wrap')}
+              title={wrapLongLines ? t('disable-word-wrap') : t('enable-word-wrap')}
               className={`flex items-center rounded p-1 text-xs transition-colors ${
                 wrapLongLines
                   ? 'bg-white/90 text-slate-900'
@@ -89,12 +84,12 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
             </button>
             <button
               type="button"
-              title={t('copy_to_clipboard')}
+              title={t('copy-to-clipboard')}
               className="flex gap-1.5 items-center rounded bg-none p-1 text-xs text-white"
               onClick={copyToClipboard}
             >
               {isCopied ? <IconCheck size={18} /> : <IconClipboard size={18} />}
-              {isCopied ? t('copied!') : t('copy_code')}
+              {isCopied ? t('copied') : t('copy-code')}
             </button>
             <button
               type="button"

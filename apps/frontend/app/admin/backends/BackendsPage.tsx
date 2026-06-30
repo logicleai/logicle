@@ -96,23 +96,23 @@ export const BackendsPage = () => {
           {!environment.backendConfigLock && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button disabled={environment.backendConfigLock}>{t('create_backend')}</Button>
+                <Button disabled={environment.backendConfigLock}>{t('create-backend')}</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="" sideOffset={5}>
                 <DropdownMenuButton onClick={() => onProviderSelect('openai')}>
                   {t('openai-backend')}
                 </DropdownMenuButton>
                 <DropdownMenuButton onClick={() => onProviderSelect('anthropic')}>
-                  {t('anthropic_backend')}
+                  {t('anthropic-backend')}
                 </DropdownMenuButton>{' '}
                 <DropdownMenuButton onClick={() => onProviderSelect('gcp-vertex')}>
-                  {t('gcpvertex_backend')}
+                  {t('gcpvertex-backend')}
                 </DropdownMenuButton>
                 <DropdownMenuButton onClick={() => onProviderSelect('perplexity')}>
-                  {t('perplexity_backend')}
+                  {t('perplexity-backend')}
                 </DropdownMenuButton>
                 <DropdownMenuButton onClick={() => onProviderSelect('logiclecloud')}>
-                  {t('logiclecloud_backend')}
+                  {t('logiclecloud-backend')}
                 </DropdownMenuButton>
                 <DropdownMenuButton onClick={() => onProviderSelect('google-ai-studio')}>
                   {t('gemini-backend')}

@@ -120,7 +120,7 @@ const StartChat = () => {
         <Alert variant="destructive" className="rounded-none border-x-0">
           <IconAlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            {t('rate_limit_exceeded_warning', {
+            {t('rate-limit-exceeded-warning', {
               defaultValue:
                 'You have reached your token usage limit for this period. Your messages may be restricted.',
             })}

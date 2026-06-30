@@ -61,7 +61,7 @@ export const UserPreferences = () => {
           <FormRow label={t('language')}>
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger className="w-auto min-w-[4rem]">
-                <SelectValue placeholder={t('default_')} />
+                <SelectValue placeholder={t('default')} />
               </SelectTrigger>
               <SelectContent align="end" sideOffset={0}>
                 <SelectGroup>
@@ -79,7 +79,7 @@ export const UserPreferences = () => {
       <FormField
         name="conversationEditing"
         render={({ field }) => (
-          <FormRow label={t('conversation_editing')}>
+          <FormRow label={t('conversation-editing')}>
             <Switch
               onCheckedChange={(value) => {
                 form.setValue(field.name, value)
@@ -92,7 +92,7 @@ export const UserPreferences = () => {
       <FormField
         name="showIconsInChatbar"
         render={({ field }) => (
-          <FormRow label={t('show_icons_in_chatbar')}>
+          <FormRow label={t('show-icons-in-chatbar')}>
             <Switch
               onCheckedChange={(value) => {
                 form.setValue(field.name, value)
@@ -105,7 +105,7 @@ export const UserPreferences = () => {
       <FormField
         name="advancedSystemPromptEditor"
         render={({ field }) => (
-          <FormRow label={t('advanced_system_prompt_editor')}>
+          <FormRow label={t('advanced-system-prompt-editor')}>
             <Switch
               onCheckedChange={(value) => {
                 form.setValue(field.name, value)
@@ -118,7 +118,7 @@ export const UserPreferences = () => {
       <FormField
         name="advancedMessageEditor"
         render={({ field }) => (
-          <FormRow label={t('advanced_message_editor')}>
+          <FormRow label={t('advanced-message-editor')}>
             <Switch
               onCheckedChange={(value) => {
                 form.setValue(field.name, value)

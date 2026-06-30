@@ -47,7 +47,7 @@ export const Attachment = ({ file, className, conversationId }: AttachmentProps)
           {isImage(file.fileType) && openImageEditor && file.fileId && (
             <button
               type="button"
-              title={t('edit_image')}
+              title={t('edit-image')}
               className="bg-black bg-opacity-30 rounded-md"
               onClick={() =>
                 openImageEditor(
@@ -67,7 +67,7 @@ export const Attachment = ({ file, className, conversationId }: AttachmentProps)
           {isImage(file.fileType) && (
             <button
               type="button"
-              title={t('copy_to_clipboard')}
+              title={t('copy-to-clipboard')}
               className="bg-black bg-opacity-30 rounded-md"
               onClick={() => copyImageUrlToClipboard(`/api/files/${file.fileId}/content`)}
             >

@@ -338,7 +338,7 @@ export const AssistantForm = ({
             current={shownAssistantContextLength ?? 0}
             limit={tokenLimit}
             pending={assistantContextLength === undefined}
-            details={[t('context_length_tooltip_assistant_form')]}
+            details={[t('context-length-tooltip-assistant-form')]}
             tokenDetail={assistantTokenDetail}
             className="absolute right-0 top-1/2 -translate-y-1/2"
           />

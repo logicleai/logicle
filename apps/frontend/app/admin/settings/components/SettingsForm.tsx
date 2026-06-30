@@ -26,6 +26,7 @@ const SettingsForm = ({ settings }: Props) => {
       continue
     }
     const defaultValue = settings[propName] ?? `${AppSettingsDefaults[propName]}`
+    const labelKey = propName.replaceAll('_', '-')
     switch (AppSettingsDefaults[propName].constructor) {
       case Boolean:
         defaultValues[propName] = defaultValue
@@ -34,7 +35,7 @@ const SettingsForm = ({ settings }: Props) => {
             key={propName}
             name={propName}
             render={({ field }) => (
-              <FormItem label={t(propName)} className="flex flex-row items-center space-y-0">
+              <FormItem label={t(labelKey)} className="flex flex-row items-center space-y-0">
                 <Switch
                   className="mt-0 ml-auto"
                   {...field}
@@ -56,7 +57,7 @@ const SettingsForm = ({ settings }: Props) => {
             key={propName}
             name={propName}
             render={({ field }) => (
-              <FormItem label={t(propName)}>
+              <FormItem label={t(labelKey)}>
                 <Input key={propName} {...field}></Input>
               </FormItem>
             )}

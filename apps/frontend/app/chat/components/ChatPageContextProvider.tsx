@@ -241,7 +241,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
             setSelectedConversationState(
               applyChatRunFailureToConversation({
                 conversation: currentConversation,
-                error: t('chat_response_failure'),
+                error: t('chat-response-failure'),
               })
             )
           }
@@ -419,7 +419,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         setSelectedConversationState(
           applyChatRunFailureToConversation({
             conversation: latestConversation,
-            error: t(response.error.message || 'chat_response_failure'),
+            error: t(response.error.message || 'chat-response-failure'),
           })
         )
       }

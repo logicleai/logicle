@@ -57,7 +57,7 @@ const MyAssistantPage = () => {
 
   const describeSharing = (assistant: dto.UserAssistant) => {
     for (const sharing of assistant.sharing) {
-      if (sharing.type === 'all') return t('everyone_in_the_company')
+      if (sharing.type === 'all') return t('everyone-in-the-company')
     }
     for (const sharing of assistant.sharing) {
       if (sharing.type === 'workspace') return t('workspace')
@@ -165,14 +165,14 @@ const MyAssistantPage = () => {
                 <span className="max-w-[200px] truncate ph-2">{tag}</span>
               </Badge>
             ))}
-            {assistant.hidden && <Badge variant="secondary">{t('hidden_assistant')}</Badge>}
+            {assistant.hidden && <Badge variant="secondary">{t('hidden-assistant')}</Badge>}
           </div>
         </div>
       ),
       accessorFn: (assistant: dto.UserAssistant) => assistant.name,
     },
     {
-      name: t('last_upd'),
+      name: t('last-upd'),
       thClass: 'w-[100px]',
       renderer: (assistant: dto.UserAssistant) => (
         <div>
@@ -195,7 +195,7 @@ const MyAssistantPage = () => {
       accessorFn: (assistant: dto.UserAssistant) => describeSharing(assistant),
     },
     {
-      name: t('unpublished_edits'),
+      name: t('unpublished-edits'),
       thClass: 'w-24',
       renderer: (assistant: dto.UserAssistant) => (
         <div className="flex justify-center">
@@ -268,7 +268,7 @@ const MyAssistantPage = () => {
           </div>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
             <Button disabled={!haveDefaultBackend} onClick={() => onCreateNew()} variant="primary">
-              {t('create_new')}
+              {t('create-new')}
             </Button>
           </SearchBarWithButtonsOnRight>
           <ScrollArea className="flex-1 min-h-0">

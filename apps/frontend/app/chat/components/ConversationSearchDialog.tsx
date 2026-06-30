@@ -185,7 +185,7 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-[48rem] h-3/4 min-h-0 flex flex-col overflow-hidden">
         <DialogHeader className="font-bold">
-          <DialogTitle>{t('search_chats')}</DialogTitle>
+          <DialogTitle>{t('search-chats')}</DialogTitle>
         </DialogHeader>
 
         <Form
@@ -198,7 +198,7 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
             name="query"
             render={({ field }) => (
               <FormItem>
-                <Input placeholder={t('search_placeholder')} autoFocus {...field} />
+                <Input placeholder={t('search-placeholder')} autoFocus {...field} />
               </FormItem>
             )}
           />

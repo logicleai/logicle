@@ -109,8 +109,8 @@ const AddUser = ({ onClose }: { onClose: () => void }) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={'true'}>{t('sso_user')}</SelectItem>
-                    <SelectItem value={'false'}>{t('any_available')}</SelectItem>
+                    <SelectItem value={'true'}>{t('sso-user')}</SelectItem>
+                    <SelectItem value={'false'}>{t('any-available')}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>

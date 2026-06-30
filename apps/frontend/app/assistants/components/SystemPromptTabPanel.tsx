@@ -20,7 +20,7 @@ export const SystemPromptTabPanel = ({ form, className, visible }: Props) => {
         <FormItem className={className} style={{ display: visible ? undefined : 'none' }}>
           <InstructionsEditor
             className="h-full"
-            placeholder={t('create_assistant_field_system_prompt_placeholder')}
+            placeholder={t('create-assistant-field-system-prompt-placeholder')}
             {...field}
           />
         </FormItem>

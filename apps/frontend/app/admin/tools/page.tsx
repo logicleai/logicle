@@ -63,7 +63,7 @@ const AllTools = () => {
 
   const describeSharing = (sharing: dto.Sharing2) => {
     if (sharing.type === 'public') {
-      return t('everyone_in_the_company')
+      return t('everyone-in-the-company')
     } else if (sharing.type === 'workspace') {
       return t('workspace')
     } else {
@@ -138,7 +138,7 @@ const AllTools = () => {
         <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button>{t('create_tool')}</Button>
+              <Button>{t('create-tool')}</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent sideOffset={5}>
               {creatableTools.map((type) => (

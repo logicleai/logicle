@@ -104,7 +104,7 @@ const UsersPage = () => {
       title={t('users')}
       topBar={
         <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
-          <Button onClick={() => setShowAddDialog(true)}>{t('create_user')}</Button>
+          <Button onClick={() => setShowAddDialog(true)}>{t('create-user')}</Button>
         </SearchBarWithButtonsOnRight>
       }
     >

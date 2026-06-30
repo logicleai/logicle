@@ -32,7 +32,7 @@ export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
             <FormItem label={t('token-limit')}>
               <NumberInput
                 mode="integer"
-                placeholder={t('create_assistant_field_token_limit_placeholder')}
+                placeholder={t('create-assistant-field-token-limit-placeholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />
@@ -49,7 +49,7 @@ export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
                 min={0}
                 max={1}
                 step={0.1}
-                placeholder={t('create_assistant_field_temperature_placeholder')}
+                placeholder={t('create-assistant-field-temperature-placeholder')}
                 value={field.value ?? ''}
                 onChange={field.onChange}
               />

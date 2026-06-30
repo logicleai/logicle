@@ -218,7 +218,7 @@ export const ToolKnowledgeSection = ({ form, toolId }: ToolKnowledgeSectionProps
         <IconUpload size={16} />
         <span>
           <Trans
-            i18nKey="drop_files_here_or_browse_for_file_upload"
+            i18nKey="drop-files-here-or-browse-for-file-upload"
             components={[
               <Button variant="link" size="link" key="browse" onClick={openFilePicker}>
                 {' '}

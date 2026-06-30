@@ -198,7 +198,7 @@ const AssistantHistory = () => {
       toast.error(response.error.message)
       return false
     } else {
-      toast.success(t('assistant_restored'))
+      toast.success(t('assistant-restored'))
       await mutate(url)
       return true
     }
@@ -215,7 +215,7 @@ const AssistantHistory = () => {
       return
     }
     setRenameDialog(null)
-    toast.success(t('version_name_updated'))
+    toast.success(t('version-name-updated'))
     await mutate(url)
   }
 
@@ -226,7 +226,7 @@ const AssistantHistory = () => {
           <button type="button" title={t('back')} onClick={router.back}>
             <IconArrowLeft></IconArrowLeft>
           </button>
-          <h1>{`${t('version_chronology')}`}</h1>
+          <h1>{`${t('version-chronology')}`}</h1>
         </div>
         <div className="flex gap-3 items-center">
           <Button
@@ -236,7 +236,7 @@ const AssistantHistory = () => {
             onClick={() => onRestoreVersion()}
           >
             <IconRotate />
-            {<span className="mr-1">{t('restore_this_version')}</span>}
+            {<span className="mr-1">{t('restore-this-version')}</span>}
           </Button>
         </div>
       </div>
@@ -275,7 +275,7 @@ const AssistantHistory = () => {
                         <span className="mt-3 flex items-center gap-2 text-sm">
                           {assistantVersion.current ? (
                             <span className="rounded-full bg-orange-100 px-2 py-0.5 text-orange-800">
-                              {t('current_draft')}
+                              {t('current-draft')}
                             </span>
                           ) : null}
                           {assistantVersion.published ? (
@@ -291,7 +291,7 @@ const AssistantHistory = () => {
                             variant="ghost"
                             size="icon"
                             className="opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-                            title={t('rename_version')}
+                            title={t('rename-version')}
                           >
                             <IconDotsVertical />
                           </Button>
@@ -306,7 +306,7 @@ const AssistantHistory = () => {
                               })
                             }
                           >
-                            {t('rename_version')}
+                            {t('rename-version')}
                           </DropdownMenuButton>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -331,12 +331,12 @@ const AssistantHistory = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('rename_version')}</DialogTitle>
+            <DialogTitle>{t('rename-version')}</DialogTitle>
           </DialogHeader>
           <Input
             autoFocus
             value={renameDialog?.value ?? ''}
-            placeholder={t('version_name_prompt')}
+            placeholder={t('version-name-prompt')}
             onChange={(event) =>
               setRenameDialog((prev) => (prev ? { ...prev, value: event.target.value } : prev))
             }

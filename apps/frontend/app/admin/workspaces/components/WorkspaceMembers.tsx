@@ -113,7 +113,7 @@ export const WorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
                           onClick={async () => {
                             setUserModifyingRole(member)
                           }}
-                          text={t('edit_role')}
+                          text={t('edit-role')}
                         />
                       </ActionList>
                     </TableCell>
