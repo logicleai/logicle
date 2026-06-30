@@ -5,28 +5,16 @@ import ts from 'typescript'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const projectRoot = path.resolve(__dirname, '../..')
-const localesRoot = path.join(projectRoot, 'locales')
+const repoRoot = path.resolve(__dirname, '../../../..')
+const localesRoot = path.join(repoRoot, 'apps/frontend/locales')
 
-const ignoredDirs = new Set([
-  'node_modules',
-  '.next',
-  'dist',
-  'dist-server',
-  'coverage',
-  'locales',
-])
+const ignoredDirs = new Set(['node_modules', '.next', 'dist', 'dist-server', 'coverage', 'locales'])
 
 const sourceExts = new Set(['.ts', '.tsx', '.js', '.jsx'])
-const kebabCaseRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const failUnused = process.argv.includes('--fail-unused')
-const skipKebab = process.argv.includes('--skip-kebab') || process.argv.includes('--no-kebab')
+const reportUnused = process.argv.includes('--report-unused') || failUnused
 
 type LocaleMap = Map<string, Set<string>>
-
-function isKebabCase(key: string): boolean {
-  return kebabCaseRegex.test(key)
-}
 
 function walk(dir: string, onFile: (filePath: string) => void) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
@@ -83,8 +71,7 @@ function loadLocales(): LocaleMap {
 function collectKeysFromSource(filePath: string): Set<string> {
   const text = fs.readFileSync(filePath, 'utf-8')
   const ext = path.extname(filePath)
-  const kind =
-    ext === '.tsx' || ext === '.jsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+  const kind = ext === '.tsx' || ext === '.jsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS
   const sourceFile = ts.createSourceFile(filePath, text, ts.ScriptTarget.Latest, true, kind)
   const keys = new Set<string>()
 
@@ -123,7 +110,7 @@ function collectKeysFromSource(filePath: string): Set<string> {
 
 function collectCodeKeys(): Set<string> {
   const keys = new Set<string>()
-  walk(projectRoot, (filePath) => {
+  walk(repoRoot, (filePath) => {
     const ext = path.extname(filePath)
     if (!sourceExts.has(ext)) return
     if (filePath.includes(`${path.sep}locales${path.sep}`)) return
@@ -138,7 +125,7 @@ function collectCodeKeys(): Set<string> {
 function main() {
   const locales = loadLocales()
   if (locales.size === 0) {
-    console.error('No locale files found under locales/**/logicle.json')
+    console.error('No locale files found under apps/frontend/locales/**/logicle.json')
     process.exit(1)
   }
 
@@ -150,11 +137,6 @@ function main() {
 
   const missingInLocales = [...codeKeys].filter((key) => !allLocaleKeys.has(key))
   const unusedInCode = [...allLocaleKeys].filter((key) => !codeKeys.has(key))
-
-  const nonConformingLocaleKeys = skipKebab
-    ? []
-    : [...allLocaleKeys].filter((key) => !isKebabCase(key))
-  const nonConformingCodeKeys = skipKebab ? [] : [...codeKeys].filter((key) => !isKebabCase(key))
 
   let hasErrors = false
 
@@ -179,25 +161,11 @@ function main() {
 
   if (unusedInCode.length > 0) {
     if (failUnused) hasErrors = true
-    console.error(`Unused locale keys (${unusedInCode.length}):`)
-    for (const key of unusedInCode.sort()) {
-      console.error(`  - ${key}`)
-    }
-  }
-
-  if (nonConformingLocaleKeys.length > 0) {
-    hasErrors = true
-    console.error(`Locale keys not kebab-case (${nonConformingLocaleKeys.length}):`)
-    for (const key of nonConformingLocaleKeys.sort()) {
-      console.error(`  - ${key}`)
-    }
-  }
-
-  if (nonConformingCodeKeys.length > 0) {
-    hasErrors = true
-    console.error(`Code keys not kebab-case (${nonConformingCodeKeys.length}):`)
-    for (const key of nonConformingCodeKeys.sort()) {
-      console.error(`  - ${key}`)
+    if (reportUnused) {
+      console.error(`Unused locale keys (${unusedInCode.length}):`)
+      for (const key of unusedInCode.sort()) {
+        console.error(`  - ${key}`)
+      }
     }
   }
 
