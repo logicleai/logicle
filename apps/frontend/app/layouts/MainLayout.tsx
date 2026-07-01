@@ -15,6 +15,17 @@ import { usePathname } from 'next/navigation'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 import { t } from 'i18next'
 import { useEnvironment } from '../context/environmentProvider'
+import { useSatellites } from '@/hooks/satellites'
+
+const SatelliteNavIcon: React.FC = () => {
+  const { data, isLoading } = useSatellites()
+  if (!isLoading && data.length === 0) return null
+  return (
+    <Link href="/satellites" title="Satellites" className="relative">
+      <IconSatellite size={28}></IconSatellite>
+    </Link>
+  )
+}
 
 export interface Props {
   leftBar?: JSX.Element
@@ -46,11 +57,7 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
           <Link href="/images">
             <Images size={28}></Images>
           </Link>
-          {environment.enableSatellitesUi && (
-            <Link href="/satellites" title="Satellites" className="relative">
-              <IconSatellite size={28}></IconSatellite>
-            </Link>
-          )}
+          {environment.enableSatellitesUi && <SatelliteNavIcon />}
         </div>
         <div>
           <AppMenu />
@@ -106,11 +113,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
           <Link title={t('images')} href="/images">
             <Images size={28}></Images>
           </Link>
-          {environment.enableSatellitesUi && (
-            <Link href="/satellites" title="Satellites" className="relative">
-              <IconSatellite size={28}></IconSatellite>
-            </Link>
-          )}
+          {environment.enableSatellitesUi && <SatelliteNavIcon />}
         </div>
         <div>
           <AppMenu />
