@@ -18,9 +18,15 @@ export interface LlmModelCapabilities {
   knowledge?: boolean
   nativePdfPageLimit?: number
   promptCaching?: boolean
+  temperature?: boolean
 }
 
-export const tokenizerStrategies = ['cl100k_base', 'o200k_base', 'approx_4chars', 'anthropic_heuristic'] as const
+export const tokenizerStrategies = [
+  'cl100k_base',
+  'o200k_base',
+  'approx_4chars',
+  'anthropic_heuristic',
+] as const
 export type TokenizerStrategy = (typeof tokenizerStrategies)[number]
 
 export const llmModelNoCapabilities: LlmModelCapabilities = {
