@@ -619,9 +619,10 @@ export class ChatAssistant {
         this.llmModelCapabilities.function_calling && Object.keys(this.functions).length !== 0
           ? 'auto'
           : undefined,
-      temperature: modelSupportsReasoning(this.llmModel)
-        ? undefined
-        : this.assistantParams.temperature,
+      temperature:
+        modelSupportsReasoning(this.llmModel) || this.llmModelCapabilities.temperature === false
+          ? undefined
+          : this.assistantParams.temperature,
       providerOptions,
       experimental_transform: ai.smoothStream({ delayInMs: 20, chunking: 'word' }),
       abortSignal: this.options.abortSignal,

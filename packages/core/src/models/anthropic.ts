@@ -266,9 +266,31 @@ export const claude46SonnetModel: LlmModel = {
   maxOutputTokens: 64000,
 }
 
+export const claude5SonnetModel: LlmModel = {
+  id: 'claude-sonnet-5', // was incorrectly 4-5
+  model: 'claude-sonnet-5',
+  name: 'Claude 5 Sonnet',
+  description:
+    'High-performance hybrid reasoning model with exceptional efficiency, enhanced coding capabilities, and support for extended/adaptive thinking.',
+  provider: 'anthropic',
+  owned_by: 'anthropic',
+  context_length: 1048576,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    web_search: true,
+    supportedMedia: ['application/pdf'],
+    nativePdfPageLimit: 100,
+    promptCaching: true,
+    temperature: false,
+  },
+  supportedReasoningEfforts: [],
+  maxOutputTokens: 64000,
+}
+
 export const claudeSonnetLatest: LlmModel = {
-  ...claude46SonnetModel,
-  name: 'Claude Sonnet latest (4.6)',
+  ...claude5SonnetModel,
+  name: 'Claude Sonnet latest (5)',
   id: 'claude-sonnet-latest',
   tags: ['latest'],
 }
@@ -288,4 +310,5 @@ export const anthropicModels: LlmModel[] = [
   claude45SonnetModel,
   claude45OpusModel,
   claude46SonnetModel,
+  claude5SonnetModel,
 ]
