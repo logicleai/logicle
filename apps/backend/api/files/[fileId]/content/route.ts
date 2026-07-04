@@ -7,7 +7,6 @@ import { scheduleFileAnalysisForFile } from '@/lib/file-analysis'
 import { finalizeUploadedFile } from '@/backend/lib/files/upload-dedup'
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
-import env from '@/lib/env'
 import { getConfiguredFileEncryption } from '@/lib/storage/encryption'
 
 

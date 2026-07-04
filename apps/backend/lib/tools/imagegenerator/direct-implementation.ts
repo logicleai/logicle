@@ -349,10 +349,6 @@ export class OpenAiImageGeneratorPlugin extends DirectImageGeneratorPlugin {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
     new OpenAiImageGeneratorPlugin(toolParams, params as DirectImageGeneratorPluginParams)
 
-  constructor(toolParams: ToolParams, params: DirectImageGeneratorPluginParams) {
-    super(toolParams, params)
-  }
-
   protected providerName() {
     return 'openai'
   }
@@ -382,10 +378,6 @@ export class GoogleImageGeneratorPlugin extends DirectImageGeneratorPlugin {
   static toolName = 'imagegen.google'
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
     new GoogleImageGeneratorPlugin(toolParams, params as DirectImageGeneratorPluginParams)
-
-  constructor(toolParams: ToolParams, params: DirectImageGeneratorPluginParams) {
-    super(toolParams, params)
-  }
 
   protected providerName() {
     return isImagenImageModel(this.model) ? 'imagen' : 'gemini'
@@ -425,10 +417,6 @@ export class TogetherImageGeneratorPlugin extends DirectImageGeneratorPlugin {
   static toolName = 'imagegen.together'
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
     new TogetherImageGeneratorPlugin(toolParams, params as DirectImageGeneratorPluginParams)
-
-  constructor(toolParams: ToolParams, params: DirectImageGeneratorPluginParams) {
-    super(toolParams, params)
-  }
 
   protected providerName() {
     return 'together'

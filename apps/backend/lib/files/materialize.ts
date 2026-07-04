@@ -1,7 +1,6 @@
 import { db } from '@/db/database'
 import type { FileDbRow } from '@/backend/models/file'
 import type { FileOwnerType } from '@/db/schema'
-import env from '@/lib/env'
 import { storage } from '@/lib/storage'
 import { getConfiguredFileEncryption, isFileEncrypted } from '@/lib/storage/encryption'
 import { nanoid } from 'nanoid'

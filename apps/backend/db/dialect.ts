@@ -6,7 +6,7 @@ import env from '../../../packages/core/src/env.ts'
 import { logger } from '../lib/logging.ts'
 
 const toIsoTimestamp = (value: string) => {
-  return value.replace(' ', 'T') + 'Z'
+  return `${value.replace(' ', 'T')}Z`
 }
 
 async function createDialect() {

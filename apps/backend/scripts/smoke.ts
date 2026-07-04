@@ -171,7 +171,7 @@ async function checkWebSocketHandshake() {
 
 /** Connect to /api/rpc without auth and expect close code 1008. */
 async function checkSatelliteRejectsUnauthenticated() {
-  const wsUrl = baseUrl.replace(/^http/, 'ws') + '/api/rpc'
+  const wsUrl = `${baseUrl.replace(/^http/, 'ws')}/api/rpc`
   await new Promise<void>((resolve, reject) => {
     const ws = new WebSocket(wsUrl, 'logicle-satellite-v1')
     const timeout = setTimeout(() => {
@@ -222,7 +222,7 @@ async function checkRegisteredSatelliteConnect(runId: string) {
   }
   const bearerToken = `${keyId}.${keySecret}`
 
-  const wsUrl = baseUrl.replace(/^http/, 'ws') + '/api/rpc'
+  const wsUrl = `${baseUrl.replace(/^http/, 'ws')}/api/rpc`
   await new Promise<void>((resolve, reject) => {
     const ws = new WebSocket(wsUrl, 'logicle-satellite-v1', {
       headers: { Authorization: `Bearer ${bearerToken}` },

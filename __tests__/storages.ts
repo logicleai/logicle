@@ -1,4 +1,4 @@
-import { test, expect, vi } from 'vitest'
+import { test, expect, } from 'vitest'
 import { MemoryStorage } from '@/lib/storage/MemoryStorage'
 import { CachingStorage } from '@/lib/storage/CachingStorage'
 import { AeadEncryptingStorage } from '@/ee/AeadEncryptingStorage'

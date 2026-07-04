@@ -36,7 +36,6 @@ import type * as ai from 'ai'
 import { buildEstimatedPreambleSegments, preparePreamblePlan, PreamblePlan } from '@/backend/lib/chat/preamble'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
 import { projectMessageForEstimation, fileDescriptorText } from '@/backend/lib/chat/message-projection'
-import env from '@/lib/env'
 
 // --- File token cache -----------------------------------------------------------
 
@@ -582,7 +581,7 @@ export const estimatePreambleTokensFromPlan = async ({
         entry.fileId, entry.fileName, entry.mimetype, entry.partIndex, messageParts, model, stats
       )
       const descText = fileDescriptorText(entry.fileName, entry.fileId, entry.mimetype, entry.size, ordinal0 + 1, 'Knowledge')
-      let entryTokens = fileEntry.tokens + await countTextTokensCached(model, descText, stats)
+      const entryTokens = fileEntry.tokens + await countTextTokensCached(model, descText, stats)
       knowledgeTokens += entryTokens
       collector?.addPreamblePart({
         type: 'knowledge_file',

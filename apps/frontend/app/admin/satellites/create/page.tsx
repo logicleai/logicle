@@ -1,7 +1,7 @@
 'use client'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AdminPage } from '../../components/AdminPage'
@@ -12,6 +12,7 @@ import * as dto from '@/types/dto'
 const CreateSatellite = () => {
   const { t } = useTranslation()
   const router = useRouter()
+  const nameId = useId()
   const [name, setName] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
@@ -45,11 +46,11 @@ const CreateSatellite = () => {
     <AdminPage title={t('create-satellite')}>
       <form onSubmit={onSubmit} className="max-w-md space-y-4">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium mb-2">
+          <label htmlFor={nameId} className="block text-sm font-medium mb-2">
             {t('satellite-name')}
           </label>
           <Input
-            id="name"
+            id={nameId}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}

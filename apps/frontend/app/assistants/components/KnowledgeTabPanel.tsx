@@ -78,10 +78,12 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
       return
     }
     let mounted = true
-    Promise.all(watchedFiles.map((f) => getFileAnalysis(f.id, modelId))).then((results) => {
-      if (!mounted) return
-      publishWarningState(results.some((r) => r.data?.warnings && r.data.warnings.length > 0))
-    })
+    Promise.all(watchedFiles.map((f) => getFileAnalysis(f.id, modelId)))
+      .then((results) => {
+        if (!mounted) return
+        publishWarningState(results.some((r) => r.data?.warnings && r.data.warnings.length > 0))
+      })
+      .catch(() => {})
     return () => {
       mounted = false
     }

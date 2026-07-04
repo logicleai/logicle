@@ -119,6 +119,7 @@ export const ContextLengthIndicator = ({
               <svg
                 viewBox={`0 0 ${size} ${size}`}
                 className={cn('h-[26px] w-[26px] -rotate-90', pending ? 'animate-pulse' : '')}
+                aria-hidden="true"
               >
                 <circle
                   cx={size / 2}

@@ -1,4 +1,4 @@
-import env from '@/lib/env'
+
 import { forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { canAccess } from '@/backend/lib/files/authorization'
 import { addFile } from '@/models/file'

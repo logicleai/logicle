@@ -123,7 +123,7 @@ class FileAnalysisRuntime {
 export const fileAnalysisRuntime = new FileAnalysisRuntime()
 
 export const scheduleFileAnalysisForFile = (file: FileDbRow): void => {
-  fileAnalysisRuntime.submit(file.id)
+  void fileAnalysisRuntime.submit(file.id)
 }
 
 export const ensureFileAnalysisForFile = async (

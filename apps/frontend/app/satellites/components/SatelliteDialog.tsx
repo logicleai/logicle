@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,7 @@ type Props = {
 
 export const SatelliteDialog = ({ mode, satellite, onClose, onSaved }: Props) => {
   const { t } = useTranslation()
+  const nameId = useId()
   const [name, setName] = useState(satellite?.name ?? '')
   const [loading, setLoading] = useState(false)
 
@@ -60,11 +61,11 @@ export const SatelliteDialog = ({ mode, satellite, onClose, onSaved }: Props) =>
             <DialogTitle>{t(mode === 'create' ? 'create-satellite' : 'rename')}</DialogTitle>
           </DialogHeader>
           <div>
-            <label htmlFor="satellite-name" className="block text-sm font-medium mb-2">
+            <label htmlFor={nameId} className="block text-sm font-medium mb-2">
               {t('satellite-name')}
             </label>
             <Input
-              id="satellite-name"
+              id={nameId}
               type="text"
               autoComplete="off"
               data-1p-ignore="true"
