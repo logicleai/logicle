@@ -13,6 +13,7 @@ The main compromise is coverage versus speed: some integration and live-provider
   - folder CRUD baseline
   - backend + assistant + conversation setup
   - file upload + content fetch
+  - AEAD file content range request
   - chat SSE stream returns assistant data
   - websocket `/api/rpc` handshake
 - Source script: `logicle/scripts/smoke.ts`

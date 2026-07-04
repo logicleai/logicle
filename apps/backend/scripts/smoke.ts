@@ -381,6 +381,28 @@ async function main() {
     throw new Error(`Unexpected uploaded file content: ${fileContent.text}`)
   }
 
+  console.log('Smoke: AEAD file download supports HTTP range requests')
+  const rangedContent = await request('GET', `/api/files/${fileId}/content`, {
+    expectedStatus: 206,
+    headers: {
+      ...sameOriginHeaders,
+      range: 'bytes=0-4',
+    },
+  })
+  if (rangedContent.text !== 'hello') {
+    throw new Error(`Unexpected ranged file content: ${rangedContent.text}`)
+  }
+  if (rangedContent.res.headers.get('content-range') !== 'bytes 0-4/11') {
+    throw new Error(
+      `Unexpected ranged content-range: ${rangedContent.res.headers.get('content-range')}`
+    )
+  }
+  if (rangedContent.res.headers.get('accept-ranges') !== 'bytes') {
+    throw new Error(
+      `Unexpected ranged accept-ranges header: ${rangedContent.res.headers.get('accept-ranges')}`
+    )
+  }
+
   console.log('Smoke: pdf upload analysis preview')
   const pdfBuffer = await readFile(new URL('./data/basic-text.pdf', import.meta.url))
   const pdfCreated = await request('POST', '/api/files', {
