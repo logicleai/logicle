@@ -188,7 +188,7 @@ export const GET = operation({
     }
 
     const rangeHeader = headers.get('range')
-    const supportsRanges = file.encryption === 'aead'
+    const supportsRanges = file.encryption !== 'pgp'
 
     if (rangeHeader && supportsRanges && typeof file.size === 'number') {
       const range = parseRangeHeader(rangeHeader, file.size)

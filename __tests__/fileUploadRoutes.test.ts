@@ -507,8 +507,13 @@ describe('GET /api/files/:fileId/content', () => {
       { params: Promise.resolve({ fileId: 'f-plain' }) }
     )
 
-    expect(response.status).toBe(200)
-    expect(response.headers.get('accept-ranges')).toBe('none')
-    expect(mocks.readStream).toHaveBeenCalledWith('plain.txt', null, { expectedSizeBytes: 100 })
+    expect(response.status).toBe(206)
+    expect(response.headers.get('content-range')).toBe('bytes 0-9/100')
+    expect(response.headers.get('accept-ranges')).toBe('bytes')
+    expect(mocks.readStream).toHaveBeenCalledWith('plain.txt', null, {
+      expectedSizeBytes: 100,
+      rangeStart: 0,
+      rangeEnd: 9,
+    })
   })
 })
