@@ -5,6 +5,7 @@ export const toUpdateableAssistantDraft = (
 ): dto.UpdateableAssistantDraft => ({
   backendId: assistant.backendId,
   description: assistant.description,
+  contextCompression: assistant.contextCompression,
   files: assistant.files,
   iconUri: assistant.iconUri,
   model: assistant.model,
@@ -24,6 +25,7 @@ export const normalizeUpdateableAssistantDraft = (
 ): dto.UpdateableAssistantDraft => ({
   backendId: assistant.backendId,
   description: assistant.description,
+  contextCompression: assistant.contextCompression ?? null,
   files: assistant.files ?? [],
   iconUri: assistant.iconUri ?? null,
   model: assistant.model,
@@ -50,6 +52,7 @@ export type UpdateableAssistantDraftField = keyof dto.UpdateableAssistantDraft
 const trackedDraftFields: UpdateableAssistantDraftField[] = [
   'name',
   'description',
+  'contextCompression',
   'model',
   'backendId',
   'systemPrompt',
