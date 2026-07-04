@@ -170,7 +170,7 @@ const env = {
   fileStorage: {
     location: process.env.FILE_STORAGE_LOCATION,
     cacheSizeInMb: parseFloat(process.env.FILE_STORAGE_CACHE_SIZE_MB ?? '0'),
-    encryptionProvider: process.env.FILE_STORAGE_ENCRYPTION_PROVIDER || 'pgp',
+    encryptionProvider: process.env.FILE_STORAGE_ENCRYPTION_PROVIDER || 'aead',
     encryptionKey: process.env.FILE_STORAGE_ENCRYPTION_KEY ?? 'CHANGEIT',
     encryptFiles: process.env.FILE_STORAGE_ENCRYPTION_ENABLE === '1',
   },
