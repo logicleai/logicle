@@ -61,6 +61,10 @@ export class PgpEncryptingStorage extends BaseStorage {
     return new PgpEncryptingStorage(innerStorage, passPhrase)
   }
 
+  supportsRangeReads(encrypted: StorageEncryption): boolean {
+    return encrypted !== 'pgp' && this.innerStorage.supportsRangeReads(encrypted)
+  }
+
   async readStream(
     path: string,
     encrypted: StorageEncryption,

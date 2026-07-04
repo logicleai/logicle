@@ -9,6 +9,10 @@ export class MemoryStorage extends BaseStorage {
     delete this.map[path]
   }
 
+  supportsRangeReads(_encryption: StorageEncryption): boolean {
+    return true
+  }
+
   async readStream(
     path: string,
     _encryption: StorageEncryption,

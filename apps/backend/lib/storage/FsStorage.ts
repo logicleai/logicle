@@ -25,6 +25,10 @@ export class FsStorage extends BaseStorage {
     await fs.promises.rm(fsPath)
   }
 
+  supportsRangeReads(_encryption: StorageEncryption): boolean {
+    return true
+  }
+
   async readStream(
     path: string,
     _encryption: StorageEncryption,
