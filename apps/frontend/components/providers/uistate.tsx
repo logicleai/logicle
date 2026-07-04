@@ -10,7 +10,7 @@ const parseUIState = (key: string): UIProps => {
       return JSON.parse(data)
     }
   } catch {
-    console.log('Failed parsing cache storage')
+    console.error('Failed parsing cache storage')
   }
   return {}
 }

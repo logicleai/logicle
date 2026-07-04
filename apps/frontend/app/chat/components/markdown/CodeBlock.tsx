@@ -33,7 +33,7 @@ export const CodeBlock: FC<Props> = memo(({ language, value, forExport }) => {
   }, [language])
 
   const copyToClipboard = async () => {
-    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+    if (!navigator.clipboard?.writeText) {
       return
     }
 

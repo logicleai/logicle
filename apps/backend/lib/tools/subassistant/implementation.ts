@@ -155,7 +155,7 @@ export class SubAssistantTool implements ToolImplementation {
             await assistant.invokeLlmAndProcessResponse(chatState, nullSink)
 
             const lastMsg = chatState.getLastMessage()
-            if (!lastMsg || lastMsg.role !== 'assistant') {
+            if (lastMsg?.role !== 'assistant') {
               return { type: 'error-text', value: 'Sub-assistant did not produce a response' }
             }
             const assistantMsg = lastMsg as dto.AssistantMessage

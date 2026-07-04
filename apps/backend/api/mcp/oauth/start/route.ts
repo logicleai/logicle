@@ -37,7 +37,7 @@ export const GET = operation({
       return error(400, 'Missing toolId')
     }
     const tool = await getTool(toolId)
-    if (!tool || tool.type !== 'mcp') {
+    if (tool?.type !== 'mcp') {
       return notFound('Tool not found')
     }
     const parsed = mcpPluginSchema.safeParse(tool.configuration)

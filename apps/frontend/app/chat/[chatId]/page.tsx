@@ -21,9 +21,6 @@ const ChatPage = () => {
     // when routing between them, we must ensure that it matches the
     // page URL
     if (selectedConversation?.id !== chatId) {
-      console.debug(
-        `Loading messages for chat ${chatId} because selectedConversation is ${selectedConversation?.id}`
-      )
       void loadConversation(chatId).catch(() => {
         toast.error('Failed loading the chat')
       })

@@ -217,7 +217,7 @@ const remarkNonImageFileLinks: Plugin<[string], Root> = (baseUrl: string) => {
 
         tasks.push(
           getFileWithId(fileId).then((file) => {
-            if (!file || !file.type.startsWith('image/')) {
+            if (!file?.type.startsWith('image/')) {
               replacements.push({
                 parent: p,
                 index: idx,

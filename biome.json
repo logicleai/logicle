@@ -1,17 +1,7 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.2/schema.json",
 
   "files": {
-    "experimentalScannerIgnores": [
-      ".next",
-      "node_modules",
-      "dist",
-      "dist-server",
-      "dist-scripts",
-      "coverage",
-      "vendor",
-      "pdf2md"
-    ],
     "includes": [
       "**/*.{js,ts,tsx}",
       "!**/node_modules",
@@ -20,7 +10,8 @@
       "!**/dist-server",
       "!**/dist-scripts",
       "!**/coverage",
-      "!vendor",
+      "!**/vendor",
+      "!**/pdf2md",
       "!apps/backend/lib/vendor/pdf2md"
     ]
   },
@@ -56,6 +47,7 @@
             "ignoreRestSiblings": true
           }
         },
+        "noUnusedImports": "warn",
         "useExhaustiveDependencies": "off"
       },
       "nursery": {
@@ -67,7 +59,13 @@
       "suspicious": {
         "noExplicitAny": "off",
         "useIterableCallbackReturn": "off",
-        "noArrayIndexKey": "off"
+        "noArrayIndexKey": "off",
+        "noConsole": {
+          "level": "warn",
+          "options": {
+            "allow": ["error", "warn"]
+          }
+        }
       },
       "style": {
         "useImportType": "off",
@@ -78,5 +76,42 @@
 
   "javascript": {
     "globals": ["React", "JSX"]
-  }
+  },
+
+  "overrides": [
+    {
+      "includes": ["apps/frontend/hooks/**/*.{js,ts,tsx}"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useExhaustiveDependencies": "warn"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "apps/backend/scripts/**/*.{js,ts,tsx}",
+        "apps/backend/testapps/**/*.{js,ts,tsx}",
+        "apps/backend/lib/tracing/**/*.{js,ts,tsx}",
+        "apps/backend/lib/bootstrap.ts",
+        "apps/backend/lib/logging.ts",
+        "apps/backend/lib/file-analysis/runtime.ts",
+        "apps/backend/ee/pgp-s2k-worker/**/*.{js,ts,tsx}",
+        "apps/backend/ee/PgpEncryptingStorage.ts",
+        "apps/backend/server.ts",
+        "apps/backend/generate_openapi.ts",
+        "apps/frontend/dev.ts",
+        "apps/proxy.ts",
+        "bench/**/*.{js,ts,tsx}"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ]
 }

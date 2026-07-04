@@ -311,7 +311,7 @@ describe('message projection parity', () => {
 
     const llm = await dtoMessageToLlmMessage(toolMessage, approxModel.capabilities, 'litellm')
     expect(llm?.role).toBe('tool')
-    if (!llm || llm.role !== 'tool') return
+    if (llm?.role !== 'tool') return
     const content = llm.content
     expect(content[0]).toEqual(
       expect.objectContaining({

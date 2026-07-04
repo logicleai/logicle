@@ -54,7 +54,7 @@ const OpenApiToolFields = ({ form, apiKeys, setApiKeys }: Props) => {
         const nextKeys = await extractApiKeysFromOpenApiSchema(docObject)
         setApiKeys(nextKeys)
       } catch {
-        console.log(`Failed extracting API keys...`)
+        console.error(`Failed extracting API keys...`)
         setApiKeys([])
       }
       const result = validateSchema(docObject)
@@ -74,7 +74,7 @@ const OpenApiToolFields = ({ form, apiKeys, setApiKeys }: Props) => {
         }
       }
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
     return diagnostics
   }

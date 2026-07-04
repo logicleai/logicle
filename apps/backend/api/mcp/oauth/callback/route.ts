@@ -126,7 +126,7 @@ export const GET = operation({
       return renderError('Missing OAuth session')
     }
     const tool = await getTool(oauthSession.toolId)
-    if (!tool || tool.type !== 'mcp') {
+    if (tool?.type !== 'mcp') {
       return renderError('Tool not found', 404)
     }
     const parsed = mcpPluginSchema.safeParse(tool.configuration)

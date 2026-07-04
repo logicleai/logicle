@@ -47,7 +47,7 @@ export function applyStreamPartToMessage(
       throw new Error('Received text delta for non-assistant message')
     }
     const lastPart = message.parts[message.parts.length - 1]
-    if (!lastPart || lastPart.type !== 'text') {
+    if (lastPart?.type !== 'text') {
       throw new Error('Received text delta but last part is not text')
     }
     return {
@@ -64,7 +64,7 @@ export function applyStreamPartToMessage(
       throw new Error('Received reasoning delta for non-assistant message')
     }
     const lastPart = message.parts[message.parts.length - 1]
-    if (!lastPart || lastPart.type !== 'reasoning') {
+    if (lastPart?.type !== 'reasoning') {
       throw new Error('Received reasoning delta but last part is not reasoning')
     }
     return {

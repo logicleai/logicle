@@ -71,7 +71,7 @@ class FileAnalysisRuntime {
 
     try {
       const file = await getFileWithId(fileId)
-      if (!file || !file.fileBlobId) {
+      if (!file?.fileBlobId) {
         throw new Error(`File not ready (fileBlobId=${file?.fileBlobId ?? 'missing'})`)
       }
 
