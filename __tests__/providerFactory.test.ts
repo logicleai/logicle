@@ -88,6 +88,7 @@ describe('createLanguageModelBasic', () => {
 
     expect(mockCreateAnthropic).toHaveBeenCalledWith(
       expect.objectContaining({
+        baseURL: 'https://proxy.example.com/anthropic',
         headers: { 'x-litellm-customer-id': 'customer-1' },
       })
     )

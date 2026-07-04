@@ -23,7 +23,9 @@ export type AssistantReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | '
 export const geminiThinkingConfigFromReasoningEffort = (
   modelId: string,
   reasoningEffort: AssistantReasoningEffort
-): { thinkingLevel: AssistantReasoningEffort; includeThoughts: true } | { thinkingBudget: number; includeThoughts: true } => {
+):
+  | { thinkingLevel: AssistantReasoningEffort; includeThoughts: true }
+  | { thinkingBudget: number; includeThoughts: true } => {
   if (modelId.includes('gemini-3')) {
     return { thinkingLevel: reasoningEffort, includeThoughts: true }
   }
@@ -111,7 +113,7 @@ export function createLanguageModelBasic(
         return anthropic
           .createAnthropic({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            baseURL: `${params.endPoint}/v1`,
+            baseURL: `${params.endPoint}/anthropic`,
             headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
             fetch,
           })

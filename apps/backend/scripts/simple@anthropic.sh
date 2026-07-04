@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MODEL=claude-sonnet-4-20250514
+MODEL=claude-sonnet-4-6
 USE_LOGICLECLOUD=false
 IMAGE_FILE=""
 
@@ -32,7 +32,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$USE_LOGICLECLOUD" == "true" ]]; then
-  API_URL="https://llmproxy.eu.logicle.ai/v1/messages"
+  API_URL="https://llmproxy.eu.logicle.ai/anthropic/v1/messages"
   AUTH_HEADER="Authorization: Bearer $LOGICLECLOUD_API_KEY"
 else
   API_URL="https://api.anthropic.com/v1/messages"
