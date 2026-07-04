@@ -21,6 +21,7 @@ interface Props {
 export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
   const { t } = useTranslation()
   const compression = form.watch('contextCompression')
+  const compressionPreset = compression?.preset ?? 'none'
 
   return (
     <ScrollArea className={className} style={{ display: visible ? undefined : 'none' }}>
@@ -61,28 +62,35 @@ export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
           name="contextCompression"
           render={({ field }) => (
             <FormItem label={t('context-compression')} title={t('context-compression-help')}>
-              <Select
-                value={field.value?.preset ?? 'none'}
-                onValueChange={(v) => {
-                  if (v === 'none') {
-                    field.onChange(null)
-                  } else {
-                    field.onChange({
-                      preset: v,
-                      triggerAtTokens: field.value?.triggerAtTokens,
-                    })
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('context-compression-off')}</SelectItem>
-                  <SelectItem value="conservative">{t('context-compression-conservative')}</SelectItem>
-                  <SelectItem value="aggressive">{t('context-compression-aggressive')}</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex flex-col gap-1.5">
+                <Select
+                  value={field.value?.preset ?? 'none'}
+                  onValueChange={(v) => {
+                    if (v === 'none') {
+                      field.onChange(null)
+                    } else {
+                      field.onChange({
+                        preset: v,
+                        triggerAtTokens: field.value?.triggerAtTokens,
+                      })
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t('context-compression-off')}</SelectItem>
+                    <SelectItem value="conservative">
+                      {t('context-compression-conservative')}
+                    </SelectItem>
+                    <SelectItem value="aggressive">{t('context-compression-aggressive')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  {t(`context-compression-detail-${compressionPreset}`)}
+                </p>
+              </div>
             </FormItem>
           )}
         />
