@@ -16,10 +16,14 @@ import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 import { t } from 'i18next'
 import { useEnvironment } from '../context/environmentProvider'
 import { useSatellites } from '@/hooks/satellites'
+import { useUserProfile } from '@/components/providers/userProfileContext'
+import * as dto from '@/types/dto'
 
 const SatelliteNavIcon: React.FC = () => {
+  const userProfile = useUserProfile()
   const { data, isLoading } = useSatellites()
-  if (!isLoading && data.length === 0) return null
+  const isAdmin = userProfile?.role === dto.UserRole.ADMIN
+  if (!isAdmin && !isLoading && data.length === 0) return null
   return (
     <Link href="/satellites" title="Satellites" className="relative">
       <IconSatellite size={28}></IconSatellite>
