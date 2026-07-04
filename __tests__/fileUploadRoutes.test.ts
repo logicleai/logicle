@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   writeStream: vi.fn(),
   readStream: vi.fn(),
   rm: vi.fn(),
+  supportsRangeReads: vi.fn(),
   scheduleFileAnalysis: vi.fn(),
 }))
 
@@ -23,6 +24,7 @@ vi.mock('@/lib/storage', () => ({
     writeStream: mocks.writeStream,
     readStream: mocks.readStream,
     rm: mocks.rm,
+    supportsRangeReads: mocks.supportsRangeReads,
   },
 }))
 
@@ -143,7 +145,9 @@ beforeEach(async () => {
   mocks.writeStream.mockReset()
   mocks.readStream.mockReset()
   mocks.rm.mockReset()
+  mocks.supportsRangeReads.mockReset()
   mocks.scheduleFileAnalysis.mockReset()
+  mocks.supportsRangeReads.mockReturnValue(true)
 
   const user = await createUser({ name: 'Test User', email: 'test@example.com', ssoUser: 0 })
   testUserId = user.id
@@ -496,7 +500,7 @@ describe('GET /api/files/:fileId/content', () => {
     expect(mocks.readStream).not.toHaveBeenCalled()
   })
 
-  test('returns 200 with full content when a Range header is sent for a non-AEAD file', async () => {
+  test('returns 206 when a Range header is sent for a plaintext file', async () => {
     await insertFileWithBlob({ fileId: 'f-plain', blobId: 'b-plain', path: 'plain.txt', size: 100, encryption: null })
     mocks.readStream.mockResolvedValue(makeStream('full content'))
 
@@ -515,5 +519,22 @@ describe('GET /api/files/:fileId/content', () => {
       rangeStart: 0,
       rangeEnd: 9,
     })
+  })
+
+  test('returns 200 when the storage backend rejects range reads', async () => {
+    mocks.supportsRangeReads.mockReturnValue(false)
+    await insertFileWithBlob({ fileId: 'f-pgp', blobId: 'b-pgp', path: 'pgp.txt', size: 100, encryption: 'pgp' })
+    mocks.readStream.mockResolvedValue(makeStream('full content'))
+
+    const response = await contentRoute.GET(
+      new Request('http://localhost/api/files/f-pgp/content', {
+        headers: { cookie: sessionCookie, range: 'bytes=0-9' },
+      }),
+      { params: Promise.resolve({ fileId: 'f-pgp' }) }
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('accept-ranges')).toBe('none')
+    expect(mocks.readStream).toHaveBeenCalledWith('pgp.txt', 'pgp', { expectedSizeBytes: 100 })
   })
 })

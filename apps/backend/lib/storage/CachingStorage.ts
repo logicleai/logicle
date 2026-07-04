@@ -42,6 +42,10 @@ export class CachingStorage extends BaseStorage {
     return this.sendToCacheStream(path, innerStream)
   }
 
+  supportsRangeReads(encrypted: StorageEncryption): boolean {
+    return this.innerStorage.supportsRangeReads(encrypted)
+  }
+
   writeStream(
     path: string,
     stream: ReadableStream<Uint8Array>,

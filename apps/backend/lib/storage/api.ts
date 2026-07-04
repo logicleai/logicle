@@ -13,6 +13,7 @@ export interface Storage {
   writeStream(path: string, stream: ReadableStream<Uint8Array>, encrypted: StorageEncryption): Promise<void>
   writeBuffer(path: string, buffer: Uint8Array, encrypted: StorageEncryption): Promise<void>
   rm(path: string): Promise<void>
+  supportsRangeReads(encrypted: StorageEncryption): boolean
   readStream(
     path: string,
     encrypted: StorageEncryption,
@@ -22,6 +23,10 @@ export interface Storage {
 }
 
 export abstract class BaseStorage implements Storage {
+  supportsRangeReads(_encrypted: StorageEncryption): boolean {
+    return true
+  }
+
   abstract readStream(
     path: string,
     encrypted: StorageEncryption,

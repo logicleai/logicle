@@ -84,6 +84,10 @@ export class S3Storage extends BaseStorage {
     }
   }
 
+  supportsRangeReads(_encryption: StorageEncryption): boolean {
+    return true
+  }
+
   async readStream(
     path: string,
     _encryption: StorageEncryption,
