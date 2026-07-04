@@ -150,7 +150,7 @@
   "creating": "Creazione in corso",
   "loading": "Caricamento",
   "not-found": "Non trovato",
-  "rate-limit-exceeded-warning": "Hai raggiunto il limite di utilizzo dei token per questo periodo. I tuoi messaggi potrebbero essere limitati.",
+  "rate-limit-exceeded-warning": "Hai raggiunto il limite di utilizzo dei token per questo periodo. Per ora puoi continuare a chattare.",
   "choose-new-provider-type": "Scegli il tipo di provider",
   "choose-new-provider-type-description": "Scegli il tipo di provider LLM per il nuovo backend",
   "choose-workspace": "Scegli il tuo workspace",
