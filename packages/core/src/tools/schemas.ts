@@ -89,7 +89,7 @@ export class SatelliteInterface {
 export const KnowledgePluginSchema = z.object({}).strict()
 export type KnowledgePluginParams = z.infer<typeof KnowledgePluginSchema>
 export class KnowledgePluginInterface {
-  static toolName = 'file-manager'
+  static toolName = 'knowledge'
 }
 
 export const mcpAuthenticationSchema = z
@@ -198,12 +198,6 @@ export const OpenApiSchema = z.object({
 export type OpenApiParams = z.infer<typeof OpenApiSchema>
 export class OpenApiInterface {
   static toolName = 'openapi'
-}
-
-export const FileManagerPluginSchema = z.object({}).strict()
-export type FileManagerPluginParams = z.infer<typeof FileManagerPluginSchema>
-export class FileManagerPluginInterface {
-  static toolName = 'file-manager'
 }
 
 export const RestrictionsSchema = z.object({

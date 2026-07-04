@@ -1,6 +1,5 @@
 import {
   AudioTranscriptionInterface,
-  FileManagerPluginInterface,
   GoogleAiStudioWebSearchInterface,
   GoogleImageGeneratorPluginInterface,
   LogicleCloudWebSearchInterface,
@@ -31,7 +30,6 @@ export const toolNames = [
   ReplicateImageGeneratorPluginInterface.toolName,
   SatelliteInterface.toolName,
   OpenApiInterface.toolName,
-  FileManagerPluginInterface.toolName,
   TimeOfDayInterface.toolName,
   WebSearchInterface.toolName,
   LogicleCloudWebSearchInterface.toolName,

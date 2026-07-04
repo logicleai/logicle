@@ -57,6 +57,7 @@ import { SatelliteTool } from '../tools/satellite/implementation'
 import type { PromptSegment } from './preamble'
 import { prefixToolFunctionNames } from './toolFunctionNames'
 import { compactHistoricalToolResultsForPrompt } from './tool-result-compaction'
+import { RetrieveFilePlugin } from '../tools/retrieve-file/implementation'
 
 function estimateRawContextTokens(messages: dto.Message[]): number {
   let chars = 0
@@ -327,6 +328,28 @@ export class ChatAssistant {
       throw new Error(
         `Can't find model ${assistantParams.model} for provider ${providerConfig.providerType}`
       )
+    }
+    if (assistantParams.contextCompression) {
+      const hasFileManagerTool = tools.some(
+        (tool) =>
+          tool.toolParams.id === 'retrieve-file' ||
+          tool.toolParams.name === 'retrieve-file'
+      )
+      if (!hasFileManagerTool) {
+        tools = [
+          ...tools,
+          new RetrieveFilePlugin(
+            {
+              id: 'retrieve-file',
+              provisioned: false,
+              name: 'retrieve-file',
+              promptFragment:
+                '\nWhen context compression strips older attachments or tool outputs, use the retrieve-file tool to request a file by id. Prefer read_file when you need the file contents.\n',
+            },
+            {}
+          ),
+        ]
+      }
     }
     tools = await ChatAssistant.withBuiltinTools(tools, llmModel)
     const computed = await ChatAssistant.computeFunctions(tools, llmModel, {
