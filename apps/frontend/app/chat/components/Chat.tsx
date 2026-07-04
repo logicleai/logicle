@@ -5,14 +5,14 @@ import ChatPageContext from '@/app/chat/components/context'
 import { ChatInputOrApiKey } from './ChatInputOrApiKey'
 import { groupMessages } from '@/lib/chat/conversationUtils'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { IconArrowDown, IconAlertTriangle } from '@tabler/icons-react'
+import { IconArrowDown } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 import { useChatInput } from '@/components/providers/localstoragechatstate'
 import { MessageGroup } from './MessageGroup'
 import { ConversationSidebar } from './ConversationSidebar'
 import { useTranslation } from 'react-i18next'
 import { useTokenRateLimit } from '@/components/providers/tokenRateLimitContext'
+import { TokenRateLimitBanner } from './TokenRateLimitBanner'
 
 export interface ChatProps {
   assistant: dto.AssistantIdentification & {
@@ -43,8 +43,8 @@ export const Chat = ({
     setSideBarContent,
   } = useContext(ChatPageContext)
   const tokenRateLimit = useTokenRateLimit()
-
   const { t } = useTranslation()
+
   const [chatInput, setChatInput] = useChatInput(selectedConversation?.id ?? '')
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
   const [showScrollDownButton, setShowScrollDownButton] = useState<boolean>(false)
@@ -97,14 +97,17 @@ export const Chat = ({
     if (!el || !container) return
     scrolledToFragmentRef.current = true
     setAutoScrollEnabled(false)
-    const elTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
-    container.scrollTo({ top: elTop - (container.clientHeight - el.offsetHeight) / 2, behavior: 'smooth' })
+    const elTop =
+      el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
+    container.scrollTo({
+      top: elTop - (container.clientHeight - el.offsetHeight) / 2,
+      behavior: 'smooth',
+    })
   }, [selectedConversation])
 
   useEffect(() => {
     throttledScrollDown()
   }, [selectedConversation, throttledScrollDown, chatStatus])
-
 
   if (!selectedConversation) {
     return null
@@ -155,17 +158,6 @@ export const Chat = ({
             </div>
           )}
         </ScrollArea>
-        {tokenRateLimit?.enabled && tokenRateLimit.exceeded && (
-          <Alert variant="destructive" className="rounded-none border-x-0">
-            <IconAlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              {t('rate-limit-exceeded-warning', {
-                defaultValue:
-                  'You have reached your token usage limit for this period. Your messages may be restricted.',
-              })}
-            </AlertDescription>
-          </Alert>
-        )}
         <ChatInputOrApiKey
           assistant={assistant}
           chatInput={chatInput}
@@ -189,6 +181,7 @@ export const Chat = ({
             })
           }}
         />
+        {tokenRateLimit?.enabled && tokenRateLimit.exceeded && <TokenRateLimitBanner />}
       </div>
       {sideBarContent && <ConversationSidebar content={sideBarContent} />}
     </div>
