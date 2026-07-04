@@ -240,7 +240,7 @@
   "daily-usage": "Utilizzo Giornaliero",
   "dashboard": "Dashboard",
   "default-redirect-url": "URL di reindirizzamento predefinito",
-  "default": "Predefinito",
+  "default-option": "Predefinito",
   "default-model": "Modello predefinito",
   "delete": "Elimina",
   "delete-member-warning": "Eliminare un membro comporterà la cancellazione di tutte le attività correlate. Questa azione non può essere annullata.",

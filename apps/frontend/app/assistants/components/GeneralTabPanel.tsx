@@ -148,12 +148,12 @@ export const GeneralTabPanel = ({ form, backendModels, visible, className }: Pro
                   onValueChange={(value) => field.onChange(value === NULL_VALUE ? null : value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('default')}>
+                    <SelectValue placeholder={t('default-option')}>
                       {field.value ? t(field.value) : undefined}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContentScrollable className="max-h-72">
-                    <SelectItem value={NULL_VALUE}>{t('default')}</SelectItem>
+                    <SelectItem value={NULL_VALUE}>{t('default-option')}</SelectItem>
                     {supportedReasoningEfforts.map((effort) => (
                       <SelectItem key={effort} value={effort}>
                         {t(effort)}

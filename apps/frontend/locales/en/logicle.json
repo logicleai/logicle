@@ -240,7 +240,7 @@
   "daily-usage": "Daily Usage",
   "dashboard": "Dashboard",
   "default-redirect-url": "Default redirect URL",
-  "default": "Default",
+  "default-option": "Default",
   "default-model": "Default model",
   "delete": "Delete",
   "delete-member-warning": "Deleting a member will delete all activites related to that member. This action cannot be undone.",
