@@ -925,7 +925,7 @@ export class ChatAssistant {
           clientSink.enqueue({ type: 'part', part: toolCall })
         } else if (chunk.type === 'text-start') {
           const streamingMsg = chatState.chatHistory[chatState.chatHistory.length - 1]
-          if (!streamingMsg || streamingMsg.role !== 'assistant') {
+          if (streamingMsg?.role !== 'assistant') {
             throw new Error('Received text start but no active assistant message')
           }
           if (
@@ -941,7 +941,7 @@ export class ChatAssistant {
         } else if (chunk.type === 'text-delta') {
           const delta = chunk.text
           const streamingMsg = chatState.chatHistory[chatState.chatHistory.length - 1]
-          if (!streamingMsg || streamingMsg.role !== 'assistant') {
+          if (streamingMsg?.role !== 'assistant') {
             throw new Error('Received text but no active assistant message')
           }
           if (streamingMsg.parts.length === 0) {
@@ -955,7 +955,7 @@ export class ChatAssistant {
           clientSink.enqueue({ type: 'text', text: delta })
         } else if (chunk.type === 'reasoning-start') {
           const streamingMsg = chatState.chatHistory[chatState.chatHistory.length - 1]
-          if (!streamingMsg || streamingMsg.role !== 'assistant') {
+          if (streamingMsg?.role !== 'assistant') {
             throw new Error('Received reasoning start but no active assistant message')
           }
           const part: dto.ReasoningPart = { type: 'reasoning', reasoning: '' }
@@ -966,7 +966,7 @@ export class ChatAssistant {
         } else if (chunk.type === 'reasoning-delta') {
           const delta = chunk.text
           const streamingMsg = chatState.chatHistory[chatState.chatHistory.length - 1]
-          if (!streamingMsg || streamingMsg.role !== 'assistant') {
+          if (streamingMsg?.role !== 'assistant') {
             throw new Error('Received reasoning but no active assistant message')
           }
           if (streamingMsg.parts.length === 0) {

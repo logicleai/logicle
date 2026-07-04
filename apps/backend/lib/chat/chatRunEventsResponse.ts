@@ -46,7 +46,7 @@ export const createChatRunEventsResponse = ({
 
         flushBufferedEvents()
         const currentRun = getChatRunById(runId)
-        if (!currentRun || currentRun.status !== 'running') {
+        if (currentRun?.status !== 'running') {
           close()
           return
         }
@@ -64,7 +64,7 @@ export const createChatRunEventsResponse = ({
 
         flushBufferedEvents()
         const refreshedRun = getChatRunById(runId)
-        if (!refreshedRun || refreshedRun.status !== 'running') {
+        if (refreshedRun?.status !== 'running') {
           close()
           return
         }

@@ -37,11 +37,11 @@ const MermaidDiagram = (props: MermaidDiagramProps) => {
           svgRef.current = svg
         }
       } catch (e: any) {
-        console.log(`Error: ${e}`)
+        console.error(`Error: ${e}`)
       }
     }
     renderDiagram().catch((e) => {
-      console.log(`Mysterious error: ${e}`)
+      console.error(`Mysterious error: ${e}`)
     })
     return () => {
       cancelled = true

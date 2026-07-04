@@ -19,7 +19,7 @@ export const GET = operation({
   implementation: async ({ headers, cookies, url }) => {
     const session = await getSsoFlowSession(cookies)
     const idpConnection = await findIdpConnection(session.idp)
-    if (!idpConnection || idpConnection.type !== 'OIDC') {
+    if (idpConnection?.type !== 'OIDC') {
       return error(400, 'Unknown OIDC connection')
     }
     if (!session.state) {

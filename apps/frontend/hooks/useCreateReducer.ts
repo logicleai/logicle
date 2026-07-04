@@ -24,5 +24,5 @@ export const useCreateReducer = <T>({ initialState }: { initialState: T }) => {
 
   const [state, dispatch] = useReducer(reducer, initialState)
 
-  return useMemo(() => ({ state, dispatch }), [state, dispatch])
+  return useMemo(() => ({ state, dispatch }), [state])
 }

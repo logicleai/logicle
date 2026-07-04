@@ -22,7 +22,7 @@ const parseChatsState = (key: string): ChatsState => {
       return JSON.parse(data)
     }
   } catch {
-    console.log('Failed parsing cache storage')
+    console.error('Failed parsing cache storage')
   }
   return {}
 }
@@ -54,7 +54,7 @@ const parseContextLengthsState = (key: string): ContextLengthsState => {
       return JSON.parse(data)
     }
   } catch {
-    console.log('Failed parsing context length cache storage')
+    console.error('Failed parsing context length cache storage')
   }
   return {}
 }

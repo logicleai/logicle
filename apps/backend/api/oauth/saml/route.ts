@@ -43,7 +43,7 @@ export const POST = operation({
 
     const idpConnection = await findIdpConnection(connectionId)
 
-    if (!idpConnection || idpConnection.type !== 'SAML') {
+    if (idpConnection?.type !== 'SAML') {
       return error(400, 'Unknown SAML connection')
     }
 
