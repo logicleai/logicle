@@ -23,6 +23,7 @@
       "apps/backend/db/**/*.{js,ts,tsx}",
       "apps/backend/ee/**/*.{js,ts,tsx}",
       "apps/backend/lib/**/*.{js,ts,tsx}",
+      "!apps/backend/lib/vendor/pdf2md",
       "apps/backend/models/**/*.{js,ts,tsx}",
       "apps/backend/scripts/**/*.{js,ts,tsx}",
       "apps/backend/testapps/**/*.{js,ts,tsx}",

@@ -66,10 +66,10 @@ function estimateRawContextTokens(messages: dto.Message[]): number {
     }
     if ('parts' in msg && Array.isArray((msg as { parts?: unknown }).parts)) {
       for (const part of (msg as { parts: Record<string, unknown>[] }).parts) {
-        if (part['type'] === 'text' && typeof part['text'] === 'string') chars += part['text'].length
-        if (part['type'] === 'tool-result') {
-          const r = part['result'] as Record<string, unknown> | undefined
-          if (r?.['type'] === 'text' && typeof r['value'] === 'string') chars += r['value'].length
+        if (part.type === 'text' && typeof part.text === 'string') chars += part.text.length
+        if (part.type === 'tool-result') {
+          const r = part.result as Record<string, unknown> | undefined
+          if (r?.type === 'text' && typeof r.value === 'string') chars += r.value.length
         }
       }
     }
@@ -547,7 +547,7 @@ export class ChatAssistant {
         last.providerOptions = {
           ...last.providerOptions,
           anthropic: {
-            ...(last.providerOptions?.['anthropic'] as object | undefined),
+            ...(last.providerOptions?.anthropic as object | undefined),
             cacheControl,
           },
         }

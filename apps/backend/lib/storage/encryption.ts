@@ -14,7 +14,6 @@ export function getConfiguredFileEncryption(): StoredFileEncryption | null {
   switch (env.fileStorage.encryptionProvider) {
     case 'aead':
       return fileEncryptionIds.aead
-    case 'pgp':
     default:
       return fileEncryptionIds.pgp
   }

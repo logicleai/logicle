@@ -280,7 +280,7 @@ async function convertMcpSpecToToolFunctions(
           }
         }
 
-        let result
+        let result: Awaited<ReturnType<Client['callTool']>>
         try {
           result = await clientToUse.callTool({
             name: tool.name,

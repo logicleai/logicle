@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import type { UserImage } from '@/services/files'
 import { IconCopy, IconDownload } from '@tabler/icons-react'
 import { copyImageUrlToClipboard } from '@/frontend/lib/clipboard'
-import { cn } from '@/frontend/lib/utils'
 
 export default function ImagesPage() {
   const { t } = useTranslation()
@@ -22,12 +21,25 @@ export default function ImagesPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images.map((image) => (
               <div key={image.id} className="relative group rounded overflow-hidden border aspect-square">
-                <img
-                  alt={image.name}
-                  src={`/api/files/${image.id}/content`}
-                  className={cn('w-full h-full object-contain bg-foreground/5', image.conversationId && 'cursor-pointer')}
-                  onClick={() => image.conversationId && router.push(`/chat/${image.conversationId}#file-${image.id}`)}
-                />
+                {image.conversationId ? (
+                  <button
+                    type="button"
+                    className="block w-full h-full cursor-pointer"
+                    onClick={() => router.push(`/chat/${image.conversationId}#file-${image.id}`)}
+                  >
+                    <img
+                      alt={image.name}
+                      src={`/api/files/${image.id}/content`}
+                      className="w-full h-full object-contain bg-foreground/5"
+                    />
+                  </button>
+                ) : (
+                  <img
+                    alt={image.name}
+                    src={`/api/files/${image.id}/content`}
+                    className="w-full h-full object-contain bg-foreground/5"
+                  />
+                )}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors pointer-events-none" />
                 <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover:visible">
                   <button

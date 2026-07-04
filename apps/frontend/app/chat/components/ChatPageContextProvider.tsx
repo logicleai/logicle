@@ -539,7 +539,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
             }
 
             if (!targetConversation) return
-            sendMessage({
+            await sendMessage({
               msg: {
                 role: 'user',
                 content: prompt,

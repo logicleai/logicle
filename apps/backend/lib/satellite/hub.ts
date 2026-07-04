@@ -147,7 +147,7 @@ export async function handleSatelliteConnection(ws: WebSocket, req: IncomingMess
 
   ws.on('message', (data) => handleSatelliteMessage(ws, userId, data))
   for (const data of messageQueue) {
-    handleSatelliteMessage(ws, userId, data)
+    await handleSatelliteMessage(ws, userId, data)
   }
 }
 

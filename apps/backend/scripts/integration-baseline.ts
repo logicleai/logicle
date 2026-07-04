@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-export {}
-
 import WebSocket from 'ws'
 
 const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
@@ -114,7 +112,7 @@ async function openSatelliteConnection(
   satelliteId: string,
   satelliteName: string
 ): Promise<() => void> {
-  const wsUrl = baseUrl.replace(/^http/, 'ws') + '/api/rpc'
+  const wsUrl = `${baseUrl.replace(/^http/, 'ws')}/api/rpc`
   return new Promise<() => void>((resolve, reject) => {
     const ws = new WebSocket(wsUrl, { headers: { authorization: `Bearer ${bearerToken}` } })
     const timeout = setTimeout(() => {

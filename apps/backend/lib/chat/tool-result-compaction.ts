@@ -65,7 +65,7 @@ function stripUserMessageAttachments(msg: dto.UserMessage): dto.UserMessage {
   const descriptor = `[Files attached in this turn (content not re-sent): ${names}]`
   return {
     ...msg,
-    content: descriptor + (msg.content ? '\n' + msg.content : ''),
+    content: descriptor + (msg.content ? `\n${msg.content}` : ''),
     attachments: [],
   }
 }

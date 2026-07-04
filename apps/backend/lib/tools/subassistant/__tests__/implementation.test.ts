@@ -162,7 +162,7 @@ beforeEach(async () => {
     [{ id: 'sub-assistant-id', name: 'ImageBot', description: 'generates images' }]
   )
   const fns = await tool.functions({} as any, {} as any)
-  const fn = fns['invoke_assistant']
+  const fn = fns.invoke_assistant
   if (!fn || fn.type === 'provider') throw new Error('invoke_assistant not found or not a function tool')
   invokeAssistant = (p) => fn.invoke(p as any)
 })
