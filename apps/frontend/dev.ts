@@ -22,7 +22,11 @@ const getUpgradeHandler =
 await app.prepare()
 
 const server = createServer((req, res) => {
-  handle(req, res, parse(req.url || '/', true))
+  handle(req, res, parse(req.url || '/', true)).catch((error) => {
+    console.error(error)
+    res.statusCode = 500
+    res.end('Internal Server Error')
+  })
 })
 
 if (getUpgradeHandler) {
