@@ -2,7 +2,10 @@ import { describe, expect, test, vi } from 'vitest'
 import * as dto from '@/types/dto'
 import { stockModels } from '@/lib/chat/models'
 import { dtoMessageToLlmMessage } from '@/backend/lib/chat/conversion'
-import { projectMessageForEstimation } from '@/backend/lib/chat/message-projection'
+import {
+  projectMessageForEstimation,
+  projectMessageForEstimationCached,
+} from '@/backend/lib/chat/message-projection'
 import { countModelMessageTokens } from '@/backend/lib/chat/prompt-token-counter'
 import {
   estimateConversationWindowTokens,
@@ -183,6 +186,20 @@ describe('message projection parity', () => {
         expect.objectContaining({ kind: 'attachment' }),
       ])
     )
+  })
+
+  test('cached projection reuses the same object for the same message instance', () => {
+    const message: dto.UserMessage = {
+      ...base,
+      id: 'u-cache',
+      role: 'user',
+      content: 'hello',
+      attachments: [],
+    }
+
+    const first = projectMessageForEstimationCached(message)
+    const second = projectMessageForEstimationCached(message)
+    expect(second).toBe(first)
   })
 
   test('projects assistant reasoning only when signature exists and keeps tool call payload', () => {

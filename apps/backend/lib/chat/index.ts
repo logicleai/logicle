@@ -26,6 +26,9 @@ import { ParameterValueAndDescription } from '@/models/user'
 import {
   prepareConversationCostPlan,
   selectOptimalHistoryStartIndex,
+  estimateHistoryMessageCosts,
+  estimatePreambleTokens,
+  type HistoryMessageCost,
 } from '@/backend/lib/chat/token-estimator'
 
 export { fillTemplate } from './preamble'
@@ -56,27 +59,11 @@ import type { Usage } from './usage'
 import { SatelliteTool } from '../tools/satellite/implementation'
 import type { PromptSegment } from './preamble'
 import { prefixToolFunctionNames } from './toolFunctionNames'
-import { compactHistoricalToolResultsForPrompt } from './tool-result-compaction'
-
-function estimateRawContextTokens(messages: dto.Message[]): number {
-  let chars = 0
-  for (const msg of messages) {
-    if ('content' in msg && typeof (msg as { content?: unknown }).content === 'string') {
-      chars += (msg as { content: string }).content.length
-    }
-    if ('parts' in msg && Array.isArray((msg as { parts?: unknown }).parts)) {
-      for (const part of (msg as { parts: Record<string, unknown>[] }).parts) {
-        if (part.type === 'text' && typeof part.text === 'string') chars += part.text.length
-        if (part.type === 'tool-result') {
-          const r = part.result as Record<string, unknown> | undefined
-          if (r?.type === 'text' && typeof r.value === 'string') chars += r.value.length
-        }
-      }
-    }
-  }
-  return Math.ceil(chars / 4)
-}
-import { distillAndSaveTurn, shouldDistillTurn } from './turn-memory-distiller'
+import {
+  planMessageCompression,
+  applyCompressionPlan,
+  resolveCompressionTriggerTokens,
+} from './compression-planner'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -329,16 +316,16 @@ export class ChatAssistant {
       )
     }
     if (assistantParams.contextCompression) {
-      const { RetrieveFilePlugin } = await import('../tools/retrieve-file/implementation')
+      const { ContextRetrievePlugin } = await import('../tools/context-retrieve/implementation')
       tools = [
         ...tools,
-        new RetrieveFilePlugin(
+        new ContextRetrievePlugin(
           {
-            id: 'retrieve-file',
+            id: 'context-retrieve',
             provisioned: false,
-            name: 'retrieve-file',
+            name: 'context-retrieve',
             promptFragment:
-              '\nWhen context compression strips older attachments or tool outputs, use the retrieve-file tool to request a file by id. Prefer read_file when you need the file contents.\n',
+              '\nContext compression may replace older attachments, tool outputs, or long messages with a short summary that includes an id. Use the context-retrieve tool to recover the original: get_file(id) for a file, get_message(id) for a whole message, or search(query) to find a message when you don\'t already have its id.\n',
           },
           {}
         ),
@@ -500,28 +487,46 @@ export class ChatAssistant {
     return undefined
   }
 
-  async truncateChat(messages: dto.Message[]) {
+  async truncateChat(messages: dto.Message[], historyCosts?: HistoryMessageCost[]) {
     if (messages.length === 0) return messages
-    const { plan } = await prepareConversationCostPlan({
-      assistantParams: this.assistantParams,
-      model: this.llmModel,
-      tools: this.tools,
-      parameters: this.parameters,
-      knowledgeFiles: this.knowledge,
-      history: messages,
-    })
+    let assistantTokens: number
+    let draftTokens: number
+    let historyMessageCosts: HistoryMessageCost[]
+    if (historyCosts !== undefined) {
+      assistantTokens = await estimatePreambleTokens({
+        assistantParams: this.assistantParams,
+        model: this.llmModel,
+        tools: this.tools,
+        parameters: this.parameters,
+        knowledgeFiles: this.knowledge,
+      })
+      draftTokens = 0
+      historyMessageCosts = historyCosts
+    } else {
+      const { plan } = await prepareConversationCostPlan({
+        assistantParams: this.assistantParams,
+        model: this.llmModel,
+        tools: this.tools,
+        parameters: this.parameters,
+        knowledgeFiles: this.knowledge,
+        history: messages,
+      })
+      assistantTokens = plan.assistantTokens
+      draftTokens = plan.draftTokens
+      historyMessageCosts = plan.historyMessageCosts
+    }
     const startIndex = selectOptimalHistoryStartIndex(
       messages,
-      plan.historyMessageCosts,
-      plan.assistantTokens,
-      plan.draftTokens,
+      historyMessageCosts,
+      assistantTokens,
+      draftTokens,
       this.assistantParams.tokenLimit
     )
     if (startIndex > 0) {
       const totalTokens =
-        plan.assistantTokens +
-        plan.draftTokens +
-        plan.historyMessageCosts.slice(startIndex).reduce((s, e) => s + e.tokens, 0)
+        assistantTokens +
+        draftTokens +
+        historyMessageCosts.slice(startIndex).reduce((s, e) => s + e.tokens, 0)
       if (totalTokens <= this.assistantParams.tokenLimit) {
         logger.info(
           `Truncating chat: estimated token count ${totalTokens} within limit of ${this.assistantParams.tokenLimit} after dropping ${startIndex} messages`
@@ -575,19 +580,23 @@ export class ChatAssistant {
     this.throwIfAborted()
     const compression = this.assistantParams.contextCompression
     let promptMessages = messages
+    let historyCosts: HistoryMessageCost[] | undefined
     if (compression) {
-      const shouldCompress =
-        !compression.triggerAtTokens ||
-        estimateRawContextTokens(messages) >= compression.triggerAtTokens
+      const triggerAtTokens = resolveCompressionTriggerTokens(compression.triggerAtTokens)
+      historyCosts = await estimateHistoryMessageCosts(this.llmModel, messages)
+      const estimatedTokens = historyCosts.reduce((sum, cost) => sum + cost.tokens, 0)
+      const shouldCompress = estimatedTokens >= triggerAtTokens
       if (shouldCompress) {
-        promptMessages = await compactHistoricalToolResultsForPrompt(
-          messages,
-          this.options.conversationId,
-          compression.preset
-        )
+        const decisions = planMessageCompression(messages, compression.preset)
+        promptMessages = await applyCompressionPlan(messages, decisions)
+      } else {
+        historyCosts = undefined
       }
     }
-    const truncatedChat = await this.truncateChat(promptMessages)
+    const truncatedChat = await this.truncateChat(
+      promptMessages,
+      promptMessages === messages ? historyCosts : undefined
+    )
 
     const preambleSegments = await buildPreambleSegments({
       assistantParams: this.assistantParams,
@@ -1050,7 +1059,6 @@ export class ChatAssistant {
       return usage
     }
 
-    const historyLengthAtTurnStart = chatState.chatHistory.length
     let iterationCount = 0
     let complete = false
     while (!complete) {
@@ -1216,36 +1224,6 @@ export class ChatAssistant {
       await Promise.all(nonNativeToolCalls.map(executeToolCall))
       const updatedToolMessage = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
       await this.saveMessage(updatedToolMessage)
-    }
-
-    if (this.assistantParams.contextCompression && this.options.conversationId) {
-      const turnMessages = chatState.chatHistory.slice(historyLengthAtTurnStart)
-      if (shouldDistillTurn(turnMessages)) {
-        const userMessage = chatState.chatHistory
-          .slice(0, historyLengthAtTurnStart)
-          .reverse()
-          .find((m): m is dto.UserMessage => m.role === 'user')
-        const finalAssistantMsg = turnMessages
-          .filter((m): m is dto.AssistantMessage => m.role === 'assistant')
-          .at(-1)
-        const toolMessages = turnMessages.filter(
-          (m): m is dto.ToolMessage => m.role === 'tool'
-        )
-        const finalAnswer =
-          finalAssistantMsg?.parts
-            .filter((p): p is dto.TextPart => p.type === 'text')
-            .map((p) => p.text)
-            .join('') ?? ''
-        if (userMessage && toolMessages.length > 0) {
-          void distillAndSaveTurn({
-            conversationId: this.options.conversationId,
-            userMessage,
-            finalAnswer,
-            toolMessages,
-            currentLanguageModel: this.languageModel,
-          })
-        }
-      }
     }
 
     if (generateSummary) {

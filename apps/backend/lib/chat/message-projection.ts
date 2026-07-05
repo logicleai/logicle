@@ -1,6 +1,7 @@
 import * as dto from '@/types/dto'
 
 const isImageMimeType = (mimetype: string) => mimetype.startsWith('image/')
+const projectionCache = new WeakMap<dto.Message, ProjectedMessageForEstimation>()
 
 /**
  * Generates a concise per-file metadata descriptor for interspersed mode.
@@ -70,8 +71,12 @@ export type ProjectedMessageForEstimation =
 export const projectMessageForEstimation = (
   message: dto.Message
 ): ProjectedMessageForEstimation => {
+  const cached = projectionCache.get(message)
+  if (cached) return cached
   if (message.role === 'user-request' || message.role === 'user-response') {
-    return { role: 'ignored', items: [] }
+    const projected: ProjectedMessageForEstimation = { role: 'ignored', items: [] }
+    projectionCache.set(message, projected)
+    return projected
   }
   if (message.role === 'user') {
     const items: MessageProjectionItem[] = []
@@ -86,7 +91,9 @@ export const projectMessageForEstimation = (
       })
       items.push({ kind: 'attachment', attachment })
     })
-    return { role: 'user', items }
+    const projected: ProjectedMessageForEstimation = { role: 'user', items }
+    projectionCache.set(message, projected)
+    return projected
   }
   if (message.role === 'assistant') {
     const items: MessageProjectionItem[] = []
@@ -111,7 +118,9 @@ export const projectMessageForEstimation = (
         })
       }
     }
-    return { role: 'assistant', items }
+    const projected: ProjectedMessageForEstimation = { role: 'assistant', items }
+    projectionCache.set(message, projected)
+    return projected
   }
   const items: MessageProjectionItem[] = []
   for (const part of message.parts) {
@@ -124,5 +133,45 @@ export const projectMessageForEstimation = (
       output: part.result,
     })
   }
-  return { role: 'tool', items }
+  const projected: ProjectedMessageForEstimation = { role: 'tool', items }
+  projectionCache.set(message, projected)
+  return projected
+}
+
+export const projectMessageForEstimationCached = projectMessageForEstimation
+
+const renderToolResultOutput = (toolName: string, output: dto.ToolCallResultOutput): string => {
+  if (output.type === 'text' || output.type === 'error-text') {
+    return `Tool "${toolName}" result: ${output.value}`
+  }
+  if (output.type === 'json' || output.type === 'error-json') {
+    return `Tool "${toolName}" result: ${JSON.stringify(output.value)}`
+  }
+  const parts = output.value.map((v, index) =>
+    v.type === 'text' ? v.text : fileDescriptorText(v.name, v.id, v.mimetype, v.size, index + 1, 'Attachment')
+  )
+  return `Tool "${toolName}" result:\n${parts.join('\n')}`
+}
+
+/**
+ * Renders a message's *original, uncompressed* content as plain text — used by the
+ * `context-retrieve` tool's `get_message` and `search` functions, which operate directly on the
+ * live conversation history (never a compressed representation). See docs/context-compression.md.
+ */
+export const renderMessagePlainText = (message: dto.Message): string => {
+  if (message.role === 'user-request' || message.role === 'user-response') {
+    return `[${message.role} message, no textual content]`
+  }
+  const projected = projectMessageForEstimation(message)
+  const lines: string[] = []
+  for (const item of projected.items) {
+    if (item.kind === 'text') {
+      lines.push(item.text)
+    } else if (item.kind === 'tool_call') {
+      lines.push(`Called tool "${item.toolName}" with args: ${JSON.stringify(item.payload.input)}`)
+    } else if (item.kind === 'tool_result') {
+      lines.push(renderToolResultOutput(item.toolName, item.output))
+    }
+  }
+  return lines.join('\n')
 }

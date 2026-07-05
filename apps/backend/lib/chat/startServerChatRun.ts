@@ -23,6 +23,7 @@ import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/us
 import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
 import { type SimpleSession } from '@/types/session'
 import { type Usage } from '@/backend/lib/chat/usage'
+import { warmCompressionCache } from '@/backend/lib/chat/compression-planner'
 
 type StartRunResult =
   | {
@@ -127,10 +128,15 @@ export const startServerChatRun = async ({
   }
 
   const auditor = new MessageAuditor(conversationWithBackendAssistant, session)
+  const warmIfEnabled = (message: dto.Message) => {
+    if (!assistant.contextCompression) return
+    void warmCompressionCache(message)
+  }
 
   const saveAndAuditMessage = async (message: dto.Message, usage?: Usage) => {
     await saveMessage(message)
     await auditor.auditMessage(message, usage)
+    warmIfEnabled(message)
   }
 
   const files = [

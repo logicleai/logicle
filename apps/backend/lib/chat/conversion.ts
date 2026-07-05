@@ -13,7 +13,7 @@ import {
   canSendAsNativeImage,
   resolvePdfNativeAttachmentDecision,
 } from './file-attachment-policy'
-import { projectMessageForEstimation, fileDescriptorText } from './message-projection'
+import { projectMessageForEstimationCached, fileDescriptorText } from './message-projection'
 
 // LiteLLM does not support binary attachments inside tool results. Detect this by inspecting
 // the AI SDK provider string rather than storing the limitation in model capabilities.
@@ -160,7 +160,7 @@ export const dtoMessageToLlmMessage = async (
   capabilities: LlmModelCapabilities,
   providerName: string
 ): Promise<ai.ModelMessage | undefined> => {
-  const projected = projectMessageForEstimation(m)
+  const projected = projectMessageForEstimationCached(m)
   if (projected.role === 'ignored') return undefined
   if (projected.role === 'tool') {
     const results = projected.items.filter((item) => item.kind === 'tool_result')

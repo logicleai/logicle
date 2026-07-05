@@ -376,18 +376,13 @@ export interface Satellite {
   updatedAt: string
 }
 
-export interface TurnMemory {
-  id: string
-  conversationId: string
-  userMessageId: string
-  userIntent: string
-  answerSummary: string
-  durableFacts: string
-  openQuestions: string
-  decisions: string
-  rehydrationHints: string
-  warnings: string
+export interface CompressedMessage {
+  sourceMessageId: string
+  compressionVersion: number
+  content: string
+  version: number | null
   createdAt: string
+  updatedAt: string
 }
 
 export interface UserTokenWindow {
@@ -426,7 +421,7 @@ export interface DB {
   Property: Property
   Satellite: Satellite
   Session: Session
-  TurnMemory: TurnMemory
+  CompressedMessage: CompressedMessage
   Workspace: Workspace
   WorkspaceMember: WorkspaceMember
   User: User

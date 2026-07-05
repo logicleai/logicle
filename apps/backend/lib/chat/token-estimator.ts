@@ -35,7 +35,10 @@ import {
 import type * as ai from 'ai'
 import { buildEstimatedPreambleSegments, preparePreamblePlan, PreamblePlan } from '@/backend/lib/chat/preamble'
 import { tokenizerForModel } from '@/lib/chat/tokenizer'
-import { projectMessageForEstimation, fileDescriptorText } from '@/backend/lib/chat/message-projection'
+import {
+  projectMessageForEstimationCached,
+  fileDescriptorText,
+} from '@/backend/lib/chat/message-projection'
 
 // --- File token cache -----------------------------------------------------------
 
@@ -379,7 +382,7 @@ const estimateDtoMessageTokens = async (
   onDetail?: (part: dto.TokenDetailPart) => void
 ): Promise<number> => {
   const algorithm = tokenizerForModel(model)
-  const projected = projectMessageForEstimation(message)
+  const projected = projectMessageForEstimationCached(message)
   if (projected.role === 'ignored') return 0
   let tokens = 0
   for (const item of projected.items) {

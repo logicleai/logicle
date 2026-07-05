@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { RetrieveFilePlugin } from '@/backend/lib/tools/retrieve-file/implementation'
+import { ContextRetrievePlugin } from '@/backend/lib/tools/context-retrieve/implementation'
 import type { ToolFunction, ToolInvokeParams, ToolParams } from '@/lib/chat/tools'
 import { ChatState } from '@/backend/lib/chat/ChatState'
 import { dtoMessageToDbMessage } from '@/backend/models/message'
@@ -46,10 +46,14 @@ const toolParams: ToolParams = { id: 't1', name: 'fm', provisioned: false, promp
 const textOnlyModel = { capabilities: { vision: false, supportedMedia: [] } } as any
 const nativePdfModel = { capabilities: { vision: false, supportedMedia: ['application/pdf'] } } as any
 
-function makeInvokeParams(params: Record<string, unknown>, userId = 'user-1'): ToolInvokeParams {
+function makeInvokeParams(
+  params: Record<string, unknown>,
+  messages: dto.Message[] = [],
+  userId = 'user-1'
+): ToolInvokeParams {
   return {
     llmModel: textOnlyModel,
-    messages: [],
+    messages,
     assistantId: 'assistant-1',
     userId,
     params,
@@ -57,16 +61,17 @@ function makeInvokeParams(params: Record<string, unknown>, userId = 'user-1'): T
   }
 }
 
-describe('RetrieveFilePlugin read_file', () => {
+async function getFunctions() {
+  const plugin = new ContextRetrievePlugin(toolParams, {})
+  return (await plugin.functions({} as any, { userId: 'user-1' })) as Record<string, ToolFunction>
+}
+
+describe('ContextRetrievePlugin get_file', () => {
   it('returns an error when no file matches the given id', async () => {
     mockFileExecuteTakeFirst.mockResolvedValue(undefined)
-    const plugin = new RetrieveFilePlugin(toolParams, {})
-    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
-      string,
-      ToolFunction
-    >
+    const fns = await getFunctions()
 
-    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'missing' }))
+    const result = await fns.get_file.invoke(makeInvokeParams({ id: 'missing' }))
 
     expect(result).toEqual({ type: 'error-text', value: 'File not found' })
   })
@@ -80,13 +85,9 @@ describe('RetrieveFilePlugin read_file', () => {
       path: 'files/a.txt',
     })
     mockCanAccessFile.mockResolvedValue(false)
-    const plugin = new RetrieveFilePlugin(toolParams, {})
-    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
-      string,
-      ToolFunction
-    >
+    const fns = await getFunctions()
 
-    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'f1' }))
+    const result = await fns.get_file.invoke(makeInvokeParams({ id: 'f1' }))
 
     expect(result).toEqual({ type: 'error-text', value: 'File not found' })
   })
@@ -101,13 +102,9 @@ describe('RetrieveFilePlugin read_file', () => {
       path: 'files/a.txt',
     })
     mockExtractFromFile.mockResolvedValue('text content')
-    const plugin = new RetrieveFilePlugin(toolParams, {})
-    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
-      string,
-      ToolFunction
-    >
+    const fns = await getFunctions()
 
-    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'f1' }))
+    const result = await fns.get_file.invoke(makeInvokeParams({ id: 'f1' }))
 
     expect(result).toEqual({ type: 'text', value: 'text content' })
   })
@@ -122,13 +119,9 @@ describe('RetrieveFilePlugin read_file', () => {
       path: 'files/a.pdf',
     })
     mockExtractFromFile.mockResolvedValue('')
-    const plugin = new RetrieveFilePlugin(toolParams, {})
-    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
-      string,
-      ToolFunction
-    >
+    const fns = await getFunctions()
 
-    const result = await fns.read_file.invoke({
+    const result = await fns.get_file.invoke({
       ...makeInvokeParams({ id: 'f1' }),
       llmModel: nativePdfModel,
     })
@@ -158,12 +151,8 @@ describe('RetrieveFilePlugin read_file', () => {
       path: 'files/a.pdf',
     })
     mockExtractFromFile.mockResolvedValue('')
-    const plugin = new RetrieveFilePlugin(toolParams, {})
-    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
-      string,
-      ToolFunction
-    >
-    const result = await fns.read_file.invoke({
+    const fns = await getFunctions()
+    const result = await fns.get_file.invoke({
       ...makeInvokeParams({ id: 'f1' }),
       llmModel: nativePdfModel,
     })
@@ -183,7 +172,7 @@ describe('RetrieveFilePlugin read_file', () => {
       part: {
         type: 'tool-result',
         toolCallId: 'call-1',
-        toolName: 'retrieve-file__read_file',
+        toolName: 'context-retrieve__get_file',
         result,
       },
     })
@@ -210,7 +199,7 @@ describe('RetrieveFilePlugin read_file', () => {
   })
 })
 
-describe('RetrieveFilePlugin read_file blob resolution', () => {
+describe('ContextRetrievePlugin get_file blob resolution', () => {
   it('overrides size/encryption from the linked FileBlob row when fileBlobId is set', async () => {
     mockFileExecuteTakeFirst.mockResolvedValue({
       id: 'f1',
@@ -224,13 +213,9 @@ describe('RetrieveFilePlugin read_file blob resolution', () => {
     mockBlobExecuteTakeFirst.mockResolvedValue({ size: 42, encryption: 'pgp' })
     mockExtractFromFile.mockResolvedValue('extracted')
 
-    const plugin = new RetrieveFilePlugin(toolParams, {})
-    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
-      string,
-      ToolFunction
-    >
+    const fns = await getFunctions()
 
-    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'f1' }))
+    const result = await fns.get_file.invoke(makeInvokeParams({ id: 'f1' }))
 
     expect(result).toEqual({ type: 'text', value: 'extracted' })
   })
@@ -246,13 +231,9 @@ describe('RetrieveFilePlugin read_file blob resolution', () => {
       path: 'files/a.txt',
     })
 
-    const plugin = new RetrieveFilePlugin(toolParams, {})
-    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
-      string,
-      ToolFunction
-    >
+    const fns = await getFunctions()
 
-    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'f1' }))
+    const result = await fns.get_file.invoke(makeInvokeParams({ id: 'f1' }))
 
     expect(result).toEqual({
       type: 'error-text',
@@ -262,17 +243,86 @@ describe('RetrieveFilePlugin read_file blob resolution', () => {
   })
 })
 
-describe('RetrieveFilePlugin read_file not-found path', () => {
-  it('returns an error when no file matches the given id', async () => {
-    mockFileExecuteTakeFirst.mockResolvedValue(undefined)
-    const plugin = new RetrieveFilePlugin(toolParams, {})
-    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
-      string,
-      ToolFunction
-    >
+const base = {
+  conversationId: 'conv-1',
+  parent: null,
+  sentAt: '2026-07-05T00:00:00.000Z',
+} as const
 
-    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'missing' }))
+describe('ContextRetrievePlugin get_message', () => {
+  it('returns the original, uncompressed content of a message from the live conversation history', async () => {
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: 'What is in report.pdf?', attachments: [] },
+    ]
+    const fns = await getFunctions()
 
-    expect(result).toEqual({ type: 'error-text', value: 'File not found' })
+    const result = await fns.get_message.invoke(makeInvokeParams({ id: 'u1' }, messages))
+
+    expect(result).toEqual({ type: 'text', value: 'What is in report.pdf?' })
+  })
+
+  it('returns an error when no message in the conversation matches the id', async () => {
+    const fns = await getFunctions()
+
+    const result = await fns.get_message.invoke(makeInvokeParams({ id: 'missing' }, []))
+
+    expect(result).toEqual({ type: 'error-text', value: 'Message not found' })
+  })
+
+  it('requires no DB access at all — it only looks at the messages already handed to invoke', async () => {
+    const messages: dto.Message[] = [
+      {
+        ...base,
+        id: 't1',
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool-result',
+            toolCallId: 'c1',
+            toolName: 'some_tool',
+            result: { type: 'text', value: 'raw tool output' },
+          },
+        ],
+      },
+    ]
+    const fns = await getFunctions()
+
+    const result = await fns.get_message.invoke(makeInvokeParams({ id: 't1' }, messages))
+
+    expect(result).toEqual({ type: 'text', value: 'Tool "some_tool" result: raw tool output' })
+    expect(mockFileExecuteTakeFirst).not.toHaveBeenCalled()
+  })
+})
+
+describe('ContextRetrievePlugin search', () => {
+  it('finds a matching historical message and returns its id and a snippet', async () => {
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: 'the quarterly revenue figures are attached', attachments: [] },
+      { ...base, id: 'u2', role: 'user', content: 'thanks', attachments: [] },
+    ]
+    const fns = await getFunctions()
+
+    const result = await fns.search.invoke(makeInvokeParams({ query: 'revenue' }, messages))
+
+    expect(result.type).toBe('text')
+    expect((result as { value: string }).value).toContain('id: u1')
+    expect((result as { value: string }).value).toContain('quarterly revenue figures')
+  })
+
+  it('returns a friendly message when nothing matches', async () => {
+    const messages: dto.Message[] = [{ ...base, id: 'u1', role: 'user', content: 'hello', attachments: [] }]
+    const fns = await getFunctions()
+
+    const result = await fns.search.invoke(makeInvokeParams({ query: 'nonexistent' }, messages))
+
+    expect(result).toEqual({ type: 'text', value: 'No messages matched "nonexistent".' })
+  })
+
+  it('rejects an empty query', async () => {
+    const fns = await getFunctions()
+
+    const result = await fns.search.invoke(makeInvokeParams({ query: '   ' }, []))
+
+    expect(result).toEqual({ type: 'error-text', value: 'Empty search query' })
   })
 })
