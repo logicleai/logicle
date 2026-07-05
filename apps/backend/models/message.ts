@@ -51,13 +51,6 @@ export const saveMessage = async (message: dto.Message) => {
       .execute()
     await trx.insertInto('Message').values(mapped).execute()
   })
-  // Fire-and-forget: warms the context-compression cache as soon as the message is durable, so a
-  // later prompt build that needs to compact this message doesn't pay for it synchronously. Must
-  // never affect message persistence — see "Compression Starts on Save" in
-  // docs/context-compression.md.
-  void import('@/backend/lib/chat/compression-planner').then(({ warmCompressionCache }) =>
-    warmCompressionCache(message)
-  )
 }
 
 export const getMessages = async (conversationId: string) => {

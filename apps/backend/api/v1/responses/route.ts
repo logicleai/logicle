@@ -16,6 +16,7 @@ import { error, forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/
 import { getUserSecretValue } from '@/models/userSecrets'
 import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecretMessages'
 import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
+import { warmCompressionCache } from '@/backend/lib/chat/compression-planner'
 
 const RequestBodySchema = z
   .object({
@@ -150,6 +151,10 @@ export const POST = operation({
 
     const auditor = new MessageAuditor(conversationWithBackendAssistant, session)
     type ResponseBody = z.infer<typeof ResponseBodySchema>
+    const warmIfEnabled = (message: dto.Message) => {
+      if (!assistant.contextCompression) return
+      void warmCompressionCache(message)
+    }
 
     const response: ResponseBody = {
       id: '',
@@ -158,6 +163,7 @@ export const POST = operation({
     const saveAndAuditMessage = async (message: dto.Message, usage?: Usage) => {
       await saveMessage(message)
       await auditor.auditMessage(message, usage)
+      warmIfEnabled(message)
       if (message.role === 'assistant') {
         message.parts.forEach((part) => {
           if (part.type === 'text') {
