@@ -1,6 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { RetrieveFilePlugin } from '@/backend/lib/tools/retrieve-file/implementation'
 import type { ToolFunction, ToolInvokeParams, ToolParams } from '@/lib/chat/tools'
+import { ChatState } from '@/backend/lib/chat/ChatState'
+import { dtoMessageToDbMessage } from '@/backend/models/message'
+import type * as dto from '@/types/dto'
 
 const mockFileExecuteTakeFirst = vi.fn()
 const mockBlobExecuteTakeFirst = vi.fn()
@@ -41,6 +44,7 @@ beforeEach(() => {
 
 const toolParams: ToolParams = { id: 't1', name: 'fm', provisioned: false, promptFragment: '' }
 const textOnlyModel = { capabilities: { vision: false, supportedMedia: [] } } as any
+const nativePdfModel = { capabilities: { vision: false, supportedMedia: ['application/pdf'] } } as any
 
 function makeInvokeParams(params: Record<string, unknown>, userId = 'user-1'): ToolInvokeParams {
   return {
@@ -106,6 +110,103 @@ describe('RetrieveFilePlugin read_file', () => {
     const result = await fns.read_file.invoke(makeInvokeParams({ id: 'f1' }))
 
     expect(result).toEqual({ type: 'text', value: 'text content' })
+  })
+
+  it('marks file attachments as hidden when returning a binary file', async () => {
+    mockFileExecuteTakeFirst.mockResolvedValue({
+      id: 'f1',
+      name: 'a.pdf',
+      type: 'application/pdf',
+      size: 10,
+      fileBlobId: null,
+      path: 'files/a.pdf',
+    })
+    mockExtractFromFile.mockResolvedValue('')
+    const plugin = new RetrieveFilePlugin(toolParams, {})
+    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
+      string,
+      ToolFunction
+    >
+
+    const result = await fns.read_file.invoke({
+      ...makeInvokeParams({ id: 'f1' }),
+      llmModel: nativePdfModel,
+    })
+
+    expect(result).toEqual({
+      type: 'content',
+      value: [
+        {
+          type: 'file',
+          id: 'f1',
+          size: 10,
+          name: 'a.pdf',
+          mimetype: 'application/pdf',
+          uiHidden: true,
+        },
+      ],
+    })
+  })
+
+  it('serializes uiHidden through the tool message persistence chain', async () => {
+    mockFileExecuteTakeFirst.mockResolvedValue({
+      id: 'f1',
+      name: 'a.pdf',
+      type: 'application/pdf',
+      size: 10,
+      fileBlobId: null,
+      path: 'files/a.pdf',
+    })
+    mockExtractFromFile.mockResolvedValue('')
+    const plugin = new RetrieveFilePlugin(toolParams, {})
+    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
+      string,
+      ToolFunction
+    >
+    const result = await fns.read_file.invoke({
+      ...makeInvokeParams({ id: 'f1' }),
+      llmModel: nativePdfModel,
+    })
+    const userMessage: dto.UserMessage = {
+      id: 'u1',
+      role: 'user',
+      conversationId: 'c1',
+      parent: null,
+      sentAt: '2026-07-05T00:00:00.000Z',
+      content: 'read it',
+      attachments: [],
+    }
+    const chatState = new ChatState([userMessage])
+    chatState.appendMessage(chatState.createToolMsg())
+    chatState.applyStreamPart({
+      type: 'part',
+      part: {
+        type: 'tool-result',
+        toolCallId: 'call-1',
+        toolName: 'retrieve-file__read_file',
+        result,
+      },
+    })
+
+    const toolMessage = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
+    const dbMessage = dtoMessageToDbMessage(toolMessage)
+    const serialized = JSON.parse(dbMessage.content) as Pick<dto.ToolMessage, 'parts'>
+
+    expect(serialized.parts[0]?.type).toBe('tool-result')
+    const part = serialized.parts[0] as dto.ToolCallResultPart
+    expect(part.result).toEqual({
+      type: 'content',
+      value: [
+        {
+          type: 'file',
+          id: 'f1',
+          size: 10,
+          name: 'a.pdf',
+          mimetype: 'application/pdf',
+          uiHidden: true,
+        },
+      ],
+    })
   })
 })
 
