@@ -15,6 +15,7 @@ const {
   mockWrapLanguageModel,
   mockExtractReasoningMiddleware,
   mockGetBackends,
+  mockContextRetrieveFunctions,
 } = vi.hoisted(() => ({
   mockCreateOpenAI: vi.fn(),
   mockCreateAnthropic: vi.fn(),
@@ -25,6 +26,7 @@ const {
   mockWrapLanguageModel: vi.fn(),
   mockExtractReasoningMiddleware: vi.fn(),
   mockGetBackends: vi.fn(),
+  mockContextRetrieveFunctions: vi.fn().mockResolvedValue({}),
 }))
 
 vi.mock('@ai-sdk/openai', () => ({
@@ -59,6 +61,7 @@ vi.mock('@/lib/env', () => ({
     chat: { autoSummary: { enable: false, useChatBackend: false, maxLength: 500 }, maxOutputTokens: undefined },
     dumpLlmConversation: false,
     fileStorage: { encryptFiles: false },
+    tools: { prefixFunctionNames: true },
   },
 }))
 vi.mock('@/lib/logging', () => ({
@@ -76,6 +79,13 @@ vi.mock('@/db/dialect', () => ({ createDialect: () => null }))
 vi.mock('@/backend/lib/tools/knowledge/implementation', () => ({
   KnowledgePlugin: class KnowledgePlugin {
     toolParams = { name: 'knowledge', promptFragment: '' }
+  },
+}))
+vi.mock('@/backend/lib/tools/context-retrieve/implementation', () => ({
+  ContextRetrievePlugin: class ContextRetrievePlugin {
+    toolParams = { name: 'context-retrieve', promptFragment: '' }
+    supportedMedia = []
+    functions = mockContextRetrieveFunctions
   },
 }))
 
@@ -370,6 +380,34 @@ describe('ChatAssistant.build', () => {
         { user: '' }
       )
     ).rejects.toThrow('Authenticated user is required to build ChatAssistant')
+  })
+
+  test('adds context-retrieve when context compression is enabled', async () => {
+    const { llmModels } = await import('@/lib/models')
+    ;(llmModels as unknown as LlmModel[]).splice(0, (llmModels as unknown as LlmModel[]).length)
+    ;(llmModels as unknown as LlmModel[]).push(makeFakeLlmModel({ id: 'gpt-4', model: 'gpt-4' }))
+    mockCreateOpenAI.mockReturnValue({ responses: () => ({ provider: 'openai.responses' }) })
+
+    const assistant = await ChatAssistant.build(
+      { providerType: 'openai', apiKey: 'k', provisioned: false } as unknown as ProviderConfig,
+      {
+        assistantId: 'a1',
+        model: 'gpt-4',
+        systemPrompt: '',
+        temperature: 0,
+        tokenLimit: 1000,
+        reasoning_effort: null,
+        contextCompression: { preset: 'conservative' },
+      },
+      {},
+      [],
+      [],
+      { user: 'u1' }
+    )
+
+    expect((assistant as any).tools.map((tool: ToolImplementation) => tool.toolParams.name)).toContain(
+      'context-retrieve'
+    )
   })
 })
 
