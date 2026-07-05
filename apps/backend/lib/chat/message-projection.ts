@@ -126,3 +126,39 @@ export const projectMessageForEstimation = (
   }
   return { role: 'tool', items }
 }
+
+const renderToolResultOutput = (toolName: string, output: dto.ToolCallResultOutput): string => {
+  if (output.type === 'text' || output.type === 'error-text') {
+    return `Tool "${toolName}" result: ${output.value}`
+  }
+  if (output.type === 'json' || output.type === 'error-json') {
+    return `Tool "${toolName}" result: ${JSON.stringify(output.value)}`
+  }
+  const parts = output.value.map((v, index) =>
+    v.type === 'text' ? v.text : fileDescriptorText(v.name, v.id, v.mimetype, v.size, index + 1, 'Attachment')
+  )
+  return `Tool "${toolName}" result:\n${parts.join('\n')}`
+}
+
+/**
+ * Renders a message's *original, uncompressed* content as plain text — used by the
+ * `context-retrieve` tool's `get_message` and `search` functions, which operate directly on the
+ * live conversation history (never a compressed representation). See docs/context-compression.md.
+ */
+export const renderMessagePlainText = (message: dto.Message): string => {
+  if (message.role === 'user-request' || message.role === 'user-response') {
+    return `[${message.role} message, no textual content]`
+  }
+  const projected = projectMessageForEstimation(message)
+  const lines: string[] = []
+  for (const item of projected.items) {
+    if (item.kind === 'text') {
+      lines.push(item.text)
+    } else if (item.kind === 'tool_call') {
+      lines.push(`Called tool "${item.toolName}" with args: ${JSON.stringify(item.payload.input)}`)
+    } else if (item.kind === 'tool_result') {
+      lines.push(renderToolResultOutput(item.toolName, item.output))
+    }
+  }
+  return lines.join('\n')
+}

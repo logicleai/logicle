@@ -3,6 +3,7 @@ import {
   ToolParams,
   ToolFunctions,
   ToolFunctionContext,
+  ToolInvokeParams,
 } from '@/lib/chat/tools'
 import { db } from '@/db/database'
 import { LlmModel } from '@/lib/chat/models'
@@ -10,12 +11,24 @@ import { cachingExtractor } from '@/lib/textextraction/cache'
 import type { FileDbRow } from '@/backend/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
 import { canSendAsNativeFile, canSendAsNativeImage } from '@/backend/lib/chat/file-attachment-policy'
+import { renderMessagePlainText } from '@/backend/lib/chat/message-projection'
+import type * as dto from '@/types/dto'
 
 const isTextLikeMimeType = (mimeType: string) =>
   mimeType.startsWith('text/') || mimeType === 'application/json'
 
-export class RetrieveFilePlugin implements ToolImplementation {
-  static toolName = 'retrieve-file'
+const MAX_SEARCH_RESULTS = 20
+const SNIPPET_RADIUS_CHARS = 80
+
+/**
+ * Exposes the chat's own uncompressed context back to the model: read a file by id, read a
+ * message's original content by id, or search the conversation's message history for a query.
+ * `get_message`/`search` operate on the live `messages` handed to `invoke` — the same
+ * `ChatState.chatHistory` compression never mutates — so they need no extra DB access or
+ * authorization beyond already being inside this conversation. See docs/context-compression.md.
+ */
+export class ContextRetrievePlugin implements ToolImplementation {
+  static toolName = 'context-retrieve'
   supportedMedia = []
   constructor(
     public toolParams: ToolParams,
@@ -44,8 +57,12 @@ export class RetrieveFilePlugin implements ToolImplementation {
     } as FileDbRow
   }
 
+  private findMessage(messages: dto.Message[], id: string): dto.Message | undefined {
+    return messages.find((m) => m.id === id)
+  }
+
   functions_: ToolFunctions = {
-    read_file: {
+    get_file: {
       description:
         'Read file content on-demand by file id. Returns text directly, or a file attachment when the model can consume that media type.',
       parameters: {
@@ -113,6 +130,71 @@ export class RetrieveFilePlugin implements ToolImplementation {
           type: 'error-text',
           value: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be extracted.`,
         }
+      },
+    },
+    get_message: {
+      description:
+        "Read a message's original, uncompressed content from this conversation by its message id. Use this when context compression has replaced a message with a summary and the exact original content is needed.",
+      parameters: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'message id',
+          },
+        },
+        additionalProperties: false,
+        required: ['id'],
+      },
+      invoke: async ({ messages, params }: ToolInvokeParams) => {
+        const message = this.findMessage(messages, `${params.id}`)
+        if (!message) {
+          return {
+            type: 'error-text',
+            value: 'Message not found',
+          }
+        }
+        return {
+          type: 'text',
+          value: renderMessagePlainText(message),
+        }
+      },
+    },
+    search: {
+      description:
+        "Search this conversation's original, uncompressed message history for a text query (case-insensitive). Returns matching message ids with a short snippet — use the id with get_message to read the full original content.",
+      parameters: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description: 'text to search for',
+          },
+        },
+        additionalProperties: false,
+        required: ['query'],
+      },
+      invoke: async ({ messages, params }: ToolInvokeParams) => {
+        const query = `${params.query}`.trim()
+        if (!query) {
+          return { type: 'error-text', value: 'Empty search query' }
+        }
+        const needle = query.toLowerCase()
+        const matches: string[] = []
+        for (const message of messages) {
+          const text = renderMessagePlainText(message)
+          const index = text.toLowerCase().indexOf(needle)
+          if (index === -1) continue
+          const start = Math.max(0, index - SNIPPET_RADIUS_CHARS)
+          const end = Math.min(text.length, index + needle.length + SNIPPET_RADIUS_CHARS)
+          const snippet = `${start > 0 ? '…' : ''}${text.slice(start, end)}${end < text.length ? '…' : ''}`
+          matches.push(`id: ${message.id} (role: ${message.role})\n${snippet}`)
+          if (matches.length >= MAX_SEARCH_RESULTS) break
+        }
+        if (matches.length === 0) {
+          return { type: 'text', value: `No messages matched "${query}".` }
+        }
+        return { type: 'text', value: matches.join('\n\n') }
       },
     },
   }

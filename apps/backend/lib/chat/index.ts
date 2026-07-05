@@ -56,7 +56,11 @@ import type { Usage } from './usage'
 import { SatelliteTool } from '../tools/satellite/implementation'
 import type { PromptSegment } from './preamble'
 import { prefixToolFunctionNames } from './toolFunctionNames'
-import { compactHistoricalToolResultsForPrompt } from './tool-result-compaction'
+import {
+  planMessageCompression,
+  applyCompressionPlan,
+  resolveCompressionTriggerTokens,
+} from './compression-planner'
 
 function estimateRawContextTokens(messages: dto.Message[]): number {
   let chars = 0
@@ -76,7 +80,6 @@ function estimateRawContextTokens(messages: dto.Message[]): number {
   }
   return Math.ceil(chars / 4)
 }
-import { distillAndSaveTurn, shouldDistillTurn } from './turn-memory-distiller'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -329,16 +332,16 @@ export class ChatAssistant {
       )
     }
     if (assistantParams.contextCompression) {
-      const { RetrieveFilePlugin } = await import('../tools/retrieve-file/implementation')
+      const { ContextRetrievePlugin } = await import('../tools/context-retrieve/implementation')
       tools = [
         ...tools,
-        new RetrieveFilePlugin(
+        new ContextRetrievePlugin(
           {
-            id: 'retrieve-file',
+            id: 'context-retrieve',
             provisioned: false,
-            name: 'retrieve-file',
+            name: 'context-retrieve',
             promptFragment:
-              '\nWhen context compression strips older attachments or tool outputs, use the retrieve-file tool to request a file by id. Prefer read_file when you need the file contents.\n',
+              '\nContext compression may replace older attachments, tool outputs, or long messages with a short summary that includes an id. Use the context-retrieve tool to recover the original: get_file(id) for a file, get_message(id) for a whole message, or search(query) to find a message when you don\'t already have its id.\n',
           },
           {}
         ),
@@ -576,15 +579,11 @@ export class ChatAssistant {
     const compression = this.assistantParams.contextCompression
     let promptMessages = messages
     if (compression) {
-      const shouldCompress =
-        !compression.triggerAtTokens ||
-        estimateRawContextTokens(messages) >= compression.triggerAtTokens
+      const triggerAtTokens = resolveCompressionTriggerTokens(compression.triggerAtTokens)
+      const shouldCompress = estimateRawContextTokens(messages) >= triggerAtTokens
       if (shouldCompress) {
-        promptMessages = await compactHistoricalToolResultsForPrompt(
-          messages,
-          this.options.conversationId,
-          compression.preset
-        )
+        const decisions = planMessageCompression(messages, compression.preset)
+        promptMessages = await applyCompressionPlan(messages, decisions)
       }
     }
     const truncatedChat = await this.truncateChat(promptMessages)
@@ -1050,7 +1049,6 @@ export class ChatAssistant {
       return usage
     }
 
-    const historyLengthAtTurnStart = chatState.chatHistory.length
     let iterationCount = 0
     let complete = false
     while (!complete) {
@@ -1216,36 +1214,6 @@ export class ChatAssistant {
       await Promise.all(nonNativeToolCalls.map(executeToolCall))
       const updatedToolMessage = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
       await this.saveMessage(updatedToolMessage)
-    }
-
-    if (this.assistantParams.contextCompression && this.options.conversationId) {
-      const turnMessages = chatState.chatHistory.slice(historyLengthAtTurnStart)
-      if (shouldDistillTurn(turnMessages)) {
-        const userMessage = chatState.chatHistory
-          .slice(0, historyLengthAtTurnStart)
-          .reverse()
-          .find((m): m is dto.UserMessage => m.role === 'user')
-        const finalAssistantMsg = turnMessages
-          .filter((m): m is dto.AssistantMessage => m.role === 'assistant')
-          .at(-1)
-        const toolMessages = turnMessages.filter(
-          (m): m is dto.ToolMessage => m.role === 'tool'
-        )
-        const finalAnswer =
-          finalAssistantMsg?.parts
-            .filter((p): p is dto.TextPart => p.type === 'text')
-            .map((p) => p.text)
-            .join('') ?? ''
-        if (userMessage && toolMessages.length > 0) {
-          void distillAndSaveTurn({
-            conversationId: this.options.conversationId,
-            userMessage,
-            finalAnswer,
-            toolMessages,
-            currentLanguageModel: this.languageModel,
-          })
-        }
-      }
     }
 
     if (generateSummary) {

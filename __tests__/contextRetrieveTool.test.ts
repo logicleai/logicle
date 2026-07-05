@@ -44,7 +44,7 @@ const makeModel = (
 const textOnlyModel = makeModel({ vision: false, supportedMedia: [] })
 const imageModel = makeModel({ vision: true, supportedMedia: [] })
 
-describe('retrieve-file read_file', () => {
+describe('context-retrieve get_file', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     canAccessFile.mockResolvedValue(true)
@@ -62,13 +62,13 @@ describe('retrieve-file read_file', () => {
     executeTakeFirst.mockResolvedValue(fileEntry)
     extractFromFile.mockResolvedValue('hello world')
 
-    const { RetrieveFilePlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
-    const plugin = new RetrieveFilePlugin({ id: 't1', name: 'retrieve-file', provisioned: false, promptFragment: '' }, {})
-    const readFile = plugin.functions_.read_file
-    if (readFile.type === 'provider') {
-      throw new Error('Expected read_file to be a function tool')
+    const { ContextRetrievePlugin } = await import('@/backend/lib/tools/context-retrieve/implementation')
+    const plugin = new ContextRetrievePlugin({ id: 't1', name: 'context-retrieve', provisioned: false, promptFragment: '' }, {})
+    const getFile = plugin.functions_.get_file
+    if (getFile.type === 'provider') {
+      throw new Error('Expected get_file to be a function tool')
     }
-    const result = await readFile.invoke({
+    const result = await getFile.invoke({
       llmModel: textOnlyModel,
       messages: [],
       assistantId: 'a1',
@@ -92,13 +92,13 @@ describe('retrieve-file read_file', () => {
     }
     executeTakeFirst.mockResolvedValue(fileEntry)
 
-    const { RetrieveFilePlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
-    const plugin = new RetrieveFilePlugin({ id: 't1', name: 'retrieve-file', provisioned: false, promptFragment: '' }, {})
-    const readFile = plugin.functions_.read_file
-    if (readFile.type === 'provider') {
-      throw new Error('Expected read_file to be a function tool')
+    const { ContextRetrievePlugin } = await import('@/backend/lib/tools/context-retrieve/implementation')
+    const plugin = new ContextRetrievePlugin({ id: 't1', name: 'context-retrieve', provisioned: false, promptFragment: '' }, {})
+    const getFile = plugin.functions_.get_file
+    if (getFile.type === 'provider') {
+      throw new Error('Expected get_file to be a function tool')
     }
-    const result = await readFile.invoke({
+    const result = await getFile.invoke({
       llmModel: imageModel,
       messages: [],
       assistantId: 'a1',
@@ -123,7 +123,7 @@ describe('retrieve-file read_file', () => {
     expect(extractFromFile).not.toHaveBeenCalled()
   })
 
-  test('denies read_file when the caller cannot access the file', async () => {
+  test('denies get_file when the caller cannot access the file', async () => {
     const fileEntry = {
       id: 'file-private',
       name: 'private.txt',
@@ -135,13 +135,13 @@ describe('retrieve-file read_file', () => {
     executeTakeFirst.mockResolvedValue(fileEntry)
     canAccessFile.mockResolvedValue(false)
 
-    const { RetrieveFilePlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
-    const plugin = new RetrieveFilePlugin({ id: 't1', name: 'retrieve-file', provisioned: false, promptFragment: '' }, {})
-    const readFile = plugin.functions_.read_file
-    if (readFile.type === 'provider') {
-      throw new Error('Expected read_file to be a function tool')
+    const { ContextRetrievePlugin } = await import('@/backend/lib/tools/context-retrieve/implementation')
+    const plugin = new ContextRetrievePlugin({ id: 't1', name: 'context-retrieve', provisioned: false, promptFragment: '' }, {})
+    const getFile = plugin.functions_.get_file
+    if (getFile.type === 'provider') {
+      throw new Error('Expected get_file to be a function tool')
     }
-    const result = await readFile.invoke({
+    const result = await getFile.invoke({
       llmModel: textOnlyModel,
       messages: [],
       assistantId: 'a1',
