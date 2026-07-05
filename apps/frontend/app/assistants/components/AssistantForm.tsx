@@ -29,6 +29,9 @@ interface Props {
   onChange?: (assistant: dto.UpdateableAssistantDraft) => void
   onValidate?: (valid: boolean) => void
   firePublish?: MutableRefObject<(() => void) | undefined>
+  onHiddenChange: (hidden: boolean) => void
+  hidden: boolean
+  visibilityDisabled: boolean
 }
 
 type TabState = 'general' | 'instructions' | 'tools' | 'knowledge' | 'advanced' | 'usage'
@@ -61,6 +64,9 @@ export const AssistantForm = ({
   onChange,
   onValidate,
   firePublish,
+  onHiddenChange,
+  hidden,
+  visibilityDisabled,
 }: Props) => {
   const { t } = useTranslation()
   const { data: models } = useBackendsModels()
@@ -373,6 +379,9 @@ export const AssistantForm = ({
           className="flex-1 min-w-0"
           form={form}
           visible={activeTab === 'advanced'}
+          hidden={hidden}
+          visibilityDisabled={visibilityDisabled}
+          onHiddenChange={onHiddenChange}
         />
         <UsageTabPanel
           className="flex-1 min-w-0"

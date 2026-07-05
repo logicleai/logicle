@@ -112,6 +112,9 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
             className="flex-1 min-w-0"
             form={form}
             visible={activeTab === 'advanced'}
+            hidden={assistantVersion.hidden}
+            visibilityDisabled={true}
+            onHiddenChange={() => {}}
           />
         </div>
       </div>

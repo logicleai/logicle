@@ -11,14 +11,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 
 interface Props {
   className: string
   form: UseFormReturn<FormFields>
   visible: boolean
+  hidden: boolean
+  visibilityDisabled: boolean
+  onHiddenChange: (hidden: boolean) => void
 }
 
-export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
+export const AdvancedTabPanel = ({
+  form,
+  visible,
+  className,
+  hidden,
+  visibilityDisabled,
+  onHiddenChange,
+}: Props) => {
   const { t } = useTranslation()
   const compression = form.watch('contextCompression')
   const compressionPreset = compression?.preset ?? 'none'
@@ -115,6 +126,18 @@ export const AdvancedTabPanel = ({ form, visible, className }: Props) => {
             )}
           />
         )}
+        <div className="flex items-center justify-between gap-4 rounded-md border border-input px-4 py-3">
+          <div className="space-y-1">
+            <div className="text-label">{t('visible-assistant')}</div>
+            <p className="text-sm text-muted-foreground">{t('hidden-assistant-description')}</p>
+          </div>
+          <Switch
+            checked={!hidden}
+            disabled={visibilityDisabled}
+            aria-label={t('visible-assistant')}
+            onCheckedChange={(value) => onHiddenChange(!value)}
+          />
+        </div>
       </div>
     </ScrollArea>
   )
