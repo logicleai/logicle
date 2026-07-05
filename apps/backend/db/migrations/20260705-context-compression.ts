@@ -2,6 +2,11 @@ import { Kysely } from 'kysely'
 
 export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
+    .alterTable('AssistantVersion')
+    .addColumn('contextCompression', 'text', (col) => col.defaultTo(null))
+    .execute()
+
+  await db.schema
     .createTable('CompressedMessage')
     .addColumn('sourceMessageId', 'text', (col) => col.notNull())
     .addColumn('compressionVersion', 'integer', (col) => col.notNull())
@@ -17,8 +22,4 @@ export async function up(db: Kysely<any>): Promise<void> {
     .on('CompressedMessage')
     .columns(['sourceMessageId', 'compressionVersion'])
     .execute()
-}
-
-export async function down(db: Kysely<any>): Promise<void> {
-  await db.schema.dropTable('CompressedMessage').execute()
 }
