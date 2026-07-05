@@ -37,9 +37,27 @@ const LARGE_ARGS_VALUE_THRESHOLD_CHARS = 200
 const INLINE_SUMMARY_MAX_CHARS = 500
 const REDACTED_ARGS_MARKER =
   '[redacted: content available via context-retrieve, see summarized result]'
+const INLINE_SUMMARY_CONCURRENCY = 2
 
 const isImageMimeType = (mimetype: string) => mimetype.startsWith('image/')
 const charsToTokens = (chars: number) => Math.ceil(chars / 4)
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  fn: (item: T) => Promise<R>,
+  concurrency: number
+): Promise<R[]> {
+  const results: R[] = new Array(items.length)
+  let nextIndex = 0
+  async function worker() {
+    while (nextIndex < items.length) {
+      const i = nextIndex++
+      results[i] = await fn(items[i]!)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker))
+  return results
+}
 
 const estimateMessageChars = (message: dto.Message): number => {
   const projected = projectMessageForEstimation(message)
@@ -302,20 +320,23 @@ async function compressUserMessage(message: dto.UserMessage): Promise<dto.UserMe
   const referenceLines: string[] = []
   if (hasAttachments) {
     const { getFileWithId } = await import('@/models/file')
-    for (const attachment of message.attachments) {
-      const fileEntry = await getFileWithId(attachment.id)
-      const fileRef: dto.CompressionFileRef = {
-        id: attachment.id,
-        name: attachment.name,
-        mimetype: attachment.mimetype,
-        size: attachment.size,
-        origin: fileEntry?.origin ?? 'uploaded',
-        sourceMessageId: message.id,
-      }
-      referenceLines.push(
-        buildFileRecoveryReference(fileRef, await buildInlineTextSummary(fileEntry))
-      )
-    }
+    const attachmentSummaries = await mapWithConcurrency(
+      message.attachments,
+      async (attachment) => {
+        const fileEntry = await getFileWithId(attachment.id)
+        const fileRef: dto.CompressionFileRef = {
+          id: attachment.id,
+          name: attachment.name,
+          mimetype: attachment.mimetype,
+          size: attachment.size,
+          origin: fileEntry?.origin ?? 'uploaded',
+          sourceMessageId: message.id,
+        }
+        return buildFileRecoveryReference(fileRef, await buildInlineTextSummary(fileEntry))
+      },
+      INLINE_SUMMARY_CONCURRENCY
+    )
+    referenceLines.push(...attachmentSummaries)
   }
 
   const bodyText = hasAttachments ? message.content : truncateInline(message.content)
@@ -386,22 +407,25 @@ async function compressToolResultPart(
     // favor of a fixed overview line plus a stable file-recovery reference per recoverable file —
     // otherwise the un-summarized text could still leak the full content back into the prompt.
     const { getFileWithId } = await import('@/models/file')
-    const fileReferences: string[] = []
-    for (const item of result.value) {
-      if (item.type !== 'file') continue
-      const fileEntry = await getFileWithId(item.id)
-      const fileRef: dto.CompressionFileRef = {
-        id: item.id,
-        name: item.name,
-        mimetype: item.mimetype,
-        size: item.size,
-        origin: fileEntry?.origin ?? 'generated',
-        sourceMessageId,
-      }
-      fileReferences.push(
-        buildFileRecoveryReference(fileRef, await buildInlineTextSummary(fileEntry))
-      )
-    }
+    const fileItems = result.value.filter((item) => item.type === 'file') as Array<
+      (typeof result.value)[number] & { type: 'file' }
+    >
+    const fileReferences = await mapWithConcurrency(
+      fileItems,
+      async (item) => {
+        const fileEntry = await getFileWithId(item.id)
+        const fileRef: dto.CompressionFileRef = {
+          id: item.id,
+          name: item.name,
+          mimetype: item.mimetype,
+          size: item.size,
+          origin: fileEntry?.origin ?? 'generated',
+          sourceMessageId,
+        }
+        return buildFileRecoveryReference(fileRef, await buildInlineTextSummary(fileEntry))
+      },
+      INLINE_SUMMARY_CONCURRENCY
+    )
     return {
       ...part,
       result: {
