@@ -57,7 +57,6 @@ import { SatelliteTool } from '../tools/satellite/implementation'
 import type { PromptSegment } from './preamble'
 import { prefixToolFunctionNames } from './toolFunctionNames'
 import { compactHistoricalToolResultsForPrompt } from './tool-result-compaction'
-import { RetrieveFilePlugin } from '../tools/retrieve-file/implementation'
 
 function estimateRawContextTokens(messages: dto.Message[]): number {
   let chars = 0
@@ -336,6 +335,7 @@ export class ChatAssistant {
           tool.toolParams.name === 'retrieve-file'
       )
       if (!hasFileManagerTool) {
+        const { RetrieveFilePlugin } = await import('../tools/retrieve-file/implementation')
         tools = [
           ...tools,
           new RetrieveFilePlugin(
