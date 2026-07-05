@@ -13,6 +13,8 @@ import { ConversationSidebar } from './ConversationSidebar'
 import { useTranslation } from 'react-i18next'
 import { useTokenRateLimit } from '@/components/providers/tokenRateLimitContext'
 import { TokenRateLimitBanner } from './TokenRateLimitBanner'
+import { MessageLimitBanner } from './MessageLimitBanner'
+import { useEnvironment } from '@/app/context/environmentProvider'
 
 export interface ChatProps {
   assistant: dto.AssistantIdentification & {
@@ -43,6 +45,7 @@ export const Chat = ({
     setSideBarContent,
   } = useContext(ChatPageContext)
   const tokenRateLimit = useTokenRateLimit()
+  const environment = useEnvironment()
   const { t } = useTranslation()
 
   const [chatInput, setChatInput] = useChatInput(selectedConversation?.id ?? '')
@@ -125,6 +128,12 @@ export const Chat = ({
     streamingMessageId
   )
   const userMessageCount = groupList.filter((g) => g.actor === 'user').length
+  const hardMessageLimitReached =
+    environment.hardMessageLimit !== undefined && userMessageCount >= environment.hardMessageLimit
+  const softMessageLimitReached =
+    !hardMessageLimitReached &&
+    environment.softMessageLimit !== undefined &&
+    userMessageCount >= environment.softMessageLimit
 
   return (
     <div className={`flex overflow-hidden gap-4 ${className ?? ''}`}>
@@ -181,6 +190,16 @@ export const Chat = ({
             })
           }}
         />
+        {(hardMessageLimitReached || softMessageLimitReached) && (
+          <MessageLimitBanner
+            variant={hardMessageLimitReached ? 'block' : 'warning'}
+            count={
+              hardMessageLimitReached
+                ? environment.hardMessageLimit ?? userMessageCount
+                : environment.softMessageLimit ?? userMessageCount
+            }
+          />
+        )}
         {tokenRateLimit?.enabled && tokenRateLimit.exceeded && <TokenRateLimitBanner />}
       </div>
       {sideBarContent && <ConversationSidebar content={sideBarContent} />}

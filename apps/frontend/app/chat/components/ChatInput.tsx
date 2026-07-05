@@ -1,4 +1,4 @@
-import { IconAlertTriangle, IconBan, IconPaperclip, IconPlayerStopFilled, IconSend2 } from '@tabler/icons-react'
+import { IconPaperclip, IconPlayerStopFilled, IconSend2 } from '@tabler/icons-react'
 import {
   ChangeEvent,
   DragEvent,
@@ -96,8 +96,6 @@ export const ChatInput = ({
   }
   const environment = useEnvironment()
   const model = environment.models.find((candidate) => candidate.id === modelId)
-  const softLimitReached =
-    environment.softMessageLimit !== undefined && (userMessageCount ?? 0) >= environment.softMessageLimit
   const hardLimitReached =
     (environment.hardMessageLimit !== undefined && (userMessageCount ?? 0) >= environment.hardMessageLimit) ||
     !!locked
@@ -541,30 +539,6 @@ export const ChatInput = ({
             </>
           )}
         </div>
-        {(softLimitReached || hardLimitReached) && (
-          <div
-            className={`mt-2 flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-sm font-medium ${
-              hardLimitReached
-                ? 'border-destructive/40 bg-destructive/10 text-destructive'
-                : 'border-amber-400 bg-amber-50 text-amber-800 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-300'
-            }`}
-          >
-            {hardLimitReached ? (
-              <IconBan size={16} className="shrink-0" />
-            ) : (
-              <IconAlertTriangle size={16} className="shrink-0" />
-            )}
-            <span>
-              {hardLimitReached
-                ? t('chat-hard-message-limit-reached', {
-                    count: environment.hardMessageLimit ?? userMessageCount,
-                  })
-                : t('chat-soft-message-limit-warning', {
-                    count: environment.softMessageLimit ?? userMessageCount,
-                  })}
-            </span>
-          </div>
-        )}
         <ChatDisclaimer
           rightSlot={
             <ContextLengthIndicator
