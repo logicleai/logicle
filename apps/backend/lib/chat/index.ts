@@ -328,6 +328,22 @@ export class ChatAssistant {
         `Can't find model ${assistantParams.model} for provider ${providerConfig.providerType}`
       )
     }
+    if (assistantParams.contextCompression) {
+      const { RetrieveFilePlugin } = await import('../tools/retrieve-file/implementation')
+      tools = [
+        ...tools,
+        new RetrieveFilePlugin(
+          {
+            id: 'retrieve-file',
+            provisioned: false,
+            name: 'retrieve-file',
+            promptFragment:
+              '\nWhen context compression strips older attachments or tool outputs, use the retrieve-file tool to request a file by id. Prefer read_file when you need the file contents.\n',
+          },
+          {}
+        ),
+      ]
+    }
     tools = await ChatAssistant.withBuiltinTools(tools, llmModel)
     const computed = await ChatAssistant.computeFunctions(tools, llmModel, {
       userId: options.user,

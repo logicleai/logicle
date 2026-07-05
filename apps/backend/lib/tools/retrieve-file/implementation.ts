@@ -1,39 +1,33 @@
 import {
   ToolImplementation,
-  ToolBuilder,
   ToolParams,
   ToolFunctions,
   ToolFunctionContext,
 } from '@/lib/chat/tools'
-import {
-  FileManagerPluginInterface,
-  FileManagerPluginParams,
-} from '@/lib/tools/schemas'
 import { db } from '@/db/database'
-import * as dto from '@/types/dto'
 import { LlmModel } from '@/lib/chat/models'
 import { cachingExtractor } from '@/lib/textextraction/cache'
-import { storage } from '@/lib/storage'
 import type { FileDbRow } from '@/backend/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
+import { canSendAsNativeFile, canSendAsNativeImage } from '@/backend/lib/chat/file-attachment-policy'
 
-export class FileManagerPlugin extends FileManagerPluginInterface implements ToolImplementation {
-  static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
-    new FileManagerPlugin(toolParams, params as FileManagerPluginParams) // TODO: need a better validation
+const isTextLikeMimeType = (mimeType: string) =>
+  mimeType.startsWith('text/') || mimeType === 'application/json'
+
+export class RetrieveFilePlugin implements ToolImplementation {
+  static toolName = 'retrieve-file'
   supportedMedia = []
   constructor(
     public toolParams: ToolParams,
-    public params: FileManagerPluginParams
+    public params: Record<string, never>
   ) {
-    super()
   }
 
   functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
-  private async getFileDbRowBy(where: { id?: string; name?: string }): Promise<FileDbRow | undefined> {
+  private async getFileDbRowBy(where: { id: string }): Promise<FileDbRow | undefined> {
     let query = db.selectFrom('File').selectAll()
-    if (where.id) query = query.where('id', '=', where.id)
-    if (where.name) query = query.where('name', '=', where.name)
+    query = query.where('id', '=', where.id)
     const file = await query.executeTakeFirst()
     if (!file) return undefined
     const blob = file.fileBlobId
@@ -51,50 +45,9 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
   }
 
   functions_: ToolFunctions = {
-    getFile: {
-      description: 'Get the content of an uploaded file in base64 format',
-      parameters: {
-        type: 'object',
-        properties: {
-          name: {
-            type: 'string',
-            description: 'name of the file',
-          },
-        },
-        additionalProperties: false,
-        required: ['name'],
-      },
-      invoke: async ({ params, userId }): Promise<dto.ToolCallResultOutput> => {
-        const fileEntry = await this.getFileDbRowBy({ name: `${params.name}` })
-        if (!fileEntry) {
-          return {
-            type: 'error-text',
-            value: 'File not found',
-          }
-        }
-        if (!(await canAccessFile({ userId }, fileEntry.id))) {
-          return {
-            type: 'error-text',
-            value: 'File not found',
-          }
-        }
-        return {
-          type: 'content',
-          value: [
-            {
-              type: 'file',
-              id: fileEntry.id,
-              size: fileEntry.size ?? 0,
-              name: fileEntry.name,
-              mimetype: fileEntry.type,
-            },
-          ],
-        }
-      },
-    },
     read_file: {
       description:
-        'Read file content on-demand by file id. Returns extracted text when available, otherwise base64 bytes.',
+        'Read file content on-demand by file id. Returns text directly, or a file attachment when the model can consume that media type.',
       parameters: {
         type: 'object',
         properties: {
@@ -106,7 +59,7 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
         additionalProperties: false,
         required: ['id'],
       },
-      invoke: async ({ params, userId }): Promise<dto.ToolCallResultOutput> => {
+      invoke: async ({ llmModel, params, userId }) => {
         const fileEntry = await this.getFileDbRowBy({ id: `${params.id}` })
         if (!fileEntry) {
           return {
@@ -120,17 +73,45 @@ export class FileManagerPlugin extends FileManagerPluginInterface implements Too
             value: 'File not found',
           }
         }
-        const extractedText = await cachingExtractor.extractFromFile(fileEntry)
+        const extractedText = isTextLikeMimeType(fileEntry.type)
+          ? await cachingExtractor.extractFromFile(fileEntry)
+          : null
         if (typeof extractedText === 'string' && extractedText.length > 0) {
           return {
             type: 'text',
             value: extractedText,
           }
         }
-        const bytes = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+        if (
+          canSendAsNativeImage(fileEntry.type, llmModel.capabilities) ||
+          canSendAsNativeFile(fileEntry.type, llmModel.capabilities)
+        ) {
+          return {
+            type: 'content',
+            value: [
+              {
+                type: 'file',
+                id: fileEntry.id,
+                size: fileEntry.size ?? 0,
+                name: fileEntry.name,
+                mimetype: fileEntry.type,
+                uiHidden: true,
+              },
+            ],
+          }
+        }
+        const fallbackText = isTextLikeMimeType(fileEntry.type)
+          ? extractedText
+          : await cachingExtractor.extractFromFile(fileEntry)
+        if (typeof fallbackText === 'string' && fallbackText.length > 0) {
+          return {
+            type: 'text',
+            value: fallbackText,
+          }
+        }
         return {
-          type: 'text',
-          value: bytes.toString('base64'),
+          type: 'error-text',
+          value: `The content of the file "${fileEntry.name}" with id ${fileEntry.id} could not be extracted.`,
         }
       },
     },

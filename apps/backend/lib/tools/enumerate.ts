@@ -3,7 +3,6 @@ import { ToolBuilder, ToolImplementation } from '@/lib/chat/tools'
 import { TimeOfDay } from './timeofday/implementation'
 import { getToolsFiltered, getBuildableTools, BuildableTool } from '@/models/tool'
 import { OpenApiPlugin } from './openapi/implementation'
-import { FileManagerPlugin } from './retrieve-file/implementation'
 import { ImageGeneratorPlugin } from './imagegenerator/implementation'
 import {
   GoogleImageGeneratorPlugin,
@@ -35,7 +34,6 @@ const builders: Record<string, ToolBuilder> = {
   [TogetherImageGeneratorPlugin.toolName]: TogetherImageGeneratorPlugin.builder,
   [ReplicateImageGeneratorPlugin.toolName]: ReplicateImageGeneratorPlugin.builder,
   [SatelliteTool.toolName]: SatelliteTool.builder,
-  [FileManagerPlugin.toolName]: FileManagerPlugin.builder,
   [OpenApiPlugin.toolName]: OpenApiPlugin.builder,
   [McpPlugin.toolName]: McpPlugin.builder,
   [NativeTool.toolName]: NativeTool.builder,

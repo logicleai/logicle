@@ -8,8 +8,6 @@ import {
   CodeInterpreterSchema,
   DummyToolInterface,
   DummyToolSchema,
-  FileManagerPluginInterface,
-  FileManagerPluginSchema,
   GoogleImageGeneratorPluginInterface,
   GoogleAiStudioWebSearchInterface,
   GoogleAiStudioWebSearchSchema,
@@ -75,10 +73,6 @@ export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
   [SatelliteInterface.toolName]: {
     toolName: SatelliteInterface.toolName,
     schema: SatelliteSchema,
-  },
-  [FileManagerPluginInterface.toolName]: {
-    toolName: FileManagerPluginInterface.toolName,
-    schema: FileManagerPluginSchema,
   },
   [OpenApiInterface.toolName]: {
     toolName: OpenApiInterface.toolName,

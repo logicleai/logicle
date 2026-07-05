@@ -10,6 +10,7 @@ import { copyImageUrlToClipboard } from '@/frontend/lib/clipboard'
 
 interface AttachmentProps {
   file: Upload
+  uiHidden?: boolean
   className?: string
   conversationId?: string
 }
@@ -18,9 +19,11 @@ export const isImage = (mimeType: string) => {
   return mimeType.startsWith('image/')
 }
 
-export const Attachment = ({ file, className, conversationId }: AttachmentProps) => {
+export const Attachment = ({ file, uiHidden, className, conversationId }: AttachmentProps) => {
   const { t } = useTranslation()
   const { openImageEditor } = useContext(ChatPageContext)
+
+  if (uiHidden) return null
 
   return (
     <div

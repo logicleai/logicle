@@ -139,6 +139,7 @@ export type ToolCallResultOutput =
             mimetype: string
             name: string
             size: number
+            uiHidden?: boolean
           }
       >
     }

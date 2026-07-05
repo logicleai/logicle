@@ -1,12 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { FileManagerPlugin } from '@/backend/lib/tools/retrieve-file/implementation'
+import { RetrieveFilePlugin } from '@/backend/lib/tools/retrieve-file/implementation'
 import type { ToolFunction, ToolInvokeParams, ToolParams } from '@/lib/chat/tools'
+import { ChatState } from '@/backend/lib/chat/ChatState'
+import { dtoMessageToDbMessage } from '@/backend/models/message'
+import type * as dto from '@/types/dto'
 
 const mockFileExecuteTakeFirst = vi.fn()
 const mockBlobExecuteTakeFirst = vi.fn()
 const mockCanAccessFile = vi.fn()
 const mockExtractFromFile = vi.fn()
-const mockReadBuffer = vi.fn()
 
 vi.mock('@/db/database', () => ({
   db: {
@@ -33,23 +35,20 @@ vi.mock('@/backend/lib/files/authorization', () => ({
 vi.mock('@/lib/textextraction/cache', () => ({
   cachingExtractor: { extractFromFile: (...args: unknown[]) => mockExtractFromFile(...args) },
 }))
-vi.mock('@/lib/storage', () => ({
-  storage: { readBuffer: (...args: unknown[]) => mockReadBuffer(...args) },
-}))
-
 beforeEach(() => {
   mockFileExecuteTakeFirst.mockReset()
   mockBlobExecuteTakeFirst.mockReset()
   mockCanAccessFile.mockReset().mockResolvedValue(true)
   mockExtractFromFile.mockReset()
-  mockReadBuffer.mockReset()
 })
 
 const toolParams: ToolParams = { id: 't1', name: 'fm', provisioned: false, promptFragment: '' }
+const textOnlyModel = { capabilities: { vision: false, supportedMedia: [] } } as any
+const nativePdfModel = { capabilities: { vision: false, supportedMedia: ['application/pdf'] } } as any
 
 function makeInvokeParams(params: Record<string, unknown>, userId = 'user-1'): ToolInvokeParams {
   return {
-    llmModel: {} as any,
+    llmModel: textOnlyModel,
     messages: [],
     assistantId: 'assistant-1',
     userId,
@@ -58,58 +57,160 @@ function makeInvokeParams(params: Record<string, unknown>, userId = 'user-1'): T
   }
 }
 
-describe('FileManagerPlugin getFile', () => {
-  it('returns an error when no file matches the given name', async () => {
+describe('RetrieveFilePlugin read_file', () => {
+  it('returns an error when no file matches the given id', async () => {
     mockFileExecuteTakeFirst.mockResolvedValue(undefined)
-    const plugin = new FileManagerPlugin(toolParams, {})
+    const plugin = new RetrieveFilePlugin(toolParams, {})
     const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
       string,
       ToolFunction
     >
 
-    const result = await fns.getFile.invoke(makeInvokeParams({ name: 'missing.txt' }))
+    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'missing' }))
 
     expect(result).toEqual({ type: 'error-text', value: 'File not found' })
   })
 
-  it('returns an error when the caller cannot access the matched file', async () => {
-    mockFileExecuteTakeFirst.mockResolvedValue({ id: 'f1', name: 'a.txt', type: 'text/plain', size: 10 })
+  it('returns an error when the caller cannot access the file', async () => {
+    mockFileExecuteTakeFirst.mockResolvedValue({
+      id: 'f1',
+      name: 'a.txt',
+      type: 'text/plain',
+      size: 10,
+      path: 'files/a.txt',
+    })
     mockCanAccessFile.mockResolvedValue(false)
-    const plugin = new FileManagerPlugin(toolParams, {})
+    const plugin = new RetrieveFilePlugin(toolParams, {})
     const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
       string,
       ToolFunction
     >
 
-    const result = await fns.getFile.invoke(makeInvokeParams({ name: 'a.txt' }))
+    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'f1' }))
 
     expect(result).toEqual({ type: 'error-text', value: 'File not found' })
   })
 
-  it('returns the file as a content attachment when found and accessible', async () => {
+  it('returns extracted text when found and accessible', async () => {
     mockFileExecuteTakeFirst.mockResolvedValue({
       id: 'f1',
       name: 'a.txt',
       type: 'text/plain',
       size: 10,
       fileBlobId: null,
+      path: 'files/a.txt',
     })
-    const plugin = new FileManagerPlugin(toolParams, {})
+    mockExtractFromFile.mockResolvedValue('text content')
+    const plugin = new RetrieveFilePlugin(toolParams, {})
     const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
       string,
       ToolFunction
     >
 
-    const result = await fns.getFile.invoke(makeInvokeParams({ name: 'a.txt' }))
+    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'f1' }))
+
+    expect(result).toEqual({ type: 'text', value: 'text content' })
+  })
+
+  it('marks file attachments as hidden when returning a binary file', async () => {
+    mockFileExecuteTakeFirst.mockResolvedValue({
+      id: 'f1',
+      name: 'a.pdf',
+      type: 'application/pdf',
+      size: 10,
+      fileBlobId: null,
+      path: 'files/a.pdf',
+    })
+    mockExtractFromFile.mockResolvedValue('')
+    const plugin = new RetrieveFilePlugin(toolParams, {})
+    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
+      string,
+      ToolFunction
+    >
+
+    const result = await fns.read_file.invoke({
+      ...makeInvokeParams({ id: 'f1' }),
+      llmModel: nativePdfModel,
+    })
 
     expect(result).toEqual({
       type: 'content',
-      value: [{ type: 'file', id: 'f1', size: 10, name: 'a.txt', mimetype: 'text/plain' }],
+      value: [
+        {
+          type: 'file',
+          id: 'f1',
+          size: 10,
+          name: 'a.pdf',
+          mimetype: 'application/pdf',
+          uiHidden: true,
+        },
+      ],
+    })
+  })
+
+  it('serializes uiHidden through the tool message persistence chain', async () => {
+    mockFileExecuteTakeFirst.mockResolvedValue({
+      id: 'f1',
+      name: 'a.pdf',
+      type: 'application/pdf',
+      size: 10,
+      fileBlobId: null,
+      path: 'files/a.pdf',
+    })
+    mockExtractFromFile.mockResolvedValue('')
+    const plugin = new RetrieveFilePlugin(toolParams, {})
+    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
+      string,
+      ToolFunction
+    >
+    const result = await fns.read_file.invoke({
+      ...makeInvokeParams({ id: 'f1' }),
+      llmModel: nativePdfModel,
+    })
+    const userMessage: dto.UserMessage = {
+      id: 'u1',
+      role: 'user',
+      conversationId: 'c1',
+      parent: null,
+      sentAt: '2026-07-05T00:00:00.000Z',
+      content: 'read it',
+      attachments: [],
+    }
+    const chatState = new ChatState([userMessage])
+    chatState.appendMessage(chatState.createToolMsg())
+    chatState.applyStreamPart({
+      type: 'part',
+      part: {
+        type: 'tool-result',
+        toolCallId: 'call-1',
+        toolName: 'retrieve-file__read_file',
+        result,
+      },
+    })
+
+    const toolMessage = chatState.getLastMessageAssert<dto.ToolMessage>('tool')
+    const dbMessage = dtoMessageToDbMessage(toolMessage)
+    const serialized = JSON.parse(dbMessage.content) as Pick<dto.ToolMessage, 'parts'>
+
+    expect(serialized.parts[0]?.type).toBe('tool-result')
+    const part = serialized.parts[0] as dto.ToolCallResultPart
+    expect(part.result).toEqual({
+      type: 'content',
+      value: [
+        {
+          type: 'file',
+          id: 'f1',
+          size: 10,
+          name: 'a.pdf',
+          mimetype: 'application/pdf',
+          uiHidden: true,
+        },
+      ],
     })
   })
 })
 
-describe('FileManagerPlugin getFileDbRowBy blob resolution', () => {
+describe('RetrieveFilePlugin read_file blob resolution', () => {
   it('overrides size/encryption from the linked FileBlob row when fileBlobId is set', async () => {
     mockFileExecuteTakeFirst.mockResolvedValue({
       id: 'f1',
@@ -123,18 +224,15 @@ describe('FileManagerPlugin getFileDbRowBy blob resolution', () => {
     mockBlobExecuteTakeFirst.mockResolvedValue({ size: 42, encryption: 'pgp' })
     mockExtractFromFile.mockResolvedValue('extracted')
 
-    const plugin = new FileManagerPlugin(toolParams, {})
+    const plugin = new RetrieveFilePlugin(toolParams, {})
     const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
       string,
       ToolFunction
     >
 
-    const result = await fns.getFile.invoke(makeInvokeParams({ name: 'a.txt' }))
+    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'f1' }))
 
-    expect(result).toEqual({
-      type: 'content',
-      value: [{ type: 'file', id: 'f1', size: 42, name: 'a.txt', mimetype: 'text/plain' }],
-    })
+    expect(result).toEqual({ type: 'text', value: 'extracted' })
   })
 
   it('falls back to the File row size/encryption when there is no linked blob', async () => {
@@ -148,26 +246,26 @@ describe('FileManagerPlugin getFileDbRowBy blob resolution', () => {
       path: 'files/a.txt',
     })
 
-    const plugin = new FileManagerPlugin(toolParams, {})
+    const plugin = new RetrieveFilePlugin(toolParams, {})
     const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
       string,
       ToolFunction
     >
 
-    const result = await fns.getFile.invoke(makeInvokeParams({ name: 'a.txt' }))
+    const result = await fns.read_file.invoke(makeInvokeParams({ id: 'f1' }))
 
     expect(result).toEqual({
-      type: 'content',
-      value: [{ type: 'file', id: 'f1', size: 7, name: 'a.txt', mimetype: 'text/plain' }],
+      type: 'error-text',
+      value: 'The content of the file "a.txt" with id f1 could not be extracted.',
     })
     expect(mockBlobExecuteTakeFirst).not.toHaveBeenCalled()
   })
 })
 
-describe('FileManagerPlugin read_file not-found path', () => {
+describe('RetrieveFilePlugin read_file not-found path', () => {
   it('returns an error when no file matches the given id', async () => {
     mockFileExecuteTakeFirst.mockResolvedValue(undefined)
-    const plugin = new FileManagerPlugin(toolParams, {})
+    const plugin = new RetrieveFilePlugin(toolParams, {})
     const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<
       string,
       ToolFunction

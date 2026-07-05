@@ -302,7 +302,10 @@ const convertV3ToV4 = (msg: MessageV3): dto.Message => {
             ...part,
             result: {
               ...part.result,
-              value: [...part.result.value, ...msg.attachments.map(attachmentToContentFile)],
+              value: [
+                ...part.result.value,
+                ...msg.attachments.map((attachment) => attachmentToContentFile(attachment)),
+              ],
             },
           }
         } else if (part.result.type === 'text') {
@@ -315,7 +318,7 @@ const convertV3ToV4 = (msg: MessageV3): dto.Message => {
                   type: 'text',
                   text: part.result.value,
                 },
-                ...msg.attachments.map(attachmentToContentFile),
+                ...msg.attachments.map((attachment) => attachmentToContentFile(attachment)),
               ],
             },
           }

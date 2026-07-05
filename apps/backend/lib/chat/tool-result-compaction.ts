@@ -61,8 +61,8 @@ export async function compactHistoricalToolResultsForPrompt(
 
 function stripUserMessageAttachments(msg: dto.UserMessage): dto.UserMessage {
   if (!msg.attachments || msg.attachments.length === 0) return msg
-  const names = msg.attachments.map((a) => a.name).join(', ')
-  const descriptor = `[Files attached in this turn (content not re-sent): ${names}]`
+  const descriptors = msg.attachments.map((attachment) => `${attachment.name} (id: ${attachment.id})`)
+  const descriptor = `[Files attached in this turn (content not re-sent): ${descriptors.join(', ')}]`
   return {
     ...msg,
     content: descriptor + (msg.content ? `\n${msg.content}` : ''),
@@ -71,15 +71,16 @@ function stripUserMessageAttachments(msg: dto.UserMessage): dto.UserMessage {
 }
 
 function compactToolMessage(msg: dto.ToolMessage, answerSummary: string): dto.ToolMessage {
-  const compactedParts: dto.ToolCallResultPart[] = msg.parts
-    .filter((p): p is dto.ToolCallResultPart => p.type === 'tool-result')
-    .map((p) => ({
-      ...p,
+  const compactedParts = msg.parts.map((part) => {
+    if (part.type !== 'tool-result') return part
+    return {
+      ...part,
       result: {
         type: 'text' as const,
         value: `[Tool output summarized for context efficiency. Turn summary: ${answerSummary}]`,
       },
-    }))
+    }
+  })
 
   return { ...msg, parts: compactedParts }
 }

@@ -3,7 +3,6 @@ import type { ToolInvokeParams } from '@/lib/chat/tools'
 
 const executeTakeFirst = vi.fn()
 const extractFromFile = vi.fn()
-const readBuffer = vi.fn()
 const canAccessFile = vi.fn()
 
 vi.mock('@/db/database', () => ({
@@ -24,17 +23,28 @@ vi.mock('@/lib/textextraction/cache', () => ({
   },
 }))
 
-vi.mock('@/lib/storage', () => ({
-  storage: {
-    readBuffer,
-  },
-}))
-
 vi.mock('@/backend/lib/files/authorization', () => ({
   canAccessFile,
 }))
 
-describe('file-manager read_file', () => {
+const makeModel = (
+  capabilities: Partial<ToolInvokeParams['llmModel']['capabilities']>
+): ToolInvokeParams['llmModel'] =>
+  ({
+    id: 'test-model',
+    model: 'test-model',
+    name: 'Test Model',
+    provider: 'openai',
+    owned_by: 'openai',
+    description: '',
+    context_length: 128000,
+    capabilities,
+  }) as ToolInvokeParams['llmModel']
+
+const textOnlyModel = makeModel({ vision: false, supportedMedia: [] })
+const imageModel = makeModel({ vision: true, supportedMedia: [] })
+
+describe('retrieve-file read_file', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     canAccessFile.mockResolvedValue(true)
@@ -52,14 +62,14 @@ describe('file-manager read_file', () => {
     executeTakeFirst.mockResolvedValue(fileEntry)
     extractFromFile.mockResolvedValue('hello world')
 
-    const { FileManagerPlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
-    const plugin = new FileManagerPlugin({ id: 't1', name: 'fm', provisioned: false, promptFragment: '' }, {})
+    const { RetrieveFilePlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
+    const plugin = new RetrieveFilePlugin({ id: 't1', name: 'retrieve-file', provisioned: false, promptFragment: '' }, {})
     const readFile = plugin.functions_.read_file
     if (readFile.type === 'provider') {
       throw new Error('Expected read_file to be a function tool')
     }
     const result = await readFile.invoke({
-      llmModel: {} as ToolInvokeParams['llmModel'],
+      llmModel: textOnlyModel,
       messages: [],
       assistantId: 'a1',
       userId: 'u1',
@@ -69,30 +79,27 @@ describe('file-manager read_file', () => {
 
     expect(result).toEqual({ type: 'text', value: 'hello world' })
     expect(canAccessFile).toHaveBeenCalledWith({ userId: 'u1' }, 'file-1')
-    expect(readBuffer).not.toHaveBeenCalled()
   })
 
-  test('falls back to base64 bytes when text extraction is unavailable', async () => {
+  test('returns a file descriptor when the model can consume the media type', async () => {
     const fileEntry = {
       id: 'file-2',
-      name: 'bin.dat',
-      type: 'application/octet-stream',
-      path: 'files/bin.dat',
+      name: 'image.png',
+      type: 'image/png',
+      path: 'files/image.png',
       encryption: 'pgp',
       size: 3,
     }
     executeTakeFirst.mockResolvedValue(fileEntry)
-    extractFromFile.mockResolvedValue('')
-    readBuffer.mockResolvedValue(Buffer.from([1, 2, 3]))
 
-    const { FileManagerPlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
-    const plugin = new FileManagerPlugin({ id: 't1', name: 'fm', provisioned: false, promptFragment: '' }, {})
+    const { RetrieveFilePlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
+    const plugin = new RetrieveFilePlugin({ id: 't1', name: 'retrieve-file', provisioned: false, promptFragment: '' }, {})
     const readFile = plugin.functions_.read_file
     if (readFile.type === 'provider') {
       throw new Error('Expected read_file to be a function tool')
     }
     const result = await readFile.invoke({
-      llmModel: {} as ToolInvokeParams['llmModel'],
+      llmModel: imageModel,
       messages: [],
       assistantId: 'a1',
       userId: 'u1',
@@ -100,8 +107,20 @@ describe('file-manager read_file', () => {
       uiLink: { debugMessage: vi.fn(), addCitations: vi.fn(), attachments: [], citations: [] },
     })
 
-    expect(result).toEqual({ type: 'text', value: Buffer.from([1, 2, 3]).toString('base64') })
-    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, 'pgp')
+    expect(result).toEqual({
+      type: 'content',
+      value: [
+        {
+          type: 'file',
+          id: 'file-2',
+          name: 'image.png',
+          mimetype: 'image/png',
+          size: 3,
+          uiHidden: true,
+        },
+      ],
+    })
+    expect(extractFromFile).not.toHaveBeenCalled()
   })
 
   test('denies read_file when the caller cannot access the file', async () => {
@@ -116,14 +135,14 @@ describe('file-manager read_file', () => {
     executeTakeFirst.mockResolvedValue(fileEntry)
     canAccessFile.mockResolvedValue(false)
 
-    const { FileManagerPlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
-    const plugin = new FileManagerPlugin({ id: 't1', name: 'fm', provisioned: false, promptFragment: '' }, {})
+    const { RetrieveFilePlugin } = await import('@/backend/lib/tools/retrieve-file/implementation')
+    const plugin = new RetrieveFilePlugin({ id: 't1', name: 'retrieve-file', provisioned: false, promptFragment: '' }, {})
     const readFile = plugin.functions_.read_file
     if (readFile.type === 'provider') {
       throw new Error('Expected read_file to be a function tool')
     }
     const result = await readFile.invoke({
-      llmModel: {} as ToolInvokeParams['llmModel'],
+      llmModel: textOnlyModel,
       messages: [],
       assistantId: 'a1',
       userId: 'u2',
@@ -133,6 +152,5 @@ describe('file-manager read_file', () => {
 
     expect(result).toEqual({ type: 'error-text', value: 'File not found' })
     expect(extractFromFile).not.toHaveBeenCalled()
-    expect(readBuffer).not.toHaveBeenCalled()
   })
 })
