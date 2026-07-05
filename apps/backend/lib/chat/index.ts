@@ -27,6 +27,8 @@ import {
   prepareConversationCostPlan,
   selectOptimalHistoryStartIndex,
   estimateHistoryMessageCosts,
+  estimatePreambleTokens,
+  type HistoryMessageCost,
 } from '@/backend/lib/chat/token-estimator'
 
 export { fillTemplate } from './preamble'
@@ -485,28 +487,46 @@ export class ChatAssistant {
     return undefined
   }
 
-  async truncateChat(messages: dto.Message[]) {
+  async truncateChat(messages: dto.Message[], historyCosts?: HistoryMessageCost[]) {
     if (messages.length === 0) return messages
-    const { plan } = await prepareConversationCostPlan({
-      assistantParams: this.assistantParams,
-      model: this.llmModel,
-      tools: this.tools,
-      parameters: this.parameters,
-      knowledgeFiles: this.knowledge,
-      history: messages,
-    })
+    let assistantTokens: number
+    let draftTokens: number
+    let historyMessageCosts: HistoryMessageCost[]
+    if (historyCosts !== undefined) {
+      assistantTokens = await estimatePreambleTokens({
+        assistantParams: this.assistantParams,
+        model: this.llmModel,
+        tools: this.tools,
+        parameters: this.parameters,
+        knowledgeFiles: this.knowledge,
+      })
+      draftTokens = 0
+      historyMessageCosts = historyCosts
+    } else {
+      const { plan } = await prepareConversationCostPlan({
+        assistantParams: this.assistantParams,
+        model: this.llmModel,
+        tools: this.tools,
+        parameters: this.parameters,
+        knowledgeFiles: this.knowledge,
+        history: messages,
+      })
+      assistantTokens = plan.assistantTokens
+      draftTokens = plan.draftTokens
+      historyMessageCosts = plan.historyMessageCosts
+    }
     const startIndex = selectOptimalHistoryStartIndex(
       messages,
-      plan.historyMessageCosts,
-      plan.assistantTokens,
-      plan.draftTokens,
+      historyMessageCosts,
+      assistantTokens,
+      draftTokens,
       this.assistantParams.tokenLimit
     )
     if (startIndex > 0) {
       const totalTokens =
-        plan.assistantTokens +
-        plan.draftTokens +
-        plan.historyMessageCosts.slice(startIndex).reduce((s, e) => s + e.tokens, 0)
+        assistantTokens +
+        draftTokens +
+        historyMessageCosts.slice(startIndex).reduce((s, e) => s + e.tokens, 0)
       if (totalTokens <= this.assistantParams.tokenLimit) {
         logger.info(
           `Truncating chat: estimated token count ${totalTokens} within limit of ${this.assistantParams.tokenLimit} after dropping ${startIndex} messages`
@@ -560,17 +580,23 @@ export class ChatAssistant {
     this.throwIfAborted()
     const compression = this.assistantParams.contextCompression
     let promptMessages = messages
+    let historyCosts: HistoryMessageCost[] | undefined
     if (compression) {
       const triggerAtTokens = resolveCompressionTriggerTokens(compression.triggerAtTokens)
-      const historyCosts = await estimateHistoryMessageCosts(this.llmModel, messages)
+      historyCosts = await estimateHistoryMessageCosts(this.llmModel, messages)
       const estimatedTokens = historyCosts.reduce((sum, cost) => sum + cost.tokens, 0)
       const shouldCompress = estimatedTokens >= triggerAtTokens
       if (shouldCompress) {
         const decisions = planMessageCompression(messages, compression.preset)
         promptMessages = await applyCompressionPlan(messages, decisions)
+      } else {
+        historyCosts = undefined
       }
     }
-    const truncatedChat = await this.truncateChat(promptMessages)
+    const truncatedChat = await this.truncateChat(
+      promptMessages,
+      promptMessages === messages ? historyCosts : undefined
+    )
 
     const preambleSegments = await buildPreambleSegments({
       assistantParams: this.assistantParams,

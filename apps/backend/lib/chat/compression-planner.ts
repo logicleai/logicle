@@ -242,11 +242,13 @@ export async function applyCompressionPlan(
 ): Promise<dto.Message[]> {
   const decisionByMessageId = new Map(decisions.map((d) => [d.messageId, d]))
   const output: dto.Message[] = []
+  const assistantToolCallIndices = new Map<string, number[]>()
 
   for (const message of messages) {
     const decision = decisionByMessageId.get(message.id)
     if (!decision || decision.policy === 'full') {
-      output.push(message)
+      const outputIndex = output.push(message) - 1
+      recordAssistantToolCallIndices(message, outputIndex, assistantToolCallIndices)
       continue
     }
 
@@ -260,13 +262,14 @@ export async function applyCompressionPlan(
         compressToolMessage(message)
       )
       if (compactedToolCallIds.size > 0) {
-        redactSiblingToolCallArgs(output, compactedToolCallIds)
+        redactSiblingToolCallArgs(output, assistantToolCallIndices, compactedToolCallIds)
       }
       output.push(compacted)
       continue
     }
 
-    output.push(message)
+    const outputIndex = output.push(message) - 1
+    recordAssistantToolCallIndices(message, outputIndex, assistantToolCallIndices)
   }
 
   return output
@@ -460,20 +463,45 @@ async function compressToolResultPart(
   }
 }
 
-function redactSiblingToolCallArgs(output: dto.Message[], toolCallIds: Set<string>): void {
-  for (let i = output.length - 1; i >= 0; i--) {
-    const candidate = output[i]!
-    if (candidate.role !== 'assistant') continue
-    let mutated = false
-    const parts = candidate.parts.map((part) => {
-      if (part.type !== 'tool-call' || !toolCallIds.has(part.toolCallId)) return part
-      const redactedArgs = redactLargeStringFields(part.args)
-      if (redactedArgs === part.args) return part
-      mutated = true
-      return { ...part, args: redactedArgs }
-    })
-    if (mutated) {
-      output[i] = { ...candidate, parts }
+function recordAssistantToolCallIndices(
+  message: dto.Message,
+  outputIndex: number,
+  assistantToolCallIndices: Map<string, number[]>
+): void {
+  if (message.role !== 'assistant') return
+  for (const part of message.parts) {
+    if (part.type !== 'tool-call') continue
+    const indices = assistantToolCallIndices.get(part.toolCallId)
+    if (indices) {
+      indices.push(outputIndex)
+    } else {
+      assistantToolCallIndices.set(part.toolCallId, [outputIndex])
+    }
+  }
+}
+
+function redactSiblingToolCallArgs(
+  output: dto.Message[],
+  assistantToolCallIndices: Map<string, number[]>,
+  toolCallIds: Set<string>
+): void {
+  for (const toolCallId of toolCallIds) {
+    const indices = assistantToolCallIndices.get(toolCallId)
+    if (!indices) continue
+    for (const i of indices) {
+      const candidate = output[i]
+      if (!candidate || candidate.role !== 'assistant') continue
+      let mutated = false
+      const parts = candidate.parts.map((part) => {
+        if (part.type !== 'tool-call' || part.toolCallId !== toolCallId) return part
+        const redactedArgs = redactLargeStringFields(part.args)
+        if (redactedArgs === part.args) return part
+        mutated = true
+        return { ...part, args: redactedArgs }
+      })
+      if (mutated) {
+        output[i] = { ...candidate, parts }
+      }
     }
   }
 }
