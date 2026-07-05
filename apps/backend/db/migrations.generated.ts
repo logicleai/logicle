@@ -47,7 +47,7 @@ import * as m20260603Satellites from './migrations/20260603-satellites'
 import * as m202606031ToolEnabled from './migrations/20260603.1-tool-enabled'
 import * as m20260622FileBlobEncryptionAlgorithm from './migrations/20260622-file_blob_encryption_algorithm'
 import * as m20260623UserTokenWindow from './migrations/20260623-user-token-window'
-import * as m20260705CompressedMessage from './migrations/20260705-compressed-message'
+import * as m20260705ContextCompression from './migrations/20260705-context-compression'
 
 import type { MigrationWithDialect } from './migrations'
 
@@ -99,5 +99,5 @@ export const migrationModules: Record<string, MigrationWithDialect> = {
   '20260603.1-tool-enabled': m202606031ToolEnabled,
   '20260622-file_blob_encryption_algorithm': m20260622FileBlobEncryptionAlgorithm,
   '20260623-user-token-window': m20260623UserTokenWindow,
-  '20260705-compressed-message': m20260705CompressedMessage,
+  '20260705-context-compression': m20260705ContextCompression,
 }
