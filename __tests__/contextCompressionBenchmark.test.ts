@@ -121,7 +121,11 @@ import { setTokenizerCounter } from '@/backend/lib/chat/prompt-token-counter'
 import { countTextWithTokenizer } from '@/lib/chat/tokenizer'
 import { ChatAssistant, type AssistantParams } from '@/backend/lib/chat'
 import { ChatState } from '@/backend/lib/chat/ChatState'
-import { planMessageCompression, applyCompressionPlan } from '@/backend/lib/chat/compression-planner'
+import {
+  planMessageCompression,
+  applyCompressionPlan,
+  warmCompressionCache,
+} from '@/backend/lib/chat/compression-planner'
 import { estimateHistoryMessageCosts } from '@/backend/lib/chat/token-estimator'
 import type { ClientSink } from '@/backend/lib/chat/ClientSink'
 import type { LlmModel } from '@/lib/chat/models'
@@ -284,7 +288,13 @@ async function makeAssistant(
     assistantParams,
     model,
     allTools,
-    { user: 'benchmark-user', conversationId: 'conv-1' },
+    {
+      user: 'benchmark-user',
+      conversationId: 'conv-1',
+      saveMessage: async (message) => {
+        await warmCompressionCache(message)
+      },
+    },
     {},
     [],
     computed
@@ -622,6 +632,7 @@ describe.skipIf(!ENABLED)('context compression benchmark', () => {
             [{ id: docFileId, mimetype: 'text/plain', name: 'reservation.txt', size: 2200 }]
           )
           expect(turn1.sink.hasError()).toBe(false)
+          expect(compressedMessageStore.has(`${turn1.history.find((m) => m.role === 'user')!.id}:2`)).toBe(true)
 
           const padded = withFillerTurns(turn1.history)
 
