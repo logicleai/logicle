@@ -16,6 +16,9 @@ behavior — not a description of history, and not an aspirational design. Imple
 
 ## Configuration
 
+Per-assistant, stored as `Assistant.contextCompression` (`contextCompressionConfigSchema`, in
+`packages/core/src/types/dto/assistant.ts`):
+
 ```ts
 type ContextCompressionConfig = {
   preset: 'conservative' | 'aggressive'
@@ -25,27 +28,95 @@ type ContextCompressionConfig = {
 
 `contextCompression: null` disables compression entirely for that assistant — history is always
 sent in full (subject to the ordinary token-budget truncation in `truncateChat`, which is a
-separate mechanism).
+separate mechanism). This is the default for new assistants
+(`contextCompressionConfigSchema.optional().default(null)`).
 
-## Token Floor
+- **`preset`** (required once compression is enabled) — `'conservative'` or `'aggressive'`. Picks
+  the size thresholds used by `planMessageCompression` (see the preset table below). There is no
+  third "off" value at this level — set the whole config to `null` to disable instead.
+- **`triggerAtTokens`** (optional, positive integer) — assistant-specific override that can only
+  *raise* the server-wide token floor described below, never lower it. Leave unset to just use the
+  floor as-is.
 
-Compression never runs below `DEFAULT_COMPRESSION_TRIGGER_TOKENS` (6000, see
-`compression-planner.ts`) estimated prompt tokens, no matter what `triggerAtTokens` is set to.
-`triggerAtTokens` can only _raise_ this floor, never lower it. The estimate itself is the real,
-tokenizer-based count from `estimateHistoryMessageCosts` (`token-estimator.ts`) — the same estimator
-`truncateChat` uses for the actual budget window — not a cheap `chars/4`-style approximation, so the
-trigger decision, the truncation window, and the token-savings numbers all agree with each other:
+### Server-Wide Floor: `CHAT_CONTEXT_COMPRESSION_TRIGGER_TOKENS`
+
+Regardless of preset or per-assistant `triggerAtTokens`, compression never runs below a
+server-configured floor — this guarantees short conversations are always sent in full, on every
+assistant, without relying on each assistant's config being set sensibly.
+
+- **Env var:** `CHAT_CONTEXT_COMPRESSION_TRIGGER_TOKENS` (integer, in estimated tokens).
+- **Default:** `6000` if unset or unparsable (`packages/core/src/env.ts`, `env.chat.contextCompressionTriggerTokens`).
+- **Resolution:** `resolveCompressionTriggerTokens(triggerAtTokens)` in `compression-planner.ts`
+  returns `Math.max(triggerAtTokens ?? 0, env.chat.contextCompressionTriggerTokens)` — the env var
+  is a hard floor, and an assistant's `triggerAtTokens` is only ever honored when it's *higher* than
+  that floor:
 
 ```ts
+// env.chat.contextCompressionTriggerTokens == 6000 (default)
 resolveCompressionTriggerTokens(undefined) // → 6000 (the floor)
 resolveCompressionTriggerTokens(500) // → 6000 (500 is below the floor, floor wins)
 resolveCompressionTriggerTokens(20000) // → 20000 (above the floor, honored)
 ```
 
+The estimate itself is the real, tokenizer-based count from `estimateHistoryMessageCosts`
+(`token-estimator.ts`) — the same estimator `truncateChat` uses for the actual budget window — not
+a cheap `chars/4`-style approximation, so the trigger decision, the truncation window, and the
+token-savings numbers all agree with each other.
+
 **Example:** an assistant has `contextCompression: { preset: 'conservative' }` (no
-`triggerAtTokens`). A conversation with two short turns and no attachments — a few hundred tokens —
-is always sent in full. Compression only starts considering messages once the estimated raw prompt
-size reaches 6000 tokens.
+`triggerAtTokens`), and the server runs with the default floor. A conversation with two short turns
+and no attachments — a few hundred tokens — is always sent in full. Compression only starts
+considering messages once the estimated raw prompt size reaches 6000 tokens. If an operator raises
+`CHAT_CONTEXT_COMPRESSION_TRIGGER_TOKENS` to `20000`, every assistant on that server — including
+ones with a lower `triggerAtTokens` configured — now waits until 20000 estimated tokens before
+compression kicks in at all.
+
+## Presets: `conservative` vs `aggressive`
+
+There are exactly two presets, both implemented entirely inside `planMessageCompression`
+(`compression-planner.ts`). A preset only changes *size thresholds* for historical messages — it
+never changes what counts as "current turn" (see below) and never triggers a model call. There is
+no per-field customization beyond `triggerAtTokens`: everything else about a preset's behavior is
+fixed by these two constants:
+
+```ts
+const LARGE_TEXT_THRESHOLD_CHARS = 2000            // conservative
+const AGGRESSIVE_LARGE_TEXT_THRESHOLD_CHARS = 800  // aggressive
+```
+
+| Rule (applied to historical messages only)                       | `conservative`                          | `aggressive`                            |
+| ------------------------------------------------------------------ | ---------------------------------------- | ----------------------------------------- |
+| Current turn (last user/user-response message + everything after) | always `full`, no exceptions             | always `full`, no exceptions — **identical to conservative; this preset never touches the current turn** |
+| Historical `user` message **with attachments**                     | `summary`                                | `summary`                                |
+| Historical `user` message, **long plain text, no attachments**     | `full` (left alone)                      | `summary` if `content.length > 800`      |
+| Historical `tool` result **with a recoverable file**                | `summary`                                | `summary`                                |
+| Historical `tool` result, **large text-only output**                | `summary` if estimated chars `> 2000`    | `summary` if estimated chars `> 800`     |
+| Everything else (short historical text, no attachments/files)      | `full`                                   | `full`                                   |
+
+In short: **`aggressive` is a strict superset of `conservative`** — every message `conservative`
+would summarize, `aggressive` also summarizes, plus two extra cases (long historical plain-text
+user messages, and smaller historical tool outputs down to 800 chars instead of 2000). There is no
+`aggressive`-only behavior on attachments, files, or the current turn; both presets treat those
+identically. The one place `aggressive` differs qualitatively rather than just numerically is rule
+2 (`hasLargeText` in `planMessageCompression`) — that check is gated on
+`preset === 'aggressive'` entirely, so `conservative` never fires it no matter how long the text is.
+
+**A common misconception worth stating explicitly: `aggressive` does *not* summarize attachments or
+tool results in the current turn.** The "current turn is never compressed" rule in
+`planMessageCompression` is checked first and unconditionally, before any preset-specific logic —
+there is no code path, under any preset, that assigns `policy: 'summary'` to a current-turn message.
+If you need to keep the model from re-reading a huge attachment *just uploaded in this turn*, that
+is not something either preset controls; it would require a different mechanism (e.g. the ordinary
+token-budget truncation in `truncateChat`, or advising the user to start a fresh conversation).
+
+**Choosing a preset:**
+
+- **`conservative`** — pick this when tool outputs and attachments are the main cost driver and
+  historical conversational text is short and cheap to keep verbatim (e.g. mostly short questions,
+  large tool/file payloads). Preserves more of the model's own past reasoning text untouched.
+- **`aggressive`** — pick this when conversations run very long and include large blocks of pasted
+  text from the user (long historical messages, not just files), or when a stricter savings target
+  is worth the model needing `context-retrieve.get_message`/`get_file` more often to recover detail.
 
 ## Current Turn Is Never Compressed
 
@@ -404,3 +475,10 @@ and that it needs no DB access), and `search` (match with snippet, no-match, emp
 - `apps/backend/lib/chat/message-projection.ts` — `renderMessagePlainText`, used by `get_message`
   and `search` to render a message's original content as plain text.
 - `packages/core/src/types/dto/compression.ts` — `CompressionFileRef`, `MessageCompressionDecision`.
+- `packages/core/src/types/dto/assistant.ts` — `ContextCompressionPreset`, `ContextCompressionConfig`
+  (the `Assistant.contextCompression` field's schema).
+- `packages/core/src/env.ts` — `env.chat.contextCompressionTriggerTokens`, the
+  `CHAT_CONTEXT_COMPRESSION_TRIGGER_TOKENS`-backed server-wide floor.
+- `apps/frontend/app/assistants/components/AdvancedTabPanel.tsx` — the assistant-editor UI for
+  `preset`/`triggerAtTokens`; copy lives in `apps/frontend/locales/{en,it}/logicle.json` under the
+  `context-compression-*` keys.
