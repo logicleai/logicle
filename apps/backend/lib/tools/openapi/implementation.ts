@@ -146,7 +146,7 @@ function convertOpenAPIOperationToToolFunction(
     assistantId,
     rootOwner,
   }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
-    const storeFile = async (data: Uint8Array, fileName: string, contentType: string) =>
+      const storeFile = async (data: Uint8Array, fileName: string, contentType: string) =>
       await saveFile({
         rootOwner,
         conversationId,
@@ -156,6 +156,7 @@ function convertOpenAPIOperationToToolFunction(
         mimeType: contentType,
         nameHint: fileName,
         source: 'OpenAPI',
+        provenance: 'generated-file',
       })
 
     const opParameters = operation.parameters as OpenAPIV3.ParameterObject[]

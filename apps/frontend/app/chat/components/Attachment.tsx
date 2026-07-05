@@ -1,4 +1,5 @@
 import { Upload } from '@/components/app/upload'
+import * as dto from '@/types/dto'
 import { cn } from '@/frontend/lib/utils'
 import { IconEdit, IconFile } from '@tabler/icons-react'
 import { IconCopy } from '@tabler/icons-react'
@@ -10,6 +11,7 @@ import { copyImageUrlToClipboard } from '@/frontend/lib/clipboard'
 
 interface AttachmentProps {
   file: Upload
+  provenance?: dto.FileProvenance
   className?: string
   conversationId?: string
 }
@@ -18,9 +20,17 @@ export const isImage = (mimeType: string) => {
   return mimeType.startsWith('image/')
 }
 
-export const Attachment = ({ file, className, conversationId }: AttachmentProps) => {
+export const Attachment = ({ file, provenance, className, conversationId }: AttachmentProps) => {
   const { t } = useTranslation()
   const { openImageEditor } = useContext(ChatPageContext)
+  const provenanceLabel =
+    provenance === 'retrieved-file'
+      ? 'Referenced file'
+      : provenance === 'generated-file'
+        ? 'Generated file'
+        : provenance === 'user-upload'
+          ? 'Uploaded file'
+          : null
 
   return (
     <div
@@ -38,8 +48,11 @@ export const Attachment = ({ file, className, conversationId }: AttachmentProps)
             <div className="bg-primary p-2 rounded">
               <IconFile color="white" size="24"></IconFile>
             </div>
-            <div className="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
-              {file.fileName}
+            <div className="flex-1 overflow-hidden">
+              <div className="whitespace-nowrap text-ellipsis overflow-hidden">{file.fileName}</div>
+              {provenanceLabel && (
+                <div className="text-xs text-muted-foreground whitespace-nowrap">{provenanceLabel}</div>
+              )}
             </div>
           </div>
         )}

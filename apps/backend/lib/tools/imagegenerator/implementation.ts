@@ -214,6 +214,7 @@ export class ImageGeneratorPlugin
         mimetype: 'image/png',
         size: imgBinaryData.byteLength,
         name: name,
+        provenance: 'generated-file',
       })
     }
     return result

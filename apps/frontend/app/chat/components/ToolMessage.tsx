@@ -69,6 +69,7 @@ export const ToolMessage: FC<Props> = ({ message }) => {
                     <Attachment
                       key={attachment.id}
                       file={upload}
+                      provenance={attachment.provenance}
                       conversationId={message.conversationId}
                     />
                   )

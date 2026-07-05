@@ -80,6 +80,8 @@ export interface Attachment {
   size: number
 }
 
+export type FileProvenance = 'user-upload' | 'retrieved-file' | 'generated-file'
+
 export const ConversationWithFolderIdSchema = conversationSchema.extend({
   folderId: z.string().nullable(),
 }).meta({ id: 'ConversationWithFolderId' })
@@ -139,6 +141,7 @@ export type ToolCallResultOutput =
             mimetype: string
             name: string
             size: number
+            provenance?: FileProvenance
           }
       >
     }
