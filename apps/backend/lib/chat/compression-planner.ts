@@ -35,7 +35,8 @@ const LARGE_TEXT_THRESHOLD_CHARS = 2000
 const AGGRESSIVE_LARGE_TEXT_THRESHOLD_CHARS = 800
 const LARGE_ARGS_VALUE_THRESHOLD_CHARS = 200
 const INLINE_SUMMARY_MAX_CHARS = 500
-const REDACTED_ARGS_MARKER = '[redacted: content available via context-retrieve, see summarized result]'
+const REDACTED_ARGS_MARKER =
+  '[redacted: content available via context-retrieve, see summarized result]'
 
 const isImageMimeType = (mimetype: string) => mimetype.startsWith('image/')
 const charsToTokens = (chars: number) => Math.ceil(chars / 4)
@@ -57,7 +58,10 @@ const estimateMessageChars = (message: dto.Message): number => {
   return chars
 }
 
-export function buildFileRecoveryReference(fileRef: dto.CompressionFileRef, summary: string): string {
+export function buildFileRecoveryReference(
+  fileRef: dto.CompressionFileRef,
+  summary: string
+): string {
   return [
     `File available on demand: ${fileRef.name}`,
     `id: ${fileRef.id}`,
@@ -175,7 +179,9 @@ export function planMessageCompression(
       const hasLargeText = preset === 'aggressive' && message.content.length > largeTextThreshold
       if (hasAttachments || hasLargeText) {
         policy = 'summary'
-        reason = hasAttachments ? 'historical user attachment' : 'large historical user message (aggressive preset)'
+        reason = hasAttachments
+          ? 'historical user attachment'
+          : 'large historical user message (aggressive preset)'
       }
     } else if (message.role === 'tool') {
       let hasFileItems = false
@@ -186,7 +192,9 @@ export function planMessageCompression(
       const isLargeText = chars > largeTextThreshold
       if (hasFileItems || isLargeText) {
         policy = 'summary'
-        reason = hasFileItems ? 'historical tool result with recoverable file' : 'large historical tool output'
+        reason = hasFileItems
+          ? 'historical tool result with recoverable file'
+          : 'large historical tool output'
       }
     }
 
@@ -230,7 +238,9 @@ export async function applyCompressionPlan(
     }
 
     if (message.role === 'tool') {
-      const { compacted, compactedToolCallIds } = await compressOnce(message.id, () => compressToolMessage(message))
+      const { compacted, compactedToolCallIds } = await compressOnce(message.id, () =>
+        compressToolMessage(message)
+      )
       if (compactedToolCallIds.size > 0) {
         redactSiblingToolCallArgs(output, compactedToolCallIds)
       }
@@ -253,7 +263,8 @@ export async function applyCompressionPlan(
 export async function warmCompressionCache(message: dto.Message): Promise<void> {
   try {
     if (message.role === 'user') {
-      const eligible = message.attachments.length > 0 || message.content.length > LARGE_TEXT_THRESHOLD_CHARS
+      const eligible =
+        message.attachments.length > 0 || message.content.length > LARGE_TEXT_THRESHOLD_CHARS
       if (eligible) await compressOnce(message.id, () => compressUserMessage(message))
       return
     }
@@ -262,7 +273,8 @@ export async function warmCompressionCache(message: dto.Message): Promise<void> 
         if (part.type !== 'tool-result') return false
         const { result } = part
         if (result.type === 'content') return result.value.some((v) => v.type === 'file')
-        if (result.type === 'text' || result.type === 'error-text') return result.value.length > LARGE_TEXT_THRESHOLD_CHARS
+        if (result.type === 'text' || result.type === 'error-text')
+          return result.value.length > LARGE_TEXT_THRESHOLD_CHARS
         return false
       })
       if (eligible) await compressOnce(message.id, () => compressToolMessage(message))
@@ -273,7 +285,9 @@ export async function warmCompressionCache(message: dto.Message): Promise<void> 
 }
 
 async function compressUserMessage(message: dto.UserMessage): Promise<dto.UserMessage> {
-  const { getCompressedMessage, saveCompressedMessage } = await import('@/models/compressed-message')
+  const { getCompressedMessage, saveCompressedMessage } = await import(
+    '@/models/compressed-message'
+  )
   const cached = await getCompressedMessage(message.id, COMPRESSION_VERSION)
   if (cached) {
     return { ...message, ...(cached.content as Partial<dto.UserMessage>) }
@@ -298,13 +312,17 @@ async function compressUserMessage(message: dto.UserMessage): Promise<dto.UserMe
         origin: fileEntry?.origin ?? 'uploaded',
         sourceMessageId: message.id,
       }
-      referenceLines.push(buildFileRecoveryReference(fileRef, await buildInlineTextSummary(fileEntry)))
+      referenceLines.push(
+        buildFileRecoveryReference(fileRef, await buildInlineTextSummary(fileEntry))
+      )
     }
   }
 
   const bodyText = hasAttachments ? message.content : truncateInline(message.content)
   const content: Partial<dto.UserMessage> = {
-    content: [...referenceLines, bodyText, buildMessageRecoveryNote(message.id)].filter(Boolean).join('\n\n'),
+    content: [...referenceLines, bodyText, buildMessageRecoveryNote(message.id)]
+      .filter(Boolean)
+      .join('\n\n'),
     attachments: [],
   }
 
@@ -322,7 +340,9 @@ async function compressToolMessage(
   message: dto.ToolMessage
 ): Promise<{ compacted: dto.ToolMessage; compactedToolCallIds: Set<string> }> {
   const compactedToolCallIds = new Set<string>()
-  const { getCompressedMessage, saveCompressedMessage } = await import('@/models/compressed-message')
+  const { getCompressedMessage, saveCompressedMessage } = await import(
+    '@/models/compressed-message'
+  )
 
   const cached = await getCompressedMessage(message.id, COMPRESSION_VERSION)
   if (cached) {
@@ -378,13 +398,19 @@ async function compressToolResultPart(
         origin: fileEntry?.origin ?? 'generated',
         sourceMessageId,
       }
-      fileReferences.push(buildFileRecoveryReference(fileRef, await buildInlineTextSummary(fileEntry)))
+      fileReferences.push(
+        buildFileRecoveryReference(fileRef, await buildInlineTextSummary(fileEntry))
+      )
     }
     return {
       ...part,
       result: {
         type: 'text',
-        value: [TOOL_RESULT_OVERVIEW, ...fileReferences, buildMessageRecoveryNote(sourceMessageId)].join('\n\n'),
+        value: [
+          TOOL_RESULT_OVERVIEW,
+          ...fileReferences,
+          buildMessageRecoveryNote(sourceMessageId),
+        ].join('\n\n'),
       },
     }
   }
@@ -394,14 +420,19 @@ async function compressToolResultPart(
       ...part,
       result: {
         type: 'text',
-        value: `${TOOL_RESULT_OVERVIEW}\n\n${truncateInline(result.value)}\n\n${buildMessageRecoveryNote(sourceMessageId)}`,
+        value: `${TOOL_RESULT_OVERVIEW}\n\n${truncateInline(
+          result.value
+        )}\n\n${buildMessageRecoveryNote(sourceMessageId)}`,
       },
     }
   }
 
   return {
     ...part,
-    result: { type: 'text', value: `${TOOL_RESULT_OVERVIEW}\n\n${buildMessageRecoveryNote(sourceMessageId)}` },
+    result: {
+      type: 'text',
+      value: `${TOOL_RESULT_OVERVIEW}\n\n${buildMessageRecoveryNote(sourceMessageId)}`,
+    },
   }
 }
 
