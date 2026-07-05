@@ -26,6 +26,7 @@ import { ParameterValueAndDescription } from '@/models/user'
 import {
   prepareConversationCostPlan,
   selectOptimalHistoryStartIndex,
+  estimateHistoryMessageCosts,
 } from '@/backend/lib/chat/token-estimator'
 
 export { fillTemplate } from './preamble'
@@ -61,25 +62,6 @@ import {
   applyCompressionPlan,
   resolveCompressionTriggerTokens,
 } from './compression-planner'
-
-function estimateRawContextTokens(messages: dto.Message[]): number {
-  let chars = 0
-  for (const msg of messages) {
-    if ('content' in msg && typeof (msg as { content?: unknown }).content === 'string') {
-      chars += (msg as { content: string }).content.length
-    }
-    if ('parts' in msg && Array.isArray((msg as { parts?: unknown }).parts)) {
-      for (const part of (msg as { parts: Record<string, unknown>[] }).parts) {
-        if (part.type === 'text' && typeof part.text === 'string') chars += part.text.length
-        if (part.type === 'tool-result') {
-          const r = part.result as Record<string, unknown> | undefined
-          if (r?.type === 'text' && typeof r.value === 'string') chars += r.value.length
-        }
-      }
-    }
-  }
-  return Math.ceil(chars / 4)
-}
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -580,7 +562,9 @@ export class ChatAssistant {
     let promptMessages = messages
     if (compression) {
       const triggerAtTokens = resolveCompressionTriggerTokens(compression.triggerAtTokens)
-      const shouldCompress = estimateRawContextTokens(messages) >= triggerAtTokens
+      const historyCosts = await estimateHistoryMessageCosts(this.llmModel, messages)
+      const estimatedTokens = historyCosts.reduce((sum, cost) => sum + cost.tokens, 0)
+      const shouldCompress = estimatedTokens >= triggerAtTokens
       if (shouldCompress) {
         const decisions = planMessageCompression(messages, compression.preset)
         promptMessages = await applyCompressionPlan(messages, decisions)

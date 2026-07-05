@@ -31,7 +31,10 @@ separate mechanism).
 
 Compression never runs below `DEFAULT_COMPRESSION_TRIGGER_TOKENS` (6000, see
 `compression-planner.ts`) estimated prompt tokens, no matter what `triggerAtTokens` is set to.
-`triggerAtTokens` can only _raise_ this floor, never lower it:
+`triggerAtTokens` can only _raise_ this floor, never lower it. The estimate itself is the real,
+tokenizer-based count from `estimateHistoryMessageCosts` (`token-estimator.ts`) — the same estimator
+`truncateChat` uses for the actual budget window — not a cheap `chars/4`-style approximation, so the
+trigger decision, the truncation window, and the token-savings numbers all agree with each other:
 
 ```ts
 resolveCompressionTriggerTokens(undefined) // → 6000 (the floor)
@@ -350,7 +353,7 @@ message saved to DB
        └─ builds & caches CompressedMessage if eligible
 
 prompt build (ChatAssistant.invokeLlm)
-  ├─ estimateRawContextTokens(messages) >= resolveCompressionTriggerTokens(config.triggerAtTokens)?
+  ├─ estimateHistoryMessageCosts(model, messages) total >= resolveCompressionTriggerTokens(config.triggerAtTokens)?
   │    no  → send messages as-is
   │    yes ↓
   ├─ planMessageCompression(messages, preset)       → MessageCompressionDecision[]
