@@ -1,7 +1,7 @@
 import * as dto from '@/types/dto'
 import type { FileDbRow } from '@/backend/models/file'
 import { logger } from '@/lib/logging'
-import { projectMessageForEstimation } from './message-projection'
+import { projectMessageForEstimationCached } from './message-projection'
 
 // Model/DB-backed helpers are imported dynamically (below, at point of use) rather than statically
 // at module scope. This file is on the hot import path of `apps/backend/lib/chat/index.ts`, and a
@@ -60,7 +60,7 @@ async function mapWithConcurrency<T, R>(
 }
 
 const estimateMessageChars = (message: dto.Message): number => {
-  const projected = projectMessageForEstimation(message)
+  const projected = projectMessageForEstimationCached(message)
   let chars = 0
   for (const item of projected.items) {
     if (item.kind === 'text') chars += item.text.length

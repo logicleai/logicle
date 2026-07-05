@@ -1,6 +1,7 @@
 import * as dto from '@/types/dto'
 
 const isImageMimeType = (mimetype: string) => mimetype.startsWith('image/')
+const projectionCache = new WeakMap<dto.Message, ProjectedMessageForEstimation>()
 
 /**
  * Generates a concise per-file metadata descriptor for interspersed mode.
@@ -70,8 +71,12 @@ export type ProjectedMessageForEstimation =
 export const projectMessageForEstimation = (
   message: dto.Message
 ): ProjectedMessageForEstimation => {
+  const cached = projectionCache.get(message)
+  if (cached) return cached
   if (message.role === 'user-request' || message.role === 'user-response') {
-    return { role: 'ignored', items: [] }
+    const projected: ProjectedMessageForEstimation = { role: 'ignored', items: [] }
+    projectionCache.set(message, projected)
+    return projected
   }
   if (message.role === 'user') {
     const items: MessageProjectionItem[] = []
@@ -86,7 +91,9 @@ export const projectMessageForEstimation = (
       })
       items.push({ kind: 'attachment', attachment })
     })
-    return { role: 'user', items }
+    const projected: ProjectedMessageForEstimation = { role: 'user', items }
+    projectionCache.set(message, projected)
+    return projected
   }
   if (message.role === 'assistant') {
     const items: MessageProjectionItem[] = []
@@ -111,7 +118,9 @@ export const projectMessageForEstimation = (
         })
       }
     }
-    return { role: 'assistant', items }
+    const projected: ProjectedMessageForEstimation = { role: 'assistant', items }
+    projectionCache.set(message, projected)
+    return projected
   }
   const items: MessageProjectionItem[] = []
   for (const part of message.parts) {
@@ -124,8 +133,12 @@ export const projectMessageForEstimation = (
       output: part.result,
     })
   }
-  return { role: 'tool', items }
+  const projected: ProjectedMessageForEstimation = { role: 'tool', items }
+  projectionCache.set(message, projected)
+  return projected
 }
+
+export const projectMessageForEstimationCached = projectMessageForEstimation
 
 const renderToolResultOutput = (toolName: string, output: dto.ToolCallResultOutput): string => {
   if (output.type === 'text' || output.type === 'error-text') {
