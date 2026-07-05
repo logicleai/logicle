@@ -1,5 +1,6 @@
 import * as dto from '@/types/dto'
 import type { FileDbRow } from '@/backend/models/file'
+import env from '@/lib/env'
 import { logger } from '@/lib/logging'
 import { projectMessageForEstimationCached } from './message-projection'
 
@@ -15,18 +16,11 @@ import { projectMessageForEstimationCached } from './message-projection'
 export const COMPRESSION_VERSION = 2
 
 /**
- * Below this many estimated prompt tokens, compression never runs at all — the assistant's
- * `triggerAtTokens` (if set) can only raise this floor, never lower it. See "Token Floor" in
- * docs/context-compression.md.
- */
-export const DEFAULT_COMPRESSION_TRIGGER_TOKENS = 6000
-
-/**
  * The assistant-configured `triggerAtTokens` can only raise the floor below which compression
  * never runs, never lower it — this guarantees short conversations are always sent in full.
  */
 export function resolveCompressionTriggerTokens(triggerAtTokens: number | undefined): number {
-  return Math.max(triggerAtTokens ?? 0, DEFAULT_COMPRESSION_TRIGGER_TOKENS)
+  return Math.max(triggerAtTokens ?? 0, env.chat.contextCompressionTriggerTokens)
 }
 
 type ToolMessagePart = dto.ToolMessage['parts'][number]

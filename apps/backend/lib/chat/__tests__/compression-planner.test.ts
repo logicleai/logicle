@@ -8,8 +8,8 @@ import {
   applyCompressionPlan,
   warmCompressionCache,
   resolveCompressionTriggerTokens,
-  DEFAULT_COMPRESSION_TRIGGER_TOKENS,
 } from '@/backend/lib/chat/compression-planner'
+import env from '@/lib/env'
 
 const { mockExtractFromFile } = vi.hoisted(() => ({ mockExtractFromFile: vi.fn() }))
 const { mockReadBuffer } = vi.hoisted(() => ({ mockReadBuffer: vi.fn() }))
@@ -271,13 +271,13 @@ describe('planMessageCompression', () => {
 
 describe('resolveCompressionTriggerTokens', () => {
   test('a low or unset assistant threshold never drops below the default floor', () => {
-    expect(resolveCompressionTriggerTokens(undefined)).toBe(DEFAULT_COMPRESSION_TRIGGER_TOKENS)
-    expect(resolveCompressionTriggerTokens(100)).toBe(DEFAULT_COMPRESSION_TRIGGER_TOKENS)
+    expect(resolveCompressionTriggerTokens(undefined)).toBe(env.chat.contextCompressionTriggerTokens)
+    expect(resolveCompressionTriggerTokens(100)).toBe(env.chat.contextCompressionTriggerTokens)
   })
 
   test('an assistant threshold above the floor is honored', () => {
-    expect(resolveCompressionTriggerTokens(DEFAULT_COMPRESSION_TRIGGER_TOKENS + 5000)).toBe(
-      DEFAULT_COMPRESSION_TRIGGER_TOKENS + 5000
+    expect(resolveCompressionTriggerTokens(env.chat.contextCompressionTriggerTokens + 5000)).toBe(
+      env.chat.contextCompressionTriggerTokens + 5000
     )
   })
 })
