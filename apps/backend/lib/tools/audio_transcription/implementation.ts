@@ -245,7 +245,6 @@ export class AudioTranscription extends AudioTranscriptionInterface implements T
             mimetype: 'text/plain',
             size: transcriptBuffer.byteLength,
             name: transcriptFileName,
-            provenance: 'generated-file',
           },
         ],
       }

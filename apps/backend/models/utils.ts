@@ -182,7 +182,6 @@ const convertToolResultOutputV2ToV3 = (
               id: '',
               name: '',
               mimetype: m.mediaType,
-              provenance: 'generated-file',
             }
           }
           return m
@@ -253,14 +252,12 @@ const attachmentToContentFile = (attachment: {
   mimetype: string
   name: string
   size: number
-  provenance?: 'user-upload' | 'retrieved-file' | 'generated-file'
 }): ContentItemV4 => ({
   type: 'file',
   id: attachment.id,
   mimetype: attachment.mimetype,
   name: attachment.name,
   size: attachment.size,
-  provenance: attachment.provenance ?? 'user-upload',
 })
 
 const convertV3ToV4 = (msg: MessageV3): dto.Message => {

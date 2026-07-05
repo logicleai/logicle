@@ -5,7 +5,6 @@ export interface AttachmentV2 {
   mimetype: string
   name: string
   size: number
-  provenance?: 'user-upload' | 'retrieved-file' | 'generated-file'
 }
 
 export type CitationV2 =
@@ -51,7 +50,6 @@ type LanguageModelV2ToolResultOutputV2 =
             type: 'media'
             data: string
             mediaType: string
-            provenance?: 'user-upload' | 'retrieved-file' | 'generated-file'
           }
       >
     }

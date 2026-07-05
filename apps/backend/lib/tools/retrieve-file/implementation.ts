@@ -95,7 +95,7 @@ export class RetrieveFilePlugin implements ToolImplementation {
                 size: fileEntry.size ?? 0,
                 name: fileEntry.name,
                 mimetype: fileEntry.type,
-                provenance: 'retrieved-file',
+                uiHidden: true,
               },
             ],
           }

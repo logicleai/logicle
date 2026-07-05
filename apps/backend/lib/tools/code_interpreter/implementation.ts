@@ -281,7 +281,6 @@ export class CodeInterpreter
         mimetype: dbFile.type,
         name: dbFile.name,
         size: dbFile.size ?? buffer.byteLength,
-        provenance: 'generated-file',
       })
     }
     if (storedMetadata.length > 0) {

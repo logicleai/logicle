@@ -5,7 +5,6 @@ export interface AttachmentV3 {
   mimetype: string
   name: string
   size: number
-  provenance?: 'user-upload' | 'retrieved-file' | 'generated-file'
 }
 
 export interface ToolCallV3 {
@@ -44,7 +43,6 @@ export type ToolCallResultOutputV3 =
             mimetype: string
             name: string
             size: number
-            provenance?: 'user-upload' | 'retrieved-file' | 'generated-file'
           }
       >
     }

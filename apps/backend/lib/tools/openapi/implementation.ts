@@ -156,7 +156,6 @@ function convertOpenAPIOperationToToolFunction(
         mimeType: contentType,
         nameHint: fileName,
         source: 'OpenAPI',
-        provenance: 'generated-file',
       })
 
     const opParameters = operation.parameters as OpenAPIV3.ParameterObject[]

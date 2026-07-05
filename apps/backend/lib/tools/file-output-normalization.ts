@@ -11,7 +11,6 @@ interface PersistFileLikeParams
   mimeType: string
   nameHint?: string
   source: string
-  provenance?: dto.FileProvenance
 }
 
 const defaultMimeType = 'application/octet-stream'
@@ -27,14 +26,12 @@ const toFilePart = (fileEntry: {
   type: string
   name: string
   size: number
-  provenance?: dto.FileProvenance
 }): Extract<dto.ToolCallResultOutput, { type: 'content' }>['value'][number] => ({
   type: 'file',
   id: fileEntry.id,
   mimetype: fileEntry.type,
   name: fileEntry.name,
   size: fileEntry.size,
-  provenance: fileEntry.provenance,
 })
 
 export const saveFile = async (
@@ -56,7 +53,6 @@ export const saveFile = async (
     type: dbFile.type,
     name: dbFile.name,
     size: dbFile.size ?? bytes.byteLength,
-    provenance: params.provenance,
   })
 }
 
