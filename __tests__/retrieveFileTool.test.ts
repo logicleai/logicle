@@ -116,6 +116,7 @@ describe('retrieve-file read_file', () => {
           name: 'image.png',
           mimetype: 'image/png',
           size: 3,
+          uiHidden: true,
         },
       ],
     })
