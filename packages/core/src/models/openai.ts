@@ -195,6 +195,7 @@ export const o3DeepResearchModel: LlmModel = {
     vision: true, // Deep Research can analyze images/PDFs it finds or that you attach
     function_calling: true, // uses Responses API "tools" (web_search_preview, code_interpreter, mcp)
     knowledge: false,
+    web_search: true,
     supportedMedia: ['text/html', 'application/pdf', 'image/png', 'image/jpeg'],
   },
   supportedReasoningEfforts: ['low', 'medium', 'high'],
