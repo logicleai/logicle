@@ -104,7 +104,7 @@ export function createLanguageModelBasic(
         return openai
           .createOpenAI({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            baseURL: params.endPoint,
+            baseURL: `${params.endPoint}/openai/v1`,
             headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
             fetch,
           })
