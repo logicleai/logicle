@@ -140,7 +140,7 @@
   "changed-fields-unavailable": "Il dettaglio dei campi non è disponibile per questa bozza.",
   "chat": "Chat",
   "hidden-assistant": "Nascosto",
-  "visible-assistant": "Visibile",
+  "visible-assistant": "Visibile nella pagina di ricerca",
   "hidden-assistant-description": "Nasconde questo assistente dal selettore principale, mantenendolo disponibile in I miei assistenti, amministrazione, chat dirette e selezione dei sotto-assistenti.",
   "chat-is-already-shared": "La conversazione è condivisa",
   "chat-response-failure": "Si è verificato un errore durante la ricezione della risposta",
