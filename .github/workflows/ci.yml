@@ -122,6 +122,26 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        db:
+          - sqlite
+          - postgres
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: logicle
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U admin -d logicle"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -178,11 +198,17 @@ jobs:
           set -euo pipefail
           trap 'status=$?; if [ "$status" -ne 0 ]; then echo "Smoke test failed; dumping container logs"; docker logs logicle-smoke || true; fi' EXIT
 
+          if [ "${{ matrix.db }}" = "postgres" ]; then
+            DATABASE_URL="postgresql://admin:admin@127.0.0.1:5432/logicle"
+          else
+            DATABASE_URL="file:///data/sqlite/logicle.sqlite"
+          fi
+
           docker run -d \
             --name logicle-smoke \
             -p 3000:3000 \
             -e APP_URL=http://localhost:3000 \
-            -e DATABASE_URL=file:///data/sqlite/logicle.sqlite \
+            -e DATABASE_URL="${DATABASE_URL}" \
             -e FILE_STORAGE_ENCRYPTION_ENABLE=1 \
             -e FILE_STORAGE_LOCATION=/data/files \
             "${SMOKE_IMAGE}"
@@ -206,10 +232,12 @@ jobs:
           node dist-scripts/smoke.js "http://127.0.0.1:3000"
 
       - name: Run integration baseline checks (main/dispatch)
-        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+        if: (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && matrix.db == 'sqlite'
         run: |
           set -euo pipefail
           trap 'status=$?; if [ "$status" -ne 0 ]; then echo "Baseline test failed; dumping container logs"; docker logs logicle-smoke || true; fi' EXIT
+
+          DATABASE_URL=file:///data/sqlite/logicle.sqlite
 
           docker rm -f logicle-smoke || true
 
@@ -217,7 +245,7 @@ jobs:
             --name logicle-smoke \
             -p 3000:3000 \
             -e APP_URL=http://localhost:3000 \
-            -e DATABASE_URL=file:///data/sqlite/logicle.sqlite \
+            -e DATABASE_URL="${DATABASE_URL}" \
             -e FILE_STORAGE_ENCRYPTION_ENABLE=1 \
             -e FILE_STORAGE_LOCATION=/data/files \
             "${SMOKE_IMAGE}"
