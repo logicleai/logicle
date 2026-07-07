@@ -41,6 +41,73 @@ function cookieHeader() {
   return [...cookieJar.entries()].map(([k, v]) => `${k}=${v}`).join('; ')
 }
 
+function createSession() {
+  const sessionCookies = new Map<string, string>()
+
+  function setCookiesFromResponse(headers: Headers) {
+    const values =
+      typeof (headers as Headers & { getSetCookie?: () => string[] }).getSetCookie === 'function'
+        ? (headers as Headers & { getSetCookie: () => string[] }).getSetCookie()
+        : headers.get('set-cookie')
+          ? [headers.get('set-cookie') as string]
+          : []
+
+    for (const raw of values) {
+      if (!raw) continue
+      const first = raw.split(';', 1)[0]
+      const idx = first.indexOf('=')
+      if (idx <= 0) continue
+      const name = first.slice(0, idx).trim()
+      const value = first.slice(idx + 1).trim()
+      sessionCookies.set(name, value)
+    }
+  }
+
+  function cookieHeader() {
+    return [...sessionCookies.entries()].map(([k, v]) => `${k}=${v}`).join('; ')
+  }
+
+  async function request(method: string, path: string, opts: RequestOptions = {}) {
+    const {
+      expectedStatus = 200,
+      json,
+      body,
+      headers = {},
+      includeCookies = true,
+      allowStatus = null,
+    } = opts
+    const allHeaders: Record<string, string> = { ...headers }
+    if (includeCookies && sessionCookies.size > 0) {
+      allHeaders.cookie = cookieHeader()
+    }
+    let payload = body
+    if (json !== undefined) {
+      payload = JSON.stringify(json)
+    }
+
+    const res = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers: allHeaders,
+      body: payload,
+    })
+    setCookiesFromResponse(res.headers)
+    const text = await res.text()
+
+    if (allowStatus?.includes(res.status)) {
+      return { res, text }
+    }
+
+    if (res.status !== expectedStatus) {
+      throw new Error(
+        `Request failed: ${method} ${path} -> ${res.status}, expected ${expectedStatus}\n${text}`
+      )
+    }
+    return { res, text }
+  }
+
+  return { request }
+}
+
 type RequestOptions = {
   expectedStatus?: number
   json?: unknown
@@ -291,6 +358,11 @@ async function checkRegisteredSatelliteConnect(runId: string) {
 }
 
 async function main() {
+  const adminSession = createSession()
+  const userSession = createSession()
+  const requestAdmin = adminSession.request
+  const requestUser = userSession.request
+
   console.log('Smoke: health endpoint')
   const health = await request('GET', '/api/health', { expectedStatus: 200 })
   if (!health.text.includes('"status":"ok"')) {
@@ -313,19 +385,31 @@ async function main() {
   const password = 'SmokePassw0rd!'
 
   console.log('Smoke: signup + login')
-  await request('POST', '/api/auth/join', {
+  await requestUser('POST', '/api/auth/join', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: { name: 'Smoke User', email, password },
   })
-  await request('POST', '/api/auth/login', {
+  await requestUser('POST', '/api/auth/login', {
     expectedStatus: 204,
     headers: jsonHeaders,
     json: { email, password },
   })
+  const adminEmail = `smoke-admin-${runId}@example.com`
+  const adminPassword = 'SmokePassw0rd!'
+  await requestAdmin('POST', '/api/auth/join', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: { name: 'Smoke Admin', email: adminEmail, password: adminPassword },
+  })
+  await requestAdmin('POST', '/api/auth/login', {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: { email: adminEmail, password: adminPassword },
+  })
 
   console.log('Smoke: authenticated profile read')
-  const profile = await request('GET', '/api/me/profile', {
+  const profile = await requestUser('GET', '/api/me/profile', {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
@@ -335,29 +419,99 @@ async function main() {
   }
   const owner = { ownerType: 'USER', ownerId: profileJson.id }
 
+  console.log('Smoke: user profile patch covers image + properties')
+  await requestUser('PATCH', '/api/me/profile', {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: {
+      image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
+      properties: {
+        [`smoke-${runId}`]: `value-${runId}`,
+      },
+    },
+  })
+
   console.log('Smoke: CRUD baseline with folders')
-  const folderCreated = await request('POST', '/api/me/folders', {
+  const folderCreated = await requestUser('POST', '/api/me/folders', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: { name: `Smoke Folder ${runId}` },
   })
   const folderJson = parseJson(folderCreated.text, '/api/me/folders POST') as { id: string }
-  await request('GET', `/api/me/folders/${folderJson.id}`, {
+  await requestUser('GET', `/api/me/folders/${folderJson.id}`, {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
-  await request('PATCH', `/api/me/folders/${folderJson.id}`, {
+  await requestUser('PATCH', `/api/me/folders/${folderJson.id}`, {
     expectedStatus: 204,
     headers: jsonHeaders,
     json: { name: `Smoke Folder Updated ${runId}` },
   })
-  await request('DELETE', `/api/me/folders/${folderJson.id}`, {
-    expectedStatus: 204,
+
+  console.log('Smoke: workspace and membership endpoints')
+  const workspaceCreated = await requestUser('POST', '/api/workspaces', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: { name: `Smoke Workspace ${runId}` },
+  })
+  const workspaceJson = parseJson(workspaceCreated.text, '/api/workspaces POST') as {
+    id: string
+    name: string
+  }
+  await requestUser('GET', `/api/workspaces/${workspaceJson.id}`, {
+    expectedStatus: 200,
     headers: sameOriginHeaders,
   })
+  await requestUser('PATCH', `/api/workspaces/${workspaceJson.id}`, {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: { name: `Smoke Workspace Updated ${runId}` },
+  })
+  const workspaceMembers = await requestUser('GET', `/api/workspaces/${workspaceJson.id}/members`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  if (!workspaceMembers.text.includes(profileJson.id)) {
+    throw new Error(`Workspace members did not include the creator: ${workspaceMembers.text}`)
+  }
+
+  console.log('Smoke: admin tool CRUD and workspace sharing')
+  const toolCreated = await requestAdmin('POST', '/api/tools', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      type: 'dummy',
+      name: `Smoke Tool ${runId}`,
+      description: 'Smoke tool',
+      configuration: {},
+      tags: ['smoke'],
+      icon: null,
+      sharing: { type: 'workspace', workspaces: [workspaceJson.id] },
+      promptFragment: 'smoke',
+    },
+  })
+  const toolJson = parseJson(toolCreated.text, '/api/tools POST') as { id: string }
+  await requestAdmin('GET', `/api/tools/${toolJson.id}`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  await requestAdmin('PATCH', `/api/tools/${toolJson.id}`, {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: {
+      description: `Smoke tool updated ${runId}`,
+    },
+  })
+  const visibleTools = await requestUser('GET', '/api/me/tools', {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  if (!visibleTools.text.includes(toolJson.id)) {
+    throw new Error(`User tools did not include the shared tool: ${visibleTools.text}`)
+  }
 
   console.log('Smoke: file upload baseline')
-  const fileCreated = await request('POST', '/api/files', {
+  const fileCreated = await requestUser('POST', '/api/files', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: {
@@ -368,12 +522,12 @@ async function main() {
     },
   })
   const fileId = (parseJson(fileCreated.text, '/api/files POST') as { id: string }).id
-  await request('PUT', `/api/files/${fileId}/content`, {
+  await requestUser('PUT', `/api/files/${fileId}/content`, {
     expectedStatus: 204,
     headers: { 'content-type': 'text/plain', ...sameOriginHeaders },
     body: 'hello world',
   })
-  const fileContent = await request('GET', `/api/files/${fileId}/content`, {
+  const fileContent = await requestUser('GET', `/api/files/${fileId}/content`, {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
@@ -382,7 +536,7 @@ async function main() {
   }
 
   console.log('Smoke: AEAD file download supports HTTP range requests')
-  const rangedContent = await request('GET', `/api/files/${fileId}/content`, {
+  const rangedContent = await requestUser('GET', `/api/files/${fileId}/content`, {
     expectedStatus: 206,
     headers: {
       ...sameOriginHeaders,
@@ -405,7 +559,7 @@ async function main() {
 
   console.log('Smoke: pdf upload analysis preview')
   const pdfBuffer = await readFile(new URL('./data/basic-text.pdf', import.meta.url))
-  const pdfCreated = await request('POST', '/api/files', {
+  const pdfCreated = await requestUser('POST', '/api/files', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: {
@@ -416,7 +570,7 @@ async function main() {
     },
   })
   const pdfFileId = (parseJson(pdfCreated.text, '/api/files POST pdf') as { id: string }).id
-  await request('PUT', `/api/files/${pdfFileId}/content`, {
+  await requestUser('PUT', `/api/files/${pdfFileId}/content`, {
     expectedStatus: 204,
     headers: { 'content-type': 'application/pdf', ...sameOriginHeaders },
     body: new Uint8Array(pdfBuffer),
@@ -429,8 +583,20 @@ async function main() {
     throw new Error(`Invalid PDF page count: ${JSON.stringify(pdfAnalysis)}`)
   }
 
+  const pdfDetails = await requestUser('GET', `/api/files/${pdfFileId}`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  const pdfDetailsJson = parseJson(pdfDetails.text, `/api/files/${pdfFileId}`) as {
+    id: string
+    name: string
+    type: string
+    size: number
+    createdAt?: string
+  }
+
   console.log('Smoke: setup backend + assistant + conversation')
-  const backendCreated = await request('POST', '/api/backends', {
+  const backendCreated = await requestUser('POST', '/api/backends', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: {
@@ -441,7 +607,7 @@ async function main() {
   })
   const backendId = (parseJson(backendCreated.text, '/api/backends POST') as { id: string }).id
 
-  const assistantCreated = await request('POST', '/api/assistants', {
+  const assistantCreated = await requestUser('POST', '/api/assistants', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: {
@@ -456,15 +622,33 @@ async function main() {
       tags: [],
       prompts: [],
       tools: [],
-      files: [],
+      files: [
+        {
+          id: pdfDetailsJson.id,
+          name: pdfDetailsJson.name,
+          type: pdfDetailsJson.type,
+          size: pdfDetailsJson.size,
+          createdAt: pdfDetailsJson.createdAt,
+        },
+      ],
       iconUri: null,
     },
   })
   const assistantId = (
     parseJson(assistantCreated.text, '/api/assistants POST') as { assistantId: string }
   ).assistantId
+  await requestUser('POST', `/api/assistants/${assistantId}/sharing`, {
+    expectedStatus: 200,
+    headers: jsonHeaders,
+    json: [{ type: 'workspace', workspaceId: workspaceJson.id, workspaceName: workspaceJson.name }],
+  })
+  await requestUser('POST', `/api/assistants/${assistantId}/publish`, {
+    expectedStatus: 200,
+    headers: jsonHeaders,
+    json: { versionName: `Smoke Publish ${runId}` },
+  })
 
-  const conversationCreated = await request('POST', '/api/conversations', {
+  const conversationCreated = await requestUser('POST', '/api/conversations', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: {
@@ -475,16 +659,26 @@ async function main() {
   const conversationId = (
     parseJson(conversationCreated.text, '/api/conversations POST') as { id: string }
   ).id
+  const chatMessageId = `msg-${runId}`
+  await requestUser('POST', `/api/me/folders/${folderJson.id}`, {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: { conversationId },
+  })
+  await requestUser('GET', `/api/me/folders/${folderJson.id}/conversations`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
 
   console.log('Smoke: chat SSE endpoint returns stream')
-  const chat = await request('POST', '/api/chat', {
+  const chat = await requestUser('POST', '/api/chat', {
     expectedStatus: 200,
     headers: {
       ...jsonHeaders,
       accept: 'text/event-stream',
     },
     json: {
-      id: `msg-${runId}`,
+      id: chatMessageId,
       conversationId,
       parent: null,
       role: 'user',
@@ -498,6 +692,121 @@ async function main() {
   if (!chat.text.includes('"type":"message"')) {
     throw new Error('Chat response did not contain message chunk')
   }
+
+  console.log('Smoke: conversation share and feedback')
+  const shareCreated = await requestUser('POST', `/api/conversations/${conversationId}/share`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  const shareJson = parseJson(shareCreated.text, `/api/conversations/${conversationId}/share`) as {
+    id: string
+    lastMessageId: string
+  }
+  if (!shareJson.lastMessageId) {
+    throw new Error('Conversation share missing lastMessageId')
+  }
+  await requestUser('PATCH', `/api/conversations/${conversationId}/share`, {
+    expectedStatus: 204,
+    headers: sameOriginHeaders,
+  })
+  await requestUser('PUT', `/api/conversations/${conversationId}/messages/${chatMessageId}/feedback`, {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: { feedback: 'like', comment: 'smoke' },
+  })
+  await requestUser('GET', `/api/conversations/${conversationId}/messages/${chatMessageId}/feedback`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+
+  console.log('Smoke: prompt, API key, secret, and satellite CRUD')
+  const promptCreated = await requestUser('POST', '/api/me/prompts', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      name: `Smoke Prompt ${runId}`,
+      description: 'Smoke prompt',
+      content: 'hello',
+    },
+  })
+  const promptJson = parseJson(promptCreated.text, '/api/me/prompts POST') as { id: string }
+  await requestUser('PUT', `/api/me/prompts/${promptJson.id}`, {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: {
+      name: `Smoke Prompt Updated ${runId}`,
+      description: 'Smoke prompt updated',
+      content: 'hello again',
+    },
+  })
+  await requestUser('DELETE', `/api/me/prompts/${promptJson.id}`, {
+    expectedStatus: 204,
+    headers: sameOriginHeaders,
+  })
+
+  const apiKeyCreated = await requestUser('POST', '/api/me/apikeys', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      description: `Smoke API key ${runId}`,
+      scope: ['chat:read'],
+      expiresAt: null,
+    },
+  })
+  const apiKeyJson = parseJson(apiKeyCreated.text, '/api/me/apikeys POST') as { id: string }
+  await requestUser('DELETE', `/api/me/apikeys/${apiKeyJson.id}`, {
+    expectedStatus: 204,
+    headers: sameOriginHeaders,
+  })
+
+  const secretCreated = await requestUser('POST', '/api/me/secrets', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      context: `smoke-${runId}`,
+      type: 'backend-credentials',
+      label: `Smoke Secret ${runId}`,
+      value: 'secret',
+    },
+  })
+  const secretJson = parseJson(secretCreated.text, '/api/me/secrets POST') as { id: string }
+  await requestUser('GET', '/api/me/secrets', {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  await requestUser('DELETE', `/api/me/secrets/${secretJson.id}`, {
+    expectedStatus: 204,
+    headers: sameOriginHeaders,
+  })
+
+  const satelliteCreated = await requestUser('POST', '/api/me/satellites', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: { name: `Smoke Satellite ${runId}` },
+  })
+  const satelliteJson = parseJson(satelliteCreated.text, '/api/me/satellites POST') as { id: string }
+  await requestUser('GET', `/api/me/satellites/${satelliteJson.id}`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  await requestUser('PATCH', `/api/me/satellites/${satelliteJson.id}`, {
+    expectedStatus: 200,
+    headers: jsonHeaders,
+    json: { name: `Smoke Satellite Updated ${runId}` },
+  })
+  await requestUser('DELETE', `/api/me/satellites/${satelliteJson.id}`, {
+    expectedStatus: 204,
+    headers: sameOriginHeaders,
+  })
+  await requestAdmin('DELETE', `/api/tools/${toolJson.id}`, {
+    expectedStatus: 204,
+    headers: sameOriginHeaders,
+  })
+
+  await requestUser('DELETE', `/api/me/folders/${folderJson.id}`, {
+    expectedStatus: 204,
+    headers: sameOriginHeaders,
+  })
 
   console.log('Smoke: websocket /api/rpc handshake')
   await checkWebSocketHandshake()
