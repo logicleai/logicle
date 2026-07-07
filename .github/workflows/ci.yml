@@ -122,12 +122,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        db:
-          - sqlite
-          - postgres
     services:
       postgres:
         image: postgres:16
@@ -196,44 +190,52 @@ jobs:
       - name: Run smoke and baseline integration checks
         run: |
           set -euo pipefail
-          trap 'status=$?; if [ "$status" -ne 0 ]; then echo "Smoke test failed; dumping container logs"; docker logs logicle-smoke || true; fi' EXIT
 
-          if [ "${{ matrix.db }}" = "postgres" ]; then
-            DATABASE_URL="postgresql://admin:admin@host.docker.internal:5432/logicle"
-          else
-            DATABASE_URL="file:///data/sqlite/logicle.sqlite"
-          fi
+          run_smoke() {
+            local name="$1"
+            local database_url="$2"
 
-          docker run -d \
-            --name logicle-smoke \
-            --add-host=host.docker.internal:host-gateway \
-            -p 3000:3000 \
-            -e APP_URL=http://localhost:3000 \
-            -e DATABASE_URL="${DATABASE_URL}" \
-            -e FILE_STORAGE_ENCRYPTION_ENABLE=1 \
-            -e FILE_STORAGE_LOCATION=/data/files \
-            "${SMOKE_IMAGE}"
+            echo "Running smoke against ${name}"
+            docker rm -f logicle-smoke || true
 
-          echo "Waiting for app startup..."
-          ready=0
-          for i in $(seq 1 20); do
-            if curl -fsS http://localhost:3000/api/health >/dev/null; then
-              ready=1
-              break
+            docker run -d \
+              --name logicle-smoke \
+              --add-host=host.docker.internal:host-gateway \
+              -p 3000:3000 \
+              -e APP_URL=http://localhost:3000 \
+              -e DATABASE_URL="${database_url}" \
+              -e FILE_STORAGE_ENCRYPTION_ENABLE=1 \
+              -e FILE_STORAGE_LOCATION=/data/files \
+              "${SMOKE_IMAGE}"
+
+            echo "Waiting for app startup (${name})..."
+            ready=0
+            for i in $(seq 1 20); do
+              if curl -fsS http://localhost:3000/api/health >/dev/null; then
+                ready=1
+                break
+              fi
+              sleep 1
+            done
+
+            if [ "${ready}" -ne 1 ]; then
+              echo "Smoke test failed: app did not become ready within 20 seconds (${name})"
+              docker logs logicle-smoke || true
+              exit 1
             fi
-            sleep 1
-          done
 
-          if [ "${ready}" -ne 1 ]; then
-            echo "Smoke test failed: app did not become ready within 20 seconds"
-            docker logs logicle-smoke || true
-            exit 1
-          fi
+            if ! node dist-scripts/smoke.js "http://127.0.0.1:3000"; then
+              echo "Smoke test failed (${name}); dumping container logs"
+              docker logs logicle-smoke || true
+              exit 1
+            fi
+          }
 
-          node dist-scripts/smoke.js "http://127.0.0.1:3000"
+          run_smoke "sqlite" "file:///data/sqlite/logicle.sqlite"
+          run_smoke "postgres" "postgresql://admin:admin@host.docker.internal:5432/logicle"
 
       - name: Run integration baseline checks (main/dispatch)
-        if: (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && matrix.db == 'sqlite'
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
           trap 'status=$?; if [ "$status" -ne 0 ]; then echo "Baseline test failed; dumping container logs"; docker logs logicle-smoke || true; fi' EXIT
