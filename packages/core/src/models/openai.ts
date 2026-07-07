@@ -311,7 +311,7 @@ export const gpt5NanoModel: LlmModel = {
 }
 
 export const gpt5ChatModel: LlmModel = {
-  id: 'gpt-5-chat-latest',
+  id: 'gpt-5-chat',
   model: 'gpt-5-chat-latest',
   name: 'GPT-5 Chat',
   description: 'A smarter, more conversational ChatGPT',
@@ -347,7 +347,7 @@ export const gpt51Model: LlmModel = {
 }
 
 export const gpt51ChatModel: LlmModel = {
-  id: 'gpt-5.1-chat-latest',
+  id: 'gpt-5.1-chat',
   model: 'gpt-5.1-chat-latest',
   name: 'GPT-5.1 Chat',
   description: 'A smarter, more conversational ChatGPT',
@@ -401,7 +401,7 @@ export const gpt52ProModel: LlmModel = {
 }
 
 export const gpt52ChatModel: LlmModel = {
-  id: 'gpt-5.2-chat-latest',
+  id: 'gpt-5.2-chat',
   model: 'gpt-5.2-chat-latest',
   name: 'GPT-5.2 Chat',
   description: 'A smarter, more conversational ChatGPT',
@@ -471,9 +471,9 @@ export const gpt54Model: LlmModel = {
   defaultReasoning: 'low',
 }
 
-export const gptChatLatest: LlmModel = {
+export const gptChatLatestModel: LlmModel = {
   ...gpt52ChatModel,
-  id: 'gpt-chat-latest',
+  id: 'chatgpt-5-latest',
   name: 'Gpt chat latest (5.2)',
   tags: ['latest'],
 }
@@ -487,7 +487,7 @@ export const gptLatest: LlmModel = {
 
 export const openaiModels: LlmModel[] = [
   gptLatest,
-  gptChatLatest,
+  gptChatLatestModel,
   gpt35Model,
   gpt41Model,
   gpt41MiniModel,

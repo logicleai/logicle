@@ -33,7 +33,7 @@ import {
   o3DeepResearchModel,
   gptLatest,
   gpt51Model,
-  gpt5ChatModel,
+  gptChatLatestModel,
   gpt52Model,
   gpt54Model,
 } from './openai'
@@ -54,7 +54,7 @@ import {
 } from './vertex'
 
 export const logicleModels: LlmModel[] = [
-  { ...gptLatest, id: 'gpt-5-latest' },
+  gptLatest,
   gpt35Model,
   gpt4oModel,
   gpt4oMiniModel,
@@ -65,7 +65,7 @@ export const logicleModels: LlmModel[] = [
   gpt51Model,
   gpt52Model,
   gpt54Model,
-  { ...gpt5ChatModel, id: 'chatgpt-5-latest', name: 'GPT 5 Chat', model: 'chatgpt-5-latest' },
+  gptChatLatestModel,
   o1Model,
   o1MiniModel,
   o3Model,
