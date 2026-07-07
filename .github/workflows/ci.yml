@@ -199,13 +199,14 @@ jobs:
           trap 'status=$?; if [ "$status" -ne 0 ]; then echo "Smoke test failed; dumping container logs"; docker logs logicle-smoke || true; fi' EXIT
 
           if [ "${{ matrix.db }}" = "postgres" ]; then
-            DATABASE_URL="postgresql://admin:admin@127.0.0.1:5432/logicle"
+            DATABASE_URL="postgresql://admin:admin@host.docker.internal:5432/logicle"
           else
             DATABASE_URL="file:///data/sqlite/logicle.sqlite"
           fi
 
           docker run -d \
             --name logicle-smoke \
+            --add-host=host.docker.internal:host-gateway \
             -p 3000:3000 \
             -e APP_URL=http://localhost:3000 \
             -e DATABASE_URL="${DATABASE_URL}" \

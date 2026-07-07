@@ -45,6 +45,11 @@ export async function up(db: Kysely<any>, dialect: 'sqlite' | 'postgresql'): Pro
 
     await sql`
       ALTER TABLE ${sql.table(table)}
+      ALTER COLUMN ${sql.ref(column)} DROP DEFAULT
+    `.execute(db)
+
+    await sql`
+      ALTER TABLE ${sql.table(table)}
       ALTER COLUMN ${sql.ref(column)} TYPE timestamp
       USING ${expression}
     `.execute(db)
