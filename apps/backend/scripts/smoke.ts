@@ -165,6 +165,7 @@ function parseJson(text: string, label: string) {
 
 async function waitForFileAnalysis(
   fileId: string,
+  sessionRequest: ReturnType<typeof createSession>['request'],
   opts: { timeoutMs?: number; pollMs?: number } = {}
 ) {
   const timeoutMs = opts.timeoutMs ?? 30000
@@ -172,7 +173,7 @@ async function waitForFileAnalysis(
   const deadline = Date.now() + timeoutMs
 
   while (Date.now() < deadline) {
-    const response = await request('GET', `/api/files/${fileId}/analysis`, {
+    const response = await sessionRequest('GET', `/api/files/${fileId}/analysis`, {
       expectedStatus: 200,
       headers: sameOriginHeaders,
     })
@@ -266,15 +267,18 @@ async function checkSatelliteRejectsUnauthenticated() {
  * Create a satellite + API key, connect with the token, send a register message,
  * and verify the hub replies with a `registered` message.
  */
-async function checkRegisteredSatelliteConnect(runId: string) {
-  const satelliteCreated = await request('POST', '/api/me/satellites', {
+async function checkRegisteredSatelliteConnect(
+  runId: string,
+  sessionRequest: ReturnType<typeof createSession>['request']
+) {
+  const satelliteCreated = await sessionRequest('POST', '/api/me/satellites', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: { name: `Smoke Satellite ${runId}` },
   })
   const satelliteId = (parseJson(satelliteCreated.text, '/api/me/satellites POST') as { id: string }).id
 
-  const apiKeyCreated = await request('POST', '/api/me/apikeys', {
+  const apiKeyCreated = await sessionRequest('POST', '/api/me/apikeys', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: {
@@ -329,7 +333,7 @@ async function checkRegisteredSatelliteConnect(runId: string) {
         ws.terminate()
         reject(
           new Error(
-            `Registered satellite: satelliteId mismatch — expected "${satelliteId}", got "${msg.satelliteId}"`
+            `Registered satellite: satelliteId mismatch - expected "${satelliteId}", got "${msg.satelliteId}"`
           )
         )
         return
@@ -351,7 +355,7 @@ async function checkRegisteredSatelliteConnect(runId: string) {
     })
   })
 
-  await request('DELETE', `/api/me/satellites/${satelliteId}`, {
+  await sessionRequest('DELETE', `/api/me/satellites/${satelliteId}`, {
     expectedStatus: 204,
     headers: sameOriginHeaders,
   })
@@ -427,7 +431,8 @@ async function main() {
   if (!profileJson.id) {
     throw new Error('Missing user id in profile response')
   }
-  const owner = { ownerType: 'USER', ownerId: profileJson.id }
+  const userId = profileJson.id
+  const owner = { ownerType: 'USER', ownerId: userId }
 
   console.log('Smoke: user profile patch covers image')
   await requestUser('PATCH', '/api/me/profile', {
@@ -456,7 +461,7 @@ async function main() {
   })
 
   console.log('Smoke: workspace and membership endpoints')
-  const workspaceCreated = await requestUser('POST', '/api/workspaces', {
+  const workspaceCreated = await requestAdmin('POST', '/api/workspaces', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: { name: `Smoke Workspace ${runId}` },
@@ -465,21 +470,26 @@ async function main() {
     id: string
     name: string
   }
-  await requestUser('GET', `/api/workspaces/${workspaceJson.id}`, {
+  await requestAdmin('GET', `/api/workspaces/${workspaceJson.id}`, {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
-  await requestUser('PATCH', `/api/workspaces/${workspaceJson.id}`, {
-    expectedStatus: 204,
+  await requestAdmin('PUT', `/api/workspaces/${workspaceJson.id}`, {
+    expectedStatus: 200,
     headers: jsonHeaders,
     json: { name: `Smoke Workspace Updated ${runId}` },
   })
-  const workspaceMembers = await requestUser('GET', `/api/workspaces/${workspaceJson.id}/members`, {
+  await requestAdmin('POST', `/api/workspaces/${workspaceJson.id}/members`, {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: [{ userId, role: 'MEMBER' }],
+  })
+  const workspaceMembers = await requestAdmin('GET', `/api/workspaces/${workspaceJson.id}/members`, {
     expectedStatus: 200,
     headers: sameOriginHeaders,
   })
-  if (!workspaceMembers.text.includes(profileJson.id)) {
-    throw new Error(`Workspace members did not include the creator: ${workspaceMembers.text}`)
+  if (!workspaceMembers.text.includes(userId)) {
+    throw new Error(`Workspace members did not include the regular user: ${workspaceMembers.text}`)
   }
 
   console.log('Smoke: admin tool CRUD and workspace sharing')
@@ -582,7 +592,7 @@ async function main() {
     headers: { 'content-type': 'application/pdf', ...sameOriginHeaders },
     body: new Uint8Array(pdfBuffer),
   })
-  const pdfAnalysis = await waitForFileAnalysis(pdfFileId)
+  const pdfAnalysis = await waitForFileAnalysis(pdfFileId, requestUser)
   if (pdfAnalysis.status !== 'ready' || pdfAnalysis.payload?.kind !== 'pdf') {
     throw new Error(`Unexpected PDF analysis payload: ${JSON.stringify(pdfAnalysis)}`)
   }
@@ -598,12 +608,12 @@ async function main() {
     id: string
     name: string
     type: string
-    size: number
+    size?: number
     createdAt?: string
   }
 
   console.log('Smoke: setup backend + assistant + conversation')
-  const backendCreated = await requestUser('POST', '/api/backends', {
+  const backendCreated = await requestAdmin('POST', '/api/backends', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: {
@@ -634,7 +644,7 @@ async function main() {
           id: pdfDetailsJson.id,
           name: pdfDetailsJson.name,
           type: pdfDetailsJson.type,
-          size: pdfDetailsJson.size,
+          size: pdfDetailsJson.size ?? pdfBuffer.length,
           createdAt: pdfDetailsJson.createdAt,
         },
       ],
@@ -805,6 +815,13 @@ async function main() {
     expectedStatus: 204,
     headers: sameOriginHeaders,
   })
+  await requestAdmin('PATCH', `/api/tools/${toolJson.id}`, {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: {
+      sharing: { type: 'public' },
+    },
+  })
   await requestAdmin('DELETE', `/api/tools/${toolJson.id}`, {
     expectedStatus: 204,
     headers: sameOriginHeaders,
@@ -822,7 +839,7 @@ async function main() {
   await checkSatelliteRejectsUnauthenticated()
 
   console.log('Smoke: registered satellite connects, registers, and receives registered ack')
-  await checkRegisteredSatelliteConnect(runId)
+  await checkRegisteredSatelliteConnect(runId, requestUser)
 
   const elapsedSec = Math.floor((Date.now() - startedAt) / 1000)
   console.log(`Smoke + baseline integration checks passed in ${elapsedSec}s.`)
