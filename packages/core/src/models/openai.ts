@@ -480,7 +480,7 @@ export const gptChatLatestModel: LlmModel = {
 
 export const gptLatest: LlmModel = {
   ...gpt54Model,
-  id: 'gpt-latest',
+  id: 'gpt-5-latest',
   name: 'Gpt latest (5.4)',
   tags: ['latest'],
 }

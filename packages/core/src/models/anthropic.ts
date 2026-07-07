@@ -14,7 +14,7 @@ export const claudeThinkingBudgetTokens = (reasoning_effort?: ReasoningEffort) =
 }
 
 export const claude3HaikuModel: LlmModel = {
-  id: 'claude-3-haiku-20240307',
+  id: 'claude-3-haiku',
   model: 'claude-3-haiku-20240307',
   name: 'Claude 3 Haiku',
   description: 'Fastest and most compact model for near-instant responsiveness',
@@ -30,7 +30,7 @@ export const claude3HaikuModel: LlmModel = {
 }
 
 export const claude3SonnetModel: LlmModel = {
-  id: 'claude-3-sonnet-20240229',
+  id: 'claude-3-sonnet',
   model: 'claude-3-sonnet-20240229',
   name: 'Claude 3 Sonnet',
   description: 'Balance of intelligence and speed',
