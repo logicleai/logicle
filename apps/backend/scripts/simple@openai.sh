@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$USE_LOGICLECLOUD" == "true" ]]; then
-  API_URL="https://llmproxy.eu.logicle.ai/openai/v1/responses"
+  API_URL="https://llmproxy.eu.logicle.ai/v1/responses"
   AUTH_HEADER="Authorization: Bearer $LOGICLECLOUD_API_KEY"
 else
   API_URL="https://api.openai.com/v1/responses"

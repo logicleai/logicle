@@ -46,7 +46,7 @@ export const claude3SonnetModel: LlmModel = {
 }
 
 export const claude3OpusModel: LlmModel = {
-  id: 'claude-3-opus-latest',
+  id: 'claude-3-opus',
   model: 'claude-3-opus-latest',
   name: 'Claude 3 Opus',
   description: 'Powerful model for highly complex tasks',
@@ -62,7 +62,7 @@ export const claude3OpusModel: LlmModel = {
 }
 
 export const claude35HaikuModel: LlmModel = {
-  id: 'claude-3-5-haiku-latest',
+  id: 'claude-3-5-haiku',
   model: 'claude-3-5-haiku-latest',
   name: 'Claude 3.5 Haiku',
   description: 'Anthropic fastest model',
@@ -81,7 +81,7 @@ export const claude35HaikuModel: LlmModel = {
 }
 
 export const claude35SonnetModel: LlmModel = {
-  id: 'claude-3-5-sonnet-latest',
+  id: 'claude-3-5-sonnet',
   model: 'claude-3-5-sonnet-latest',
   name: 'Claude 3.5 Sonnet',
   description: 'Most intelligent model yet',
@@ -100,7 +100,7 @@ export const claude35SonnetModel: LlmModel = {
 }
 
 export const claude37SonnetModel: LlmModel = {
-  id: 'claude-3-7-sonnet-latest',
+  id: 'claude-3-7-sonnet',
   model: 'claude-3-7-sonnet-latest',
   name: 'Claude 3.7 Sonnet',
   description:
@@ -121,7 +121,7 @@ export const claude37SonnetModel: LlmModel = {
 }
 
 export const claude4SonnetModel: LlmModel = {
-  id: 'claude-sonnet-4-20250514',
+  id: 'claude-sonnet-4',
   model: 'claude-sonnet-4-20250514',
   name: 'Claude 4 Sonnet',
   description:
@@ -142,7 +142,7 @@ export const claude4SonnetModel: LlmModel = {
 }
 
 export const claude4OpusModel: LlmModel = {
-  id: 'claude-opus-4-20250514',
+  id: 'claude-opus-4',
   model: 'claude-opus-4-20250514',
   name: 'Claude 4 Opus',
   description:

@@ -113,7 +113,7 @@ export function createLanguageModelBasic(
         return anthropic
           .createAnthropic({
             apiKey: params.provisioned ? expandEnv(params.apiKey) : params.apiKey,
-            baseURL: `${params.endPoint}/anthropic/v1`,
+            baseURL: `${params.endPoint}/v1`,
             headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
             fetch,
           })
