@@ -54,7 +54,7 @@
     "@ai-sdk/google": "^3.0.67",
     "@ai-sdk/google-vertex": "4.0.121",
     "@ai-sdk/openai": "3.0.0",
-    "@ai-sdk/perplexity": "3.0.0",
+    "@ai-sdk/perplexity": "3.0.43",
     "@ai-sdk/provider": "3.0.10",
     "@ai-sdk/provider-utils": "4.0.26",
     "@apidevtools/openapi-schemas": "^2.1.0",
