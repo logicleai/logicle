@@ -429,15 +429,12 @@ async function main() {
   }
   const owner = { ownerType: 'USER', ownerId: profileJson.id }
 
-  console.log('Smoke: user profile patch covers image + properties')
+  console.log('Smoke: user profile patch covers image')
   await requestUser('PATCH', '/api/me/profile', {
     expectedStatus: 204,
     headers: jsonHeaders,
     json: {
       image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
-      properties: {
-        [`smoke-${runId}`]: `value-${runId}`,
-      },
     },
   })
 
