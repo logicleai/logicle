@@ -383,20 +383,10 @@ async function main() {
   const runId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`
   const email = `smoke-${runId}@example.com`
   const password = 'SmokePassw0rd!'
-
-  console.log('Smoke: signup + login')
-  await requestUser('POST', '/api/auth/join', {
-    expectedStatus: 201,
-    headers: jsonHeaders,
-    json: { name: 'Smoke User', email, password },
-  })
-  await requestUser('POST', '/api/auth/login', {
-    expectedStatus: 204,
-    headers: jsonHeaders,
-    json: { email, password },
-  })
   const adminEmail = `smoke-admin-${runId}@example.com`
   const adminPassword = 'SmokePassw0rd!'
+
+  console.log('Smoke: create admin and regular user sessions')
   await requestAdmin('POST', '/api/auth/join', {
     expectedStatus: 201,
     headers: jsonHeaders,
@@ -406,6 +396,26 @@ async function main() {
     expectedStatus: 204,
     headers: jsonHeaders,
     json: { email: adminEmail, password: adminPassword },
+  })
+
+  await requestAdmin('POST', '/api/users', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      name: 'Smoke User',
+      email,
+      password,
+      role: 'USER',
+      ssoUser: false,
+      preferences: '{}',
+      image: null,
+      properties: {},
+    },
+  })
+  await requestUser('POST', '/api/auth/login', {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: { email, password },
   })
 
   console.log('Smoke: authenticated profile read')
