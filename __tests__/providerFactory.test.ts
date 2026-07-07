@@ -5,15 +5,15 @@ const {
   mockCreateAnthropic,
   mockCreateGoogleGenerativeAI,
   mockCreateLitellm,
-  mockCreateVertex,
   mockCreatePerplexity,
+  mockCreateVertex,
 } = vi.hoisted(() => ({
   mockCreateOpenAI: vi.fn(),
   mockCreateAnthropic: vi.fn(),
   mockCreateGoogleGenerativeAI: vi.fn(),
   mockCreateLitellm: vi.fn(),
-  mockCreateVertex: vi.fn(),
   mockCreatePerplexity: vi.fn(),
+  mockCreateVertex: vi.fn(),
 }))
 
 vi.mock('@ai-sdk/openai', () => ({ createOpenAI: mockCreateOpenAI }))
@@ -44,15 +44,15 @@ describe('createLanguageModelBasic', () => {
     mockCreateAnthropic.mockReset()
     mockCreateGoogleGenerativeAI.mockReset()
     mockCreateLitellm.mockReset()
-    mockCreateVertex.mockReset()
     mockCreatePerplexity.mockReset()
+    mockCreateVertex.mockReset()
 
     mockCreateOpenAI.mockReturnValue({ responses: vi.fn() })
     mockCreateAnthropic.mockReturnValue({ languageModel: vi.fn() })
     mockCreateGoogleGenerativeAI.mockReturnValue({ languageModel: vi.fn() })
     mockCreateLitellm.mockReturnValue({ languageModel: vi.fn() })
-    mockCreateVertex.mockReturnValue({ languageModel: vi.fn() })
     mockCreatePerplexity.mockReturnValue({ languageModel: vi.fn() })
+    mockCreateVertex.mockReturnValue({ languageModel: vi.fn() })
   })
 
   test('adds x-litellm-customer-id on logiclecloud OpenAI requests', () => {
@@ -108,6 +108,26 @@ describe('createLanguageModelBasic', () => {
 
     expect(mockCreateGoogleGenerativeAI).toHaveBeenCalledWith(
       expect.objectContaining({
+        headers: { 'x-litellm-customer-id': 'customer-1' },
+      })
+    )
+  })
+
+  test('adds x-litellm-customer-id on logiclecloud Perplexity requests', () => {
+    createLanguageModelBasic(
+      {
+        providerType: 'logiclecloud',
+        apiKey: 'api-key',
+        endPoint: 'https://proxy.example.com',
+        provisioned: false,
+      } as any,
+      { ...baseModel, owned_by: 'perplexity' },
+      { user: 'customer-1' }
+    )
+
+    expect(mockCreateLitellm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseURL: 'https://proxy.example.com',
         headers: { 'x-litellm-customer-id': 'customer-1' },
       })
     )

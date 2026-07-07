@@ -554,6 +554,15 @@ describe('ChatAssistant.createLanguageModelBasic', () => {
     expect(mockCreateGoogleGenerativeAI).toHaveBeenCalled()
   })
 
+  test('creates logiclecloud + perplexity-owned model using LiteLLM', () => {
+    const config: ProviderConfig = { providerType: 'logiclecloud', apiKey: 'key', endPoint: 'http://llm', provisioned: false } as any
+    const model = makeFakeLlmModel({ model: 'sonar-pro', owned_by: 'perplexity' })
+    ChatAssistant.createLanguageModelBasic(config, model)
+    expect(mockCreateLitellm).toHaveBeenCalledWith(
+      expect.objectContaining({ baseURL: 'http://llm' })
+    )
+  })
+
   test('creates logiclecloud + other model using LiteLLM', () => {
     const config: ProviderConfig = { providerType: 'logiclecloud', apiKey: 'key', endPoint: 'http://llm', provisioned: false } as any
     const model = makeFakeLlmModel({ model: 'some-model', owned_by: 'litellm' as any })
