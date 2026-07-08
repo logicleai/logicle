@@ -346,12 +346,12 @@ const convertV3ToV4 = (msg: MessageV3): dto.Message => {
 export const dtoMessageFromDbMessage = (m: schema.Message): dto.Message => {
   if (m.version === 4) {
     const msg = {
+      ...JSON.parse(m.content),
       id: m.id,
       conversationId: m.conversationId,
       parent: m.parent,
       role: m.role,
       sentAt: m.sentAt,
-      ...JSON.parse(m.content),
     } satisfies dto.Message
     return msg
   }

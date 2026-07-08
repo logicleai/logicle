@@ -48,6 +48,7 @@ import * as m202606031ToolEnabled from './migrations/20260603.1-tool-enabled'
 import * as m20260622FileBlobEncryptionAlgorithm from './migrations/20260622-file_blob_encryption_algorithm'
 import * as m20260623UserTokenWindow from './migrations/20260623-user-token-window'
 import * as m20260705ContextCompression from './migrations/20260705-context-compression'
+import * as m20260708PostgresTimestampColumns from './migrations/20260708-postgres_timestamp_columns'
 
 import type { MigrationWithDialect } from './migrations'
 
@@ -100,4 +101,5 @@ export const migrationModules: Record<string, MigrationWithDialect> = {
   '20260622-file_blob_encryption_algorithm': m20260622FileBlobEncryptionAlgorithm,
   '20260623-user-token-window': m20260623UserTokenWindow,
   '20260705-context-compression': m20260705ContextCompression,
+  '20260708-postgres_timestamp_columns': m20260708PostgresTimestampColumns,
 }

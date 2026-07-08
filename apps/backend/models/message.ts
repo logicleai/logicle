@@ -4,6 +4,8 @@ import * as schema from '@/db/schema'
 import * as dto from '@/types/dto'
 
 export const dtoMessageToDbMessage = (message: dto.Message): schema.Message => {
+  const sentAt = message.sentAt ?? new Date().toISOString()
+  message.sentAt = sentAt
   const content = JSON.stringify({
     ...message,
     id: undefined,
@@ -12,7 +14,6 @@ export const dtoMessageToDbMessage = (message: dto.Message): schema.Message => {
     role: undefined,
     sentAt: undefined,
   })
-  const sentAt = new Date().toISOString()
   return {
     content,
     id: message.id,
@@ -25,6 +26,8 @@ export const dtoMessageToDbMessage = (message: dto.Message): schema.Message => {
 }
 
 export const saveMessage = async (message: dto.Message) => {
+  const sentAt = message.sentAt ?? new Date().toISOString()
+  message.sentAt = sentAt
   const content = JSON.stringify({
     ...message,
     id: undefined,
@@ -33,7 +36,6 @@ export const saveMessage = async (message: dto.Message) => {
     role: undefined,
     sentAt: undefined,
   })
-  const sentAt = new Date().toISOString()
   const mapped = {
     content,
     id: message.id,
