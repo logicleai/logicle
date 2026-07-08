@@ -163,6 +163,13 @@ function parseJson(text: string, label: string) {
   }
 }
 
+function parseSseData(text: string, label: string) {
+  return text
+    .split('\n')
+    .filter((line) => line.startsWith('data: '))
+    .map((line) => parseJson(line.slice('data: '.length), label))
+}
+
 async function waitForFileAnalysis(
   fileId: string,
   sessionRequest: ReturnType<typeof createSession>['request'],
@@ -617,9 +624,8 @@ async function main() {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: {
-      providerType: 'openai',
+      providerType: 'mock',
       name: `Smoke Backend ${runId}`,
-      apiKey: 'user_provided',
     },
   })
   const backendId = (parseJson(backendCreated.text, '/api/backends POST') as { id: string }).id
@@ -630,7 +636,7 @@ async function main() {
     json: {
       backendId,
       description: 'Smoke assistant',
-      model: 'gpt-4o-mini',
+      model: 'mock-echo',
       name: 'Smoke Assistant',
       systemPrompt: 'You are a smoke test assistant.',
       temperature: 0.2,
@@ -708,6 +714,22 @@ async function main() {
   }
   if (!chat.text.includes('"type":"message"')) {
     throw new Error('Chat response did not contain message chunk')
+  }
+  const chatEvents = parseSseData(chat.text, '/api/chat SSE') as Array<{
+    type?: string
+    text?: string
+    part?: { type?: string; error?: string }
+  }>
+  const streamedText = chatEvents
+    .filter((event) => event.type === 'text')
+    .map((event) => event.text ?? '')
+    .join('')
+  if (streamedText !== 'Echo: hello smoke') {
+    throw new Error(`Chat response did not contain mock provider echo: ${chat.text}`)
+  }
+  const errorEvent = chatEvents.find((event) => event.part?.type === 'error')
+  if (errorEvent?.part?.error) {
+    throw new Error(`Chat response contained error part: ${errorEvent.part.error}`)
   }
 
   console.log('Smoke: conversation share and feedback')

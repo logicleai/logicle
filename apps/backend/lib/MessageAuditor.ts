@@ -97,7 +97,7 @@ export class MessageAuditor {
       model: this.conversation.assistant.model,
       tokens: 0,
       tokenDetails: null,
-      sentAt: message.sentAt,
+      sentAt: message.sentAt ?? new Date().toISOString(),
       errors: null,
     }
   }
