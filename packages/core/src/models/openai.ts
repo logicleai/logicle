@@ -471,6 +471,24 @@ export const gpt54Model: LlmModel = {
   defaultReasoning: 'low',
 }
 
+export const gpt56TerraModel: LlmModel = {
+  id: 'gpt-5.6-terra',
+  model: 'gpt-5.6-terra',
+  name: 'GPT-5.6 Terra',
+  description: 'GPT-5.6 Terra, available via Chat Completions and Responses APIs',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 400000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: false, // caching is automatic and non-configurable on this model
+  },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high', 'xhigh'],
+  defaultReasoning: 'low',
+}
+
 export const gptChatLatestModel: LlmModel = {
   ...gpt52ChatModel,
   id: 'chatgpt-5-latest',
@@ -479,9 +497,9 @@ export const gptChatLatestModel: LlmModel = {
 }
 
 export const gptLatest: LlmModel = {
-  ...gpt54Model,
+  ...gpt56TerraModel,
   id: 'gpt-5-latest',
-  name: 'Gpt latest (5.4)',
+  name: 'Gpt latest (5.6 Terra)',
   tags: ['latest'],
 }
 
@@ -507,6 +525,7 @@ export const openaiModels: LlmModel[] = [
   gpt54Model,
   gpt55Model,
   gpt55ProModel,
+  gpt56TerraModel,
   o1Model,
   o1MiniModel,
   o3Model,
