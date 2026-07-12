@@ -67,6 +67,26 @@ export async function findSatelliteAuthByApiKey(apiKey: string) {
   return null
 }
 
+export async function findSatelliteBySecret(bearerToken: string) {
+  const parts = bearerToken.split('.')
+  if (parts.length === 2) {
+    const id = parts[0]
+    const secret = parts[1]
+    const row = await db
+      .selectFrom('Satellite')
+      .innerJoin('User', (join) => join.onRef('User.id', '=', 'Satellite.userId'))
+      .select(['User.enabled as userEnabled', 'Satellite.userId', 'Satellite.secret'])
+      .where('Satellite.id', '=', id)
+      .executeTakeFirst()
+    if (row?.userEnabled && row.secret) {
+      if (await bcrypt.compare(secret, row.secret)) {
+        return { userId: row.userId, satelliteId: id }
+      }
+    }
+  }
+  return null
+}
+
 type AuthResult = { success: true; value: AuthenticatedSession } | { success: false; msg: string }
 
 async function getUserAuthState(userId: string) {

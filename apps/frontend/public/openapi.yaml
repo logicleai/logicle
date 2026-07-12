@@ -2254,6 +2254,28 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/InsertablePrompt"
+  /api/me/satellites/{id}/regenerate-secret:
+    post:
+      summary: Regenerate satellite secret
+      description: Generate a new connection secret for a satellite, invalidating the
+        previous one.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Satellite"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
   /api/me/satellites/{id}:
     get:
       summary: Get satellite details
@@ -5936,6 +5958,10 @@ components:
           type: string
         userId:
           type: string
+        secret:
+          anyOf:
+            - type: string
+            - type: "null"
         createdAt:
           type: string
           format: date-time
@@ -5948,6 +5974,7 @@ components:
         - id
         - name
         - userId
+        - secret
         - createdAt
         - updatedAt
       additionalProperties: false

@@ -5,12 +5,14 @@ import { EventEmitter } from 'node:events'
 
 const {
   mockFindSatelliteAuthByApiKey,
+  mockFindSatelliteBySecret,
   mockGetSatellite,
   mockCreateToolWithId,
   mockUpdateToolSatelliteInfo,
   mockDbExecuteTakeFirst,
 } = vi.hoisted(() => ({
   mockFindSatelliteAuthByApiKey: vi.fn(),
+  mockFindSatelliteBySecret: vi.fn(),
   mockGetSatellite: vi.fn(),
   mockCreateToolWithId: vi.fn().mockResolvedValue({ id: 'created-tool-id' }),
   mockUpdateToolSatelliteInfo: vi.fn().mockResolvedValue(undefined),
@@ -19,6 +21,7 @@ const {
 
 vi.mock('@/backend/api/utils/auth', () => ({
   findSatelliteAuthByApiKey: mockFindSatelliteAuthByApiKey,
+  findSatelliteBySecret: mockFindSatelliteBySecret,
 }))
 
 vi.mock('@/models/satellite', () => ({
@@ -111,6 +114,7 @@ beforeEach(() => {
   connections.clear()
   hub.nextCallId = 1
   vi.clearAllMocks()
+  mockFindSatelliteBySecret.mockResolvedValue(null) // no satellite secret match by default; falls through to the api key path
   mockCreateToolWithId.mockResolvedValue({ id: 'created-tool-id' })
   mockUpdateToolSatelliteInfo.mockResolvedValue(undefined)
   mockDbExecuteTakeFirst.mockResolvedValue(undefined) // no existing tool by default
@@ -285,6 +289,56 @@ describe('register message', () => {
 
     expect(ws.closeCode).toBe(1008)
     expect(ws.closeReason).toBe('Satellite not found or unauthorized')
+  })
+})
+
+// ─── satellite secret authentication ──────────────────────────────────────────
+
+describe('satellite secret authentication', () => {
+  test('registers using the authenticated satelliteId, satelliteId omitted from register message', async () => {
+    mockFindSatelliteBySecret.mockResolvedValue({ userId: 'user-1', satelliteId: 'sat-1' })
+    mockGetSatellite.mockResolvedValue(validSatellite('sat-1', 'user-1', 'My Satellite'))
+    const ws = new MockWebSocket()
+    await handleSatelliteConnection(ws as any, makeReq('Bearer sat-1.secret'))
+
+    ws.emit('message', JSON.stringify({ type: 'register', name: 'ignored', tools: [{ name: 'doThing' }] }))
+    await flushAsyncWork()
+
+    expect(mockFindSatelliteAuthByApiKey).not.toHaveBeenCalled()
+    expect(connections.has('sat-1')).toBe(true)
+    expect(connections.get('sat-1')!.tools).toEqual([{ name: 'doThing' }])
+    expect(JSON.parse(ws.sent[0])).toEqual({
+      type: 'registered',
+      satelliteId: 'sat-1',
+      name: 'My Satellite',
+    })
+  })
+
+  test('rejects when register satelliteId does not match the authenticated satellite', async () => {
+    mockFindSatelliteBySecret.mockResolvedValue({ userId: 'user-1', satelliteId: 'sat-1' })
+    mockGetSatellite.mockResolvedValue(validSatellite('sat-1'))
+    const ws = new MockWebSocket()
+    await handleSatelliteConnection(ws as any, makeReq('Bearer sat-1.secret'))
+
+    ws.emit('message', JSON.stringify({ type: 'register', satelliteId: 'sat-2', name: 'sat', tools: [] }))
+    await flushAsyncWork()
+
+    expect(ws.closeCode).toBe(1008)
+    expect(ws.closeReason).toBe('Satellite id mismatch')
+    expect(connections.size).toBe(0)
+  })
+
+  test('falls back to api key auth when no satellite secret matches', async () => {
+    mockFindSatelliteBySecret.mockResolvedValue(null)
+    mockFindSatelliteAuthByApiKey.mockResolvedValue(validAuth())
+    mockGetSatellite.mockResolvedValue(validSatellite('sat-1'))
+    const ws = new MockWebSocket()
+    await handleSatelliteConnection(ws as any, makeReq('Bearer valid-key'))
+
+    ws.emit('message', JSON.stringify({ type: 'register', satelliteId: 'sat-1', name: 'sat', tools: [] }))
+    await flushAsyncWork()
+
+    expect(connections.has('sat-1')).toBe(true)
   })
 })
 

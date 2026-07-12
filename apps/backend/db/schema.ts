@@ -372,6 +372,7 @@ export interface Satellite {
   id: string
   name: string
   userId: string
+  secret: string | null
   createdAt: string
   updatedAt: string
 }

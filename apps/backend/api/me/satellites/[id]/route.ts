@@ -1,20 +1,25 @@
 import { ok, noBody, operation, responseSpec, errorSpec, notFound } from '@/lib/routes'
 import { getSatellite, deleteSatellite, updateSatellite } from '@/models/satellite'
-import { satelliteSchema, updateableSatelliteSchema } from '@/types/dto'
+import * as dto from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
+
+const hideSecret = (satellite: dto.Satellite): dto.Satellite => ({
+  ...satellite,
+  secret: satellite.secret ? '<hidden>' : null,
+})
 
 export const GET = operation({
   name: 'Get satellite details',
   description: 'Fetch details for a specific satellite.',
   authentication: 'user',
-  responses: [responseSpec(200, satelliteSchema), errorSpec(404)] as const,
+  responses: [responseSpec(200, dto.satelliteSchema), errorSpec(404)] as const,
   implementation: async ({ session, params }) => {
     const satellite = await getSatellite(params.id)
     if (!satellite || satellite.userId !== session.userId) {
       return notFound()
     }
-    return ok(satellite)
+    return ok(hideSecret(satellite))
   },
 })
 
@@ -37,14 +42,14 @@ export const PATCH = operation({
   name: 'Update satellite',
   description: 'Update a satellite.',
   authentication: 'user',
-  requestBodySchema: updateableSatelliteSchema,
-  responses: [responseSpec(200, satelliteSchema), errorSpec(404)] as const,
+  requestBodySchema: dto.updateableSatelliteSchema,
+  responses: [responseSpec(200, dto.satelliteSchema), errorSpec(404)] as const,
   implementation: async ({ session, params, body }) => {
     const satellite = await getSatellite(params.id)
     if (!satellite || satellite.userId !== session.userId) {
       return notFound()
     }
     const updatedSatellite = await updateSatellite(params.id, session.userId, body)
-    return ok(updatedSatellite)
+    return ok(hideSecret(updatedSatellite))
   },
 })

@@ -8,10 +8,13 @@ A **satellite** is an external process that connects to the Logicle backend over
 
 ### Registered satellites
 
-A registered satellite has a `Satellite` DB row, an admin-managed API key, and a stable identity across reconnects.
+A registered satellite has a `Satellite` DB row and a stable identity across reconnects.
 
 - Created in **My Satellites → Create Satellite** (user-facing) or **Admin → Satellites** (admin).
-- Connects with an API key scoped to that satellite ID via `satelliteId` in the `register` message.
+- Each satellite has its own connection secret, generated at creation and shown only once. This secret authenticates the WebSocket handshake only — it is not a general-purpose API key and cannot be used for any REST call.
+- Connects with `Authorization: Bearer <satelliteId>.<secret>`; the `satelliteId` in the `register` message is optional when connecting this way (the authenticated satellite identity is authoritative) but must match if present.
+- A satellite's secret can be regenerated at any time from **My Satellites** (invalidates the previous secret immediately and disconnects any live session using it).
+- Registered satellites can still alternatively connect with a general-purpose user API key that includes `satelliteId` in the `register` message (legacy path, unchanged) — see [Authentication](#authentication).
 - The display name comes from the DB, not from the bridge.
 - On first connect, Logicle automatically creates a `type: satellite` tool record in the tool library — one record per satellite, keyed to its stable ID.
 - The tool record persists in the DB even while the satellite is disconnected. Tools are callable only when the bridge is live.
@@ -19,7 +22,7 @@ A registered satellite has a `Satellite` DB row, an admin-managed API key, and a
 
 ### Ephemeral satellites (personal bridges)
 
-An ephemeral satellite has no DB record and no stable identity.
+An ephemeral satellite has no DB record and no stable identity. This mode is unchanged.
 
 - Connects with a general-purpose user API key (no `satelliteId` in the `register` message).
 - Gets a transient `ephemeral_<nanoid>` ID assigned by the server.
@@ -74,8 +77,9 @@ The server enforces `logicle-satellite-v1` at the HTTP Upgrade layer, before any
 ### Authentication
 
 - Transport: Bearer token in the `Authorization` header of the WebSocket Upgrade request.
-- Token format: `{apiKeyId}.{plainSecret}`, compared with bcrypt.
-- Requires `ENABLE_APIKEYS=1` environment variable.
+- Two credential kinds are accepted, tried in this order:
+  1. **Satellite secret**: `{satelliteId}.{plainSecret}`, compared with bcrypt against the `Satellite` row's own secret. Never accepted for REST calls — it only exists on the `Satellite` table, not the `ApiKey` table. Recommended for registered satellites.
+  2. **User API key** (legacy/ephemeral path, unchanged): `{apiKeyId}.{plainSecret}`, compared with bcrypt. Requires `ENABLE_APIKEYS=1`. Used for ephemeral (personal bridge) connections, and still accepted for registered satellites that include `satelliteId` in the `register` message.
 - Any authenticated user may connect a satellite; the `userId` is stored on the connection to scope tool availability.
 
 ### Message types
@@ -95,20 +99,22 @@ The server enforces `logicle-satellite-v1` at the HTTP Upgrade layer, before any
 
 1. Go to **My Satellites** (or **Admin → Satellites** for admin-managed satellites)
 2. Click **Create Satellite** and give it a descriptive name (e.g. "Local Python Bridge")
-3. Copy the generated API key — it is shown **only once**
+3. Copy the generated secret — it is shown **only once**
 
-The key format is `<id>.<secret>`.
+The secret format is `<satelliteId>.<secret>`.
 
 ### Step 2 — Connect the bridge
 
 Connect to `ws://your-logicle-host/api/rpc` with:
 
 ```
-Authorization: Bearer <api-key>
+Authorization: Bearer <satelliteId>.<secret>
 Sec-WebSocket-Protocol: logicle-satellite-v1
 ```
 
-After the handshake succeeds, send a `register` message including the satellite's DB ID:
+After the handshake succeeds, send a `register` message. Including `satelliteId` is optional
+when connecting with the satellite's own secret (it is derived from the credential), but if
+present it must match:
 
 ```json
 {
@@ -140,13 +146,13 @@ On first connect, Logicle automatically creates a tool record for the satellite.
 
 Once connected, the satellite's tools are immediately available in chat for the owning user.
 
-### Step 4 — Rotate the API key
+### Step 4 — Rotate the secret
 
-1. Go to **My Satellites → [name] → API Keys**
-2. Delete the old key, create a new one
-3. Update the bridge with the new key
+1. Go to **My Satellites**, find the satellite, and choose **Regenerate secret**
+2. Copy the new secret — it is shown **only once** and immediately disconnects any live session using the old one
+3. Update the bridge with the new secret
 
-The tool record and satellite ID are unaffected — they are linked to the satellite ID, not the key.
+The tool record and satellite ID are unaffected — they are linked to the satellite ID, not the secret.
 
 ---
 
@@ -267,7 +273,8 @@ The SSE endpoint `GET /api/me/satellites/events` streams `satellite_connected` a
 |---|---|---|
 | HTTP 400 on connect | Wrong or missing sub-protocol | Set `Sec-WebSocket-Protocol: logicle-satellite-v1` |
 | HTTP 400 on connect | Multiple sub-protocols advertised | Send exactly one protocol value |
-| 401 / auth rejected | Wrong API key | Verify `Authorization: Bearer <key>` format |
+| 401 / auth rejected | Wrong secret or API key | Verify `Authorization: Bearer <satelliteId>.<secret>` (or `<apiKeyId>.<secret>` for the legacy/ephemeral path) format |
+| 1008 after regenerating a secret | Old secret was rotated | Reconnect the bridge with the new secret |
 | Satellite rejected with 1008 | `satelliteId` not found or not owned by this user | Check the satellite ID matches the one created in the UI |
 | Tools not visible in chat | `register` not sent after connect | Send `register` and wait for `registered` |
 | Tools not visible in chat | Wrong user | Tools are scoped to the user who owns the satellite |

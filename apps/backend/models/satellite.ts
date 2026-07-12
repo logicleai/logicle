@@ -2,12 +2,14 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
+import { hashPassword } from '@/lib/auth/password'
 
 function dbToDto(satellite: schema.Satellite): dto.Satellite {
   return {
     id: satellite.id,
     name: satellite.name,
     userId: satellite.userId,
+    secret: satellite.secret,
     createdAt: satellite.createdAt,
     updatedAt: satellite.updatedAt,
   }
@@ -40,15 +42,17 @@ export const getUserSatellites = async (userId: string): Promise<dto.Satellite[]
 export const createSatellite = async (
   userId: string,
   data: dto.InsertableSatellite
-): Promise<dto.Satellite> => {
+): Promise<{ satellite: dto.Satellite; secret: string }> => {
   const id = nanoid()
   const now = new Date().toISOString()
+  const secret = nanoid()
   await db
     .insertInto('Satellite')
     .values({
       id,
       name: data.name,
       userId,
+      secret: await hashPassword(secret),
       createdAt: now,
       updatedAt: now,
     })
@@ -57,7 +61,34 @@ export const createSatellite = async (
   if (!created) {
     throw new Error('Failed creating satellite')
   }
-  return created
+  return { satellite: created, secret }
+}
+
+export const regenerateSatelliteSecret = async (
+  id: string,
+  userId: string
+): Promise<{ satellite: dto.Satellite; secret: string }> => {
+  const satellite = await getSatellite(id)
+  if (!satellite) {
+    throw new Error('Satellite not found')
+  }
+  if (satellite.userId !== userId) {
+    throw new Error('Unauthorized')
+  }
+  const secret = nanoid()
+  await db
+    .updateTable('Satellite')
+    .set({
+      secret: await hashPassword(secret),
+      updatedAt: new Date().toISOString(),
+    })
+    .where('id', '=', id)
+    .execute()
+  const updated = await getSatellite(id)
+  if (!updated) {
+    throw new Error('Failed regenerating satellite secret')
+  }
+  return { satellite: updated, secret }
 }
 
 export const updateSatellite = async (

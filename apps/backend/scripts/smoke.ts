@@ -271,8 +271,9 @@ async function checkSatelliteRejectsUnauthenticated() {
 }
 
 /**
- * Create a satellite + API key, connect with the token, send a register message,
- * and verify the hub replies with a `registered` message.
+ * Create a satellite, connect with its own connection secret, send a register message,
+ * verify the hub replies with a `registered` message, and confirm that secret is rejected
+ * for plain REST calls.
  */
 async function checkRegisteredSatelliteConnect(
   runId: string,
@@ -283,22 +284,22 @@ async function checkRegisteredSatelliteConnect(
     headers: jsonHeaders,
     json: { name: `Smoke Satellite ${runId}` },
   })
-  const satelliteId = (parseJson(satelliteCreated.text, '/api/me/satellites POST') as { id: string }).id
+  const { id: satelliteId, secret: satelliteSecret } = parseJson(
+    satelliteCreated.text,
+    '/api/me/satellites POST'
+  ) as { id: string; secret: string }
+  const bearerToken = `${satelliteId}.${satelliteSecret}`
 
-  const apiKeyCreated = await sessionRequest('POST', '/api/me/apikeys', {
-    expectedStatus: 201,
-    headers: jsonHeaders,
-    json: {
-      description: `Smoke satellite key ${runId}`,
-      scope: ['satellite:connect'],
-      expiresAt: null,
-    },
+  const restRejected = await request('GET', '/api/me/apikeys', {
+    headers: { Authorization: `Bearer ${bearerToken}` },
+    includeCookies: false,
+    allowStatus: [401],
   })
-  const { id: keyId, key: keySecret } = parseJson(apiKeyCreated.text, '/api/me/apikeys POST') as {
-    id: string
-    key: string
+  if (restRejected.res.status !== 401) {
+    throw new Error(
+      `Registered satellite secret should not authenticate REST calls, got ${restRejected.res.status}`
+    )
   }
-  const bearerToken = `${keyId}.${keySecret}`
 
   const wsUrl = `${baseUrl.replace(/^http/, 'ws')}/api/rpc`
   await new Promise<void>((resolve, reject) => {
