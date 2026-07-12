@@ -89,6 +89,7 @@
   "registered": "Registered",
   "ephemeral": "Ephemeral",
   "registered-satellites": "Registered Satellites",
+  "registered-satellite": "Registered Satellite",
   "personal-bridges": "Personal Bridges",
   "connected": "Connected",
   "disconnected": "Disconnected",

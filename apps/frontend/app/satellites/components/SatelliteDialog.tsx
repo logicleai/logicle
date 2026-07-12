@@ -7,18 +7,19 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { post, patch } from '@/lib/fetch'
-import { mutateSatellites } from '@/hooks/satellites'
+import { mutateSatellites, mutateAdminSatellites } from '@/hooks/satellites'
 import * as dto from '@/types/dto'
 import { SatelliteSecretDialog } from './SatelliteSecretDialog'
 
 type Props = {
   mode: 'create' | 'rename'
+  scope?: 'me' | 'admin'
   satellite?: dto.Satellite | dto.SatelliteListItem
   onClose: () => void
   onSaved?: (satellite: dto.Satellite) => void
 }
 
-export const SatelliteDialog = ({ mode, satellite, onClose, onSaved }: Props) => {
+export const SatelliteDialog = ({ mode, scope = 'me', satellite, onClose, onSaved }: Props) => {
   const { t } = useTranslation()
   const nameId = useId()
   const [name, setName] = useState(satellite?.name ?? '')
@@ -38,7 +39,10 @@ export const SatelliteDialog = ({ mode, satellite, onClose, onSaved }: Props) =>
       const response =
         mode === 'create'
           ? await post<dto.Satellite>('/api/me/satellites', { name: trimmedName })
-          : await patch<dto.Satellite>(`/api/me/satellites/${satellite?.id}`, { name: trimmedName })
+          : await patch<dto.Satellite>(
+              `${scope === 'admin' ? '/api/satellites' : '/api/me/satellites'}/${satellite?.id}`,
+              { name: trimmedName }
+            )
 
       if (response.error) {
         toast.error(response.error.message)
@@ -46,7 +50,7 @@ export const SatelliteDialog = ({ mode, satellite, onClose, onSaved }: Props) =>
       }
 
       const savedSatellite = response.data as dto.Satellite
-      await mutateSatellites()
+      await (scope === 'admin' ? mutateAdminSatellites() : mutateSatellites())
       onSaved?.(savedSatellite)
 
       if (mode === 'create') {
