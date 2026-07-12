@@ -10,7 +10,7 @@ import {
 import { ToolUILink } from '@/lib/chat/tools'
 import { IncomingMessage } from 'node:http'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types'
-import { findSatelliteAuthByApiKey } from '@/backend/api/utils/auth'
+import { findSatelliteAuthByApiKey, findSatelliteBySecret } from '@/backend/api/utils/auth'
 import { getSatellite } from '@/models/satellite'
 import { createToolWithId, updateToolSatelliteInfo } from '@/models/tool'
 import { db } from '@/db/database'
@@ -50,6 +50,9 @@ export const connections = hub.connections
 
 interface SatelliteAuthResult {
   userId: string
+  // Set when authenticated with a satellite's own connection secret, in which case
+  // this is the authoritative satellite identity for the connection.
+  satelliteId?: string
 }
 
 export async function checkSatelliteAuthentication(
@@ -60,8 +63,14 @@ export async function checkSatelliteAuthentication(
       logger.warn('[SatelliteHub] Invalid auth header format')
       return null
     }
-    const apiKey = authorization.substring(7)
-    const auth = await findSatelliteAuthByApiKey(apiKey)
+    const bearerToken = authorization.substring(7)
+
+    const satelliteAuth = await findSatelliteBySecret(bearerToken)
+    if (satelliteAuth) {
+      return { userId: satelliteAuth.userId, satelliteId: satelliteAuth.satelliteId }
+    }
+
+    const auth = await findSatelliteAuthByApiKey(bearerToken)
     if (!auth) {
       logger.warn('[SatelliteHub] Authentication failed')
       return null
@@ -142,18 +151,19 @@ export async function handleSatelliteConnection(ws: WebSocket, req: IncomingMess
     return
   }
 
-  const { userId } = auth
+  const { userId, satelliteId: authSatelliteId } = auth
   logger.info(`[SatelliteHub] Connection authenticated: userId=${userId}`)
 
-  ws.on('message', (data) => handleSatelliteMessage(ws, userId, data))
+  ws.on('message', (data) => handleSatelliteMessage(ws, userId, authSatelliteId, data))
   for (const data of messageQueue) {
-    await handleSatelliteMessage(ws, userId, data)
+    await handleSatelliteMessage(ws, userId, authSatelliteId, data)
   }
 }
 
 async function handleSatelliteMessage(
   socket: WebSocket,
   userId: string,
+  authSatelliteId: string | undefined,
   data: WebSocket.RawData
 ) {
   try {
@@ -177,7 +187,25 @@ async function handleSatelliteMessage(
       let satelliteId: string
       let finalName: string
 
-      if (requestedSatelliteId) {
+      if (authSatelliteId) {
+        // Authenticated with the satellite's own connection secret: this identity is
+        // authoritative, no separate ownership lookup is needed.
+        if (requestedSatelliteId && requestedSatelliteId !== authSatelliteId) {
+          logger.warn(
+            `[SatelliteHub] register satelliteId "${requestedSatelliteId}" does not match authenticated satellite "${authSatelliteId}"`
+          )
+          socket.close(1008, 'Satellite id mismatch')
+          return
+        }
+        satelliteId = authSatelliteId
+        const satellite = await getSatellite(satelliteId)
+        if (!satellite) {
+          logger.warn(`[SatelliteHub] Satellite ${satelliteId} not found`)
+          socket.close(1008, 'Satellite not found')
+          return
+        }
+        finalName = satellite.name
+      } else if (requestedSatelliteId) {
         satelliteId = requestedSatelliteId
         const satellite = await getSatellite(satelliteId)
         if (!satellite || satellite.userId !== userId) {
@@ -200,7 +228,7 @@ async function handleSatelliteMessage(
         return
       }
 
-      const kind: SatelliteConnection['kind'] = requestedSatelliteId ? 'registered' : 'ephemeral'
+      const kind: SatelliteConnection['kind'] = authSatelliteId || requestedSatelliteId ? 'registered' : 'ephemeral'
       const newConn: SatelliteConnection = {
         satelliteId,
         kind,

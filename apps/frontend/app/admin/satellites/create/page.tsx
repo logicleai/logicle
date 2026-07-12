@@ -8,6 +8,7 @@ import { AdminPage } from '../../components/AdminPage'
 import toast from 'react-hot-toast'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
+import { SatelliteSecretDialog } from '@/app/satellites/components/SatelliteSecretDialog'
 
 const CreateSatellite = () => {
   const { t } = useTranslation()
@@ -15,6 +16,7 @@ const CreateSatellite = () => {
   const nameId = useId()
   const [name, setName] = useState<string>('')
   const [loading, setLoading] = useState(false)
+  const [createdSatellite, setCreatedSatellite] = useState<dto.Satellite | null>(null)
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -36,10 +38,20 @@ const CreateSatellite = () => {
 
       const satellite = response.data as dto.Satellite
       toast.success(t('satellite-created'))
-      router.push(`/admin/satellites/${satellite.id}`)
+      setCreatedSatellite(satellite)
     } finally {
       setLoading(false)
     }
+  }
+
+  if (createdSatellite) {
+    return (
+      <SatelliteSecretDialog
+        satelliteId={createdSatellite.id}
+        secret={createdSatellite.secret ?? ''}
+        onClose={() => router.push(`/admin/satellites/${createdSatellite.id}`)}
+      />
+    )
   }
 
   return (

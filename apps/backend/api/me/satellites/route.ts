@@ -49,7 +49,7 @@ export const POST = operation({
   requestBodySchema: insertableSatelliteSchema,
   responses: [responseSpec(201, satelliteSchema)] as const,
   implementation: async ({ session, body }) => {
-    const satellite = await createSatellite(session.userId, body)
-    return ok(satellite, 201)
+    const { satellite, secret } = await createSatellite(session.userId, body)
+    return ok({ ...satellite, secret }, 201)
   },
 })

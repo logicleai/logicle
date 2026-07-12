@@ -14,7 +14,7 @@ export const GET = operation({
     if (!satellite) {
       return notFound()
     }
-    return ok(satellite)
+    return ok({ ...satellite, secret: satellite.secret ? '<hidden>' : null })
   },
 })
 

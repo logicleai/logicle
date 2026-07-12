@@ -5,6 +5,7 @@ export const satelliteSchema = z.object({
   id: z.string(),
   name: z.string(),
   userId: z.string(),
+  secret: z.string().nullable(),
   createdAt: iso8601UtcDateTimeSchema,
   updatedAt: iso8601UtcDateTimeSchema,
 }).meta({ id: 'Satellite' })

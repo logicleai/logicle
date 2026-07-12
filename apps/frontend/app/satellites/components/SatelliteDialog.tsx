@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { post, patch } from '@/lib/fetch'
 import { mutateSatellites } from '@/hooks/satellites'
 import * as dto from '@/types/dto'
+import { SatelliteSecretDialog } from './SatelliteSecretDialog'
 
 type Props = {
   mode: 'create' | 'rename'
@@ -22,6 +23,7 @@ export const SatelliteDialog = ({ mode, satellite, onClose, onSaved }: Props) =>
   const nameId = useId()
   const [name, setName] = useState(satellite?.name ?? '')
   const [loading, setLoading] = useState(false)
+  const [createdSatellite, setCreatedSatellite] = useState<dto.Satellite | null>(null)
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -45,12 +47,27 @@ export const SatelliteDialog = ({ mode, satellite, onClose, onSaved }: Props) =>
 
       const savedSatellite = response.data as dto.Satellite
       await mutateSatellites()
-      toast.success(t(mode === 'create' ? 'satellite-created' : 'saved'))
       onSaved?.(savedSatellite)
-      onClose()
+
+      if (mode === 'create') {
+        setCreatedSatellite(savedSatellite)
+      } else {
+        toast.success(t('saved'))
+        onClose()
+      }
     } finally {
       setLoading(false)
     }
+  }
+
+  if (createdSatellite) {
+    return (
+      <SatelliteSecretDialog
+        satelliteId={createdSatellite.id}
+        secret={createdSatellite.secret ?? ''}
+        onClose={onClose}
+      />
+    )
   }
 
   return (

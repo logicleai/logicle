@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Action, ActionList } from '@/components/ui/actionlist'
-import { IconTrash, IconPlus, IconSatellite, IconPencil } from '@tabler/icons-react'
+import { IconTrash, IconPlus, IconSatellite, IconPencil, IconKey } from '@tabler/icons-react'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
-import { delete_ } from '@/lib/fetch'
+import { delete_, post } from '@/lib/fetch'
 import { useConfirmationContext } from '@/components/providers/confirmationContext'
 import toast from 'react-hot-toast'
 import { mutateSatellites, useSatellites } from '@/hooks/satellites'
@@ -13,6 +13,7 @@ import * as dto from '@/types/dto'
 import { Link } from '@/components/ui/link'
 import { AdminPage } from '@/app/admin/components/AdminPage'
 import { SatelliteDialog } from './components/SatelliteDialog'
+import { SatelliteSecretDialog } from './components/SatelliteSecretDialog'
 
 const MySatellitesPage = () => {
   const { t } = useTranslation()
@@ -20,7 +21,25 @@ const MySatellitesPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [creatingSatellite, setCreatingSatellite] = useState(false)
   const [renamingSatellite, setRenamingSatellite] = useState<dto.SatelliteListItem | null>(null)
+  const [regeneratedSecret, setRegeneratedSecret] = useState<dto.Satellite | null>(null)
   const modalContext = useConfirmationContext()
+
+  async function onRegenerateSecret(satellite: dto.SatelliteListItem) {
+    const result = await modalContext.askConfirmation({
+      title: `${t('regenerate-satellite-secret')} ${satellite.name}`,
+      message: t('regenerate-satellite-secret-confirmation'),
+      confirmMsg: t('regenerate-satellite-secret'),
+    })
+    if (!result) return
+
+    const response = await post<dto.Satellite>(`/api/me/satellites/${satellite.id}/regenerate-secret`)
+    if (response.error) {
+      toast.error(response.error.message)
+      return
+    }
+    await mutateSatellites()
+    setRegeneratedSecret(response.data)
+  }
 
   async function onDelete(satellite: dto.SatelliteListItem) {
     if (satellite.kind === 'ephemeral') {
@@ -115,6 +134,11 @@ const MySatellitesPage = () => {
                       text={t('rename')}
                     />
                     <Action
+                      icon={IconKey}
+                      onClick={() => onRegenerateSecret(satellite)}
+                      text={t('regenerate-satellite-secret')}
+                    />
+                    <Action
                       icon={IconTrash}
                       onClick={() => onDelete(satellite)}
                       text={t('remove-satellite')}
@@ -141,6 +165,13 @@ const MySatellitesPage = () => {
           mode="rename"
           satellite={renamingSatellite}
           onClose={() => setRenamingSatellite(null)}
+        />
+      )}
+      {regeneratedSecret && (
+        <SatelliteSecretDialog
+          satelliteId={regeneratedSecret.id}
+          secret={regeneratedSecret.secret ?? ''}
+          onClose={() => setRegeneratedSecret(null)}
         />
       )}
     </AdminPage>
