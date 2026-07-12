@@ -1,6 +1,7 @@
 import { ok, operation, responseSpec } from '@/lib/routes'
 import { hub } from '@/lib/satellite/hub'
 import { getAllSatellites } from '@/models/satellite'
+import { getUsers } from '@/models/user'
 import { satelliteListItemSchema } from '@/types/dto'
 
 export const dynamic = 'force-dynamic'
@@ -12,6 +13,8 @@ export const GET = operation({
   responses: [responseSpec(200, satelliteListItemSchema.array())] as const,
   implementation: async () => {
     const satellites = await getAllSatellites()
+    const users = await getUsers()
+    const userNameById = new Map(users.map((user) => [user.id, user.name]))
     const connectionsById = new Map(
       Array.from(hub.connections.values()).map((conn) => [conn.satelliteId, conn])
     )
@@ -21,6 +24,7 @@ export const GET = operation({
       name: satellite.name,
       kind: 'registered' as const,
       connected: connectionsById.has(satellite.id),
+      ownerName: userNameById.get(satellite.userId) ?? null,
       createdAt: satellite.createdAt,
       updatedAt: satellite.updatedAt,
     }))
@@ -32,6 +36,7 @@ export const GET = operation({
         name: conn.name,
         kind: 'ephemeral' as const,
         connected: true,
+        ownerName: userNameById.get(conn.userId) ?? null,
         createdAt: conn.connectedAt.toISOString(),
         updatedAt: conn.connectedAt.toISOString(),
       }))

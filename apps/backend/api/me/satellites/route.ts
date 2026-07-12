@@ -1,5 +1,6 @@
 import { ok, operation, responseSpec } from '@/lib/routes'
 import { getUserSatellites, createSatellite } from '@/models/satellite'
+import { getUserById } from '@/models/user'
 import { satelliteListItemSchema, satelliteSchema, insertableSatelliteSchema } from '@/types/dto'
 import { hub } from '@/lib/satellite/hub'
 
@@ -14,6 +15,8 @@ export const GET = operation({
     const satellites = await getUserSatellites(session.userId)
     const connections = Array.from(hub.connections.values()).filter((conn) => conn.userId === session.userId)
     const connectionsById = new Map(connections.map((conn) => [conn.satelliteId, conn]))
+    const owner = await getUserById(session.userId)
+    const ownerName = owner?.name ?? null
 
     const registered = satellites.map((satellite) => {
       const connection = connectionsById.get(satellite.id)
@@ -22,6 +25,7 @@ export const GET = operation({
         name: satellite.name,
         kind: 'registered' as const,
         connected: !!connection,
+        ownerName,
         createdAt: satellite.createdAt,
         updatedAt: satellite.updatedAt,
       }
@@ -34,6 +38,7 @@ export const GET = operation({
         name: conn.name,
         kind: 'ephemeral' as const,
         connected: true,
+        ownerName,
         createdAt: conn.connectedAt.toISOString(),
         updatedAt: conn.connectedAt.toISOString(),
       }))

@@ -1,7 +1,7 @@
 'use client'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
-import { Column, SimpleTable, column } from '@/components/ui/tables'
+import { Column, SimpleTable } from '@/components/ui/tables'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { AdminPage } from '../components/AdminPage'
 import { useAdminSatellites } from '@/hooks/satellites'
@@ -24,19 +24,57 @@ const AdminSatellitesPage = () => {
   const ephemeralSatellites = filteredSatellites.filter((s) => s.kind === 'ephemeral')
 
   const columns: Column<dto.SatelliteListItem>[] = [
-    column(t('name'), (satellite) => (
-      <Link variant="ghost" href={`/admin/satellites/${satellite.id}`}>
-        {satellite.name}
-      </Link>
-    )),
-    column('Type', (satellite) => (
-      <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-        {satellite.kind === 'ephemeral' ? 'Personal Bridge' : 'Registered'}
-      </span>
-    )),
-    column(t('created'), (satellite) => (
-      <span>{satellite.createdAt ? new Date(satellite.createdAt).toLocaleDateString() : 'Live only'}</span>
-    )),
+    {
+      name: t('name'),
+      headerClass: 'text-center',
+      renderer: (satellite) => (
+        <div className="text-center">
+          <Link variant="ghost" href={`/admin/satellites/${satellite.id}`}>
+            {satellite.name}
+          </Link>
+        </div>
+      ),
+    },
+    {
+      name: t('owner'),
+      headerClass: 'text-center',
+      renderer: (satellite) => <div className="text-center">{satellite.ownerName ?? '-'}</div>,
+    },
+    {
+      name: 'Type',
+      headerClass: 'text-center',
+      renderer: (satellite) => (
+        <div className="text-center">
+          <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+            {satellite.kind === 'ephemeral' ? 'Personal Bridge' : 'Registered'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      name: t('created'),
+      headerClass: 'text-center',
+      renderer: (satellite) => (
+        <div className="text-center">
+          {satellite.createdAt ? new Date(satellite.createdAt).toLocaleDateString() : 'Live only'}
+        </div>
+      ),
+    },
+    {
+      name: t('connected'),
+      headerClass: 'text-center',
+      renderer: (satellite) => (
+        <div className="text-center">
+          <span
+            className={`text-xs px-2 py-1 rounded-full ${
+              satellite.connected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {satellite.connected ? `● ${t('connected')}` : `○ ${t('disconnected')}`}
+          </span>
+        </div>
+      ),
+    },
   ]
 
   return (

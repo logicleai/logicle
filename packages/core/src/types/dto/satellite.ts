@@ -15,6 +15,7 @@ export const satelliteListItemSchema = z.object({
   name: z.string(),
   kind: z.enum(['registered', 'ephemeral']),
   connected: z.boolean(),
+  ownerName: z.string().nullable(),
   createdAt: iso8601UtcDateTimeSchema.nullable(),
   updatedAt: iso8601UtcDateTimeSchema.nullable(),
 }).meta({ id: 'SatelliteListItem' })
