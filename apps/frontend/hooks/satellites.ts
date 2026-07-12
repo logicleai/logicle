@@ -97,6 +97,26 @@ export function mutateAdminSatellites() {
   return mutate(ADMIN_SATELLITES_URL)
 }
 
+export function useAdminSatellite(id: string) {
+  const { data, error, isLoading, mutate } = useSWR(
+    id ? `${ADMIN_SATELLITES_URL}/${id}` : null,
+    async (url) => {
+      const response = await get(url)
+      if (response.error) {
+        throw new Error(response.error.message)
+      }
+      return response.data as dto.Satellite
+    }
+  )
+
+  return {
+    data,
+    error: error?.message || null,
+    isLoading,
+    mutate,
+  }
+}
+
 export function useSatellite(id: string) {
   const { data, error, isLoading, mutate } = useSWR(
     id ? `/api/me/satellites/${id}` : null,

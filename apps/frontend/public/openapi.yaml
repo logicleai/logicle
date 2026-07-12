@@ -2559,6 +2559,36 @@ paths:
             type: string
       security:
         - bearerAuth: []
+    patch:
+      summary: Update satellite
+      description: "Admin: rename any satellite."
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Satellite"
+        "404":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              additionalProperties: false
   /api/satellites:
     get:
       summary: List all satellites
