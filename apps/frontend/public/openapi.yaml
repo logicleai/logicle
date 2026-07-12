@@ -5993,6 +5993,10 @@ components:
             - ephemeral
         connected:
           type: boolean
+        ownerName:
+          anyOf:
+            - type: string
+            - type: "null"
         createdAt:
           anyOf:
             - type: string
@@ -6010,6 +6014,7 @@ components:
         - name
         - kind
         - connected
+        - ownerName
         - createdAt
         - updatedAt
       additionalProperties: false
