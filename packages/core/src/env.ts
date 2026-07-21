@@ -119,6 +119,9 @@ const env = {
     mcp: {
       clientCacheTtlSeconds: parseOptionalInt(process.env.MCP_CLIENT_CACHE_TTL_SECONDS) ?? 300,
       clientCacheMaxItems: parseOptionalInt(process.env.MCP_CLIENT_CACHE_MAX_ITEMS) ?? 100,
+      reconnectionMaxRetries: parseOptionalInt(process.env.MCP_RECONNECTION_MAX_RETRIES) ?? 5,
+      callToolMaxRetries: parseOptionalInt(process.env.MCP_CALL_TOOL_MAX_RETRIES) ?? 1,
+      keepAliveIntervalSeconds: parseOptionalInt(process.env.MCP_KEEP_ALIVE_INTERVAL_SECONDS) ?? 30,
     },
     prefixFunctionNames: process.env.PREFIX_FUNCTION_NAMES !== '0',
   },

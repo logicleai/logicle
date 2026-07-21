@@ -32,10 +32,12 @@ import { storage } from '@/lib/storage'
 interface CacheItem {
   id: string
   client: Client
+  keepAlive?: NodeJS.Timeout
 }
 
 const clientCacheTtlMs = Math.max(0, env.tools.mcp.clientCacheTtlSeconds) * 1000
 const clientCacheMaxItems = env.tools.mcp.clientCacheMaxItems
+const keepAliveIntervalMs = Math.max(0, env.tools.mcp.keepAliveIntervalSeconds) * 1000
 const clientCache = new LRUCache<string, CacheItem>({
   ttl: clientCacheTtlMs,
   max: clientCacheMaxItems,
@@ -43,9 +45,25 @@ const clientCache = new LRUCache<string, CacheItem>({
   updateAgeOnGet: true,
   dispose: (value) => {
     logger.info(`Disposing MCP client ${value.id}`)
+    clearInterval(value.keepAlive)
     void value.client.close()
   },
 })
+
+// Cached clients can sit idle for minutes between tool invocations. Without
+// traffic on the wire, an intermediary proxy (e.g. an nginx ingress with its
+// default ~60s idle timeout) will silently kill the connection, so the next
+// use fails or has to reconnect. Ping periodically to keep it warm.
+const startKeepAlive = (key: string, client: Client): NodeJS.Timeout | undefined => {
+  if (keepAliveIntervalMs <= 0) return undefined
+  const timer = setInterval(() => {
+    client.ping().catch((error) => {
+      logger.warn(`MCP keep-alive ping failed for client at cache key ${key}`, error)
+    })
+  }, keepAliveIntervalMs)
+  timer.unref?.()
+  return timer
+}
 
 if (clientCacheTtlMs > 0) {
   const sweepIntervalMs = Math.min(clientCacheTtlMs, 60_000)
@@ -90,6 +108,12 @@ const createTransport = ({ url, authentication }: McpPluginParams, accessToken?:
       requestInit: {
         headers,
       },
+      reconnectionOptions: {
+        maxReconnectionDelay: 30_000,
+        initialReconnectionDelay: 1_000,
+        reconnectionDelayGrowFactor: 1.5,
+        maxRetries: env.tools.mcp.reconnectionMaxRetries,
+      },
     })
   }
 }
@@ -128,7 +152,7 @@ const getClient = async (
     throw e
   }
   const id = nanoid()
-  clientCache.set(key, { id, client })
+  clientCache.set(key, { id, client, keepAlive: startKeepAlive(key, client) })
   return client
 }
 
@@ -231,6 +255,7 @@ async function convertMcpSpecToToolFunctions(
       invoke: async (invokeParams: ToolInvokeParams) => {
         const { params, userId } = invokeParams
         let clientToUse = client
+        let accessToken: string | undefined
         if (toolParams.authentication.type === 'oauth') {
           if (!userId) {
             return {
@@ -254,7 +279,8 @@ async function convertMcpSpecToToolFunctions(
                   : 'MCP credentials missing or expired. Please enable the tool.',
             }
           }
-          clientToUse = await getClient(toolParams, resolution.accessToken, userId)
+          accessToken = resolution.accessToken
+          clientToUse = await getClient(toolParams, accessToken, userId)
         }
 
         // Resolve file_id → base64 bytes before forwarding to the real MCP tool.
@@ -280,18 +306,35 @@ async function convertMcpSpecToToolFunctions(
           }
         }
 
-        let result: Awaited<ReturnType<Client['callTool']>>
-        try {
-          result = await clientToUse.callTool({
-            name: tool.name,
-            arguments: callArgs,
-          })
-        } catch (e) {
-          logger.error(`MCP tool '${tool.name}' invocation failed`, e)
-          const errorMessage = e instanceof Error ? e.message : 'MCP tool invocation failed'
+        let result: Awaited<ReturnType<Client['callTool']>> | undefined
+        const maxAttempts = 1 + Math.max(0, env.tools.mcp.callToolMaxRetries)
+        let lastError: unknown
+        let attempt = 0
+        for (; attempt < maxAttempts; attempt++) {
+          try {
+            result = await clientToUse.callTool({
+              name: tool.name,
+              arguments: callArgs,
+            })
+            lastError = undefined
+            break
+          } catch (e) {
+            lastError = e
+            logger.error(
+              `MCP tool '${tool.name}' invocation failed (attempt ${attempt + 1}/${maxAttempts})`,
+              e
+            )
+            if (attempt + 1 >= maxAttempts) break
+            // The transport may have been torn down (e.g. an idle proxy closed the
+            // connection mid-call); reconnect with a fresh client before retrying.
+            clientToUse = await getClient(toolParams, accessToken, userId)
+          }
+        }
+        if (lastError !== undefined) {
+          const errorMessage = lastError instanceof Error ? lastError.message : 'MCP tool invocation failed'
           return { type: 'error-text' as const, value: errorMessage }
         }
-        return await normalizeMcpToolResult(result, invokeParams, {
+        return await normalizeMcpToolResult(result!, invokeParams, {
           resolveResourceLinks: !blobSig,
           readResource: async (uri) => {
             const read = await clientToUse.readResource({ uri })
