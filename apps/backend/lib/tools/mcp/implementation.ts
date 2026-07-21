@@ -11,11 +11,14 @@ import {
   McpInterface,
   McpPluginAuthentication,
   McpPluginParams,
+  isMcpStdioPluginParams,
+  mcpPluginSchema,
 } from '@/lib/tools/schemas'
 import { JSONSchema7 } from 'json-schema'
 import { logger } from '@/lib/logging'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { nanoid } from 'nanoid'
 import env from '@/lib/env'
@@ -90,7 +93,12 @@ const computeHeaders = (
   return {}
 }
 
-const createTransport = ({ url, authentication }: McpPluginParams, accessToken?: string) => {
+const createTransport = (params: McpPluginParams, accessToken?: string) => {
+  if (isMcpStdioPluginParams(params)) {
+    logger.info(`Create MCP stdio transport for command ${params.command}`)
+    return new StdioClientTransport({ command: params.command, args: params.args })
+  }
+  const { url, authentication } = params
   const headers = {
     ...computeHeaders(authentication, accessToken),
     ...(env.tenantId ? { 'x-tenant-id': env.tenantId } : {}),
@@ -128,7 +136,8 @@ const getClient = async (
   if (cached) {
     return cached.client
   }
-  logger.info(`Creating MCP client to ${params.url}`)
+  const endpoint = isMcpStdioPluginParams(params) ? `stdio:${params.command}` : params.url
+  logger.info(`Creating MCP client to ${endpoint}`)
   const client = new Client({
     name: 'example-client',
     version: '1.0.0',
@@ -139,7 +148,7 @@ const getClient = async (
   }
   transport.onerror = (error) => {
     logger.error(
-      `MCP Transport error, closing and removing from cache client for tool at ${params.url}`,
+      `MCP Transport error, closing and removing from cache client for tool at ${endpoint}`,
       error
     )
     void client.close()
@@ -171,7 +180,9 @@ function isBlobProperty(name: string, schema: JSONSchema7): boolean {
 
 function isMimeTypeProperty(name: string): boolean {
   const lower = name.toLowerCase()
-  return lower === 'mimetype' || lower === 'mime_type' || lower === 'mediatype' || lower === 'media_type'
+  return (
+    lower === 'mimetype' || lower === 'mime_type' || lower === 'mediatype' || lower === 'media_type'
+  )
 }
 
 // Returns the blob and mimeType property names if the schema has a blob+mimeType pair.
@@ -244,8 +255,10 @@ async function convertMcpSpecToToolFunctions(
       ? rewriteSchemaForFileId(originalSchema, blobSig.blobProp, blobSig.mimeTypeProp)
       : originalSchema
     const exposedDescription = blobSig
-      ? `${tool.description ?? ''}\n\nProvide a Logicle file_id; the file bytes are fetched automatically.`
-      : (tool.description ?? '')
+      ? `${
+          tool.description ?? ''
+        }\n\nProvide a Logicle file_id; the file bytes are fetched automatically.`
+      : tool.description ?? ''
 
     result[tool.name] = {
       description: exposedDescription,
@@ -331,14 +344,17 @@ async function convertMcpSpecToToolFunctions(
           }
         }
         if (lastError !== undefined) {
-          const errorMessage = lastError instanceof Error ? lastError.message : 'MCP tool invocation failed'
+          const errorMessage =
+            lastError instanceof Error ? lastError.message : 'MCP tool invocation failed'
           return { type: 'error-text' as const, value: errorMessage }
         }
         return await normalizeMcpToolResult(result!, invokeParams, {
           resolveResourceLinks: !blobSig,
           readResource: async (uri) => {
             const read = await clientToUse.readResource({ uri })
-            return read.contents?.[0] as { blob?: string; text?: string; mimeType?: string } | undefined
+            return read.contents?.[0] as
+              | { blob?: string; text?: string; mimeType?: string }
+              | undefined
           },
         })
       },
@@ -350,8 +366,8 @@ async function convertMcpSpecToToolFunctions(
 
 export class McpPlugin extends McpInterface implements ToolImplementation {
   static builder: ToolBuilder = async (toolParams: ToolParams, params: Record<string, unknown>) => {
-    const config = params as McpPluginParams
-    return new McpPlugin(toolParams, config) // TODO: need a better validation
+    const config = mcpPluginSchema.parse(params)
+    return new McpPlugin(toolParams, config)
   }
 
   supportedMedia = []
@@ -370,6 +386,12 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
   }
 
   async functions(_model: LlmModel, context: ToolFunctionContext): Promise<ToolFunctions> {
+    if (isMcpStdioPluginParams(this.config) && !this.toolParams.provisioned) {
+      logger.warn(
+        `Ignoring stdio MCP tool ${this.toolParams.id}: stdio is only available to provisioned tools`
+      )
+      return {}
+    }
     const userId = context?.userId ?? ''
     if (
       this.config.authentication.type === 'oauth' &&
