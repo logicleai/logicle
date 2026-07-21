@@ -482,6 +482,7 @@ describe('GET /api/files/:fileId/content', () => {
       expectedSizeBytes: 100,
       rangeStart: 10,
       rangeEnd: 19,
+      signal: expect.any(AbortSignal),
     })
   })
 
@@ -518,6 +519,7 @@ describe('GET /api/files/:fileId/content', () => {
       expectedSizeBytes: 100,
       rangeStart: 0,
       rangeEnd: 9,
+      signal: expect.any(AbortSignal),
     })
   })
 
@@ -535,6 +537,9 @@ describe('GET /api/files/:fileId/content', () => {
 
     expect(response.status).toBe(200)
     expect(response.headers.get('accept-ranges')).toBe('none')
-    expect(mocks.readStream).toHaveBeenCalledWith('pgp.txt', 'pgp', { expectedSizeBytes: 100 })
+    expect(mocks.readStream).toHaveBeenCalledWith('pgp.txt', 'pgp', {
+      expectedSizeBytes: 100,
+      signal: expect.any(AbortSignal),
+    })
   })
 })

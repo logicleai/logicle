@@ -173,7 +173,7 @@ export const GET = operation({
   name: 'Download file content',
   authentication: 'user',
   responses: [responseSpec(200, z.any()), errorSpec(403), errorSpec(404)] as const,
-  implementation: async ({ params, headers, session }) => {
+  implementation: async ({ params, headers, session, signal }) => {
     const file = await db
       .selectFrom('File')
       .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
@@ -203,6 +203,7 @@ export const GET = operation({
         expectedSizeBytes: file.size,
         rangeStart: start,
         rangeEnd: end,
+        signal,
       })
       return new Response(stream, {
         status: 206,
@@ -217,6 +218,7 @@ export const GET = operation({
 
     const fileContent = await storage.readStream(file.path, file.encryption, {
       expectedSizeBytes: file.size ?? undefined,
+      signal,
     })
     return new Response(fileContent, {
       headers: {
