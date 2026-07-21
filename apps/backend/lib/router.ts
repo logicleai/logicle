@@ -29,7 +29,7 @@ const toNodeRequestUrl = (req: IncomingMessage) => {
   return new URL(req.url ?? '/', `${protocol}://${host}`)
 }
 
-const toWebRequest = (req: IncomingMessage) => {
+const toWebRequest = (req: IncomingMessage, signal: AbortSignal) => {
   const url = toNodeRequestUrl(req)
   const headers = new Headers()
 
@@ -54,6 +54,7 @@ const toWebRequest = (req: IncomingMessage) => {
         ? undefined
         : (Readable.toWeb(req) as ReadableStream),
     duplex: 'half',
+    signal,
   } as RequestInit)
 }
 
@@ -129,7 +130,19 @@ const methodNotAllowedForModule = (routeModule: RouteModule) => {
 }
 
 export async function handleApiRequest(req: IncomingMessage, res: ServerResponse) {
-  const request = toWebRequest(req)
+  // Ties the Request's AbortSignal to the real connection lifecycle: if the
+  // client disconnects before we finish writing the response (e.g. a large
+  // file download is cancelled mid-stream), route handlers observing
+  // `signal` can tear down any in-flight upstream work (S3 reads, etc.)
+  // instead of leaving it running until it times out on its own.
+  const abortController = new AbortController()
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      abortController.abort()
+    }
+  })
+
+  const request = toWebRequest(req, abortController.signal)
   const url = new URL(request.url)
   const match = matchRoute(url.pathname)
 
