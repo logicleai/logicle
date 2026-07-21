@@ -75,6 +75,7 @@ function createSession() {
       headers = {},
       includeCookies = true,
       allowStatus = null,
+      signal,
     } = opts
     const allHeaders: Record<string, string> = { ...headers }
     if (includeCookies && sessionCookies.size > 0) {
@@ -89,6 +90,7 @@ function createSession() {
       method,
       headers: allHeaders,
       body: payload,
+      signal,
     })
     setCookiesFromResponse(res.headers)
     const text = await res.text()
@@ -115,6 +117,7 @@ type RequestOptions = {
   headers?: Record<string, string>
   includeCookies?: boolean
   allowStatus?: number[] | null
+  signal?: AbortSignal
 }
 
 async function request(method: string, path: string, opts: RequestOptions = {}) {
@@ -580,6 +583,56 @@ async function main() {
     throw new Error(
       `Unexpected ranged accept-ranges header: ${rangedContent.res.headers.get('accept-ranges')}`
     )
+  }
+
+  console.log('Smoke: aborting a download mid-stream does not break the server')
+  {
+    // Large enough that the response is still streaming out when we cut the
+    // client connection below, instead of already having completed.
+    const abortPayload = crypto.randomBytes(4 * 1024 * 1024)
+    const abortFileCreated = await requestUser('POST', '/api/files', {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: {
+        name: `smoke-abort-${runId}.bin`,
+        type: 'application/octet-stream',
+        size: abortPayload.byteLength,
+        owner,
+      },
+    })
+    const abortFileId = (
+      parseJson(abortFileCreated.text, '/api/files POST abort') as { id: string }
+    ).id
+    await requestUser('PUT', `/api/files/${abortFileId}/content`, {
+      expectedStatus: 204,
+      headers: { 'content-type': 'application/octet-stream', ...sameOriginHeaders },
+      body: new Uint8Array(abortPayload),
+    })
+
+    const controller = new AbortController()
+    const downloadPromise = requestUser('GET', `/api/files/${abortFileId}/content`, {
+      headers: sameOriginHeaders,
+      signal: controller.signal,
+    })
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    controller.abort()
+
+    let sawAbortError = false
+    try {
+      await downloadPromise
+    } catch (err) {
+      sawAbortError = err instanceof Error && err.name === 'AbortError'
+    }
+    if (!sawAbortError) {
+      throw new Error('Expected the client-aborted download request to reject with AbortError')
+    }
+
+    // The server must stay healthy and keep serving unrelated requests after
+    // a client disconnects mid-download.
+    await requestUser('GET', '/api/me/profile', {
+      expectedStatus: 200,
+      headers: sameOriginHeaders,
+    })
   }
 
   console.log('Smoke: pdf upload analysis preview')
