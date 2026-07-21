@@ -177,6 +177,13 @@ jobs:
           SHORT_SHA="${GITHUB_SHA::8}"
           echo "version=${DATE}.${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build production image (local)
         uses: docker/build-push-action@v5
         with:
@@ -186,6 +193,14 @@ jobs:
           build-args: APP_VERSION=${{ steps.buildver.outputs.version }}
           cache-from: type=gha,scope=nextjs-build
           cache-to: type=gha,mode=max,scope=nextjs-build
+
+      - name: Verify bundled file analyzer
+        run: |
+          docker run --rm --entrypoint sh "${SMOKE_IMAGE}" -c '
+            mcp-file-analyzer -help >/dev/null
+            command -v soffice
+            command -v pdftoppm
+          '
 
       - name: Run smoke and baseline integration checks
         run: |
