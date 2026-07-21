@@ -103,14 +103,20 @@ export class S3Storage extends BaseStorage {
             : undefined,
       }
       const command = new GetObjectCommand(params)
-      const response = await this.s3Client.send(command)
+      // abortSignal keeps the underlying socket tied to the client's request:
+      // if the client disconnects mid-download, the SDK destroys the S3
+      // connection immediately instead of leaving it open (and unreturned to
+      // the agent pool) until S3 itself times it out.
+      const response = await this.s3Client.send(command, { abortSignal: options?.signal })
       const body = response.Body
       if (!body) {
         throw new Error(`Failed reading S3 object ${path}: No body`)
       }
       return body.transformToWebStream()
     } catch (error) {
-      logger.error('Failed reading S3 object', error)
+      if (!options?.signal?.aborted) {
+        logger.error('Failed reading S3 object', error)
+      }
       throw error
     }
   }

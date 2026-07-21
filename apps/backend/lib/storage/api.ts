@@ -7,6 +7,7 @@ export interface StorageReadOptions {
   bypassCache?: boolean
   rangeStart?: number
   rangeEnd?: number
+  signal?: AbortSignal
 }
 
 export interface Storage {
