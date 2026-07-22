@@ -1,0 +1,47 @@
+# Mount this file in the Logicle container and set:
+# PROVISION_PATH=/provision/mcp-file-analyzer.yaml
+#
+# The tool is provisioned by virtue of being declared here. Local stdio MCP
+# tools are intentionally accepted only from provisioning, so application users
+# cannot configure arbitrary commands to run inside the container.
+backends:
+  logiclecloud:
+    name: Logicle Cloud
+    providerType: logiclecloud
+    apiKey: ${LOGICLECLOUD_API_KEY}
+    endPoint: https://llmproxy.eu.logicle.ai
+
+tools:
+  image-generator:
+    type: imagegen.openai
+    name: Image generator
+    description: Generate and edit images with GPT Image 1.5.
+    tags:
+      - images
+      - generation
+    sharing:
+      type: public
+    configuration:
+      model: gpt-image-1.5
+      apiKey: ${OPENAI_API_KEY}
+
+  mcp-file-analyzer:
+    type: mcp
+    name: File analyzer
+    description: Extract text and render previews from files attached to a chat.
+    tags:
+      - files
+      - documents
+    sharing:
+      type: public
+    configuration:
+      transport: stdio
+      # Metadata only: stdio does not open a network connection to this URL.
+      url: stdio://local
+      command: /usr/local/bin/mcp-file-analyzer
+      args: []
+      sandbox:
+        mode: conversation
+        root: /data/mcp-file-analyzer
+      authentication:
+        type: none

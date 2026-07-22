@@ -1,20 +1,29 @@
+# syntax=docker/dockerfile:1.5
+
+# Pin this to a released analyzer version (or digest) when updating it.
+ARG FILE_ANALYZER_IMAGE=ghcr.io/logicleai/mcp-file-analyzer:0.6.0
+
 # ---------------------
-# Stage 1: Builder
+# Stage 1: File analyzer
+# ---------------------
+FROM ${FILE_ANALYZER_IMAGE} AS file-analyzer
+
+# ---------------------
+# Stage 2: Builder
 # ---------------------
 # This is the build stage where we build the NextJS application.
-# syntax directive enables --mount support
-# syntax=docker/dockerfile:1.5
-FROM node:24-alpine AS builder
+FROM node:24-bookworm-slim AS builder
 
 # Accept optional version at build time: --build-arg APP_VERSION=1.2.3
 ARG APP_VERSION
 
-RUN apk add --no-cache \
-    python3 make g++ py3-pip py3-setuptools \
-    pkgconf \
-    cairo-dev pango-dev giflib-dev pixman-dev libjpeg-turbo-dev librsvg-dev \
-    vips-dev \
-    && ln -sf python3 /usr/bin/python
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ python3-pip python3-setuptools \
+    pkg-config \
+    libcairo2-dev libpango1.0-dev libgif-dev libpixman-1-dev libjpeg62-turbo-dev librsvg2-dev \
+    libvips-dev \
+    && ln -sf python3 /usr/bin/python \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g node-gyp pnpm@10.10.0
 
@@ -56,18 +65,28 @@ RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
 
 
 # ---------------------
-# Final Stage: Runtime
+# Stage 3: Runtime
 # ---------------------
-FROM node:24-alpine
+FROM node:24-bookworm-slim
 
 WORKDIR /app
 
 # Install kysely globally to enable database migrations at app startup
 RUN npm install -g kysely
 
-# Runtime libs for native modules (sharp/canvas)
-RUN apk add --no-cache \
-    cairo pango giflib pixman libjpeg-turbo librsvg vips vips-cpp
+# Runtime libraries for native modules (sharp/canvas), plus the renderer used by
+# mcp-file-analyzer for Office document previews.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcairo2 libpango-1.0-0 libgif7 libpixman-1-0 libjpeg62-turbo librsvg2-2 libvips42 \
+    libreoffice-core-nogui \
+    libreoffice-impress-nogui \
+    libreoffice-writer-nogui \
+    libreoffice-calc-nogui \
+    fonts-liberation \
+    fonts-dejavu-core \
+    fonts-noto-core \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create and set permissions for directories
 RUN mkdir -p apps/frontend/.next/cache /data/sqlite /data/files \
@@ -79,6 +98,7 @@ COPY --from=builder /app/apps/frontend/.next/standalone ./
 COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
 COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/.env ./.env
+COPY --from=file-analyzer /mcp-file-analyzer /usr/local/bin/mcp-file-analyzer
 
 # Switch to the non-root 'node' for security reasons
 USER node

@@ -114,12 +114,36 @@ export const mcpAuthenticationSchema = z
   ])
   .default({ type: 'none' })
 
-export const mcpPluginSchema = z.object({
+export const mcpHttpPluginSchema = z.object({
+  transport: z.never().optional(),
   url: z.string().url(),
   authentication: mcpAuthenticationSchema,
 })
+
+export const mcpConversationSandboxSchema = z
+  .object({
+    mode: z.literal('conversation'),
+    root: z.string().min(1),
+  })
+  .strict()
+
+export const mcpStdioPluginSchema = z.object({
+  transport: z.literal('stdio'),
+  // Maintains a URL-shaped endpoint for generic MCP metadata and OAuth call sites.
+  // The stdio transport itself never uses this value.
+  url: z.literal('stdio://local').default('stdio://local'),
+  command: z.string().min(1),
+  args: z.array(z.string()).default([]),
+  sandbox: mcpConversationSandboxSchema.optional(),
+  authentication: z.object({ type: z.literal('none') }).default({ type: 'none' }),
+})
+
+export const mcpPluginSchema = z.union([mcpHttpPluginSchema, mcpStdioPluginSchema])
 export type McpPluginAuthentication = z.infer<typeof mcpAuthenticationSchema>
 export type McpPluginParams = z.infer<typeof mcpPluginSchema>
+export type McpStdioPluginParams = z.infer<typeof mcpStdioPluginSchema>
+export const isMcpStdioPluginParams = (params: McpPluginParams): params is McpStdioPluginParams =>
+  'transport' in params && params.transport === 'stdio'
 export class McpInterface {
   static toolName = 'mcp'
 }
