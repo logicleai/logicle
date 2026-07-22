@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.5
 
 # Pin this to a released analyzer version (or digest) when updating it.
-ARG FILE_ANALYZER_IMAGE=ghcr.io/logicleai/mcp-file-analyzer:0.5.0
+ARG FILE_ANALYZER_IMAGE=ghcr.io/logicleai/mcp-file-analyzer:0.6.0
 
 # ---------------------
 # Stage 1: File analyzer
