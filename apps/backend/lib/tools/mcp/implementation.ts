@@ -11,6 +11,7 @@ import {
   McpInterface,
   McpPluginAuthentication,
   McpPluginParams,
+  McpStdioPluginParams,
   isMcpStdioPluginParams,
   mcpPluginSchema,
 } from '@/lib/tools/schemas'
@@ -27,14 +28,15 @@ import type { ToolAuthParams } from '@/lib/chat/tools'
 import { LlmModel } from '@/lib/chat/models'
 import { LRUCache } from 'lru-cache'
 import * as dto from '@/types/dto'
-import { normalizeMcpToolResult } from '@/backend/lib/tools/file-output-normalization'
-import { getFileWithId } from '@/models/file'
-import { canAccessFile } from '@/backend/lib/files/authorization'
-import { storage } from '@/lib/storage'
+import { normalizeMcpToolResult, saveFile } from '@/backend/lib/tools/file-output-normalization'
+import { prepareMcpConversationSandbox, type McpConversationSandbox } from './sandbox'
+import { attachMcpFileBridge, type McpFileBridge } from './file-bridge'
+import { SandboxedStdioClientTransport } from './sandboxed-stdio-transport'
 
 interface CacheItem {
   id: string
   client: Client
+  bridge?: McpFileBridge
   keepAlive?: NodeJS.Timeout
 }
 
@@ -93,10 +95,44 @@ const computeHeaders = (
   return {}
 }
 
-const createTransport = (params: McpPluginParams, accessToken?: string) => {
+const createTransport = (
+  params: McpPluginParams,
+  accessToken?: string,
+  sandbox?: McpConversationSandbox,
+  bridgeRef?: { value?: McpFileBridge }
+) => {
   if (isMcpStdioPluginParams(params)) {
     logger.info(`Create MCP stdio transport for command ${params.command}`)
-    return new StdioClientTransport({ command: params.command, args: params.args })
+    const env = sandbox
+      ? {
+          PATH: process.env.PATH ?? '',
+          LANG: process.env.LANG ?? 'C.UTF-8',
+          HOME: `${sandbox.workspaceDir}/home`,
+          TMPDIR: `${sandbox.workspaceDir}/tmp`,
+          MCP_SANDBOX_DIR: sandbox.workspaceDir,
+          LOGICLE_MCP_SANDBOX: '1',
+        }
+      : undefined
+    if (sandbox) {
+      return new SandboxedStdioClientTransport({
+        command: params.command,
+        args: params.args,
+        env,
+        cwd: sandbox.workspaceDir,
+        onFileBridge: (channel) => {
+          bridgeRef!.value = attachMcpFileBridge(channel, sandbox)
+        },
+      })
+    }
+    const discoveryEnv = params.sandbox
+      ? { ...process.env, LOGICLE_MCP_SANDBOX: '1' }
+      : undefined
+    return new StdioClientTransport({
+      command: params.command,
+      args: params.args,
+      env: discoveryEnv,
+      cwd: undefined,
+    })
   }
   const { url, authentication } = params
   const headers = {
@@ -129,7 +165,8 @@ const createTransport = (params: McpPluginParams, accessToken?: string) => {
 const getClient = async (
   params: McpPluginParams,
   accessToken?: string,
-  cacheKeySuffix?: string
+  cacheKeySuffix?: string,
+  sandbox?: McpConversationSandbox
 ) => {
   const key = JSON.stringify({ params, accessToken, cacheKeySuffix })
   const cached = clientCache.get(key)
@@ -142,9 +179,15 @@ const getClient = async (
     name: 'example-client',
     version: '1.0.0',
   })
-  const transport = createTransport(params, accessToken)
+  const bridgeRef: { value?: McpFileBridge } = {}
+  const transport = createTransport(params, accessToken, sandbox, bridgeRef)
   transport.onclose = () => {
     logger.info('MCP Transport closed')
+    // A local stdio child can disappear independently, for example after its
+    // binary is restarted. Never retain a client whose transport has closed.
+    if (clientCache.get(key)?.client === client) {
+      clientCache.delete(key)
+    }
   }
   transport.onerror = (error) => {
     logger.error(
@@ -161,65 +204,8 @@ const getClient = async (
     throw e
   }
   const id = nanoid()
-  clientCache.set(key, { id, client, keepAlive: startKeepAlive(key, client) })
+  clientCache.set(key, { id, client, bridge: bridgeRef.value, keepAlive: startKeepAlive(key, client) })
   return client
-}
-
-// Detects a parameter that carries base64-encoded file bytes.
-function isBlobProperty(name: string, schema: JSONSchema7): boolean {
-  if (schema.type !== 'string') return false
-  const lower = name.toLowerCase()
-  if (lower === 'data' || lower === 'blob' || lower === 'content') {
-    const desc = (schema.description ?? '').toLowerCase()
-    if (desc.includes('base64')) return true
-  }
-  const fmt = (schema as Record<string, unknown>).format
-  if (fmt === 'byte' || fmt === 'base64') return true
-  return false
-}
-
-function isMimeTypeProperty(name: string): boolean {
-  const lower = name.toLowerCase()
-  return (
-    lower === 'mimetype' || lower === 'mime_type' || lower === 'mediatype' || lower === 'media_type'
-  )
-}
-
-// Returns the blob and mimeType property names if the schema has a blob+mimeType pair.
-function detectBlobSignature(
-  schema: JSONSchema7
-): { blobProp: string; mimeTypeProp: string } | null {
-  const props = schema.properties
-  if (!props) return null
-  let blobProp: string | null = null
-  let mimeTypeProp: string | null = null
-  for (const [name, propSchema] of Object.entries(props)) {
-    if (typeof propSchema === 'boolean') continue
-    if (isBlobProperty(name, propSchema)) blobProp = name
-    if (isMimeTypeProperty(name)) mimeTypeProp = name
-  }
-  return blobProp && mimeTypeProp ? { blobProp, mimeTypeProp } : null
-}
-
-// Rewrites a blob+mimeType schema to accept a file_id instead.
-function rewriteSchemaForFileId(
-  schema: JSONSchema7,
-  blobProp: string,
-  mimeTypeProp: string
-): JSONSchema7 {
-  const { [blobProp]: _b, [mimeTypeProp]: _m, ...rest } = schema.properties ?? {}
-  const required = (schema.required ?? []).filter((r) => r !== blobProp && r !== mimeTypeProp)
-  return {
-    ...schema,
-    properties: {
-      ...rest,
-      file_id: {
-        type: 'string',
-        description: 'Logicle file ID of the document to import.',
-      },
-    },
-    required: [...required, 'file_id'],
-  }
 }
 
 async function convertMcpSpecToToolFunctions(
@@ -249,26 +235,45 @@ async function convertMcpSpecToToolFunctions(
   const result: ToolFunctions = {}
   for (const tool_ of tools) {
     const tool = tool_ as any
-    const originalSchema = tool.inputSchema as JSONSchema7
-    const blobSig = detectBlobSignature(originalSchema)
-    const exposedSchema = blobSig
-      ? rewriteSchemaForFileId(originalSchema, blobSig.blobProp, blobSig.mimeTypeProp)
-      : originalSchema
-    const exposedDescription = blobSig
-      ? `${
-          tool.description ?? ''
-        }\n\nProvide a Logicle file_id; the file bytes are fetched automatically.`
-      : tool.description ?? ''
 
     result[tool.name] = {
-      description: exposedDescription,
+      description: tool.description ?? '',
       // the code below is highly unsafe... but it's a start
-      parameters: exposedSchema,
+      parameters: tool.inputSchema,
       auth: async () => null,
       invoke: async (invokeParams: ToolInvokeParams) => {
-        const { params, userId } = invokeParams
+        const { params, userId, conversationId } = invokeParams
         let clientToUse = client
         let accessToken: string | undefined
+        if (isMcpStdioPluginParams(toolParams) && toolParams.sandbox) {
+          if (!conversationId) {
+            return {
+              type: 'error-text' as const,
+              value: 'A conversation is required to use this sandboxed MCP tool.',
+            }
+          }
+          try {
+            const sandbox = await prepareMcpConversationSandbox(
+              toolParams as McpStdioPluginParams,
+              conversationId,
+              userId,
+            )
+            if (sandbox) {
+              clientToUse = await getClient(
+                toolParams,
+                undefined,
+                `conversation:${conversationId}`,
+                sandbox
+              )
+            }
+          } catch (error) {
+            logger.warn(`Failed preparing MCP sandbox for conversation ${conversationId}`, error)
+            return {
+              type: 'error-text' as const,
+              value: error instanceof Error ? error.message : 'Failed preparing MCP sandbox.',
+            }
+          }
+        }
         if (toolParams.authentication.type === 'oauth') {
           if (!userId) {
             return {
@@ -296,29 +301,6 @@ async function convertMcpSpecToToolFunctions(
           clientToUse = await getClient(toolParams, accessToken, userId)
         }
 
-        // Resolve file_id → base64 bytes before forwarding to the real MCP tool.
-        let callArgs: Record<string, unknown> = { ...params }
-        if (blobSig) {
-          const fileId = `${params.file_id ?? ''}`
-          if (!fileId) {
-            return { type: 'error-text' as const, value: 'file_id is required' }
-          }
-          if (userId && !(await canAccessFile({ userId }, fileId))) {
-            return { type: 'error-text' as const, value: `Access denied to file: ${fileId}` }
-          }
-          const fileEntry = await getFileWithId(fileId)
-          if (!fileEntry) {
-            return { type: 'error-text' as const, value: `File not found: ${fileId}` }
-          }
-          const fileBytes = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
-          const { file_id: _ignored, ...restParams } = callArgs
-          callArgs = {
-            ...restParams,
-            [blobSig.blobProp]: Buffer.from(fileBytes).toString('base64'),
-            [blobSig.mimeTypeProp]: fileEntry.type,
-          }
-        }
-
         let result: Awaited<ReturnType<Client['callTool']>> | undefined
         const maxAttempts = 1 + Math.max(0, env.tools.mcp.callToolMaxRetries)
         let lastError: unknown
@@ -327,7 +309,7 @@ async function convertMcpSpecToToolFunctions(
           try {
             result = await clientToUse.callTool({
               name: tool.name,
-              arguments: callArgs,
+              arguments: params,
             })
             lastError = undefined
             break
@@ -348,15 +330,23 @@ async function convertMcpSpecToToolFunctions(
             lastError instanceof Error ? lastError.message : 'MCP tool invocation failed'
           return { type: 'error-text' as const, value: errorMessage }
         }
-        return await normalizeMcpToolResult(result!, invokeParams, {
-          resolveResourceLinks: !blobSig,
-          readResource: async (uri) => {
-            const read = await clientToUse.readResource({ uri })
-            return read.contents?.[0] as
-              | { blob?: string; text?: string; mimeType?: string }
-              | undefined
-          },
+        const normalized = await normalizeMcpToolResult(result!, invokeParams, {
+          resolveResourceLinks: false,
         })
+        const bridge = [...clientCache.values()].find((item) => item.client === clientToUse)?.bridge
+        const artifacts = bridge?.takeArtifacts() ?? []
+        if (artifacts.length === 0) return normalized
+        const files = await Promise.all(artifacts.map((artifact) => saveFile({
+          ...invokeParams,
+          content: artifact.data,
+          mimeType: artifact.mimeType,
+          nameHint: artifact.name,
+          source: 'MCP file bridge',
+        })))
+        if (normalized.type === 'content') {
+          return { type: 'content' as const, value: [...normalized.value, ...files] }
+        }
+        return { type: 'content' as const, value: files }
       },
     }
   }

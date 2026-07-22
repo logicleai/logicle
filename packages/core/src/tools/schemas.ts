@@ -120,6 +120,13 @@ export const mcpHttpPluginSchema = z.object({
   authentication: mcpAuthenticationSchema,
 })
 
+export const mcpConversationSandboxSchema = z
+  .object({
+    mode: z.literal('conversation'),
+    root: z.string().min(1),
+  })
+  .strict()
+
 export const mcpStdioPluginSchema = z.object({
   transport: z.literal('stdio'),
   // Maintains a URL-shaped endpoint for generic MCP metadata and OAuth call sites.
@@ -127,6 +134,7 @@ export const mcpStdioPluginSchema = z.object({
   url: z.literal('stdio://local').default('stdio://local'),
   command: z.string().min(1),
   args: z.array(z.string()).default([]),
+  sandbox: mcpConversationSandboxSchema.optional(),
   authentication: z.object({ type: z.literal('none') }).default({ type: 'none' }),
 })
 

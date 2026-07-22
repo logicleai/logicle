@@ -114,7 +114,7 @@ export const normalizeMcpToolResult = async (
         ...params,
         content: Buffer.from(item.resource.blob, 'base64'),
         mimeType: item.resource.mimeType ?? defaultMimeType,
-        nameHint: item.resource.name,
+        nameHint: item.resource.name ?? item.resource.uri,
         source: 'MCP',
       })
       contentParts.push(persisted)
