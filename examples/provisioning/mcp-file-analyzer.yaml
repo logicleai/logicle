@@ -42,6 +42,6 @@ tools:
       args: []
       sandbox:
         mode: conversation
-        root: /var/lib/logicle/mcp-file-analyzer
+        root: /data/mcp-file-analyzer
       authentication:
         type: none
