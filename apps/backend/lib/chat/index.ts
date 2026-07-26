@@ -1101,6 +1101,14 @@ export class ChatAssistant {
         const updatedAssistantResponse =
           chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
         await this.saveMessage(updatedAssistantResponse, usage)
+        if (usage) {
+          clientSink.enqueue({
+            type: 'usage',
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            totalTokens: usage.totalTokens,
+          })
+        }
       }
 
       const functions = this.functions
