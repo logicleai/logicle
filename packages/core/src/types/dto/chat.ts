@@ -351,6 +351,16 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
   summary: string
 }
 
+/** Emitted once per assistant turn, right after the LLM call finishes — carries the same token
+ * counts already computed for DB persistence (see apps/backend/lib/chat/usage.ts's `Usage`), just
+ * surfaced to the stream consumer too. Never mutates message history (see streamApply.ts). */
+interface TextStreamPartUsage extends TextStreamPartGeneric {
+  type: 'usage'
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+}
+
 export type TextStreamPart =
   | TextStreamPartNewMessage
   | TextStreamPartNewPart
@@ -360,6 +370,7 @@ export type TextStreamPart =
   | TextStreamPartCitations
   | TextStreamPartUserRequest
   | TextStreamPartSummary
+  | TextStreamPartUsage
 
 export const messageSchema = z.record(z.string(), z.unknown()) as unknown as z.ZodType<Message>
 

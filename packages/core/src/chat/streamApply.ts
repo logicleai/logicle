@@ -103,7 +103,7 @@ export function applyStreamPartToMessages(
   if (streamPart.type === 'message') {
     return [...messages, streamPart.msg]
   }
-  if (streamPart.type === 'summary') {
+  if (streamPart.type === 'summary' || streamPart.type === 'usage') {
     return messages
   }
   const lastIndex = messages.length - 1
