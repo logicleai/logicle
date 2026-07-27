@@ -4,6 +4,28 @@ This document specifies how chat context compression works. It is the source of 
 behavior — not a description of history, and not an aspirational design. Implementation lives in
 `apps/backend/lib/chat/compression-planner.ts`.
 
+## In breve
+
+La compressione è una seconda rappresentazione della cronologia, usata solo per costruire il
+prompt da inviare al modello. La conversazione salvata e la cronologia che il server passa ai tool
+restano intatte.
+
+Quando il contesto supera la soglia configurata, il planner guarda i messaggi dei turni precedenti:
+
+- gli allegati nei messaggi dell'utente vengono sostituiti da nome, id, tipo e una breve anteprima
+  testuale;
+- i risultati dei tool che contengono file vengono sostituiti da riferimenti recuperabili;
+- i risultati testuali dei tool troppo grandi vengono ridotti a un'anteprima;
+- con il preset `aggressive`, anche i messaggi testuali lunghi dell'utente vengono abbreviati.
+
+Il turno corrente non viene mai compresso. Ogni messaggio abbreviato contiene comunque il proprio
+id e un'istruzione per usare `context-retrieve.get_message`; per il contenuto di un file è presente
+anche `context-retrieve.get_file`. Se il modello non conosce l'id, può usare `search` nella
+cronologia originale della conversazione.
+
+Quindi la compressione non è un riassunto generato da un LLM e non è una cancellazione: è una
+proiezione deterministica, con recupero esplicito del dettaglio quando serve.
+
 ## Goals
 
 - Persisted chat history is never mutated. Compression only affects what is sent to the model.
@@ -462,6 +484,32 @@ Covered in `apps/backend/lib/chat/__tests__/compression-planner.test.ts`:
 `apps/backend/lib/tools/context-retrieve/__tests__/implementation.test.ts` covers the tool itself:
 `get_file` (unchanged behavior from the old `retrieve-file` tool), `get_message` (found/not-found,
 and that it needs no DB access), and `search` (match with snippet, no-match, empty query).
+
+## Behavioral Regression Benchmark
+
+The unit tests above validate the planner and the transformed message shape. They do not prove that
+an LLM can solve a task after the relevant content has been removed from the prompt. That question
+is covered by `__tests__/contextCompressionBenchmark.test.ts`.
+
+The benchmark uses real provider calls and is skipped by default. Enable it with:
+
+```bash
+RUN_LLM_INTEGRATION=1 pnpm vitest run __tests__/contextCompressionBenchmark.test.ts
+```
+
+It first checks deterministically that the planted message is actually assigned `summary`, then
+asks a real model to recover facts from the compressed history. The assertions require both the
+correct answer and evidence that the appropriate recovery tool was called, which prevents a lucky
+guess from passing. The scenarios currently cover:
+
+- recovering metadata from a large historical tool result through `get_message`;
+- recovering multiple facts from one uploaded document through `get_file`;
+- combining facts from two independently compressed documents.
+
+This test is intentionally an integration benchmark, not a stable quality score: provider/model
+versions, tool-calling behavior and network conditions can affect it. Keep the deterministic
+preconditions and retrieval assertions strict; use a small provider matrix for release smoke tests
+and run broader model comparisons separately.
 
 ## Relevant Files
 
