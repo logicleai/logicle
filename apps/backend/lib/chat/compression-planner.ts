@@ -13,7 +13,7 @@ import { projectMessageForEstimationCached } from './message-projection'
  * Bump when the summary-building rules below change so stale `CompressedMessage` rows are
  * regenerated instead of reused.
  */
-export const COMPRESSION_VERSION = 2
+export const COMPRESSION_VERSION = 4
 
 /**
  * The assistant-configured `triggerAtTokens` can only raise the floor below which compression
@@ -208,6 +208,12 @@ export function planMessageCompression(
           ? 'historical tool result with recoverable file'
           : 'large historical tool output'
       }
+    } else if (message.role === 'assistant') {
+      const isLargeText = chars > largeTextThreshold
+      if (isLargeText) {
+        policy = 'summary'
+        reason = 'large historical assistant response'
+      }
     }
 
     const tokensAfter = policy === 'summary' ? Math.min(tokensBefore, 40) : tokensBefore
@@ -262,6 +268,13 @@ export async function applyCompressionPlan(
       continue
     }
 
+    if (message.role === 'assistant') {
+      const compacted = await compressOnce(message.id, () => compressAssistantMessage(message))
+      const outputIndex = output.push(compacted) - 1
+      recordAssistantToolCallIndices(compacted, outputIndex, assistantToolCallIndices)
+      continue
+    }
+
     const outputIndex = output.push(message) - 1
     recordAssistantToolCallIndices(message, outputIndex, assistantToolCallIndices)
   }
@@ -293,6 +306,13 @@ export async function warmCompressionCache(message: dto.Message): Promise<void> 
         return false
       })
       if (eligible) await compressOnce(message.id, () => compressToolMessage(message))
+      return
+    }
+    if (message.role === 'assistant') {
+      const eligible = message.parts.some(
+        (part) => part.type === 'text' && part.text.length > LARGE_TEXT_THRESHOLD_CHARS
+      )
+      if (eligible) await compressOnce(message.id, () => compressAssistantMessage(message))
     }
   } catch (err) {
     logger.warn('Context compression cache warm-up failed', { messageId: message.id, err })
@@ -336,7 +356,7 @@ async function compressUserMessage(message: dto.UserMessage): Promise<dto.UserMe
     referenceLines.push(...attachmentSummaries)
   }
 
-  const bodyText = hasAttachments ? message.content : truncateInline(message.content)
+  const bodyText = truncateInline(message.content)
   const content: Partial<dto.UserMessage> = {
     content: [...referenceLines, bodyText, buildMessageRecoveryNote(message.id)]
       .filter(Boolean)
@@ -344,6 +364,44 @@ async function compressUserMessage(message: dto.UserMessage): Promise<dto.UserMe
     attachments: [],
   }
 
+  await saveCompressedMessage({
+    sourceMessageId: message.id,
+    compressionVersion: COMPRESSION_VERSION,
+    content,
+    version: message.version ?? null,
+  })
+
+  return { ...message, ...content }
+}
+
+/**
+ * Truncates each historical `text` part in place (preserving position relative to `tool-call` /
+ * `reasoning` parts) and appends a single recovery note. `builtin-tool-call`/`builtin-tool-result`
+ * parts are left as-is but are already excluded from the prompt entirely by
+ * `projectMessageForEstimation` regardless of compression, so they cost nothing either way.
+ */
+async function compressAssistantMessage(
+  message: dto.AssistantMessage
+): Promise<dto.AssistantMessage> {
+  const { getCompressedMessage, saveCompressedMessage } = await import(
+    '@/models/compressed-message'
+  )
+  const cached = await getCompressedMessage(message.id, COMPRESSION_VERSION)
+  if (cached) {
+    return { ...message, ...(cached.content as Partial<dto.AssistantMessage>) }
+  }
+
+  let sawText = false
+  const parts: dto.AssistantMessagePart[] = message.parts.map((part) => {
+    if (part.type !== 'text') return part
+    sawText = true
+    return { ...part, text: truncateInline(part.text) }
+  })
+  if (sawText) {
+    parts.push({ type: 'text', text: buildMessageRecoveryNote(message.id) })
+  }
+
+  const content: Partial<dto.AssistantMessage> = { parts }
   await saveCompressedMessage({
     sourceMessageId: message.id,
     compressionVersion: COMPRESSION_VERSION,
