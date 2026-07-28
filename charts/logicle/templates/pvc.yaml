@@ -1,0 +1,18 @@
+{{- if eq .Values.storage.type "pvc" }}
+{{- $filesPVC := .Values.storage.pvc.persistentVolumeClaim }}
+{{- if not $filesPVC.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "logicle.fullname" . }}-files
+  labels:
+    {{- include "logicle.labels" . | nindent 4 }}
+spec:
+  storageClassName: {{ $filesPVC.storageClass }}
+  accessModes:
+    - {{ $filesPVC.accessMode }}
+  resources:
+    requests:
+      storage: {{ $filesPVC.size }}
+{{- end }}
+{{- end }}

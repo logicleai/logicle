@@ -1,0 +1,11 @@
+{{- if .Values.provisioning.standardTools }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "logicle.fullname" . }}-standard-tools
+  labels:
+    {{- include "logicle.labels" . | nindent 4 }}
+data:
+  20-standard-tools.yaml: |
+{{ .Values.provisioning.standardTools | indent 4 }}
+{{- end }}

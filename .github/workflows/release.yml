@@ -1,11 +1,42 @@
-name: Publish Release to GitHub Container Registry
+name: Release
 
 on:
   release:
     types: [published, edited]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      # Image tag as pushed to GHCR/Docker Hub. Also used, verbatim, as the
+      # chart's Chart.yaml appVersion, so `helm install` with no image.tag
+      # override always resolves to the image this same run published.
+      image_tag: ${{ steps.resolve.outputs.image_tag }}
+      # Helm chart version (must be strict semver, no "v" prefix).
+      chart_version: ${{ steps.resolve.outputs.chart_version }}
+    steps:
+      - name: Resolve image tag and chart version
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            RAW="${{ github.event.release.tag_name }}"
+            IMAGE_TAG="${RAW#v}"
+            IMAGE_TAG="v${IMAGE_TAG}"
+            CHART_VERSION="${IMAGE_TAG#v}"
+          else
+            SHA8="${GITHUB_SHA::8}"
+            IMAGE_TAG="sha-${SHA8}"
+            CHART_VERSION="0.0.0-${SHA8}"
+          fi
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "chart_version=${CHART_VERSION}" >> "$GITHUB_OUTPUT"
+
   docker:
+    needs: version
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -13,37 +44,72 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ghcr.io/${{ github.repository }}
-            ${{ github.repository }}
-          tags: |
-            type=semver,pattern={{raw}}
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
+
+      - name: Build and push to GHCR
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.version.outputs.image_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            APP_VERSION=${{ github.event.release.tag_name }}
+            APP_VERSION=${{ needs.version.outputs.image_tag }}
+
+      # Docker Hub only carries released versions, not every dev build.
+      - name: Login to Docker Hub
+        if: github.event_name == 'release'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push to Docker Hub
+        if: github.event_name == 'release'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ github.repository }}:${{ needs.version.outputs.image_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            APP_VERSION=${{ needs.version.outputs.image_tag }}
+
+  chart:
+    needs: [version, docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Lint helm chart
+        run: helm lint charts/logicle
+
+      - uses: ./.github/actions/helm-oci-chart-releaser
+        with:
+          name: logicle
+          repository: logicleai
+          tag: ${{ needs.version.outputs.chart_version }}
+          app_version: ${{ needs.version.outputs.image_tag }}
+          path: charts/logicle
+          registry: ${{ env.REGISTRY }}
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          update_dependencies: true

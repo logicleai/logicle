@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "logicle.fullname" . }}
+  labels:
+    {{- include "logicle.labels" . | nindent 4 }}
+data:
+  PORT: "8080"
+  APP_URL: "{{ if .Values.config.useHttps }}https{{ else }}http{{ end }}://{{ .Values.config.fqdn }}"
+  DB_ENGINE: "postgres"
+  NEXTAUTH_URL: "{{ if .Values.config.useHttps }}https{{ else }}http{{ end }}://{{ .Values.config.fqdn }}"
+  LLM_PROVIDER_CONFIG_LOCK: "{{ if .Values.config.LLM_PROVIDER_CONFIG_LOCK }}1{{ else }}0{{ end }}"
+  SSO_CONFIG_LOCK: "{{ if .Values.config.SSO_CONFIG_LOCK }}1{{ else }}0{{ end }}"
+  ENABLE_SIGNUP: "{{ if .Values.config.ENABLE_SIGNUP }}1{{ else }}0{{ end }}"
+  ENABLE_TOOLS: "1"
+  ENABLE_CHAT_SHARING: "{{ if .Values.config.ENABLE_CHAT_SHARING }}1{{ else }}0{{ end }}"
+  CHAT_ATTACHMENTS_ALLOWED_FORMATS: "{{ .Values.config.CHAT_ATTACHMENTS_ALLOWED_FORMATS }}"
+  PROVISION_PATH: "/provisioning"
+  FILE_STORAGE_LOCATION: "{{ if eq .Values.storage.type "s3" }}s3://{{ .Values.storage.s3.bucket_name }}{{ else }}/data/files{{ end }}"
+  ASSISTANT_KNOWLEDGE: "prompt"
+  OPENAI_USE_RESPONSE_APIS: "1"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "{{ .Values.opentelemetry.endpoint }}"
+  ENABLE_CHAT_ATTACHMENT_CONVERSION: "1"
+  OTEL_RESOURCE_ATTRIBUTES: "host.name={{ if .Values.config.useHttps }}https{{ else }}http{{ end }}://{{ .Values.config.fqdn }}"
+  ENABLE_CHAT_TREE_NAVIGATION: "1"
+  {{- if .Values.config.CHAT_SOFT_MESSAGE_LIMIT }}
+  CHAT_SOFT_MESSAGE_LIMIT: "{{ .Values.config.CHAT_SOFT_MESSAGE_LIMIT }}"
+  {{- end }}
+  {{- if .Values.config.CHAT_HARD_MESSAGE_LIMIT }}
+  CHAT_HARD_MESSAGE_LIMIT: "{{ .Values.config.CHAT_HARD_MESSAGE_LIMIT }}"
+  {{- end }}
+  {{- if .Values.brand.files }}
+  PROVISION_BRAND_PATH: "/brand"
+  {{- end }}
+  {{- if .Values.brand.favicon_path }}
+  FAVICON_PATH: "{{ .Values.brand.favicon_path }}"
+  {{- end }}
+  {{- if .Values.brand.logo_path }}
+  LOGO_PATH: "{{ .Values.brand.logo_path }}"
+  {{- end }}
+  {{- if .Values.brand.app_display_name }}
+  APP_DISPLAY_NAME: "{{ .Values.brand.app_display_name }}"
+  {{- end }}

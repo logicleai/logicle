@@ -1,0 +1,11 @@
+{{- if .Values.provisioning.users }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "logicle.fullname" . }}-users
+  labels:
+    {{- include "logicle.labels" . | nindent 4 }}
+data:
+  10-users.yaml: |
+{{ .Values.provisioning.users | indent 4 }}
+{{- end }}

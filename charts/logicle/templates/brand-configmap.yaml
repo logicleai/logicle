@@ -1,0 +1,12 @@
+{{- if .Values.brand.files }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "logicle.fullname" . }}-brand
+  labels:
+    {{- include "logicle.labels" . | nindent 4 }}
+binaryData:
+  {{- range $filename, $content := .Values.brand.files }}
+  {{ $filename }}: {{ $content }}
+  {{- end }}
+{{- end }}

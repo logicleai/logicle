@@ -1,0 +1,56 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "logicle.fullname" . -}}
+{{- $fqdn := .Values.config.fqdn -}}
+{{- if and .Values.ingress.ingressClass (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.ingressClass}}
+  {{- end }}
+{{- end }}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "logicle.labels" . | nindent 4 }}
+  {{- if .Values.config.useHttps }}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+    nginx.ingress.kubernetes.io/proxy-body-size: 256m
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+  {{- end }}
+spec:
+  {{- if and .Values.ingress.ingressClass (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.ingress.ingressClass }}
+  {{- end }}
+  {{- if .Values.config.useHttps }}
+  tls:
+    - hosts:
+        - {{ $fqdn }}
+      secretName: "letsencrypt-certificate"
+  {{- end }}
+  rules:
+    - host: {{ $fqdn }}
+      http:
+        paths:
+          - path: /
+            {{- if (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
+            pathType: Prefix
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: 8080
+              {{- else }}
+              serviceName: {{ $fullName }}
+              servicePort: 8080
+              {{- end }}
+{{- end }}
