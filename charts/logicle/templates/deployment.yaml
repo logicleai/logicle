@@ -1,0 +1,88 @@
+{{- $filesPVC := .Values.storage.pvc.persistentVolumeClaim -}}
+{{- $imageTag := .Values.image.tag | default .Chart.AppVersion -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "logicle.fullname" . }}
+  labels:
+    {{- include "logicle.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "logicle.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "logicle.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: app
+        image: "{{ .Values.image.repository }}:{{ $imageTag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: {{ include "logicle.fullname" . }}
+        - secretRef:
+            name: {{ include "logicle.fullname" . }}
+        volumeMounts:
+        {{- if .Values.provisioning.backends }}
+        - name: backends-config
+          mountPath: /provisioning/00-backends.yaml
+          subPath: 00-backends.yaml
+          readOnly: true
+        {{- end }}
+        {{- if .Values.provisioning.users }}
+        - name: users-config
+          mountPath: /provisioning/10-users.yaml
+          subPath: 10-users.yaml
+          readOnly: true
+        {{- end }}
+        {{- if .Values.provisioning.standardTools }}
+        - name: standard-tools-config
+          mountPath: /provisioning/20-standard-tools.yaml
+          subPath: 20-standard-tools.yaml
+          readOnly: true
+        {{- end }}
+        {{- if eq .Values.storage.type "pvc" }}
+        - name: uploaded-files-data
+          mountPath: /data/files
+        {{- end }}
+        {{- if .Values.brand.files }}
+        - name: brand-files
+          mountPath: /brand
+          readOnly: true
+        {{- end }}
+      volumes:
+      {{- if .Values.provisioning.standardTools }}
+      - name: standard-tools-config
+        configMap:
+          name: {{ include "logicle.fullname" . }}-standard-tools
+      {{- end }}
+      {{- if .Values.provisioning.backends }}
+      - name: backends-config
+        configMap:
+          name: {{ include "logicle.fullname" . }}-backends
+      {{- end }}
+      {{- if .Values.provisioning.users }}
+      - name: users-config
+        configMap:
+          name: {{ include "logicle.fullname" . }}-users
+      {{- end }}
+      {{- if eq .Values.storage.type "pvc" }}
+      - name: uploaded-files-data
+        {{- if $filesPVC.existingClaim }}
+        persistentVolumeClaim:
+          claimName: {{ $filesPVC.existingClaim }}
+        {{- else }}
+        persistentVolumeClaim:
+          claimName: {{ include "logicle.fullname" . }}-files
+        {{- end }}
+      {{- end }}
+      {{- if .Values.brand.files }}
+      - name: brand-files
+        configMap:
+          name: {{ include "logicle.fullname" . }}-brand
+      {{- end }}

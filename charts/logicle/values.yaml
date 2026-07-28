@@ -1,0 +1,83 @@
+# Kept as "logicle-ee" so app.kubernetes.io/name (used in the Deployment's
+# immutable pod selector) stays identical to the pre-unification chart.
+# Existing "logicle-ee-$TENANT" releases can then `helm upgrade` onto this
+# chart in place, with no resource renaming/recreation.
+nameOverride: "logicle-ee"
+
+image:
+  repository: "ghcr.io/logicleai/logicle"
+  tag: ""
+  pullPolicy: Always
+
+config:
+  useHttps: true
+  fqdn: "chat.example.com"
+  NEXTAUTH_SECRET: ""
+  ENABLE_SIGNUP: true
+  ENABLE_CHAT_SHARING: true
+  LLM_PROVIDER_CONFIG_LOCK: false
+  SSO_CONFIG_LOCK: false
+  CHAT_ATTACHMENTS_ALLOWED_FORMATS: "image/jpeg,image/png,image/webp,image/gif,audio/mpeg,audio/x-m4a,audio/ogg,audio/vorbis,application/pdf,application/zip,application/xml,text/xml,text/*,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,video/mp4,application/msword,text/html,audio/wav,audio/x-wav"
+  CHAT_SOFT_MESSAGE_LIMIT: ""
+  CHAT_HARD_MESSAGE_LIMIT: ""
+
+logiclecloud:
+  llmproxy_api_key: ""
+  tools_api_key: ""
+
+imagegen:
+  openai_api_key: ""
+  together_api_key: ""
+  replicate_api_key: ""
+  gemini_api_key: ""
+
+audio_transcription:
+  assemblyai_api_key: ""
+
+tools:
+  exa_api_key: ""
+
+opentelemetry:
+  endpoint: "http://10.0.0.7:4318"
+
+# Raw YAML blobs, mounted verbatim into /provisioning/*.yaml. Left empty
+# by default (no provisioning configmaps rendered); the actual content is
+# owned by the deployer, not the chart.
+provisioning:
+  backends: ""
+  users: ""
+  standardTools: ""
+
+# Storage backend for uploaded files: "pvc" or "s3"
+storage:
+  type: "pvc"
+  pvc:
+    persistentVolumeClaim:
+      existingClaim: ""
+      storageClass: manual
+      size: 1Gi
+      accessMode: ReadWriteOnce
+  s3:
+    access_key_id: ""
+    secret_access_key: ""
+    default_region: ""
+    bucket_name: ""
+
+database:
+  host: "postgres.example.com"
+  port: 5432
+  dbName: "logicle"
+  user: "admin"
+  password: "securepassword"
+
+ingress:
+  enabled: true
+  ingressClass: "nginx"
+  annotations: {}
+
+brand:
+  # Keys are filenames, values are base64-encoded file contents (binaryData).
+  files: {}
+  favicon_path: ""
+  logo_path: ""
+  app_display_name: ""
