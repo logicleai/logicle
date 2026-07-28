@@ -77,6 +77,7 @@ RUN npm install -g kysely
 # Runtime libraries for native modules (sharp/canvas), plus the renderer used by
 # mcp-file-analyzer for Office document previews.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     libcairo2 libpango-1.0-0 libgif7 libpixman-1-0 libjpeg62-turbo librsvg2-2 libvips42 \
     libreoffice-core-nogui \
     libreoffice-impress-nogui \
