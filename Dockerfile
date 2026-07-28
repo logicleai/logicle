@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.5
 
 # Pin this to a released analyzer version (or digest) when updating it.
-ARG FILE_ANALYZER_IMAGE=ghcr.io/logicleai/mcp-file-analyzer:0.6.0
+ARG FILE_ANALYZER_IMAGE=ghcr.io/logicleai/mcp-file-analyzer:0.8.0
 
 # ---------------------
 # Stage 1: File analyzer
@@ -77,6 +77,7 @@ RUN npm install -g kysely
 # Runtime libraries for native modules (sharp/canvas), plus the renderer used by
 # mcp-file-analyzer for Office document previews.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     libcairo2 libpango-1.0-0 libgif7 libpixman-1-0 libjpeg62-turbo librsvg2-2 libvips42 \
     libreoffice-core-nogui \
     libreoffice-impress-nogui \
