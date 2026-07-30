@@ -38,16 +38,21 @@ async function createDialect() {
     PG.types.setTypeParser(1114, 'text', (value) => {
       return toIsoTimestamp(value)
     })
-    dialect = new PostgresDialect({
-      pool: new PG.Pool({
-        database: url.pathname.substring(1),
-        host: url.hostname,
-        user: url.username,
-        password: url.password,
-        port: parseInt(url.port, 10),
-        max: 10,
-      }),
+    const pool = new PG.Pool({
+      database: url.pathname.substring(1),
+      host: url.hostname,
+      user: url.username,
+      password: url.password,
+      port: parseInt(url.port, 10),
+      max: 10,
     })
+    // pg emits 'error' on the pool when an idle client's connection dies
+    // (e.g. the server closes it). Without a listener this throws as an
+    // uncaught exception and can wedge the process.
+    pool.on('error', (err) => {
+      logger.error('Postgres pool idle client error', err)
+    })
+    dialect = new PostgresDialect({ pool })
   }
   return dialect
 }
