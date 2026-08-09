@@ -7,7 +7,7 @@ import { IconTrash } from '@tabler/icons-react'
 
 interface ModalContextParams {
   title: string
-  message: string | JSX.Element
+  message: string | React.ReactElement
   confirmMsg?: string
   destructive?: boolean
 }
@@ -25,7 +25,7 @@ const ConfirmationContext = React.createContext<ContextType>({} as ContextType)
 const ConfirmationContextProvider: React.FC<ContextProviderProps> = (props) => {
   const theme = useTheme()
   const [content, setContent] = useState<ModalContextParams | undefined>()
-  const resolver = useRef<(arg: boolean) => void>()
+  const resolver = useRef<((arg: boolean) => void) | undefined>(undefined)
 
   const handleShow = (params: ModalContextParams): Promise<boolean> => {
     setContent(params)

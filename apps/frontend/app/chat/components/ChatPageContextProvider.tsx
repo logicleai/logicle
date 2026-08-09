@@ -69,7 +69,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     dispatch,
   } = contextValue
 
-  const selectedConversationRef = useRef<ConversationWithMessages | undefined>()
+  const selectedConversationRef = useRef<ConversationWithMessages | undefined>(undefined)
   const chatRunMachineRef = useRef<ChatRunMachineState>(idleChatRunMachineState)
   const subscriptionNonceRef = useRef(0)
   const loadConversationNonceRef = useRef(0)

@@ -32,9 +32,9 @@ const SatelliteNavIcon: React.FC = () => {
 }
 
 export interface Props {
-  leftBar?: JSX.Element
+  leftBar?: React.ReactElement
   leftBarCollapsible: boolean
-  children: JSX.Element
+  children: React.ReactElement
 }
 
 const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }) => {
