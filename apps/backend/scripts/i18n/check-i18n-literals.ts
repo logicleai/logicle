@@ -1,11 +1,16 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import ts from 'typescript'
+import { API } from 'typescript/unstable/sync'
+import * as ts from 'typescript/unstable/ast'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '../..')
+const tsApi = new API()
+const tsSnapshot = tsApi.updateSnapshot({
+  openProjects: [path.resolve(projectRoot, '../../tsconfig.json')],
+})
 
 const ignoredDirs = new Set([
   'node_modules',
@@ -73,14 +78,14 @@ function isMeaningfulText(text: string): boolean {
 function collectIssues(filePath: string): Issue[] {
   const issues: Issue[] = []
   const sourceText = fs.readFileSync(filePath, 'utf-8')
-  const ext = path.extname(filePath)
-  const kind = ext === '.tsx' || ext === '.jsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-  const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true, kind)
+  const sourceFile = tsSnapshot.getDefaultProjectForFile(filePath)?.program.getSourceFile(filePath)
+  if (!sourceFile) return issues
+  const parsedSourceFile = sourceFile
 
   function addIssue(node: ts.Node, message: string, text: string) {
-    if (hasIgnoreComment(sourceText, sourceFile, node)) return
-    const pos = node.getStart(sourceFile)
-    const { line, character } = sourceFile.getLineAndCharacterOfPosition(pos)
+    if (hasIgnoreComment(sourceText, parsedSourceFile, node)) return
+    const pos = node.getStart(parsedSourceFile)
+    const { line, character } = parsedSourceFile.getLineAndCharacterOfPosition(pos)
     issues.push({
       filePath,
       line: line + 1,
@@ -92,7 +97,7 @@ function collectIssues(filePath: string): Issue[] {
 
   function visit(node: ts.Node) {
     if (ts.isJsxText(node)) {
-      const text = node.getText(sourceFile)
+      const text = node.getText(parsedSourceFile)
       if (isMeaningfulText(text)) {
         addIssue(node, 'JSX text literal should be localized', text.trim())
       }
@@ -113,9 +118,9 @@ function collectIssues(filePath: string): Issue[] {
     }
 
     if (ts.isJsxAttribute(node)) {
-      const name = node.name.getText(sourceFile)
+      const name = node.name.getText(parsedSourceFile)
       if (!localizedAttributeNames.has(name)) {
-        ts.forEachChild(node, visit)
+        node.forEachChild(visit)
         return
       }
       const initializer = node.initializer
@@ -134,7 +139,7 @@ function collectIssues(filePath: string): Issue[] {
       }
     }
 
-    ts.forEachChild(node, visit)
+    node.forEachChild(visit)
   }
 
   visit(sourceFile)

@@ -536,6 +536,7 @@
   "saml-config-updated": "Configurazione SAML modificata con successo.",
   "saml-connection-established": "La connessione Single Sign-On è abilitata per il tuo workspace.",
   "save": "Salva",
+  "saved": "Salvato",
   "no-parameters-available": "Non ci sono parametri disponibili",
   "save-changes": "Salva Modifiche",
   "save-and-submit": "Salva e Invia",
