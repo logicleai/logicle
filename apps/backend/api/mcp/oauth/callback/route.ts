@@ -9,7 +9,14 @@ import { getMcpOAuthSession } from '@/lib/auth/mcpOauth'
 import { z } from 'zod'
 
 const renderHtml = (payload: Record<string, unknown>) => {
+  // JSON.stringify alone does not make untrusted data safe inside a <script>.
+  // Escape the HTML-significant characters and line separators before embedding.
   const data = JSON.stringify(payload)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
   const targetOrigin = JSON.stringify(new URL(env.appUrl).origin)
   return `<!doctype html>
 <html>
@@ -112,15 +119,16 @@ export const GET = operation({
     const code = query.code
     const state = query.state
     const errorParam = query.error
-    if (errorParam) {
-      return renderError(errorParam)
-    }
-    if (!code || !state) {
-      return renderError('Missing code or state')
-    }
     const oauthSession = await getMcpOAuthSession(cookies)
-    if (!oauthSession.state || oauthSession.state !== state) {
+    if (!state || !oauthSession.state || oauthSession.state !== state) {
       return renderError('Invalid OAuth state')
+    }
+    if (errorParam) {
+      oauthSession.destroy()
+      return renderError('Authorization was denied or failed')
+    }
+    if (!code) {
+      return renderError('Missing authorization code')
     }
     if (!oauthSession.toolId || !oauthSession.userId) {
       return renderError('Missing OAuth session')

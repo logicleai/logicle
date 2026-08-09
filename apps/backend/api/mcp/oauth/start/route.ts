@@ -6,6 +6,8 @@ import crypto from 'node:crypto'
 import { getMcpOAuthSession } from '@/lib/auth/mcpOauth'
 import env from '@/lib/env'
 import { z } from 'zod'
+import { getUserWorkspaceMemberships } from '@/models/user'
+import { isToolVisible } from '@/lib/rbac'
 
 const base64UrlEncode = (input: Buffer) => input.toString('base64url').replace(/=+$/g, '')
 const appOrigin = new URL(env.appUrl).origin
@@ -38,6 +40,10 @@ export const GET = operation({
     }
     const tool = await getTool(toolId)
     if (tool?.type !== 'mcp') {
+      return notFound('Tool not found')
+    }
+    const memberships = await getUserWorkspaceMemberships(session.userId)
+    if (!isToolVisible(tool, session.userRole, memberships.map((membership) => membership.id))) {
       return notFound('Tool not found')
     }
     const parsed = mcpPluginSchema.safeParse(tool.configuration)

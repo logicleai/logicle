@@ -4,11 +4,12 @@ import { listIdpConnections } from '@/models/sso'
 
 export const getLoginPageConfig = async (): Promise<{
   userCount: number
-  identityProviders: dto.IdpConnection[]
+  identityProviders: dto.PublicIdpConnection[]
 }> => {
+  const connections = await listIdpConnections()
   return {
     userCount: await getUserCount(),
-    identityProviders: await listIdpConnections(),
+    identityProviders: connections.map(({ id, name, description, type }) => ({ id, name, description, type })),
   }
 }
 

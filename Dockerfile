@@ -98,7 +98,6 @@ COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
 COPY --from=builder /app/apps/frontend/.next/standalone ./
 COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
 COPY --from=builder /app/dist-server ./dist-server
-COPY --from=builder /app/.env ./.env
 COPY --from=file-analyzer /mcp-file-analyzer /usr/local/bin/mcp-file-analyzer
 
 # Switch to the non-root 'node' for security reasons

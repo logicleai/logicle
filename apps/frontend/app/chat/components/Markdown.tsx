@@ -2,7 +2,6 @@ import { CodeBlock } from './markdown/CodeBlock'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
-import rehypeRaw from 'rehype-raw'
 import ReactMarkdown, { Components } from 'react-markdown'
 import rehypeExternalLinks from 'rehype-external-links'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
@@ -125,7 +124,6 @@ export const Markdown: React.FC<{
         rehypePlugins={[
           [rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }],
           rehypeKatex,
-          rehypeRaw,
         ]}
         components={components}
       >

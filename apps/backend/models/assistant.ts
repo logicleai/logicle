@@ -217,13 +217,12 @@ export const getUserAssistants = async (
     ])
     .where((eb) => {
       const conditions: Expression<SqlBool>[] = []
-      if (!assistantId) {
-        // Accessibility is enforced only when listing (i.e. assistant parameter not defined)
-        // An assistant is accessible if:
-        // is owned by the user
-        // is shared to all
-        // is shared to any of the workspaces passed as a parameter
-        // is not deleted
+      {
+        // Authorization must apply equally to list and single-assistant lookups.
+        // Draft versions are private to their owner; published versions may be shared.
+        if (type === 'draft') {
+          conditions.push(eb('Assistant.owner', '=', userId))
+        } else {
         const oredAccessibilityConditions: Expression<SqlBool>[] = [
           eb('Assistant.owner', '=', userId),
         ]
@@ -253,6 +252,7 @@ export const getUserAssistants = async (
           )
         )
         conditions.push(eb.or(oredAccessibilityConditions))
+        }
         conditions.push(eb('Assistant.deleted', '=', 0))
       }
       if (pinned) {

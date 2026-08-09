@@ -55,19 +55,25 @@ async function main() {
   }
 
   const server = createServer(async (req, res) => {
-    const pathname = parse(req.url || '/', true).pathname
-    if (pathname?.startsWith('/api/')) {
-      const handled = await handleApiRequest(req, res)
-      if (handled) {
-        return
+    try {
+      const pathname = parse(req.url || '/', true).pathname
+      if (pathname?.startsWith('/api/')) {
+        const handled = await handleApiRequest(req, res)
+        if (handled) {
+          return
+        }
       }
-    }
 
-    if (handle) {
-      const parsedUrl = parse(req.url || '/', true)
-      await handle(req, res, parsedUrl)
-    } else {
-      res.writeHead(404).end()
+      if (handle) {
+        const parsedUrl = parse(req.url || '/', true)
+        await handle(req, res, parsedUrl)
+      } else {
+        res.writeHead(404).end()
+      }
+    } catch (err) {
+      console.error('Unhandled HTTP request error:', err)
+      if (!res.headersSent) res.writeHead(500)
+      res.end()
     }
   })
 

@@ -13,17 +13,15 @@ export const GET = operation({
   responses: [responseSpec(200, dto.assistantToolSchema.array())] as const,
   implementation: async ({ session }) => {
     const workspaceMemberships = await getUserWorkspaceMemberships(session.userId)
-    const tools = (await getTools()).map((tool) => {
+    const tools = (await getTools()).filter((tool) =>
+      isToolVisible(tool, session.userRole, workspaceMemberships.map((m) => m.id))
+    ).map((tool) => {
       return {
         id: tool.id,
         name: tool.name,
         provisioned: tool.provisioned,
         capability: tool.capability,
-        visible: isToolVisible(
-          tool,
-          session.userRole,
-          workspaceMemberships.map((m) => m.id)
-        ),
+        visible: true,
       } satisfies dto.AssistantTool
     })
     return ok(tools)

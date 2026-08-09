@@ -271,6 +271,7 @@ describe('apps/backend/lib/storage/S3Storage', () => {
         clientConfigs.push(config)
         return { send }
       }),
+      DeleteObjectCommand: vi.fn().mockImplementation((params) => ({ params })),
       GetObjectCommand: vi.fn().mockImplementation((params) => ({ params })),
     }))
     vi.doMock('@aws-sdk/lib-storage', () => ({
@@ -314,12 +315,10 @@ describe('apps/backend/lib/storage/S3Storage', () => {
       'Failed to upload broken.bin to bucket bucket-name. Forwarding exception'
     )
 
-    const transformToByteArray = vi.fn().mockResolvedValue(new Uint8Array([1]))
-    send.mockResolvedValueOnce({ Body: { transformToByteArray } })
+    send.mockResolvedValueOnce({})
     await storage.rm('exists.bin')
-    expect(transformToByteArray).toHaveBeenCalled()
 
-    send.mockResolvedValueOnce({ Body: undefined })
+    send.mockResolvedValueOnce({})
     await expect(storage.rm('empty.bin')).resolves.toBeUndefined()
 
     const noSuchKey = new Error('missing')

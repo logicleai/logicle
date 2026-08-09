@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { canAccessFile } from '@/backend/lib/files/authorization'
+import { canAccessFile, canWriteFile } from '@/backend/lib/files/authorization'
 import { error, noBody, notFound, forbidden, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { storage } from '@/lib/storage'
 import { logger } from '@/lib/logging'
@@ -8,6 +8,7 @@ import { finalizeUploadedFile } from '@/backend/lib/files/upload-dedup'
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { getConfiguredFileEncryption } from '@/lib/storage/encryption'
+import env from '@/lib/env'
 
 
 // A synchronized tee, i.e. faster reader has to wait
@@ -66,7 +67,7 @@ export const PUT = operation({
     errorSpec(404),
     errorSpec(500),
   ] as const,
-  implementation: async ({ params, request, signal, session }) => {
+  implementation: async ({ params, request, headers, signal, session }) => {
     const file = await db
       .selectFrom('File')
       .leftJoin('AssistantVersionFile', (join) =>
@@ -78,8 +79,15 @@ export const PUT = operation({
     if (!file) {
       return notFound()
     }
-    if (!(await canAccessFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
+    if (!(await canWriteFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
       return forbidden()
+    }
+    if (file.fileBlobId) {
+      return error(400, 'File content has already been uploaded')
+    }
+    const contentLength = headers.get('content-length')
+    if (contentLength && (!/^\d+$/.test(contentLength) || Number(contentLength) > env.chat.attachments.maxSize)) {
+      return error(400, 'File exceeds the maximum upload size')
     }
     let clientDisconnected = false
     const onAbortLike = () => {
@@ -96,6 +104,9 @@ export const PUT = operation({
     const hashingStream = requestBodyStream.pipeThrough(
       new TransformStream<Uint8Array, Uint8Array>({
         transform(chunk, controller) {
+          if (byteSize + chunk.byteLength > env.chat.attachments.maxSize) {
+            throw new Error('File exceeds the maximum upload size')
+          }
           hash.update(chunk)
           byteSize += chunk.byteLength
           controller.enqueue(chunk)
@@ -177,7 +188,7 @@ export const GET = operation({
     const file = await db
       .selectFrom('File')
       .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
-      .select(['File.path as path', 'File.type as type', 'FileBlob.size as size', 'FileBlob.encryption as encryption'])
+      .select(['File.path as path', 'File.name as name', 'File.type as type', 'FileBlob.size as size', 'FileBlob.encryption as encryption'])
       .where('File.id', '=', params.fileId)
       .executeTakeFirst()
     if (!file) {
@@ -209,6 +220,8 @@ export const GET = operation({
         status: 206,
         headers: {
           'content-type': file.type,
+          'content-disposition': `attachment; filename="${file.name.replace(/[\\"\r\n]/g, '_')}"`,
+          'x-content-type-options': 'nosniff',
           'content-range': `bytes ${start}-${end}/${file.size}`,
           'content-length': `${end - start + 1}`,
           'accept-ranges': 'bytes',
@@ -223,6 +236,8 @@ export const GET = operation({
     return new Response(fileContent, {
       headers: {
         'content-type': file.type,
+        'content-disposition': `attachment; filename="${file.name.replace(/[\\"\r\n]/g, '_')}"`,
+        'x-content-type-options': 'nosniff',
         ...(typeof file.size === 'number' ? { 'content-length': `${file.size}` } : {}),
         'accept-ranges': supportsRanges ? 'bytes' : 'none',
       },
