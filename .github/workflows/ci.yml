@@ -4,6 +4,10 @@ on:
   push:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   SMOKE_IMAGE: logicle-smoke:${{ github.sha }}
 
@@ -16,15 +20,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.10.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
 
       - name: Install dependencies (no scripts)
         run: |
@@ -42,15 +47,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.10.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
 
       - name: Install dependencies (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -66,23 +72,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.10.0
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile
-
-      - name: Run chat projection parity tests
-        run: |
-          pnpm exec vitest run apps/backend/lib/chat/__tests__/conversion-estimation-parity.test.ts
 
       - name: Run unit tests with coverage
         run: |
@@ -136,24 +139,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.10.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
 
       - name: Install dependencies (no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build smoke scripts
         run: pnpm run build:smoke
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -180,7 +181,9 @@ jobs:
           tags: ${{ env.SMOKE_IMAGE }}
           build-args: APP_VERSION=${{ steps.buildver.outputs.version }}
           cache-from: type=gha,scope=nextjs-build
-          cache-to: type=gha,mode=max,scope=nextjs-build
+          # Export only layers in the final image. The builder cache is large enough
+          # that mode=max costs more to upload than it saves on the next CI run.
+          cache-to: type=gha,mode=min,scope=nextjs-build
 
       - name: Verify bundled file analyzer
         run: |
