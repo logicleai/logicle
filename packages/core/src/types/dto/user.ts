@@ -14,7 +14,6 @@ export const userSchema = z.object({
   createdAt: iso8601UtcDateTimeSchema,
   email: z.string().email(),
   name: z.string(),
-  password: z.string().nullable(),
   role: z.nativeEnum(UserRole),
   provisioned: z.boolean(),
   updatedAt: iso8601UtcDateTimeSchema,

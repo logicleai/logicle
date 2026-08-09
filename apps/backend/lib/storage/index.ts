@@ -42,6 +42,9 @@ const fileStorageLocation = env.fileStorage.location
 if (!fileStorageLocation) {
   throw new Error('FILE_STORAGE_LOCATION not defined. Upload failing')
 }
+if (env.fileStorage.encryptFiles && !env.fileStorage.encryptionKey) {
+  throw new Error('FILE_STORAGE_ENCRYPTION_KEY must be configured')
+}
 
 export const storage: Storage = await createStorage(
   fileStorageLocation,

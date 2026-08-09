@@ -4,7 +4,7 @@ import { BaseStorage } from './api'
 import type { StorageEncryption, StorageReadOptions } from './api'
 import { logger } from '@/lib/logging'
 import { Upload } from '@aws-sdk/lib-storage'
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { DeleteObjectCommand, GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { NodeHttpHandler } from '@smithy/node-http-handler'
 
 export class S3Storage extends BaseStorage {
@@ -65,12 +65,7 @@ export class S3Storage extends BaseStorage {
         Bucket: this.bucketName, // Replace with your bucket name
         Key: path, // The path to the object
       }
-      const command = new GetObjectCommand(params)
-      const response = await this.s3Client.send(command)
-      const body = response.Body
-      if (body) {
-        await body.transformToByteArray() //whatever happens... flush the stream
-      }
+      await this.s3Client.send(new DeleteObjectCommand(params))
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'NoSuchKey') {

@@ -43,3 +43,10 @@ export type SAMLConfig = z.infer<typeof samlConfigSchema>
 export type SamlIdpConnection = z.infer<typeof samlIdpConnectionSchema>
 export type OidcIdpConnection = z.infer<typeof oidcIdpConnectionSchema>
 export type IdpConnection = z.infer<typeof idpConnectionSchema>
+
+// This is intentionally separate from the administrative connection DTO.
+// Login is public and must never serialize provider configuration or secrets.
+export const publicIdpConnectionSchema = idpConnectionBaseSchema.extend({
+  type: z.enum(['SAML', 'OIDC']),
+}).meta({ id: 'PublicIdpConnection' })
+export type PublicIdpConnection = z.infer<typeof publicIdpConnectionSchema>

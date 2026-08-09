@@ -206,9 +206,11 @@ jobs:
               --add-host=host.docker.internal:host-gateway \
               -p 3000:3000 \
               -e APP_URL=http://localhost:3000 \
+              -e NEXTAUTH_SECRET=ci-smoke-only-session-secret \
               -e DATABASE_URL="${database_url}" \
               -e ALLOW_MOCK_PROVIDER=1 \
               -e FILE_STORAGE_ENCRYPTION_ENABLE=1 \
+              -e FILE_STORAGE_ENCRYPTION_KEY=ci-smoke-only-not-a-secret \
               -e FILE_STORAGE_LOCATION=/data/files \
               "${SMOKE_IMAGE}"
 
@@ -252,8 +254,10 @@ jobs:
             --name logicle-smoke \
             -p 3000:3000 \
             -e APP_URL=http://localhost:3000 \
+            -e NEXTAUTH_SECRET=ci-smoke-only-session-secret \
             -e DATABASE_URL="${DATABASE_URL}" \
             -e FILE_STORAGE_ENCRYPTION_ENABLE=1 \
+            -e FILE_STORAGE_ENCRYPTION_KEY=ci-smoke-only-not-a-secret \
             -e FILE_STORAGE_LOCATION=/data/files \
             "${SMOKE_IMAGE}"
 

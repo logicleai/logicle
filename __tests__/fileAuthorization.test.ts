@@ -140,10 +140,10 @@ describe('file authorization', () => {
     await expect(canAccess({ userId: 'u-user' }, 'TOOL', 't-private')).resolves.toBe(false)
   })
 
-  test('canAccessFile keeps legacy unowned files readable', async () => {
+  test('canAccessFile denies legacy unowned files until explicitly migrated', async () => {
     tables.File.push({ id: 'f-legacy' })
     const { canAccessFile } = await import('@/backend/lib/files/authorization')
-    await expect(canAccessFile({ userId: 'u1' }, 'f-legacy')).resolves.toBe(true)
+    await expect(canAccessFile({ userId: 'u1' }, 'f-legacy')).resolves.toBe(false)
   })
 
   test('canAccessFile enforces ownership and supports shared-access fallback', async () => {

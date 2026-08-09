@@ -19,7 +19,7 @@ const formSchema = z.object({
 })
 
 interface Props {
-  connections: dto.IdpConnection[]
+  connections: dto.PublicIdpConnection[]
   enableSignup: boolean
 }
 

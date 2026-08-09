@@ -41,7 +41,14 @@ export async function GET(_req: Request, route: { params: Promise<{ path: string
   }
   const base = path.resolve(brandDir)
   const params = await route.params
+  if (params.path.some((segment) => !segment || segment === '.' || segment === '..' || segment.includes('\\'))) {
+    return Response.json({ error: { message: 'Not found', values: {} } }, { status: 404 })
+  }
   const filePath = path.resolve(base, params.path.join('/'))
+  const relativePath = path.relative(base, filePath)
+  if (relativePath === '' || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
+    return Response.json({ error: { message: 'Not found', values: {} } }, { status: 404 })
+  }
   try {
     const stat = await fs.stat(filePath)
     if (!stat.isFile()) {
@@ -53,6 +60,7 @@ export async function GET(_req: Request, route: { params: Promise<{ path: string
       status: 200,
       headers: {
         'Content-Type': contentTypeFromExt(ext),
+        'X-Content-Type-Options': 'nosniff',
       },
     })
   } catch {

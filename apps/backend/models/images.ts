@@ -62,6 +62,10 @@ export const getOrCreateImageFromNullableDataUri = async (
 
 const createImageFromDataUriWithId = async (id: string, dataUri: string) => {
   const { data, mimeType } = splitDataUri(dataUri)
+  const detectedType = detectImageType(data)
+  if (!detectedType || detectedType !== mimeType) {
+    throw new Error('Only valid PNG, JPEG, and WebP images are supported')
+  }
   const values = {
     id,
     data,
@@ -69,4 +73,11 @@ const createImageFromDataUriWithId = async (id: string, dataUri: string) => {
   }
   await db.insertInto('Image').values(values).execute()
   return values
+}
+
+const detectImageType = (data: Buffer): 'image/png' | 'image/jpeg' | 'image/webp' | undefined => {
+  if (data.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png'
+  if (data.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))) return 'image/jpeg'
+  if (data.subarray(0, 4).toString() === 'RIFF' && data.subarray(8, 12).toString() === 'WEBP') return 'image/webp'
+  return undefined
 }

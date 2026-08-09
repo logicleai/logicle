@@ -107,7 +107,13 @@ const matchRoute = (pathname: string): RouteMatch | null => {
 
     const params: Record<string, string | string[]> = {}
     entry.params.forEach((param, index) => {
-      const value = decodeURIComponent(match[index + 1] ?? '')
+      let value: string
+      try {
+        value = decodeURIComponent(match[index + 1] ?? '')
+      } catch {
+        // A malformed escape sequence is invalid request input, not a process error.
+        return null
+      }
       params[param.name] = param.catchAll ? value.split('/').filter(Boolean) : value
     })
 

@@ -36,6 +36,7 @@ export const POST = operation({
       ssoUser: 0,
     })
 
-    return ok(user, 201)
+    // Never serialize the database user row: it contains the password hash.
+    return ok({ id: user.id }, 201)
   },
 })

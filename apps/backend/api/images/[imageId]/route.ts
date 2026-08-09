@@ -17,9 +17,14 @@ export const GET = operation({
     if (!data) {
       return new Response(null, { status: 404 })
     }
+    const safeInlineType = ['image/jpeg', 'image/png', 'image/webp'].includes(data.mimeType)
     return new Response(ensureABView(data.data), {
       status: 200,
-      headers: { 'content-type': data.mimeType },
+      headers: {
+        'content-type': data.mimeType,
+        'content-disposition': safeInlineType ? 'inline' : 'attachment',
+        'x-content-type-options': 'nosniff',
+      },
     })
   },
 })
