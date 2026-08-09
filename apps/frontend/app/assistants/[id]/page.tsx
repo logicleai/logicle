@@ -1,7 +1,7 @@
 'use client'
 import { WithLoadingAndError } from '@/components/ui'
 import { useParams, useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { AssistantForm } from '../components/AssistantForm'
@@ -41,7 +41,7 @@ import {
 const AUTO_SAVE_DELAY = 5000
 interface LocalConfirmationDialogState {
   title: string
-  message: string | JSX.Element
+  message: string | ReactElement
   confirmMsg: string
   destructive?: boolean
   cancelHidden?: boolean

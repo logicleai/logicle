@@ -93,7 +93,7 @@ const FormItemContext = React.createContext<FormItemContextValue>({} as FormItem
 interface FormItemProps {
   label?: string
   title?: string
-  children: JSX.Element
+  children: React.ReactElement
   className?: string
   style?: React.CSSProperties
 }

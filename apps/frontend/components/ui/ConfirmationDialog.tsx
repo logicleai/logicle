@@ -20,7 +20,7 @@ interface ConfirmationDialogProps {
   cancelText?: string
   destructive?: boolean
   children: React.ReactNode
-  icon?: JSX.Element
+  icon?: React.ReactElement
 }
 
 const ConfirmationDialog = ({

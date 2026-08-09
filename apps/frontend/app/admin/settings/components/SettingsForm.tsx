@@ -1,5 +1,6 @@
 'use client'
 import { useForm } from 'react-hook-form'
+import type React from 'react'
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useTranslation } from 'react-i18next'
 import { Switch } from '@/components/ui/switch'
@@ -18,7 +19,7 @@ const SettingsForm = ({ settings }: Props) => {
   const { t } = useTranslation()
 
   const environment = useEnvironment()
-  const formChildren: JSX.Element[] = []
+  const formChildren: React.ReactElement[] = []
   const defaultValues = {}
 
   for (const propName in AppSettingsDefaults) {

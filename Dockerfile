@@ -63,6 +63,21 @@ RUN if [ -n "${APP_VERSION}" ]; then \
 RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
     NODE_ENV=production pnpm build
 
+# The custom backend bundle keeps sharp external so its native binary remains
+# loadable. Prepare a compact, dereferenced runtime tree for sharp and its
+# Linux dependencies; Next's standalone output alone does not trace imports
+# made by dist-server.
+RUN sharp_dir="$(readlink -f node_modules/sharp)" \
+    && sharp_deps_dir="$(dirname "$sharp_dir")" \
+    && mkdir -p /app/runtime-node_modules/@img \
+    && cp -aL "$sharp_dir" /app/runtime-node_modules/sharp \
+    && cp -aL "$sharp_deps_dir/@img/colour" /app/runtime-node_modules/@img/colour \
+    && cp -aL "$sharp_deps_dir/@img/sharp-linux-x64" /app/runtime-node_modules/@img/sharp-linux-x64 \
+    && cp -aL "$sharp_deps_dir/@img/sharp-libvips-linux-x64" /app/runtime-node_modules/@img/sharp-libvips-linux-x64 \
+    && cp -aL "$sharp_deps_dir/detect-libc" /app/runtime-node_modules/detect-libc \
+    && cp -aL "$sharp_deps_dir/semver" /app/runtime-node_modules/semver \
+    && tar -C /app/runtime-node_modules -cf /app/runtime-node_modules.tar .
+
 
 # ---------------------
 # Stage 3: Runtime
@@ -98,6 +113,12 @@ COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
 COPY --from=builder /app/apps/frontend/.next/standalone ./
 COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
 COPY --from=builder /app/dist-server ./dist-server
+COPY --from=builder /app/runtime-node_modules.tar /tmp/runtime-node_modules.tar
+RUN rm -f node_modules/sharp node_modules/detect-libc node_modules/semver \
+    && rm -rf node_modules/@img \
+    && mkdir -p node_modules/@img \
+    && tar -xf /tmp/runtime-node_modules.tar -C node_modules \
+    && rm /tmp/runtime-node_modules.tar
 COPY --from=file-analyzer /mcp-file-analyzer /usr/local/bin/mcp-file-analyzer
 
 # Switch to the non-root 'node' for security reasons

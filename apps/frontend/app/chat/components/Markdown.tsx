@@ -66,7 +66,7 @@ export const Markdown: React.FC<{
         if (
           arr.length === 1 &&
           React.isValidElement(arr[0]) &&
-          arr[0].props.className === 'language-mermaid'
+          (arr[0].props as { className?: string }).className === 'language-mermaid'
         ) {
           return arr[0]
         }
