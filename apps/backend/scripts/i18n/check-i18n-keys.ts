@@ -1,12 +1,17 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import ts from 'typescript'
+import { API } from 'typescript/unstable/sync'
+import * as ts from 'typescript/unstable/ast'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const repoRoot = path.resolve(__dirname, '../../../..')
 const localesRoot = path.join(repoRoot, 'apps/frontend/locales')
+const tsApi = new API()
+const tsSnapshot = tsApi.updateSnapshot({
+  openProjects: [path.join(repoRoot, 'tsconfig.json')],
+})
 
 const ignoredDirs = new Set(['node_modules', '.next', 'dist', 'dist-server', 'coverage', 'locales'])
 
@@ -75,11 +80,9 @@ function loadLocales(): LocaleMap {
 }
 
 function collectKeysFromSource(filePath: string): Set<string> {
-  const text = fs.readFileSync(filePath, 'utf-8')
-  const ext = path.extname(filePath)
-  const kind = ext === '.tsx' || ext === '.jsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-  const sourceFile = ts.createSourceFile(filePath, text, ts.ScriptTarget.Latest, true, kind)
   const keys = new Set<string>()
+  const sourceFile = tsSnapshot.getDefaultProjectForFile(filePath)?.program.getSourceFile(filePath)
+  if (!sourceFile) return keys
 
   function addKeyFromArg(arg?: ts.Expression) {
     if (!arg) return
@@ -107,7 +110,7 @@ function collectKeysFromSource(filePath: string): Set<string> {
         addKeyFromArg(node.arguments[0])
       }
     }
-    ts.forEachChild(node, visit)
+    node.forEachChild(visit)
   }
 
   visit(sourceFile)
