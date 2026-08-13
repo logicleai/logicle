@@ -493,7 +493,7 @@ export const gptChatLatestModel: LlmModel = {
   ...gpt52ChatModel,
   model: 'chat-latest',
   id: 'chatgpt-5-latest',
-  name: 'Gpt chat latest (5.2)',
+  name: 'Gpt chat latest',
   tags: ['latest'],
 }
 
