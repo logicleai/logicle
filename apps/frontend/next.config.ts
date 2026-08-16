@@ -44,6 +44,9 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  outputFileTracingIncludes: {
+    '**/*': ['../../node_modules/.pnpm/@swc+helpers@*/node_modules/@swc/helpers/esm/**/*'],
+  },
   serverExternalPackages: [
     'openid-client',
     'openpgp',
