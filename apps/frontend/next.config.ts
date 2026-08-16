@@ -1,5 +1,11 @@
 import { NextConfig } from 'next'
 
+// Fully static build (no server-rendering runtime) — see server.ts's
+// serveStaticFrontend for the hand-rolled replacement of what Next used to
+// do at request time (env/brand injection, the proxy.ts auth redirect, and
+// the redirects/rewrites/headers below, none of which apply automatically
+// once Next is build-time only). These next.config.ts entries are kept
+// because `next dev` (used for local development) still applies them.
 const redirects = [
   {
     source: '/',
@@ -12,6 +18,8 @@ const redirects = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
+    // No `/_next/image` optimizer route exists without a server runtime.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -20,7 +28,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
+  output: 'export',
   async headers() {
     return [
       {
@@ -43,32 +51,6 @@ const nextConfig: NextConfig = {
         destination: '/well-known/saml-configuration',
       },
     ]
-  },
-  outputFileTracingIncludes: {
-    '**/*': ['../../node_modules/.pnpm/@swc+helpers@*/node_modules/@swc/helpers/esm/**/*'],
-  },
-  serverExternalPackages: [
-    'openid-client',
-    'openpgp',
-    'ws',
-    '@libpdf/core',
-    'sharp',
-    'mammoth',
-    'pptx2json',
-    'xlsx',
-    'winston',
-    '@vercel/otel',
-    '@opentelemetry/api-logs',
-    '@opentelemetry/exporter-logs-otlp-http',
-    '@opentelemetry/resources',
-    '@opentelemetry/sdk-logs',
-    '@opentelemetry/semantic-conventions',
-    '@opentelemetry/winston-transport',
-  ],
-  experimental: {
-    serverActions: {
-      allowedOrigins: ['https://accounts.google.com', 'accounts.google.com'],
-    },
   },
   transpilePackages: ['rimraf', '@logicle/file-analyzer'],
 }

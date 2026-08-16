@@ -1,0 +1,61 @@
+'use client'
+import { useTranslation } from 'react-i18next'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Prop, PropList } from '@/components/ui/proplist'
+import { useSatellite } from '@/hooks/satellites'
+import { AdminPage } from '@/app/admin/components/AdminPage'
+import { SatelliteDialog } from '../components/SatelliteDialog'
+import { useUrlSegment } from '@/hooks/useUrlSegment'
+
+const SatelliteDetail = () => {
+  const { t } = useTranslation()
+  const satelliteId = useUrlSegment(1)
+  const { data: satellite, isLoading, mutate } = useSatellite(satelliteId)
+  const [renamingSatellite, setRenamingSatellite] = useState(false)
+
+  if (!isLoading && !satellite) {
+    return <AdminPage title={t('satellite-not-found')}>{null}</AdminPage>
+  }
+
+  return (
+    <AdminPage
+      isLoading={isLoading}
+      title={satellite?.name ?? ''}
+      headerActions={
+        <Button variant="secondary" onClick={() => setRenamingSatellite(true)}>
+          {t('rename')}
+        </Button>
+      }
+    >
+      {satellite && (
+        <>
+          <p className="text-sm text-muted-foreground -mt-3 mb-4">{t('registered-satellite')}</p>
+          <Card className="p-4 max-w-xl">
+            <h2 className="text-lg font-semibold mb-4">{t('satellite-details')}</h2>
+            <PropList>
+              <Prop label={t('name')}>{satellite.name}</Prop>
+              <Prop label={t('id')}>
+                <code className="bg-muted px-2 py-1 rounded text-xs">{satellite.id}</code>
+              </Prop>
+              <Prop label={t('created')}>
+                {new Date(satellite.createdAt).toLocaleDateString()}
+              </Prop>
+            </PropList>
+          </Card>
+          {renamingSatellite && (
+            <SatelliteDialog
+              mode="rename"
+              satellite={satellite}
+              onClose={() => setRenamingSatellite(false)}
+              onSaved={(updated) => mutate(updated, { revalidate: false })}
+            />
+          )}
+        </>
+      )}
+    </AdminPage>
+  )
+}
+
+export default SatelliteDetail

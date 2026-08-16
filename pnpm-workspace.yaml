@@ -1,5 +1,13 @@
 packages:
   - 'packages/*'
+  - 'apps/backend'
+
+# Required for `pnpm deploy` (used to produce a pruned, backend-only
+# node_modules for the Docker runtime image — see Dockerfile) to use its
+# modern implementation instead of the legacy one, which was found to
+# over-include unrelated packages (e.g. @radix-ui, despite it not appearing
+# anywhere in apps/backend's resolved dependency graph).
+injectWorkspacePackages: true
 
 onlyBuiltDependencies:
   - better-sqlite3

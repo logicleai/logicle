@@ -33,6 +33,8 @@
       "@/lib/auth": ["./apps/backend/lib/auth/password.ts"],
       "@/lib/auth/*": ["./apps/backend/lib/auth/*"],
       "@/lib/models": ["./apps/backend/lib/models.ts"],
+      "@/lib/app-config": ["./apps/backend/lib/app-config.ts"],
+      "@/lib/staticFrontend": ["./apps/backend/lib/staticFrontend.ts"],
       "@/lib/parameters": ["./apps/backend/lib/parameters.ts"],
       "@/lib/properties": ["./apps/backend/lib/properties.ts"],
       "@/lib/provision": ["./apps/backend/lib/provision.ts"],

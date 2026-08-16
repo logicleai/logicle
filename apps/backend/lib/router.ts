@@ -19,7 +19,7 @@ type RouteMatch = {
 
 const supportedMethods = ['DELETE', 'GET', 'PATCH', 'POST', 'PUT'] as const
 
-const toNodeRequestUrl = (req: IncomingMessage) => {
+export const toNodeRequestUrl = (req: IncomingMessage) => {
   const host = req.headers.host ?? 'localhost'
   const protocol =
     (Array.isArray(req.headers['x-forwarded-proto'])
@@ -29,7 +29,7 @@ const toNodeRequestUrl = (req: IncomingMessage) => {
   return new URL(req.url ?? '/', `${protocol}://${host}`)
 }
 
-const toWebRequest = (req: IncomingMessage, signal: AbortSignal) => {
+export const toWebRequest = (req: IncomingMessage, signal: AbortSignal) => {
   const url = toNodeRequestUrl(req)
   const headers = new Headers()
 

@@ -4,17 +4,15 @@ import { initi18n } from './client'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import { BRAND_I18N_ELEMENT_ID, readBootstrapJson } from '@/lib/bootstrapPlaceholders'
 
 let inited = false
 
-export default function ClientI18nProvider({
-  children,
-  brand,
-}: {
-  children: React.ReactNode
-  brand: Record<string, string>
-}): React.ReactNode {
+export default function ClientI18nProvider({ children }: { children: React.ReactNode }): React.ReactNode {
   if (!inited) {
+    // server.ts splices the provisioned brand.json (if any) into a
+    // <script id="__logicle_brand_i18n__"> tag before sending the HTML.
+    const brand = readBootstrapJson<Record<string, string>>(BRAND_I18N_ELEMENT_ID) ?? {}
     initi18n(brand)
     inited = true
   }
