@@ -108,7 +108,7 @@ export function createLanguageModelBasic(
             headers: options.user ? { 'x-litellm-customer-id': options.user } : undefined,
             fetch,
           })
-          .responses(model.model)
+          .responses(`openai/${model.model}`)
       } else if (model.owned_by === 'anthropic') {
         return anthropic
           .createAnthropic({
