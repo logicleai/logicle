@@ -100,6 +100,11 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 # can't accidentally delete an unrelated package that happens to share a
 # name with one of mermaid's dependencies at a different version.
 #
+# `speech-rule-engine` (MathJax's optional math-to-speech accessibility
+# module, pulled in alongside @mathjax/src) is unreferenced anywhere in the
+# bundled output by the same grep check — our latexPlugin() usage never
+# triggers it — so it's dead weight for the same reason mermaid's subtree is.
+#
 # Separately: sharp ships prebuilt native binaries per libc, and pnpm's
 # lockfile (shared with local dev, which may run on other platforms) keeps
 # both the glibc build (what node:24-bookworm-slim's runtime actually needs)
@@ -126,6 +131,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
       'upsetjs+venn.js@', \
       'iconify+utils@3.', 'iconify+types@', \
       'khroma@', 'internmap@', 'rw@1.', \
+      'speech-rule-engine@', \
     ]; \
     for (const name of fs.readdirSync(dir)) { \
       const isDead = deadPrefixes.some((p) => name.startsWith(p) || name.startsWith('@' + p)); \
@@ -144,11 +150,15 @@ FROM node:24-bookworm-slim
 
 WORKDIR /app
 
-# Install kysely globally to enable database migrations at app startup
-RUN npm install -g kysely
-
 # Runtime libraries for native modules (sharp/canvas), plus the renderer used by
 # mcp-file-analyzer for Office document previews.
+#
+# libreoffice-core-nogui pulls in share/gallery, share/template, and
+# share/wizards (clip art, "File > New from Template" starter docs, and GUI
+# autopilot wizards) plus a bundled CREDITS.fodt — none of it reachable from
+# headless `soffice --convert-to` / UNO rendering, so it's stripped in this
+# same layer (must be the same RUN as the install, or the bytes just move to
+# an earlier layer instead of actually leaving the image).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libcairo2 libpango-1.0-0 libgif7 libpixman-1-0 libjpeg62-turbo librsvg2-2 libvips42 \
@@ -160,7 +170,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-dejavu-core \
     fonts-noto-core \
     poppler-utils \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf \
+        /usr/lib/libreoffice/share/gallery \
+        /usr/lib/libreoffice/share/template \
+        /usr/lib/libreoffice/share/wizards \
+        /usr/lib/libreoffice/CREDITS.fodt
 
 # Create and set permissions for directories
 RUN mkdir -p /data/sqlite /data/files \
