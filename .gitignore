@@ -156,7 +156,9 @@ dist-server
 # next.js
 /.next/
 /apps/frontend/.next/
+/apps/frontend/out/
 /out/
+
 
 # production
 /build
@@ -195,3 +197,4 @@ yarn-error.log*
 .eslintcache
 
 .codex
+.playwright-mcp

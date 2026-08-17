@@ -4,22 +4,26 @@ import ConfirmationModalContextProvider from '@/components/providers/confirmatio
 import ClientI18nProvider from './context/client-i18n-provider'
 import ThemeProvider from '@/components/providers/themeContext'
 import { Red_Hat_Display } from 'next/font/google'
-import { Environment, EnvironmentProvider } from './context/environmentProvider'
+import { EnvironmentProvider } from './context/environmentProvider'
 import env from '@/lib/env'
 import UserProfileProvider from '@/components/providers/userProfileContext'
 import TokenRateLimitProvider from '@/components/providers/tokenRateLimitContext'
 import SessionRefreshProvider from '@/components/providers/SessionRefreshProvider'
 import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
 import { ChatPageContextProvider } from './chat/components/ChatPageContextProvider'
-import * as fs from 'node:fs'
-import * as path from 'node:path'
-import { llmModels } from '@/lib/models'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
-import { appVersion } from '@/lib/version'
-import { getEnvironmentParameters } from '@/backend/lib/app-config'
 import { Metadata } from 'next'
 
-export const dynamic = 'force-dynamic'
+// This layout is fully static (no per-request server rendering — see
+// `output: 'export'` in next.config.ts). The env bootstrap and brand
+// CSS/i18n data it used to compute here are now spliced directly into the
+// raw HTML string by server.ts as it serves each request (never rendered by
+// React, to avoid a hydration mismatch between the static build and the
+// per-request data). EnvironmentProvider/ClientI18nProvider read those
+// spliced-in <script>/<style> tags back out on the client. See
+// apps/backend/lib/app-config.ts (getEnvironmentPayload,
+// getProvisionedBrandAssets) for what computes the data, and
+// attachBootstrapInjection in apps/backend/server.ts for the splicing.
 
 const openSans = Red_Hat_Display({
   subsets: ['latin'],
@@ -36,73 +40,17 @@ export const metadata: Metadata = {
   },
 }
 
-const loadProvisionedStyles = async (dir: string) => {
-  const children = fs
-    .readdirSync(dir, { withFileTypes: true })
-    .filter((child) => child.isFile() && path.extname(child.name).toLowerCase() === '.css')
-    .map((child) => child.name)
-    .sort()
-  const readFile = async (name: string) => {
-    const childPath = path.resolve(dir, name)
-    return { name, content: await fs.promises.readFile(childPath, 'utf-8') }
-  }
-  return Promise.all(children.map((child) => readFile(child)))
-}
-
-const loadBrandI18n = async (dir: string) => {
-  const childPath = path.resolve(dir, 'brand.json')
-  try {
-    await fs.promises.access(childPath)
-  } catch {
-    return {}
-  }
-  return JSON.parse(await fs.promises.readFile(childPath, 'utf-8'))
-}
-
-export default async function RootLayout({
+export default function RootLayout({
   // Layouts must accept a children prop.
   // This will be populated with nested layouts or pages
   children,
 }: {
   children: React.ReactNode
 }) {
-  const environment: Environment = {
-    backendConfigLock: env.backends.locked,
-    ssoConfigLock: env.sso.locked,
-    enableSignup: env.signup.enable,
-    enableAutoSummary: env.chat.autoSummary.enable,
-    enableChatSharing: env.chat.enableSharing,
-    enableChatFolders: env.chat.enableFolders,
-    enableShowToolResult: env.chat.enableShowToolResult,
-    enableChatTreeNavigation: env.chat.enableTreeNavigation,
-    maxImgAttachmentDimPx: env.chat.attachments.maxImgDimPx,
-    maxAttachmentSize: env.chat.attachments.maxSize,
-    enableApiKeysUi: env.apiKeys.enableUi,
-    enableSatellitesUi: env.satellites.enableUi,
-    enableAssistantInfo: env.assistants.enableInfo,
-    enableAssistantDuplicate: env.assistants.enableDuplicate,
-    appUrl: env.appUrl,
-    models: llmModels,
-    appVersion: appVersion,
-    appDisplayName: env.appDisplayName,
-    parameters: await getEnvironmentParameters(),
-    faviconPath: env.icons.favicon,
-    logoPath: env.icons.logo,
-    sessionRefreshIntervalMinutes: env.session.refreshIntervalMinutes,
-    sessionRefreshThrottleMinutes: env.session.refreshThrottleMinutes,
-    softMessageLimit: env.chat.softMessageLimit,
-    hardMessageLimit: env.chat.hardMessageLimit,
-  }
-
-  const styles = env.provision.brand ? await loadProvisionedStyles(env.provision.brand) : []
-  const brand = env.provision.brand ? await loadBrandI18n(env.provision.brand) : {}
   return (
     <html className={openSans.className} translate="no">
       <head>
         <meta name="google" content="notranslate" />
-        {styles.map((s) => {
-          return <style key={s.name}>{s.content}</style>
-        })}
       </head>
       <body className="overflow-hidden h-full">
         <ThemeProvider>
@@ -111,8 +59,8 @@ export default async function RootLayout({
               <Toaster toastOptions={{ duration: 4000 }} />
               <UserProfileProvider>
                 <TokenRateLimitProvider>
-                  <ClientI18nProvider brand={brand}>
-                    <EnvironmentProvider value={environment}>
+                  <ClientI18nProvider>
+                    <EnvironmentProvider>
                       <SessionRefreshProvider>
                         <ActiveWorkspaceProvider>
                           <ChatPageContextProvider>{children}</ChatPageContextProvider>

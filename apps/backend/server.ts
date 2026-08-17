@@ -1,13 +1,13 @@
 import { createServer } from 'node:http'
-import next from 'next'
 import { parse } from 'node:url'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 const dev = process.env.NODE_ENV !== 'production'
 const apiOnly = process.env.API_ONLY === 'true'
 const projectRoot = process.cwd()
 const frontendRoot = path.join(projectRoot, 'apps', 'frontend')
+const frontendOutDir = path.join(frontendRoot, 'out')
 
 const loadProcessEnv = () => {
   const mode = process.env.NODE_ENV ?? 'development'
@@ -32,19 +32,22 @@ loadProcessEnv()
 const { handleApiRequest } = await import('@/lib/router')
 const { bootstrapBackendRuntime } = await import('@/lib/bootstrap')
 const { attachSatelliteServer, SATELLITE_RPC_PATH } = await import('@/lib/satellite/server')
-
-if (!dev) {
-  // This is necessary to make standalone work. Very hacky....
-  // Got it from:
-  // https://github.com/oldium/microsoft-smtp-oauth2-proxy/blob/master/server/server.ts
-  const nextConfig = readFileSync(path.join(frontendRoot, '.next', 'required-server-files.json')).toString('utf-8')
-  const nextConfigJson = JSON.parse(nextConfig)
-  process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(nextConfigJson.config)
-}
+const { serveStaticFrontend } = await import('@/lib/staticFrontend')
 
 const port = process.env.PORT || 3000
 
-const nextApp = apiOnly ? null : next({ dev, dir: frontendRoot })
+// In dev, keep using Next's own dev server (HMR, on-demand compilation).
+// In production, apps/frontend is built with `output: 'export'` (see
+// next.config.ts) — a fully static build with no server runtime — so
+// serveStaticFrontend takes over instead of Next's request handler. This
+// also means the `standalone`/file-tracing machinery this hack used to
+// paper over is gone entirely; there's no Next server process to trace.
+//
+// The `next` package (and its ~380MB of platform SWC compiler binaries) is
+// only ever needed for this dev-mode branch — importing it dynamically,
+// gated on `dev`, keeps it out of module resolution in production entirely,
+// so the runtime Docker image can safely omit it from node_modules.
+const nextApp = apiOnly || !dev ? null : (await import('next')).default({ dev, dir: frontendRoot })
 const handle = nextApp?.getRequestHandler() ?? null
 
 async function main() {
@@ -62,12 +65,29 @@ async function main() {
         if (handled) {
           return
         }
+        // No registered route matched. Respond here rather than falling
+        // through to the frontend handlers below — otherwise an unmatched
+        // /api/* path (typo, removed endpoint, ...) would be treated as a
+        // page navigation and get the auth-gate's redirect-to-login instead
+        // of the JSON 404 an API caller actually needs.
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: { message: 'Not found', values: {} } }))
+        return
+      }
+
+      if (apiOnly) {
+        res.writeHead(404).end()
+        return
       }
 
       if (handle) {
         const parsedUrl = parse(req.url || '/', true)
         await handle(req, res, parsedUrl)
-      } else {
+        return
+      }
+
+      const handled = await serveStaticFrontend(req, res, frontendOutDir)
+      if (!handled) {
         res.writeHead(404).end()
       }
     } catch (err) {

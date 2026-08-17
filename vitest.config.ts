@@ -46,6 +46,8 @@ export default defineConfig({
       exactAlias('@/lib/auth', 'apps/backend/lib/auth/password.ts'),
       prefixAlias('@/lib/auth', 'apps/backend/lib/auth'),
       exactAlias('@/lib/models', 'apps/backend/lib/models.ts'),
+      exactAlias('@/lib/app-config', 'apps/backend/lib/app-config.ts'),
+      exactAlias('@/lib/staticFrontend', 'apps/backend/lib/staticFrontend.ts'),
       exactAlias('@/lib/parameters', 'apps/backend/lib/parameters.ts'),
       exactAlias('@/lib/properties', 'apps/backend/lib/properties.ts'),
       exactAlias('@/lib/provision', 'apps/backend/lib/provision.ts'),

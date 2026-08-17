@@ -709,6 +709,28 @@ paths:
             schema:
               $ref: "#/components/schemas/JoinRequest"
   /api/auth/login:
+    get:
+      summary: Get login page config
+      description: Public config (identity providers, signup availability) for the
+        login page.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  identityProviders:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PublicIdpConnection"
+                  enableSignup:
+                    type: boolean
+                required:
+                  - identityProviders
+                  - enableSignup
+                additionalProperties: false
     post:
       summary: Login
       description: Authenticate with email and password.
@@ -1512,6 +1534,159 @@ paths:
           $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
+  /api/environment:
+    get:
+      summary: Get environment
+      description: Bootstrap configuration consumed by the frontend on startup.
+      responses:
+        "200":
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  appUrl:
+                    type: string
+                  appVersion:
+                    type: string
+                  appDisplayName:
+                    type: string
+                  backendConfigLock:
+                    type: boolean
+                  ssoConfigLock:
+                    type: boolean
+                  enableSignup:
+                    type: boolean
+                  enableAutoSummary:
+                    type: boolean
+                  enableApiKeysUi:
+                    type: boolean
+                  enableSatellitesUi:
+                    type: boolean
+                  enableChatSharing:
+                    type: boolean
+                  enableChatFolders:
+                    type: boolean
+                  enableShowToolResult:
+                    type: boolean
+                  enableChatTreeNavigation:
+                    type: boolean
+                  enableAssistantInfo:
+                    type: boolean
+                  enableAssistantDuplicate:
+                    type: boolean
+                  maxImgAttachmentDimPx:
+                    type: number
+                  maxAttachmentSize:
+                    type: number
+                  sessionRefreshIntervalMinutes:
+                    type: number
+                  sessionRefreshThrottleMinutes:
+                    type: number
+                  softMessageLimit:
+                    type: number
+                  hardMessageLimit:
+                    type: number
+                  models:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        model:
+                          type: string
+                        name:
+                          type: string
+                        provider:
+                          type: string
+                        owned_by:
+                          type: string
+                        description:
+                          type: string
+                        context_length:
+                          type: number
+                        capabilities:
+                          type: object
+                          properties:
+                            vision:
+                              type: boolean
+                            function_calling:
+                              type: boolean
+                            supportedMedia:
+                              type: array
+                              items:
+                                type: string
+                            web_search:
+                              type: boolean
+                            knowledge:
+                              type: boolean
+                            nativePdfPageLimit:
+                              type: number
+                            promptCaching:
+                              type: boolean
+                            temperature:
+                              type: boolean
+                          required:
+                            - vision
+                            - function_calling
+                          additionalProperties: false
+                        defaultReasoning:
+                          type: string
+                        supportedReasoningEfforts:
+                          type: array
+                          items:
+                            type: string
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                        maxOutputTokens:
+                          type: number
+                        tokenizer:
+                          type: string
+                      required:
+                        - id
+                        - model
+                        - name
+                        - provider
+                        - owned_by
+                        - description
+                        - context_length
+                        - capabilities
+                      additionalProperties: false
+                  parameters:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Parameter"
+                  faviconPath:
+                    type: string
+                  logoPath:
+                    type: string
+                required:
+                  - appUrl
+                  - appVersion
+                  - appDisplayName
+                  - backendConfigLock
+                  - ssoConfigLock
+                  - enableSignup
+                  - enableAutoSummary
+                  - enableApiKeysUi
+                  - enableSatellitesUi
+                  - enableChatSharing
+                  - enableChatFolders
+                  - enableShowToolResult
+                  - enableChatTreeNavigation
+                  - enableAssistantInfo
+                  - enableAssistantDuplicate
+                  - maxImgAttachmentDimPx
+                  - maxAttachmentSize
+                  - sessionRefreshIntervalMinutes
+                  - sessionRefreshThrottleMinutes
+                  - models
+                  - parameters
+                additionalProperties: false
   /api/feedbacks:
     get:
       summary: List message feedbacks
@@ -4035,6 +4210,27 @@ components:
         - password
       additionalProperties: false
       id: JoinRequest
+    PublicIdpConnection:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum:
+            - SAML
+            - OIDC
+      required:
+        - id
+        - name
+        - description
+        - type
+      additionalProperties: false
+      id: PublicIdpConnection
     LoginRequest:
       type: object
       properties:
@@ -4809,6 +5005,29 @@ components:
         - messages
       additionalProperties: false
       id: ConversationWithMessages
+    Parameter:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        defaultValue:
+          anyOf:
+            - type: string
+            - type: "null"
+        provisioned:
+          type: boolean
+      required:
+        - id
+        - name
+        - description
+        - defaultValue
+        - provisioned
+      additionalProperties: false
+      id: Parameter
     FileAnalysisPayload:
       oneOf:
         - $ref: "#/components/schemas/UnknownFileAnalysisPayload"
@@ -6491,10 +6710,6 @@ components:
           pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
         name:
           type: string
-        password:
-          anyOf:
-            - type: string
-            - type: "null"
         role:
           type: string
           enum:
@@ -6525,7 +6740,6 @@ components:
         - createdAt
         - email
         - name
-        - password
         - role
         - provisioned
         - updatedAt

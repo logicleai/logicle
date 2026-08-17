@@ -3,6 +3,7 @@ lockfileVersion: '9.0'
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
+  injectWorkspacePackages: true
 
 overrides:
   '@codemirror/state': 6.6.0
@@ -529,6 +530,232 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.12.2)(jiti@1.21.7)(jsdom@25.0.1(canvas@2.11.2(encoding@0.1.13)))(tsx@4.20.5)(yaml@2.7.0)
+
+  apps/backend:
+    dependencies:
+      '@ai-sdk/anthropic':
+        specifier: 3.0.75
+        version: 3.0.75(zod@4.3.5)
+      '@ai-sdk/google':
+        specifier: ^3.0.67
+        version: 3.0.67(zod@4.3.5)
+      '@ai-sdk/google-vertex':
+        specifier: 4.0.121
+        version: 4.0.121(zod@4.3.5)
+      '@ai-sdk/openai':
+        specifier: 3.0.0
+        version: 3.0.0(zod@4.3.5)
+      '@ai-sdk/perplexity':
+        specifier: 3.0.43
+        version: 3.0.43(zod@4.3.5)
+      '@ai-sdk/provider':
+        specifier: 3.0.10
+        version: 3.0.10
+      '@ai-sdk/provider-utils':
+        specifier: 4.0.26
+        version: 4.0.26(zod@4.3.5)
+      '@apidevtools/openapi-schemas':
+        specifier: ^2.1.0
+        version: 2.1.0
+      '@aws-sdk/client-s3':
+        specifier: ^3.1044.0
+        version: 3.1044.0
+      '@aws-sdk/lib-storage':
+        specifier: ^3.1044.0
+        version: 3.1044.0(@aws-sdk/client-s3@3.1044.0)
+      '@google/genai':
+        specifier: ^1.52.0
+        version: 1.52.0(@modelcontextprotocol/sdk@1.29.0(zod@4.3.5))
+      '@google/generative-ai':
+        specifier: ^0.24.1
+        version: 0.24.1
+      '@libpdf/core':
+        specifier: ^0.2.12
+        version: 0.2.12(patch_hash=7188280ae4f40852c3d6af72e5c06f4924c5001a7c35f6177d4f8b87ea79d027)
+      '@mjackson/headers':
+        specifier: ^0.10.0
+        version: 0.10.0
+      '@mjackson/multipart-parser':
+        specifier: ^0.7.0
+        version: 0.7.3
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(zod@4.3.5)
+      '@node-saml/node-saml':
+        specifier: ^5.1.0
+        version: 5.1.0
+      '@openmeter/sdk':
+        specifier: 1.0.0-beta.227
+        version: 1.0.0-beta.227(react@19.2.8)
+      '@opentelemetry/api':
+        specifier: ^1.9.0
+        version: 1.9.1
+      '@opentelemetry/api-logs':
+        specifier: ^0.203.0
+        version: 0.203.0
+      '@opentelemetry/exporter-logs-otlp-http':
+        specifier: ^0.203.0
+        version: 0.203.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources':
+        specifier: ^2.0.1
+        version: 2.1.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-logs':
+        specifier: ^0.203.0
+        version: 0.203.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-trace-base':
+        specifier: ^2.1.0
+        version: 2.1.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/semantic-conventions':
+        specifier: ^1.37.0
+        version: 1.37.0
+      '@opentelemetry/winston-transport':
+        specifier: ^0.14.1
+        version: 0.14.1
+      '@readme/openapi-parser':
+        specifier: ^2.6.0
+        version: 2.7.0(openapi-types@12.1.3)
+      '@smithy/node-http-handler':
+        specifier: ^4.7.5
+        version: 4.7.5
+      '@vercel/otel':
+        specifier: ^2.0.1
+        version: 2.0.1(@opentelemetry/api-logs@0.203.0)(@opentelemetry/api@1.9.1)(@opentelemetry/instrumentation@0.205.0(@opentelemetry/api@1.9.1))(@opentelemetry/resources@2.1.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-logs@0.203.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.0.1(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.1))
+      ai:
+        specifier: 6.0.175
+        version: 6.0.175(zod@4.3.5)
+      ajv:
+        specifier: ^8.17.1
+        version: 8.17.1
+      ajv-draft-04:
+        specifier: ^1.0.0
+        version: 1.0.0(ajv@8.17.1)
+      bcryptjs:
+        specifier: 3.0.3
+        version: 3.0.3
+      better-sqlite3:
+        specifier: ^12.6.2
+        version: 12.6.2
+      docx:
+        specifier: 9.5.1
+        version: 9.5.1
+      exceljs:
+        specifier: ^4.4.0
+        version: 4.4.0
+      fast-xml-parser:
+        specifier: ^5.7.3
+        version: 5.7.3
+      form-data:
+        specifier: ^4.0.5
+        version: 4.0.6
+      google-auth-library:
+        specifier: ^10.6.2
+        version: 10.6.2
+      iron-session:
+        specifier: ^8.0.4
+        version: 8.0.4
+      js-tiktoken:
+        specifier: ^1.0.8
+        version: 1.0.19
+      json-schema:
+        specifier: ^0.4.0
+        version: 0.4.0
+      kysely:
+        specifier: ^0.28.17
+        version: 0.28.17
+      lru-cache:
+        specifier: ^11.0.2
+        version: 11.2.6
+      mammoth:
+        specifier: ^1.10.0
+        version: 1.10.0
+      meilisearch:
+        specifier: ^0.41.0
+        version: 0.41.0(encoding@0.1.13)
+      micromatch:
+        specifier: ^4.0.5
+        version: 4.0.8
+      mime-types:
+        specifier: ^3.0.1
+        version: 3.0.2
+      nanoid:
+        specifier: ^5.0.4
+        version: 5.1.4
+      openai:
+        specifier: ^6.15.0
+        version: 6.15.0(ws@8.21.3)(zod@4.3.5)
+      openapi-types:
+        specifier: ^12.1.3
+        version: 12.1.3
+      openid-client:
+        specifier: ^6.8.1
+        version: 6.8.1
+      openpgp:
+        specifier: ^6.1.1
+        version: 6.1.1
+      pg:
+        specifier: ^8.14.1
+        version: 8.14.1
+      pptx2json:
+        specifier: ^0.0.10
+        version: 0.0.10
+      remark:
+        specifier: ^15.0.1
+        version: 15.0.1
+      remark-docx:
+        specifier: ^0.3.26
+        version: 0.3.26
+      remark-gfm:
+        specifier: '4.0'
+        version: 4.0.1
+      remark-math:
+        specifier: ^6.0.0
+        version: 6.0.0
+      remark-parse:
+        specifier: ^11.0.0
+        version: 11.0.0
+      replicate:
+        specifier: ^1.4.0
+        version: 1.4.0
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
+      together-ai:
+        specifier: ^0.39.0
+        version: 0.39.0
+      turndown:
+        specifier: ^7.2.1
+        version: 7.2.1
+      turndown-plugin-gfm:
+        specifier: ^1.0.2
+        version: 1.0.2
+      undici:
+        specifier: ^7.25.0
+        version: 7.25.0
+      unified:
+        specifier: ^11.0.5
+        version: 11.0.5
+      unist-util-visit:
+        specifier: ^5.0.0
+        version: 5.0.0
+      winston:
+        specifier: ^3.15.0
+        version: 3.17.0
+      ws:
+        specifier: ^8.18.3
+        version: 8.21.3
+      xlsx:
+        specifier: file:../../vendor/xlsx
+        version: file:vendor/xlsx
+      yaml:
+        specifier: ^2.6.0
+        version: 2.7.0
+      zod:
+        specifier: ^4.0.0
+        version: 4.3.5
+    devDependencies:
+      next:
+        specifier: ^16.3.1
+        version: 16.3.1(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
 
   packages/file-analyzer: {}
 
@@ -5853,11 +6080,6 @@ packages:
   nan@2.28.0:
     resolution: {integrity: sha512-fTsDz99OTq2sVePhGdp4qQhggZFtKr64ZNVyVajRKtMOkJxYekplBh577PiJB12v/D3s2E5cGtOI45LWp6rnLQ==}
 
-  nanoid@3.3.11:
-    resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
-    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
-    hasBin: true
-
   nanoid@3.3.18:
     resolution: {integrity: sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -9488,9 +9710,19 @@ snapshots:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/semantic-conventions': 1.37.0
 
+  '@opentelemetry/core@2.0.1(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/semantic-conventions': 1.37.0
+
   '@opentelemetry/core@2.1.0(@opentelemetry/api@1.9.0)':
     dependencies:
       '@opentelemetry/api': 1.9.0
+      '@opentelemetry/semantic-conventions': 1.37.0
+
+  '@opentelemetry/core@2.1.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
       '@opentelemetry/semantic-conventions': 1.37.0
 
   '@opentelemetry/exporter-logs-otlp-http@0.203.0(@opentelemetry/api@1.9.0)':
@@ -9502,9 +9734,27 @@ snapshots:
       '@opentelemetry/otlp-transformer': 0.203.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-logs': 0.203.0(@opentelemetry/api@1.9.0)
 
+  '@opentelemetry/exporter-logs-otlp-http@0.203.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/api-logs': 0.203.0
+      '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/otlp-exporter-base': 0.203.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/otlp-transformer': 0.203.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-logs': 0.203.0(@opentelemetry/api@1.9.1)
+
   '@opentelemetry/instrumentation@0.205.0(@opentelemetry/api@1.9.0)':
     dependencies:
       '@opentelemetry/api': 1.9.0
+      '@opentelemetry/api-logs': 0.205.0
+      import-in-the-middle: 1.15.0
+      require-in-the-middle: 7.5.2
+    transitivePeerDependencies:
+      - supports-color
+
+  '@opentelemetry/instrumentation@0.205.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
       '@opentelemetry/api-logs': 0.205.0
       import-in-the-middle: 1.15.0
       require-in-the-middle: 7.5.2
@@ -9517,6 +9767,12 @@ snapshots:
       '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/otlp-transformer': 0.203.0(@opentelemetry/api@1.9.0)
 
+  '@opentelemetry/otlp-exporter-base@0.203.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/otlp-transformer': 0.203.0(@opentelemetry/api@1.9.1)
+
   '@opentelemetry/otlp-transformer@0.203.0(@opentelemetry/api@1.9.0)':
     dependencies:
       '@opentelemetry/api': 1.9.0
@@ -9528,16 +9784,39 @@ snapshots:
       '@opentelemetry/sdk-trace-base': 2.0.1(@opentelemetry/api@1.9.0)
       protobufjs: 7.5.6
 
+  '@opentelemetry/otlp-transformer@0.203.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/api-logs': 0.203.0
+      '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-logs': 0.203.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-metrics': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-trace-base': 2.0.1(@opentelemetry/api@1.9.1)
+      protobufjs: 7.5.6
+
   '@opentelemetry/resources@2.0.1(@opentelemetry/api@1.9.0)':
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.37.0
 
+  '@opentelemetry/resources@2.0.1(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/semantic-conventions': 1.37.0
+
   '@opentelemetry/resources@2.1.0(@opentelemetry/api@1.9.0)':
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/semantic-conventions': 1.37.0
+
+  '@opentelemetry/resources@2.1.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.37.0
 
   '@opentelemetry/sdk-logs@0.203.0(@opentelemetry/api@1.9.0)':
@@ -9547,11 +9826,24 @@ snapshots:
       '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
 
+  '@opentelemetry/sdk-logs@0.203.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/api-logs': 0.203.0
+      '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.1)
+
   '@opentelemetry/sdk-metrics@2.0.1(@opentelemetry/api@1.9.0)':
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
+
+  '@opentelemetry/sdk-metrics@2.0.1(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.1)
 
   '@opentelemetry/sdk-trace-base@2.0.1(@opentelemetry/api@1.9.0)':
     dependencies:
@@ -9560,11 +9852,25 @@ snapshots:
       '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.37.0
 
+  '@opentelemetry/sdk-trace-base@2.0.1(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/semantic-conventions': 1.37.0
+
   '@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0)':
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/semantic-conventions': 1.37.0
+
+  '@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.37.0
 
   '@opentelemetry/semantic-conventions@1.37.0': {}
@@ -11216,6 +11522,16 @@ snapshots:
       '@opentelemetry/sdk-metrics': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-base': 2.1.0(@opentelemetry/api@1.9.0)
 
+  '@vercel/otel@2.0.1(@opentelemetry/api-logs@0.203.0)(@opentelemetry/api@1.9.1)(@opentelemetry/instrumentation@0.205.0(@opentelemetry/api@1.9.1))(@opentelemetry/resources@2.1.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-logs@0.203.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.0.1(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.1))':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/api-logs': 0.203.0
+      '@opentelemetry/instrumentation': 0.205.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-logs': 0.203.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-metrics': 2.0.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-trace-base': 2.1.0(@opentelemetry/api@1.9.1)
+
   '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.12.2)(jiti@1.21.7)(jsdom@25.0.1(canvas@2.11.2(encoding@0.1.13)))(tsx@4.20.5)(yaml@2.7.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
@@ -11293,7 +11609,7 @@ snapshots:
 
   accepts@2.0.0:
     dependencies:
-      mime-types: 3.0.1
+      mime-types: 3.0.2
       negotiator: 1.0.0
 
   acorn-import-attributes@1.9.5(acorn@8.18.0):
@@ -12223,7 +12539,7 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
       has-tostringtag: 1.0.2
-      hasown: 2.0.3
+      hasown: 2.0.4
 
   esbuild@0.25.9:
     optionalDependencies:
@@ -12364,7 +12680,7 @@ snapshots:
       fresh: 2.0.0
       http-errors: 2.0.1
       merge-descriptors: 2.0.0
-      mime-types: 3.0.1
+      mime-types: 3.0.2
       on-finished: 2.4.1
       once: 1.4.0
       parseurl: 1.3.3
@@ -12487,7 +12803,6 @@ snapshots:
       es-set-tostringtag: 2.1.0
       hasown: 2.0.4
       mime-types: 2.1.35
-    optional: true
 
   format@0.2.2: {}
 
@@ -12563,7 +12878,7 @@ snapshots:
       get-proto: 1.0.1
       gopd: 1.2.0
       has-symbols: 1.1.0
-      hasown: 2.0.3
+      hasown: 2.0.4
       math-intrinsics: 1.1.0
 
   get-nonce@1.0.1: {}
@@ -12936,7 +13251,7 @@ snapshots:
 
   is-core-module@2.16.1:
     dependencies:
-      hasown: 2.0.3
+      hasown: 2.0.4
 
   is-core-module@2.16.2:
     dependencies:
@@ -13914,8 +14229,6 @@ snapshots:
   nan@2.28.0:
     optional: true
 
-  nanoid@3.3.11: {}
-
   nanoid@3.3.18: {}
 
   nanoid@5.1.4: {}
@@ -13944,6 +14257,32 @@ snapshots:
       '@next/swc-win32-arm64-msvc': 16.3.1
       '@next/swc-win32-x64-msvc': 16.3.1
       '@opentelemetry/api': 1.9.0
+      sharp: 0.35.3(@types/node@24.12.2)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/node'
+      - babel-plugin-macros
+
+  next@16.3.1(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+    dependencies:
+      '@next/env': 16.3.1
+      '@swc/helpers': 0.5.23
+      baseline-browser-mapping: 2.11.13
+      caniuse-lite: 1.0.30001809
+      postcss: 8.5.23
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+      styled-jsx: 5.1.6(react@19.2.8)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 16.3.1
+      '@next/swc-darwin-x64': 16.3.1
+      '@next/swc-linux-arm64-gnu': 16.3.1
+      '@next/swc-linux-arm64-musl': 16.3.1
+      '@next/swc-linux-x64-gnu': 16.3.1
+      '@next/swc-linux-x64-musl': 16.3.1
+      '@next/swc-win32-arm64-msvc': 16.3.1
+      '@next/swc-win32-x64-msvc': 16.3.1
+      '@opentelemetry/api': 1.9.1
       sharp: 0.35.3(@types/node@24.12.2)
     transitivePeerDependencies:
       - '@babel/core'
@@ -14056,6 +14395,11 @@ snapshots:
   openai@6.15.0(ws@8.18.3)(zod@4.3.5):
     optionalDependencies:
       ws: 8.18.3
+      zod: 4.3.5
+
+  openai@6.15.0(ws@8.21.3)(zod@4.3.5):
+    optionalDependencies:
+      ws: 8.21.3
       zod: 4.3.5
 
   openapi-fetch@0.15.0:
@@ -14274,7 +14618,7 @@ snapshots:
 
   postcss@8.4.49:
     dependencies:
-      nanoid: 3.3.11
+      nanoid: 3.3.18
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
@@ -14286,13 +14630,13 @@ snapshots:
 
   postcss@8.5.3:
     dependencies:
-      nanoid: 3.3.11
+      nanoid: 3.3.18
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
   postcss@8.5.6:
     dependencies:
-      nanoid: 3.3.11
+      nanoid: 3.3.18
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
@@ -15466,7 +15810,7 @@ snapshots:
     dependencies:
       content-type: 1.0.5
       media-typer: 1.1.0
-      mime-types: 3.0.1
+      mime-types: 3.0.2
 
   typescript@7.0.2:
     optionalDependencies:
@@ -15830,8 +16174,7 @@ snapshots:
 
   ws@8.18.3: {}
 
-  ws@8.21.3:
-    optional: true
+  ws@8.21.3: {}
 
   xlsx@file:vendor/xlsx: {}
 

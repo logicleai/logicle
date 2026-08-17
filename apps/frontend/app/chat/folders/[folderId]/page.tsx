@@ -1,58 +1,11 @@
-'use client'
-import { useParams, useRouter } from 'next/navigation'
-import { useSWRJson } from '@/hooks/swr'
-import * as dto from '@/types/dto'
-import WithLoadingAndError from '@/components/ui/WithLoadingAndError'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { useTranslation } from 'react-i18next'
-import Link from 'next/link'
+// Thin server wrapper: output:'export' requires generateStaticParams on any
+// file in the dynamic-segment path, and that export can't live in a 'use
+// client' module. The actual id is read client-side (useParams(), against
+// the live URL) in PageClient — this placeholder value is never used.
+import PageClient from './PageClient'
 
-const ChatFolderPage = () => {
-  const { t } = useTranslation()
-  const { folderId } = useParams() as { folderId: string }
-  const router = useRouter()
+export const generateStaticParams = () => [{ folderId: '_' }]
 
-  const { data: folder } = useSWRJson<dto.ConversationFolder>(`/api/me/folders/${folderId}`)
-
-  const {
-    data: conversations,
-    isLoading,
-    error,
-  } = useSWRJson<dto.Conversation[]>(`/api/me/folders/${folderId}/conversations`)
-
-  const handleClick = (conversation: dto.Conversation) => {
-    router.push(`/chat/${conversation.id}`)
-  }
-  return (
-    <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex flex-1 flex-col gap-2 items-center px-4 py-6">
-        <div className="max-w-[960px] w-3/4 h-full flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <h1 className="mb-4">{`${t('folder')} ${folder?.name ?? ''}`}</h1>
-          </div>
-          <ScrollArea className="flex-1 min-h-0">
-            <div className=" gap-4 flex flex-col">
-              {(conversations ?? []).map((conversation) => {
-                return (
-                  <Link
-                    href={`/chat/${conversation.id}`}
-                    prefetch={false}
-                    key={conversation.id}
-                    className="flex group align-center gap-2 items-center"
-                    onClick={() => handleClick(conversation)}
-                  >
-                    <div className="flex flex-col flex-1 h-full text-left">
-                      <div className="font-bold">{conversation.name}</div>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          </ScrollArea>
-        </div>
-      </div>
-    </WithLoadingAndError>
-  )
+export default function Page() {
+  return <PageClient />
 }
-
-export default ChatFolderPage

@@ -1,18 +1,25 @@
-import env from '@/lib/env'
+'use client'
 import Login from './LoginPanel'
-import { Metadata } from 'next'
-import { getLoginPageConfig } from '@/backend/lib/app-config'
+import * as dto from '@/types/dto'
+import { get } from '@/lib/fetch'
+import { useEffect, useState } from 'react'
 
-export const metadata: Metadata = {
-  title: 'Login',
-  robots: {
-    index: false,
-    follow: false,
-  },
+interface LoginConfig {
+  identityProviders: dto.PublicIdpConnection[]
+  enableSignup: boolean
 }
 
-export default async function LoginPage() {
-  const { userCount, identityProviders } = await getLoginPageConfig()
-  const enableSignup = env.signup.enable || userCount === 0
-  return <Login connections={identityProviders} enableSignup={enableSignup} />
+export default function LoginPage() {
+  const [config, setConfig] = useState<LoginConfig>()
+
+  useEffect(() => {
+    document.title = 'Login'
+    void get<LoginConfig>('/api/auth/login').then((response) => {
+      if (response.error) return
+      setConfig(response.data)
+    })
+  }, [])
+
+  if (!config) return null
+  return <Login connections={config.identityProviders} enableSignup={config.enableSignup} />
 }

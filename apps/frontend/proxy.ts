@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readSessionFromRequest } from '@/lib/auth/session'
 
+// Dead at runtime under `output: 'export'` (next.config.ts) — Next disables
+// middleware/proxy entirely for static exports. Kept in place rather than
+// deleted: removing it makes Next/Turbopack's proxy-file detection fall
+// through to an unrelated, identically-named apps/proxy.ts (a dev-mode
+// reverse-proxy script, see #789) and fail the build on that file's shape
+// instead. The real replacement — same redirect logic, hand-rolled — is
+// serveStaticFrontend in apps/backend/lib/staticFrontend.ts.
+//
 // Middleware redirects all app routes which require authentication
 // to login if session token is missing
 export async function proxy(req: NextRequest) {
