@@ -107,7 +107,7 @@ function createSession() {
     return { res, text }
   }
 
-  return { request }
+  return { request, cookieHeader }
 }
 
 type RequestOptions = {
@@ -245,6 +245,74 @@ async function checkWebSocketHandshake() {
       resolve()
     })
   })
+}
+
+/**
+ * Verifies the page/API access-control split that apps/backend/lib/staticFrontend.ts
+ * and server.ts's routing are responsible for — the hand-rolled replacement for what
+ * Next's middleware (proxy.ts, dead at runtime under output: 'export') and its own
+ * routing used to do automatically. Runs unauthenticated, against a database with no
+ * users provisioned yet, so it exercises exactly the state a fresh deploy is in before
+ * anyone has ever logged in — no fixture data required.
+ */
+async function checkPageAndApiAccessControl() {
+  const fetchNoRedirect = (path: string) => fetch(`${baseUrl}${path}`, { redirect: 'manual' })
+
+  console.log('Smoke: unauthenticated page load of a protected route redirects to login')
+  {
+    const res = await fetchNoRedirect('/chat')
+    if (res.status !== 307) {
+      throw new Error(`GET /chat unauthenticated -> ${res.status}, expected 307`)
+    }
+    const location = res.headers.get('location') ?? ''
+    if (!location.includes('/auth/login') || !location.includes('callbackUrl')) {
+      throw new Error(`GET /chat unauthenticated redirected to unexpected location: ${location}`)
+    }
+  }
+
+  console.log('Smoke: root redirects to /chat')
+  {
+    const res = await fetchNoRedirect('/')
+    if (res.status !== 307 || !(res.headers.get('location') ?? '').endsWith('/chat')) {
+      throw new Error(`GET / -> ${res.status} ${res.headers.get('location')}, expected 307 to /chat`)
+    }
+  }
+
+  console.log('Smoke: login and join pages are servable without a session')
+  for (const path of ['/auth/login', '/auth/join']) {
+    const res = await fetchNoRedirect(path)
+    if (res.status !== 200) {
+      throw new Error(`GET ${path} unauthenticated -> ${res.status}, expected 200`)
+    }
+  }
+
+  console.log('Smoke: public static assets are servable without a session')
+  for (const path of ['/favicon.ico', '/robots.txt', '/openapi.yaml']) {
+    const res = await fetchNoRedirect(path)
+    if (res.status !== 200) {
+      throw new Error(`GET ${path} unauthenticated -> ${res.status}, expected 200`)
+    }
+  }
+
+  console.log('Smoke: an unmatched /api/* path is a JSON 404, not a page redirect')
+  {
+    const res = await fetchNoRedirect('/api/__smoke_test_this_route_does_not_exist__')
+    if (res.status !== 404) {
+      throw new Error(`GET unmatched /api/* -> ${res.status}, expected 404`)
+    }
+    const contentType = res.headers.get('content-type') ?? ''
+    if (!contentType.includes('application/json')) {
+      throw new Error(`GET unmatched /api/* returned non-JSON content-type: ${contentType}`)
+    }
+  }
+
+  console.log('Smoke: session refresh without a session is a 401, not a redirect')
+  {
+    const res = await fetch(`${baseUrl}/api/auth/refresh`, { method: 'POST', redirect: 'manual' })
+    if (res.status !== 401) {
+      throw new Error(`POST /api/auth/refresh unauthenticated -> ${res.status}, expected 401`)
+    }
+  }
 }
 
 /** Connect to /api/rpc without auth and expect close code 1008. */
@@ -395,6 +463,8 @@ async function main() {
     allowStatus: [401, 403],
   })
 
+  await checkPageAndApiAccessControl()
+
   const runId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`
   const email = `smoke-${runId}@example.com`
   const password = 'SmokePassw0rd!'
@@ -412,6 +482,19 @@ async function main() {
     headers: jsonHeaders,
     json: { email: adminEmail, password: adminPassword },
   })
+
+  console.log('Smoke: login page redirects away once a session exists')
+  {
+    const res = await fetch(`${baseUrl}/auth/login`, {
+      redirect: 'manual',
+      headers: { cookie: adminSession.cookieHeader() },
+    })
+    if (res.status !== 307 || !(res.headers.get('location') ?? '').endsWith('/chat')) {
+      throw new Error(
+        `GET /auth/login while authenticated -> ${res.status} ${res.headers.get('location')}, expected 307 to /chat`
+      )
+    }
+  }
 
   await requestAdmin('POST', '/api/users', {
     expectedStatus: 201,
