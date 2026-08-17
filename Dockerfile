@@ -80,24 +80,61 @@ RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm --filter=@logicleai/backend deploy --prod /app/deploy-backend
 
-# `pnpm deploy` resolves apps/backend's own declared dependencies correctly,
-# but a few of those are themselves only reachable via optional/unused
-# integration paths (verified by `grep` over dist-server's actual bundled
-# output, not package.json classification) and safe to drop:
-#  - next + @next/swc-*: only imported dynamically in server.ts, gated on
-#    dev mode (see the `await import('next')` there) — never resolved once
-#    NODE_ENV=production.
-#  - mermaid (+ its own deps mathjax/cytoscape-fcose/mermaid-parser):
-#    exceljs/docx's optional diagram-embedding integration, never actually
-#    invoked by any code path dist-server bundles.
-RUN rm -rf \
-    /app/deploy-backend/node_modules/next \
-    /app/deploy-backend/node_modules/.pnpm/next@* \
-    /app/deploy-backend/node_modules/.pnpm/@next+swc-* \
-    /app/deploy-backend/node_modules/mermaid \
-    /app/deploy-backend/node_modules/.pnpm/mermaid@* \
-    /app/deploy-backend/node_modules/.pnpm/@mermaid-js+* \
-    /app/deploy-backend/node_modules/.pnpm/@mathjax+*
+# `pnpm deploy --prod` already excludes `next` (it's a devDependency of
+# apps/backend/package.json — only ever imported dynamically in server.ts,
+# gated on dev mode, see the `await import('next')` there — never resolved
+# once NODE_ENV=production) and its own transitive deps (@next/swc-*, plus
+# an orphaned second copy of sharp that `next` itself optionally depends on).
+#
+# `remark-docx` (a real, actively-used dependency — see
+# apps/backend/lib/docx/export.ts) hard-depends on `mermaid` for an optional
+# diagram-embedding plugin our code never passes to it, and separately on
+# `@mathjax/src` for the `latexPlugin()` we *do* use — but tsup inlines
+# @mathjax/src's actual code into the dist-server bundle (confirmed by
+# grepping the bundled output for MathJax-specific symbols), so the source
+# package isn't needed at runtime either. mermaid's own subtree (cytoscape,
+# katex, langium, d3, dagre-d3-es, dompurify, roughjs, marked, ...) is
+# equally unreferenced in the bundle — verified the same way — and is the
+# single largest avoidable chunk of the deployed node_modules. Removed by
+# exact versioned path (not bare package name) so a future lockfile bump
+# can't accidentally delete an unrelated package that happens to share a
+# name with one of mermaid's dependencies at a different version.
+#
+# Separately: sharp ships prebuilt native binaries per libc, and pnpm's
+# lockfile (shared with local dev, which may run on other platforms) keeps
+# both the glibc build (what node:24-bookworm-slim's runtime actually needs)
+# and the musl/Alpine one as optionalDependencies. The musl copy can never
+# load on this base image — strip it here rather than narrowing the
+# lockfile-wide `supportedArchitectures`, which would break `pnpm install`
+# for anyone developing on a different platform.
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    node -e "\
+    const fs = require('fs'); \
+    const path = require('path'); \
+    const dir = '/app/deploy-backend/node_modules/.pnpm'; \
+    const deadPrefixes = [ \
+      'mermaid@', '@mermaid-js+parser@', '@mathjax+', \
+      'cytoscape@', 'cytoscape-cose-bilkent@', 'cytoscape-fcose@', \
+      'cose-base@', 'layout-base@', 'delaunator@', 'robust-predicates@', \
+      'katex@', '@types+katex@', \
+      'langium@', 'chevrotain@', 'chevrotain-allstar@', '@chevrotain+', \
+      'dagre-d3-es@', 'd3@', 'd3-', '@types+d3', \
+      'dompurify@', \
+      'roughjs@', 'points-on-curve@', 'points-on-path@', 'path-data-parser@', 'hachure-fill@', \
+      'marked@16.', \
+      'braintree+sanitize-url@', \
+      'upsetjs+venn.js@', \
+      'iconify+utils@3.', 'iconify+types@', \
+      'khroma@', 'internmap@', 'rw@1.', \
+    ]; \
+    for (const name of fs.readdirSync(dir)) { \
+      const isDead = deadPrefixes.some((p) => name.startsWith(p) || name.startsWith('@' + p)); \
+      const isMuslSharp = name.startsWith('@img+sharp') && name.includes('musl'); \
+      if (isDead || isMuslSharp) { \
+        fs.rmSync(path.join(dir, name), { recursive: true, force: true }); \
+      } \
+    } \
+    "
 
 
 # ---------------------

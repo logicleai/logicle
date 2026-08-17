@@ -99,6 +99,21 @@ export async function serveStaticFrontend(
     pathname = '/well-known/saml-configuration'
   }
 
+  // Next's client router speculatively prefetches a route's RSC payload
+  // (`/some/route/__next.<hash>.txt` et al) before a hard navigation, to
+  // reuse it if the user does navigate there. Static export serves none of
+  // this — there's no RSC server — so Next always falls back to a full
+  // page navigation on an unsuccessful prefetch. Without this check that
+  // fallback still works, but only after the request falls through the
+  // auth gate below and gets redirected to a full login *page* (a page
+  // load's worth of work for what should be an instant 404, and noisy in
+  // the browser's network log). Matching it here short-circuits straight
+  // to 404, same as any other genuinely missing asset.
+  if (pathname.includes('/__next.')) {
+    res.writeHead(404).end()
+    return true
+  }
+
   if (isPubliclyServable(pathname)) {
     const filePath = path.join(outDir, pathname)
     if (!filePath.startsWith(outDir) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
