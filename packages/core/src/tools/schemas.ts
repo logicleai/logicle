@@ -134,6 +134,12 @@ export const mcpStdioPluginSchema = z.object({
   url: z.literal('stdio://local').default('stdio://local'),
   command: z.string().min(1),
   args: z.array(z.string()).default([]),
+  // Extra environment variables passed to the spawned process, e.g. to tune
+  // security-relevant behavior the tool itself exposes (disabling network
+  // access, restricting allowed schemes, etc). Only reachable via
+  // provisioning — stdio tools cannot be edited through the app, so this is
+  // the provisioner's knob, not an application user's.
+  env: z.record(z.string(), z.string()).default({}),
   sandbox: mcpConversationSandboxSchema.optional(),
   authentication: z.object({ type: z.literal('none') }).default({ type: 'none' }),
 })

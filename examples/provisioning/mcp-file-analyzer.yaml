@@ -40,6 +40,15 @@ tools:
       url: stdio://local
       command: /usr/local/bin/mcp-file-analyzer
       args: []
+      # Extra env vars for the spawned process. Security posture for what
+      # this specific tool binary can do is the provisioner's call, not
+      # Logicle's — e.g. mcp-file-analyzer supports disabling its own
+      # outbound-download capability entirely:
+      #   env:
+      #     MCP_DOWNLOAD_DISABLED: "1"
+      # These cannot override Logicle's own sandbox env keys (HOME, TMPDIR,
+      # MCP_SANDBOX_DIR, LOGICLE_MCP_SANDBOX, PATH, LANG).
+      env: {}
       sandbox:
         mode: conversation
         root: /data/mcp-file-analyzer
