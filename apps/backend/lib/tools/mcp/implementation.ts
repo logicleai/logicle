@@ -103,8 +103,12 @@ const createTransport = (
 ) => {
   if (isMcpStdioPluginParams(params)) {
     logger.info(`Create MCP stdio transport for command ${params.command}`)
+    // Provisioner-supplied env comes first so the fixed sandbox keys below
+    // always win — a provisioned tool can tune its own behavior (e.g.
+    // disabling a capability) but can't use `env` to escape the sandbox.
     const env = sandbox
       ? {
+          ...params.env,
           PATH: process.env.PATH ?? '',
           LANG: process.env.LANG ?? 'C.UTF-8',
           HOME: `${sandbox.workspaceDir}/home`,
@@ -125,8 +129,8 @@ const createTransport = (
       })
     }
     const discoveryEnv = params.sandbox
-      ? { ...process.env, LOGICLE_MCP_SANDBOX: '1' }
-      : undefined
+      ? { ...process.env, ...params.env, LOGICLE_MCP_SANDBOX: '1' }
+      : { ...params.env }
     return new StdioClientTransport({
       command: params.command,
       args: params.args,

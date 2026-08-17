@@ -7,6 +7,7 @@ const stdioConfig = {
   url: 'stdio://local' as const,
   command: 'mcp-file-analyzer',
   args: ['--example'],
+  env: {},
   authentication: { type: 'none' as const },
 }
 
