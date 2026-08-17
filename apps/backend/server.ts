@@ -65,6 +65,14 @@ async function main() {
         if (handled) {
           return
         }
+        // No registered route matched. Respond here rather than falling
+        // through to the frontend handlers below — otherwise an unmatched
+        // /api/* path (typo, removed endpoint, ...) would be treated as a
+        // page navigation and get the auth-gate's redirect-to-login instead
+        // of the JSON 404 an API caller actually needs.
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: { message: 'Not found', values: {} } }))
+        return
       }
 
       if (apiOnly) {
