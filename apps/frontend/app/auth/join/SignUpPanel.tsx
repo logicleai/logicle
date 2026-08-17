@@ -11,7 +11,6 @@ import { Link } from '@/components/ui/link'
 
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { post } from '@/lib/fetch'
-import { signinWithCredentials } from '@/services/auth'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -47,13 +46,23 @@ const Signup = () => {
 
     toast.success(t('successfully-subscribed'))
 
-    const res = await signinWithCredentials(values.email, values.password)
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: values.email, password: values.password }),
+    })
     if (res.ok) {
-      // We need this because using router would not reload the session
+      // Hard reload so all server components see the new session cookie.
       window.location.href = '/chat'
     } else {
-      const data = await res.json()
-      toast.error(t(data.error))
+      let message = t('remote-auth-failure')
+      try {
+        const data = await res.json()
+        if (data?.error?.message) message = t(data.error.message)
+      } catch {
+        // ignore JSON parse errors, fall back to the generic message
+      }
+      toast.error(message)
       router.push('/auth/login')
     }
   }
