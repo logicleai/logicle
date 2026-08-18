@@ -55,7 +55,7 @@ export const BackendsPage = () => {
 
   const columns: Column<dto.Backend>[] = [
     column(t('table-column-name'), (backend) => (
-      <Link variant="ghost" href={`/admin/backends/${backend.id}`}>
+      <Link variant="ghost" href={`/admin/backends/${backend.id}`} prefetch={false}>
         {backend.name}
       </Link>
     )),

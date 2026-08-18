@@ -29,7 +29,7 @@ const AdminSatellitesPage = () => {
       headerClass: 'text-center',
       renderer: (satellite) => (
         <div className="text-center">
-          <Link variant="ghost" href={`/admin/satellites/${satellite.id}`}>
+          <Link variant="ghost" href={`/admin/satellites/${satellite.id}`} prefetch={false}>
             {satellite.name}
           </Link>
         </div>
