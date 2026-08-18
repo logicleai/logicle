@@ -28,6 +28,7 @@
       "@/frontend/*": ["./apps/frontend/*"],
       "@/lib/mimeTypes": ["./apps/frontend/lib/mimeTypes.ts"],
       "@/lib/const": ["./apps/frontend/lib/const.ts"],
+      "@/lib/clientRouter": ["./apps/frontend/lib/clientRouter.tsx"],
       "@/lib/logging": ["./apps/backend/lib/logging.ts"],
       "@/lib/routes": ["./apps/backend/lib/routes.ts"],
       "@/lib/auth": ["./apps/backend/lib/auth/password.ts"],

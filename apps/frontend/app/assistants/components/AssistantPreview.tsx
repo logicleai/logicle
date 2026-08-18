@@ -136,6 +136,9 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
       chatInputElement: null,
       sideBarContent,
     },
+    // This preview panel isn't a real /chat/<id> route — there's nothing to navigate.
+    urlChatId: undefined,
+    navigateToChat: () => {},
     setSelectedConversation: () => {},
     getConversationSnapshot: () => undefined,
     loadConversation: async () => {},

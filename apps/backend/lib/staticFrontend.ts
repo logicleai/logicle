@@ -139,6 +139,30 @@ export async function serveStaticFrontend(
     return true
   }
 
+  // Next's client router (fetchServerResponse in
+  // next/dist/client/components/router-reducer/fetch-server-response.js)
+  // requests a route's RSC "flight" payload for a real client-side
+  // navigation by appending .txt (or index.txt, for a trailing slash) to
+  // the pathname — and `next build` already wrote exactly that file for
+  // every statically-known route (no dynamic segment). Serving it here
+  // lets Next do a genuine partial update (persisted layout, no reload)
+  // instead of falling back to a full page navigation, same as it would
+  // with a live RSC server. A dynamic-segment route (e.g. an id read from
+  // the URL at runtime) never has one of these on disk — request falls
+  // through to the 404 below, same as today, and still needs a
+  // navigation approach that doesn't depend on Next's router (see
+  // lib/clientRouter.tsx). Static export's client code specifically
+  // accepts `text/plain` here (not just its usual text/x-component) —
+  // see the same file's `__NEXT_CONFIG_OUTPUT === 'export'` branch.
+  if (pathname.endsWith('.txt')) {
+    const flightFile = path.join(outDir, pathname)
+    if (flightFile.startsWith(outDir) && fs.existsSync(flightFile)) {
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+      fs.createReadStream(flightFile).pipe(res)
+      return true
+    }
+  }
+
   const htmlFile = resolveExportedHtmlFile(outDir, pathname) ?? path.join(outDir, '404.html')
   const status = htmlFile.endsWith('404.html') ? 404 : 200
   const html = await fs.promises.readFile(htmlFile, 'utf-8')

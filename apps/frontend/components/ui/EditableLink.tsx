@@ -1,4 +1,4 @@
-import { FC, KeyboardEvent } from 'react'
+import { FC, KeyboardEvent, MouseEvent } from 'react'
 import Link from 'next/link'
 
 interface Props {
@@ -11,6 +11,12 @@ interface Props {
   isRenaming: boolean
   selected: boolean
   href: string
+  // When set, a plain click navigates via this callback (e.g. router-free
+  // client state, see ChatPageContextProvider.navigateToChat) instead of
+  // Next's <Link>. `href` is still rendered on the underlying <a> so
+  // ctrl/cmd/middle-click, right-click "copy link", etc. keep working
+  // natively — only the plain-left-click path is intercepted.
+  onNavigate?: () => void
 }
 
 export const EditableLink: FC<Props> = ({
@@ -23,7 +29,16 @@ export const EditableLink: FC<Props> = ({
   onRenameValueChange,
   onEnter,
   onCancel,
+  onNavigate,
 }) => {
+  const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (!onNavigate) return
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+      return
+    }
+    e.preventDefault()
+    onNavigate()
+  }
   const handleInputKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -49,6 +64,7 @@ export const EditableLink: FC<Props> = ({
           disabled ? 'disabled:cursor-not-allowed' : ''
         } ${isRenaming ? 'invisible' : ''} `}
         onBlur={() => onCancel()}
+        onClick={handleClick}
         href={href}
         draggable="true"
       >

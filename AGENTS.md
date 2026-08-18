@@ -35,6 +35,14 @@ The repository is structured as:
 - App-agnostic UI belongs in `apps/frontend/components/ui`; app-specific composition lives in `apps/frontend/components/app` or page-local `apps/frontend/app/**`.
 - Streaming chat uses server-sent events; keep message-part handling consistent with `apps/frontend/services/chat.ts` when changing chat payloads.
 
+## Static export and client-side navigation
+
+The frontend builds with `output: 'export'` (see `apps/frontend/next.config.ts`) — there is no live Next server at runtime, only the static files `next build` writes plus `apps/backend/lib/staticFrontend.ts`, which serves them, runs the auth gate, and injects env/brand bootstrap data. Two consequences follow, and both are already handled — read this before touching navigation, routing, or `staticFrontend.ts`:
+
+- **Static routes (no dynamic segment) get real Next soft navigation, for free.** `next build` writes an RSC "flight" payload file (`<route>.txt` / `<route>/index.txt`) for every statically-known route. Next's client router (`fetchServerResponse`) requests that file on every link click/`router.push`; `staticFrontend.ts` serves it as `text/plain` (the content type static-export's client explicitly accepts) when it exists on disk. This is what keeps layout state (sidebar scroll position, open panels, etc.) intact across page-to-page navigation, e.g. between `/admin/*` pages. If the file is missing or the request doesn't match, the handler falls through to a 404 and Next's router transparently falls back to a full page load — so this degrades safely, it never breaks navigation, it just makes it clunkier. **Do not delete or "simplify away" the `.txt`-serving block in `staticFrontend.ts`** — that's the entire mechanism.
+- **Dynamic segments whose value only exists at runtime (e.g. a chat id) can never have one of these files** — there's no server left to generate one on demand. For those, don't rely on `next/navigation`'s `useRouter()`/`<Link>` at all; use `apps/frontend/lib/clientRouter.tsx` (`useClientPathname()` / `useClientNavigate()`), a small `history.pushState` + React-context primitive that changes the URL and re-renders without going through Next's router or fetching anything. See `apps/frontend/app/chat/components/ChatSection.tsx` for the reference implementation (merges what used to be separate `/chat` and `/chat/[chatId]` page trees into one persistently-mounted component, switching on `urlChatId` from `ChatPageContext`). Port the same pattern to other dynamic routes (`assistants/[id]`, `admin/users/[userId]`, etc.) rather than inventing a new one.
+- When adding a genuinely new dynamic route that needs this, do not reach for `useRouter()` — check `clientRouter.tsx` first.
+
 ## Maintenance
 
 - If you notice missing, outdated, or incomplete instructions here, propose specific additions or edits to the user.

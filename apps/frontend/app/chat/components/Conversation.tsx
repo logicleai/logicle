@@ -6,7 +6,6 @@ import { EditableLink } from '@/components/ui/EditableLink'
 import * as dto from '@/types/dto'
 import { deleteConversation, saveConversation } from '@/services/conversation'
 import { mutate } from 'swr'
-import { useRouter } from 'next/navigation'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { Menu, MenuItem } from '@/components/ui/menu'
@@ -24,13 +23,13 @@ export const ConversationComponent = ({ conversation }: Props) => {
   const {
     state: { selectedConversation },
     setSelectedConversation,
+    navigateToChat,
   } = useContext(ChatPageContext)
 
   const { t } = useTranslation()
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState('')
   const modalContext = useConfirmationContext()
-  const router = useRouter()
   const userPreferences: dto.UserPreferences = {
     ...dto.userPreferencesDefaults,
     ...(useUserProfile()?.preferences ?? {}),
@@ -74,7 +73,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
     if (confirmed) {
       await deleteConversation(conversation.id)
       await mutate('/api/conversations')
-      router.push('/chat')
+      navigateToChat(undefined)
     }
   }
 
@@ -95,6 +94,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
       )}
       <EditableLink
         href={`/chat/${conversation.id}`}
+        onNavigate={() => navigateToChat(conversation.id)}
         selected={selectedConversation?.id === conversation.id}
         renameValue={renameValue}
         isRenaming={isRenaming}
