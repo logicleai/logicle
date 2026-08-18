@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Dialog } from '@radix-ui/react-dialog'
 import { post } from '@/lib/fetch'
-import React from 'react'
+import React, { useContext } from 'react'
 import toast from 'react-hot-toast'
 import { Form, FormField, FormItem } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
@@ -10,7 +10,7 @@ import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/components/ui/input'
 import * as dto from '@/types/dto'
-import Link from 'next/link'
+import ChatPageContext from '@/app/chat/components/context'
 
 interface Params {
   onClose: () => void
@@ -110,6 +110,7 @@ function extractSnippet(conversation: dto.ConversationWithMessages, searchTerm: 
 }
 export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
   const { t } = useTranslation()
+  const { navigateToChat } = useContext(ChatPageContext)
 
   const form = useForm<FormFields>({
     resolver: zodResolver(schema),
@@ -219,10 +220,17 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
             {!isLoading && !error && results.length > 0 && (
               <ul className="space-y-1">
                 {results.map((c) => (
-                  <Link
+                  <a
                     key={c.conversation.id}
                     href={`/chat/${c.conversation.id}`}
-                    onClick={onClose}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+                        return
+                      }
+                      e.preventDefault()
+                      navigateToChat(c.conversation.id)
+                      onClose()
+                    }}
                   >
                     <li className="flex items-start gap-3 rounded-xl px-3 py-2 cursor-pointer hover:bg-accent/60 transition-colors">
                       <div className="mt-1 flex h-8 w-8 flex-none items-center justify-center rounded-full border border-muted-foreground/20">
@@ -251,7 +259,7 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
                         )}{' '}
                       </div>
                     </li>
-                  </Link>
+                  </a>
                 ))}
               </ul>
             )}

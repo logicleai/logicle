@@ -28,6 +28,7 @@ export const Chatbar = () => {
     state: chatState,
     setNewChatAssistantId,
     setSelectedConversation,
+    navigateToChat,
   } = useContext(ChatPageContext)
 
   const [creatingFolder, setCreatingFolder] = useState<boolean>(false)
@@ -93,7 +94,7 @@ export const Chatbar = () => {
 
   const handleNewConversationWithAssistant = (assistantId: string) => {
     setNewChatAssistantId(assistantId)
-    router.push('/chat')
+    navigateToChat(undefined)
   }
 
   // Here it's the right place to group by folder, if we want to use folders

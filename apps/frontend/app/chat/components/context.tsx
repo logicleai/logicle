@@ -37,6 +37,22 @@ export interface ImageEditorState {
 
 export interface ChatPageContextProps {
   state: ChatPageState
+  // The chat id the address bar currently points at (undefined = the
+  // compose/"start a new chat" view). Switching this — via navigateToChat,
+  // never next/navigation's router — is what lets /chat and /chat/[chatId]
+  // behave as one persistently-mounted view instead of two Next pages, so
+  // switching chats never triggers a full page reload. See navigateToChat.
+  urlChatId: string | undefined
+  // Changes the current chat (or, with undefined, goes back to the compose
+  // view) without going through next/navigation's router. Under
+  // output:'export' there's no RSC server, so Next's router can never
+  // produce a soft-navigation payload for a runtime-only id like a chat id —
+  // it always falls back to a full page reload (see staticFrontend.ts's
+  // `/__next.` 404 short-circuit for where that fallback is triggered).
+  // This updates the URL via history.pushState directly and flips urlChatId,
+  // which the always-mounted ChatSection reacts to like any other state
+  // change — no navigation, no remount, no blank screen.
+  navigateToChat: (chatId: string | undefined) => void
   setSelectedConversation: (conversation: ConversationWithMessages | undefined) => void
   getConversationSnapshot: (conversationId: string) => ConversationWithMessages | undefined
   loadConversation: (conversationId: string) => Promise<void>

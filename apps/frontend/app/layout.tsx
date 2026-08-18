@@ -11,6 +11,7 @@ import TokenRateLimitProvider from '@/components/providers/tokenRateLimitContext
 import SessionRefreshProvider from '@/components/providers/SessionRefreshProvider'
 import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
 import { ChatPageContextProvider } from './chat/components/ChatPageContextProvider'
+import { ClientRouterProvider } from '@/lib/clientRouter'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
 import { Metadata } from 'next'
 
@@ -63,7 +64,9 @@ export default function RootLayout({
                     <EnvironmentProvider>
                       <SessionRefreshProvider>
                         <ActiveWorkspaceProvider>
-                          <ChatPageContextProvider>{children}</ChatPageContextProvider>
+                          <ClientRouterProvider>
+                            <ChatPageContextProvider>{children}</ChatPageContextProvider>
+                          </ClientRouterProvider>
                         </ActiveWorkspaceProvider>
                       </SessionRefreshProvider>
                     </EnvironmentProvider>

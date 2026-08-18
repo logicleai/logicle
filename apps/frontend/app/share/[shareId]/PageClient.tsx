@@ -25,6 +25,9 @@ const SharePage = () => {
 
   const chatPageContext: ChatPageContextProps = {
     state: defaultChatPageState,
+    // A shared, read-only conversation view — not a real /chat/<id> route.
+    urlChatId: undefined,
+    navigateToChat: () => {},
     setSelectedConversation: () => {},
     getConversationSnapshot: () => undefined,
     loadConversation: async () => {},

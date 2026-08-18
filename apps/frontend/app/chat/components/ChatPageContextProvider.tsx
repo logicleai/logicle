@@ -7,6 +7,7 @@ import ChatPageContext, {
 import { ChatPageState, defaultChatPageState } from '@/app/chat/components/state'
 import { useCreateReducer } from '@/hooks/useCreateReducer'
 import { FC, ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { useClientNavigate, useClientPathname } from '@/lib/clientRouter'
 import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
@@ -18,7 +19,6 @@ import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import { getActiveChatRun, startChatRun, stopChatRun, subscribeToChatRun } from '@/services/chat'
 import { createConversation, getConversation, getConversationMessages } from '@/services/conversation'
 import { mutate } from 'swr'
-import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { imageGenToolNames } from '@/lib/tools/tools'
 import {
@@ -41,8 +41,15 @@ interface Props {
   children: ReactNode
 }
 
+// `/chat/<id>` is the only route shape here: assistants/select, assistants/mine
+// and folders/[folderId] all have a further path segment, so a bare two-segment
+// /chat/<x> unambiguously means "an existing chat", never one of those.
+const chatIdFromPathname = (pathname: string): string | undefined => {
+  const segments = pathname.split('/').filter(Boolean)
+  return segments.length === 2 && segments[0] === 'chat' ? decodeURIComponent(segments[1]) : undefined
+}
+
 export const ChatPageContextProvider: FC<Props> = ({ children }) => {
-  const router = useRouter()
   const userProfile = useUserProfile()
   const contextValue = useCreateReducer<ChatPageState>({
     initialState: {
@@ -50,6 +57,16 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       newChatAssistantId: userProfile?.lastUsedAssistant?.id ?? null,
     },
   })
+
+  // See lib/clientRouter.tsx for why chat navigation goes through this
+  // instead of next/navigation.
+  const pathname = useClientPathname()
+  const clientNavigate = useClientNavigate()
+  const urlChatId = chatIdFromPathname(pathname)
+  const navigateToChat = useCallback(
+    (chatId: string | undefined) => clientNavigate(chatId ? `/chat/${chatId}` : '/chat'),
+    [clientNavigate]
+  )
 
   const [imageEditorState, setImageEditorState] = useState<ImageEditorState | null>(null)
 
@@ -489,6 +506,8 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     <ChatPageContext.Provider
       value={{
         ...contextValue,
+        urlChatId,
+        navigateToChat,
         setSelectedConversation,
         getConversationSnapshot,
         loadConversation,
@@ -535,7 +554,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
               await mutate('/api/conversations')
               targetConversation = { ...created.data, messages: [] }
               setSelectedConversationState(targetConversation)
-              router.push(`/chat/${created.data.id}`)
+              navigateToChat(created.data.id)
             }
 
             if (!targetConversation) return
