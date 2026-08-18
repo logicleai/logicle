@@ -99,21 +99,6 @@ export async function serveStaticFrontend(
     pathname = '/well-known/saml-configuration'
   }
 
-  // Next's client router speculatively prefetches a route's RSC payload
-  // (`/some/route/__next.<hash>.txt` et al) before a hard navigation, to
-  // reuse it if the user does navigate there. Static export serves none of
-  // this — there's no RSC server — so Next always falls back to a full
-  // page navigation on an unsuccessful prefetch. Without this check that
-  // fallback still works, but only after the request falls through the
-  // auth gate below and gets redirected to a full login *page* (a page
-  // load's worth of work for what should be an instant 404, and noisy in
-  // the browser's network log). Matching it here short-circuits straight
-  // to 404, same as any other genuinely missing asset.
-  if (pathname.includes('/__next.')) {
-    res.writeHead(404).end()
-    return true
-  }
-
   if (isPubliclyServable(pathname)) {
     const filePath = path.join(outDir, pathname)
     if (!filePath.startsWith(outDir) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
@@ -139,17 +124,21 @@ export async function serveStaticFrontend(
     return true
   }
 
-  // Next's client router (fetchServerResponse in
-  // next/dist/client/components/router-reducer/fetch-server-response.js)
-  // requests a route's RSC "flight" payload for a real client-side
-  // navigation by appending .txt (or index.txt, for a trailing slash) to
-  // the pathname — and `next build` already wrote exactly that file for
-  // every statically-known route (no dynamic segment). Serving it here
-  // lets Next do a genuine partial update (persisted layout, no reload)
-  // instead of falling back to a full page navigation, same as it would
-  // with a live RSC server. A dynamic-segment route (e.g. an id read from
-  // the URL at runtime) never has one of these on disk — request falls
-  // through to the 404 below, same as today, and still needs a
+  // Next's client router requests a route's RSC "flight" payload as a
+  // `.txt` file for two purposes, and `next build` already writes one for
+  // every statically-known route (no dynamic segment) for both:
+  //  - a real client-side navigation (fetchServerResponse in
+  //    next/dist/client/components/router-reducer/fetch-server-response.js),
+  //    at `<pathname>.txt` / `<pathname>/index.txt`;
+  //  - hover/eager segment-cache prefetch, at
+  //    `<pathname>/__next._tree.txt`, `<pathname>/__next.<segment>.__PAGE__.txt`,
+  //    etc.
+  // Serving whichever of these actually exists on disk lets Next do a
+  // genuine partial update (persisted layout, no reload) instead of
+  // falling back to a full page navigation, same as it would with a live
+  // RSC server. A dynamic-segment route (e.g. an id read from the URL at
+  // runtime) never has one of these on disk for the real id — request
+  // falls through to the 404 below, same as today, and still needs a
   // navigation approach that doesn't depend on Next's router (see
   // lib/clientRouter.tsx). Static export's client code specifically
   // accepts `text/plain` here (not just its usual text/x-component) —
