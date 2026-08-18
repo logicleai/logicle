@@ -41,7 +41,7 @@ const WorkspacesPage = () => {
 
   const columns: Column<dto.WorkspaceWithMemberCount>[] = [
     column(t('table-column-name'), (workspace: dto.WorkspaceWithMemberCount) => (
-      <Link variant="ghost" href={`/admin/workspaces/${workspace.id}`}>
+      <Link variant="ghost" href={`/admin/workspaces/${workspace.id}`} prefetch={false}>
         {workspace.name}
       </Link>
     )),

@@ -107,7 +107,7 @@ const MySatellitesPage = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {satellite.kind === 'registered' ? (
-                    <Link variant="ghost" href={`/satellites/${satellite.id}`}>
+                    <Link variant="ghost" href={`/satellites/${satellite.id}`} prefetch={false}>
                       {satellite.name}
                     </Link>
                   ) : (

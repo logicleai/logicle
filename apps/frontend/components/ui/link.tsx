@@ -32,21 +32,33 @@ interface Params extends VariantProps<typeof linkVariants> {
   iconSize?: number
   children: string
   className?: string
+  // Under static export, a link to a dynamic segment (an id only known at
+  // runtime) can never have a pre-baked prefetch payload — Next's default
+  // hover-prefetch just 404s harmlessly but noisily. Pass `false` for those.
+  prefetch?: boolean
 }
 
-const Link = ({ href, children, variant, size, className, icon, iconSize }: Params) => {
+const Link = ({ href, children, variant, size, className, icon, iconSize, prefetch }: Params) => {
   const Icon = icon
   return (
-    <NextLink href={href} className={`${linkVariants({ variant, size })} ${className ?? ''}`}>
+    <NextLink
+      href={href}
+      prefetch={prefetch}
+      className={`${linkVariants({ variant, size })} ${className ?? ''}`}
+    >
       {Icon && <Icon size={iconSize ?? 18} />}
       {children}
     </NextLink>
   )
 }
 
-const AvatarLink = ({ href, children, variant, size }: Params) => {
+const AvatarLink = ({ href, children, variant, size, prefetch }: Params) => {
   return (
-    <NextLink href={href} className={cn(linkVariants({ variant, size }), 'items-center gap-2')}>
+    <NextLink
+      href={href}
+      prefetch={prefetch}
+      className={cn(linkVariants({ variant, size }), 'items-center gap-2')}
+    >
       <LetterAvatar name={children} />
       <span className="justify-center">{children}</span>
     </NextLink>

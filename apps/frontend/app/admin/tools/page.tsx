@@ -90,7 +90,7 @@ const AllTools = () => {
 
   const columns: Column<dto.Tool>[] = [
     column(t('table-column-name'), (tool) => (
-      <Link variant="ghost" href={`/admin/tools/${tool.id}`}>
+      <Link variant="ghost" href={`/admin/tools/${tool.id}`} prefetch={false}>
         {tool.name}
       </Link>
     )),

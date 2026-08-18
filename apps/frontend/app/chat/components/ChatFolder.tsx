@@ -25,6 +25,7 @@ export const ChatFolder: React.FC<Params> = ({ folder }) => {
   return (
     <Link
       href={`/chat/folders/${folder.id}`}
+      prefetch={false}
       className="text-h3 p-2"
       key={folder.id}
       onDrop={handleDrop}
