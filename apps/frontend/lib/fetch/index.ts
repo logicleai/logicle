@@ -1,4 +1,5 @@
 import { ApiResponse } from '@/types/base'
+import { handleUnauthenticated } from '@/lib/authRedirect'
 
 const defaultHeaders = {
   'Content-Type': 'application/json',
@@ -46,6 +47,10 @@ export async function postBlob(url: RequestInfo | URL, body?: object): Promise<B
     return await response.blob()
   }
 
+  if (response.status === 401) {
+    handleUnauthenticated()
+  }
+
   const isJson = response.headers.get('content-type')?.includes('application/json')
   if (isJson) {
     const payload = (await response.json()) as ApiResponse<never>
@@ -85,6 +90,10 @@ export async function fetchApiResponse<T>(
 ): Promise<ApiResponse<T>> {
   const response = await fetch(input, init)
   const isJson = response.headers.get('content-type')?.includes('application/json')
+
+  if (response.status === 401) {
+    handleUnauthenticated()
+  }
 
   if (response.ok) {
     if (response.status === 204) {
