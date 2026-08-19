@@ -238,7 +238,7 @@ describe('password auth routes', () => {
       { params: Promise.resolve({}) }
     )
 
-    expect(response.status).toBe(401)
+    expect(response.status).toBe(400)
     await expect(response.json()).resolves.toEqual({
       error: { message: 'invalid-credentials', values: {} },
     })
@@ -260,7 +260,7 @@ describe('password auth routes', () => {
       { params: Promise.resolve({}) }
     )
 
-    expect(response.status).toBe(401)
+    expect(response.status).toBe(400)
     await expect(response.json()).resolves.toEqual({
       error: { message: 'authentication method not supported for this user', values: {} },
     })
@@ -278,7 +278,7 @@ describe('password auth routes', () => {
       { params: Promise.resolve({}) }
     )
 
-    expect(response.status).toBe(401)
+    expect(response.status).toBe(400)
     await expect(response.json()).resolves.toEqual({
       error: { message: 'invalid-credentials', values: {} },
     })

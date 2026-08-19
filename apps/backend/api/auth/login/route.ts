@@ -47,17 +47,17 @@ export const POST = operation({
   implementation: async ({ headers, cookies, body }) => {
     const user = await getUserByEmail(body.email)
     if (!user) {
-      return error(401, 'invalid-credentials')
+      return error(400, 'invalid-credentials')
     }
     if (!user.password) {
-      return error(401, 'authentication method not supported for this user')
+      return error(400, 'authentication method not supported for this user')
     }
     if (!user.enabled) {
       return error(403, 'user-disabled')
     }
     const hasValidPassword = await verifyPassword(body.password, user.password)
     if (!hasValidPassword) {
-      return error(401, 'invalid-credentials')
+      return error(400, 'invalid-credentials')
     }
     await addSessionCookie(user, cookies, undefined, { headers })
     return noBody()
