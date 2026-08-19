@@ -122,6 +122,26 @@ export async function serveViteDevRequest(
   if (!fellThrough) return
 
   const pathname = toNodeRequestUrl(req).pathname
+
+  // Vite-internal dev-asset paths (out-of-root imports served via /@fs/,
+  // the HMR client, module-graph requests, ...) should never hit the
+  // page-navigation auth gate below even if Vite's own middleware didn't
+  // fully handle one for some reason (fs.allow denial, a stale/missing
+  // module, ...) — a 404 here is a real dev-server problem to see in the
+  // console, not a "log in" prompt. Without this, a request the auth gate
+  // redirects instead of 404ing silently breaks whatever asset needed it
+  // (e.g. a CSS import from outside the Vite root) with no indication why.
+  if (
+    pathname.startsWith('/@fs/') ||
+    pathname.startsWith('/@vite/') ||
+    pathname.startsWith('/@id/') ||
+    pathname.startsWith('/@react-refresh') ||
+    pathname.startsWith('/node_modules/')
+  ) {
+    res.writeHead(404).end()
+    return
+  }
+
   if (pathname === '/') {
     redirect(res, '/chat')
     return

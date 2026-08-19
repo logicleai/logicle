@@ -43,6 +43,29 @@ export default defineConfig({
       '@/lib/clientRouter': path.resolve(dirname, 'src/shims/clientRouterShim.tsx'),
     },
   },
+  optimizeDeps: {
+    // @tabler/icons-react and lucide-react each export thousands of icons as
+    // individual submodules. Vite's dep-optimizer scan crawls the module
+    // graph from index.html to decide what to pre-bundle, but almost every
+    // route here is behind React Router's `lazy` (see router.tsx) — so most
+    // icon imports live behind a dynamic import the initial scan may not
+    // reach before the browser starts requesting them, and each one becomes
+    // its own HTTP request instead of one pre-bundled chunk. Forcing them in
+    // here (evaluated regardless of what the scanner finds) is the standard
+    // fix for this exact class of slow-dev-startup complaint with these two
+    // packages specifically.
+    include: ['@tabler/icons-react', 'lucide-react'],
+  },
+  css: {
+    // Explicit path, not left to Vite's default postcss-load-config search:
+    // that search starts from the CSS *file's* directory and walks upward,
+    // so it was finding apps/frontend/postcss.config.cjs (which sits right
+    // next to globals.css) before ever reaching this app's own config —
+    // silently using the wrong tailwind.config.cjs (relative `content`
+    // globs resolved against the wrong cwd) and producing an effectively
+    // unstyled app.
+    postcss: path.resolve(dirname, 'postcss.config.cjs'),
+  },
   define: {
     // packages/core/src/env.ts (imported client-side as `@/lib/env`) reads
     // plain `process.env.X` at module scope. Next's build silently replaces
@@ -67,6 +90,17 @@ export default defineConfig({
     // together with it if the backend runs elsewhere.
     proxy: {
       '/api': process.env.BACKEND_URL || 'http://localhost:3001',
+    },
+    fs: {
+      // Vite's default fs.allow (the Vite `root` plus its auto-detected
+      // workspace root) did not reliably cover apps/frontend/ as a sibling
+      // of this app's own root in practice — real components imported from
+      // there (e.g. ChatSection.tsx) happened to resolve fine since they're
+      // reached indirectly through tsconfig-paths/esbuild module resolution,
+      // but a direct out-of-root asset request (globals.css, imported by
+      // main.tsx) 404'd. Explicit is more reliable than relying on
+      // autodetection across a monorepo boundary like this one.
+      allow: [repoRoot],
     },
   },
   build: {
