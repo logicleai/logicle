@@ -33,6 +33,7 @@ export default defineConfig({
     alias: [
       exactAlias('@/lib/fetch', 'apps/frontend/lib/fetch/index.ts'),
       prefixAlias('@/lib/fetch', 'apps/frontend/lib/fetch'),
+      exactAlias('@/lib/authRedirect', 'apps/frontend/lib/authRedirect.ts'),
       exactAlias('@/lib/savefile', 'apps/frontend/lib/savefile.ts'),
       exactAlias('@/lib/resizeImage', 'apps/frontend/lib/resizeImage.ts'),
       exactAlias('@/lib/dnd', 'apps/frontend/lib/dnd.ts'),

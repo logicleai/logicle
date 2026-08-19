@@ -1,5 +1,6 @@
-import { describe, expect, test, vi, afterEach } from 'vitest'
+import { describe, expect, test, vi, afterEach, beforeEach } from 'vitest'
 import { fetchApiResponse, get, post, put, delete_, patch } from '@/lib/fetch'
+import * as authRedirect from '@/lib/authRedirect'
 
 // Helper to create a minimal Response-like object
 function makeResponse(
@@ -18,8 +19,13 @@ function makeResponse(
   } as unknown as Response
 }
 
+beforeEach(() => {
+  vi.spyOn(authRedirect, 'handleUnauthenticated').mockImplementation(() => {})
+})
+
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 // ---- fetchApiResponse ----
@@ -55,6 +61,19 @@ describe('fetchApiResponse', () => {
     expect(result).toEqual({
       error: { code: 500, message: 'OK', values: {} },
     })
+  })
+
+  test('triggers the unauthenticated handler on a 401 response', async () => {
+    const errBody = { error: { message: 'invalid-credentials', values: {} } }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeResponse(401, errBody)))
+    await fetchApiResponse('/api/test')
+    expect(authRedirect.handleUnauthenticated).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not trigger the unauthenticated handler on non-401 responses', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeResponse(200, { value: 42 })))
+    await fetchApiResponse('/api/test')
+    expect(authRedirect.handleUnauthenticated).not.toHaveBeenCalled()
   })
 })
 
