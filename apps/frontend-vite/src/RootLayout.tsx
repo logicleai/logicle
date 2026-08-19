@@ -10,7 +10,6 @@ import { EnvironmentProvider } from '@/app/context/environmentProvider'
 import SessionRefreshProvider from '@/components/providers/SessionRefreshProvider'
 import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
 import { ChatPageContextProvider } from '@/app/chat/components/ChatPageContextProvider'
-import { readEnvironment } from './bootstrap'
 
 // Real counterpart to apps/frontend/app/layout.tsx — same provider stack,
 // same nesting order, imported unmodified from the real app. Only
@@ -19,13 +18,8 @@ import { readEnvironment } from './bootstrap'
 // src/shims/clientRouterShim.tsx's comment for why that hand-rolled
 // provider existed in the first place and why it has no counterpart here.
 export function RootLayout() {
-  const environment = readEnvironment()
   return (
     <div className="h-full">
-      <div style={{ padding: 4, fontSize: 11, opacity: 0.5, borderBottom: '1px solid #ccc' }}>
-        vite+react-router — appDisplayName from injected bootstrap: "
-        {environment?.appDisplayName ?? '(none — dev mode has no server-side injector yet)'}"
-      </div>
       <ThemeProvider>
         <LayoutConfigProvider>
           <ConfirmationModalContextProvider>
