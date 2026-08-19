@@ -28,7 +28,7 @@ export const UsageTabPanel = ({ visible, className, assistantId }: Props) => {
             <ul className="flex flex-col gap-2">
               {parents.map((parent) => (
                 <li key={parent.id}>
-                  <Link href={`/assistants/${parent.id}`} prefetch={false}>
+                  <Link href={`/assistants/${parent.id}`} native>
                     {parent.name}
                   </Link>
                 </li>
