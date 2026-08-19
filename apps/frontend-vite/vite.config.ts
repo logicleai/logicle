@@ -12,7 +12,7 @@ import path from 'node:path'
 const dirname = import.meta.dirname
 const repoRoot = path.resolve(dirname, '..', '..')
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   root: dirname,
   // favicon.ico, logo.png, openapi.yaml, etc. still live under
   // apps/frontend/public/ — pointed at directly (not duplicated) so both
@@ -41,19 +41,45 @@ export default defineConfig({
       'next/link': path.resolve(dirname, 'src/shims/nextLinkShim.tsx'),
       'next/image': path.resolve(dirname, 'src/shims/nextImageShim.tsx'),
       '@/lib/clientRouter': path.resolve(dirname, 'src/shims/clientRouterShim.tsx'),
+      // Dev-only: @tabler/icons-react and lucide-react each export thousands
+      // of icons as individual ESM submodules from their default (`module`)
+      // entry. esbuild's dep-optimizer always code-splits its own output
+      // (not configurable — `optimizeDeps.esbuildOptions.splitting: false`
+      // is silently ignored for the dep-optimize step), so pre-bundling
+      // either package still produces one output chunk *per icon actually
+      // imported anywhere in the app* — tolerable with the browser's HTTP
+      // cache on, unusable with it off (every request pays a full round
+      // trip; this is what motivated the alias in the first place). Both
+      // packages also ship a single-file CJS bundle (their `main` entry)
+      // containing every icon — esbuild can't code-split a CommonJS module
+      // the way it does ESM re-exports, so aliasing straight to that entry
+      // collapses the whole thing to one request.
+      //
+      // Production must NOT get this alias: a CJS bundle can't be
+      // tree-shaken, so every route that touches any icon would pull in
+      // every icon in both packages — confirmed by `vite build` turning a
+      // ~530KB chunk into a 6MB one. Real users pay for that on every page
+      // load; a local dev server request-count problem doesn't apply to
+      // them the same way (no disabled cache, no thousands of round trips
+      // to a remote origin). So this only applies to `vite dev`/the
+      // middleware-mode embed in server.ts (`command === 'serve'` either
+      // way) — `vite build` keeps the real ESM barrel and its per-icon
+      // splitting, which is exactly the code-splitting you want in prod.
+      ...(command === 'serve'
+        ? {
+            '@tabler/icons-react': '@tabler/icons-react/dist/cjs/tabler-icons-react.cjs',
+            'lucide-react': 'lucide-react/dist/cjs/lucide-react.js',
+          }
+        : {}),
     },
   },
   optimizeDeps: {
-    // @tabler/icons-react and lucide-react each export thousands of icons as
-    // individual submodules. Vite's dep-optimizer scan crawls the module
-    // graph from index.html to decide what to pre-bundle, but almost every
-    // route here is behind React Router's `lazy` (see router.tsx) — so most
-    // icon imports live behind a dynamic import the initial scan may not
-    // reach before the browser starts requesting them, and each one becomes
-    // its own HTTP request instead of one pre-bundled chunk. Forcing them in
-    // here (evaluated regardless of what the scanner finds) is the standard
-    // fix for this exact class of slow-dev-startup complaint with these two
-    // packages specifically.
+    // Forces eager pre-bundling of the two entries above (whichever variant
+    // the alias resolved above picked) regardless of whether Vite's
+    // dep-scanner reaches them before the browser starts requesting them —
+    // almost every route here is behind React Router's `lazy` (see
+    // router.tsx), so the scanner doesn't reliably discover icon imports up
+    // front.
     include: ['@tabler/icons-react', 'lucide-react'],
   },
   css: {
@@ -107,4 +133,4 @@ export default defineConfig({
     outDir: path.resolve(dirname, 'dist'),
     emptyOutDir: true,
   },
-})
+}))
