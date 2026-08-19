@@ -7,9 +7,16 @@ import { forwardRef, type ImgHTMLAttributes } from 'react'
 interface Props extends ImgHTMLAttributes<HTMLImageElement> {
   src: string
   alt: string
+  unoptimized?: boolean
+  priority?: boolean
+  fill?: boolean
 }
 
-const Image = forwardRef<HTMLImageElement, Props>((props, ref) => <img ref={ref} {...props} />)
+const Image = forwardRef<HTMLImageElement, Props>(
+  ({ alt, unoptimized: _unoptimized, priority: _priority, fill: _fill, ...rest }, ref) => (
+    <img ref={ref} alt={alt} {...rest} />
+  )
+)
 Image.displayName = 'NextImageShim'
 
 export default Image

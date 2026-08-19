@@ -1,21 +1,36 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams as useRRSearchParams } from 'react-router-dom'
 
-// Aliased over `next/navigation` (see vite.config.ts) so real app code —
-// ported here unmodified, e.g. AssistantDropdown.tsx/Chatbar.tsx if a real
-// port grows to include them — keeps working against React Router instead.
-// Only the subset actually exercised by the chat tree is implemented.
-export function useRouter() {
+// Aliased over `next/navigation` (see vite.config.ts) — real app code is
+// imported unmodified across the whole app (not just chat), so this covers
+// every hook actually used anywhere in apps/frontend (verified via
+// `grep -rn "from 'next/navigation'" apps/frontend`).
+interface NextRouterShim {
+  push: (href: string) => void
+  replace: (href: string) => void
+  back: () => void
+  refresh: () => void
+}
+
+export function useRouter(): NextRouterShim {
   const navigate = useNavigate()
   return {
-    push: (href: string) => navigate(href),
-    replace: (href: string) => navigate(href, { replace: true }),
-    back: () => navigate(-1),
+    push: (href: string) => void navigate(href),
+    replace: (href: string) => void navigate(href, { replace: true }),
+    back: () => void navigate(-1),
     refresh: () => {},
   }
 }
 
 export function usePathname(): string {
   return useLocation().pathname
+}
+
+// Next's useSearchParams() returns a read-only URLSearchParams; React
+// Router's hook of the same name returns [URLSearchParams, setter] — this
+// drops the setter to match the shape call sites actually use (only reads).
+export function useSearchParams(): URLSearchParams {
+  const [params] = useRRSearchParams()
+  return params
 }
 
 // next/navigation's redirect() is a throw-based signal meant for React
