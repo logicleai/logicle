@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { RootLayout } from './RootLayout'
+import { RouteError } from './RouteError'
 import {
   AdminRouteLayout,
   MeRouteLayout,
@@ -53,6 +54,11 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
+    // Catches errors thrown by any descendant route's lazy module — at
+    // import time (a route's dependency crashing during module evaluation)
+    // or during render — instead of React Router's raw default error
+    // screen. See RouteError.tsx's own comment.
+    errorElement: <RouteError />,
     children: [
       { index: true, element: <Navigate to="/chat" replace /> },
 
@@ -184,6 +190,9 @@ export const router = createBrowserRouter([
           { path: 'me/sessions', ...page(() => import('@/app/me/sessions/page')) },
         ],
       },
+
+      // Genuinely unmatched URL — see RouteError.tsx's `notFound` branch.
+      { path: '*', element: <RouteError /> },
     ],
   },
 ])

@@ -10,6 +10,7 @@ import { EnvironmentProvider } from '@/app/context/environmentProvider'
 import SessionRefreshProvider from '@/components/providers/SessionRefreshProvider'
 import { ActiveWorkspaceProvider } from '@/components/providers/activeWorkspaceContext'
 import { ChatPageContextProvider } from '@/app/chat/components/ChatPageContextProvider'
+import { BrandMetadata } from './BrandMetadata'
 
 // Real counterpart to apps/frontend/app/layout.tsx — same provider stack,
 // same nesting order, imported unmodified from the real app. Only
@@ -28,6 +29,7 @@ export function RootLayout() {
               <TokenRateLimitProvider>
                 <ClientI18nProvider>
                   <EnvironmentProvider>
+                    <BrandMetadata />
                     <SessionRefreshProvider>
                       <ActiveWorkspaceProvider>
                         <ChatPageContextProvider>

@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import * as zlib from 'node:zlib'
 import { lookup as lookupMimeType } from 'mime-types'
 import { toNodeRequestUrl, toWebRequest } from '@/lib/router'
 import { readSessionFromRequest } from '@/lib/auth/session'
@@ -57,6 +58,36 @@ export async function injectBootstrapData(html: string): Promise<string> {
 
 function redirect(res: ServerResponse, location: string) {
   res.writeHead(307, { Location: location }).end()
+}
+
+const COMPRESSIBLE_EXTENSIONS = new Set(['.js', '.mjs', '.css', '.svg', '.json', '.map', '.txt', '.yaml'])
+
+// `/assets/*` filenames are content-hashed by `vite build` (a new hash on
+// any change), so they're safe to cache aggressively and indefinitely —
+// unlike index.html itself, which must always revalidate since it's what
+// references those hashed filenames in the first place. Also gzips
+// compressible file types on the fly when the client advertises support
+// (effectively all of them) — this had no compression at all before,
+// meaning every cold/full reload transferred assets at their raw minified
+// size instead of the ~3-4x smaller gzipped one.
+function serveAssetFile(req: IncomingMessage, res: ServerResponse, filePath: string): void {
+  const contentType = lookupMimeType(filePath) || 'application/octet-stream'
+  const headers: Record<string, string> = {
+    'Content-Type': contentType,
+    'Cache-Control': 'public, max-age=31536000, immutable',
+  }
+
+  const ext = path.extname(filePath)
+  const acceptsGzip = (req.headers['accept-encoding'] || '').includes('gzip')
+  if (acceptsGzip && COMPRESSIBLE_EXTENSIONS.has(ext)) {
+    headers['Content-Encoding'] = 'gzip'
+    res.writeHead(200, headers)
+    fs.createReadStream(filePath).pipe(zlib.createGzip()).pipe(res)
+    return
+  }
+
+  res.writeHead(200, headers)
+  fs.createReadStream(filePath).pipe(res)
 }
 
 // Same proxy.ts-derived auth gate as staticFrontend.ts, factored out so
@@ -173,9 +204,7 @@ export async function serveStaticFrontendVite(
     if (!filePath.startsWith(outDir) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
       return false
     }
-    const contentType = lookupMimeType(filePath) || 'application/octet-stream'
-    res.writeHead(200, { 'Content-Type': contentType })
-    fs.createReadStream(filePath).pipe(res)
+    serveAssetFile(req, res, filePath)
     return true
   }
 
@@ -189,6 +218,10 @@ export async function serveStaticFrontendVite(
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=utf-8',
     'X-Robots-Tag': 'noindex, nofollow, noarchive',
+    // Never cache the shell itself — it's what references the hashed
+    // /assets/* filenames above, so a cached stale index.html would keep
+    // pointing at assets a new deploy has already deleted.
+    'Cache-Control': 'no-cache',
   })
   res.end(withBootstrap)
   return true
