@@ -1,17 +1,17 @@
 'use client'
-import { useRouter } from 'next/navigation'
+import { useContext } from 'react'
 import { useSWRJson } from '@/hooks/swr'
 import * as dto from '@/types/dto'
 import WithLoadingAndError from '@/components/ui/WithLoadingAndError'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useTranslation } from 'react-i18next'
-import Link from 'next/link'
 import { useUrlSegment } from '@/hooks/useUrlSegment'
+import ChatPageContext from '@/app/chat/components/context'
 
 const ChatFolderPage = () => {
   const { t } = useTranslation()
   const folderId = useUrlSegment(2)
-  const router = useRouter()
+  const { navigateToChat } = useContext(ChatPageContext)
 
   const { data: folder } = useSWRJson<dto.ConversationFolder>(`/api/me/folders/${folderId}`)
 
@@ -21,9 +21,6 @@ const ChatFolderPage = () => {
     error,
   } = useSWRJson<dto.Conversation[]>(`/api/me/folders/${folderId}/conversations`)
 
-  const handleClick = (conversation: dto.Conversation) => {
-    router.push(`/chat/${conversation.id}`)
-  }
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex flex-1 flex-col gap-2 items-center px-4 py-6">
@@ -35,17 +32,22 @@ const ChatFolderPage = () => {
             <div className=" gap-4 flex flex-col">
               {(conversations ?? []).map((conversation) => {
                 return (
-                  <Link
+                  <a
                     href={`/chat/${conversation.id}`}
-                    prefetch={false}
                     key={conversation.id}
                     className="flex group align-center gap-2 items-center"
-                    onClick={() => handleClick(conversation)}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+                        return
+                      }
+                      e.preventDefault()
+                      navigateToChat(conversation.id)
+                    }}
                   >
                     <div className="flex flex-col flex-1 h-full text-left">
                       <div className="font-bold">{conversation.name}</div>
                     </div>
-                  </Link>
+                  </a>
                 )
               })}
             </div>

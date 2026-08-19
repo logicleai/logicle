@@ -1,7 +1,6 @@
 import { DndData } from '@/lib/dnd'
 import { post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
-import Link from 'next/link'
 import React from 'react'
 
 type Params = {
@@ -23,9 +22,8 @@ export const ChatFolder: React.FC<Params> = ({ folder }) => {
     }
   }
   return (
-    <Link
+    <a
       href={`/chat/folders/${folder.id}`}
-      prefetch={false}
       className="text-h3 p-2"
       key={folder.id}
       onDrop={handleDrop}
@@ -36,6 +34,6 @@ export const ChatFolder: React.FC<Params> = ({ folder }) => {
       >
         {folder.name}
       </div>
-    </Link>
+    </a>
   )
 }

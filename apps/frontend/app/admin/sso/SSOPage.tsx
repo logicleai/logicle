@@ -52,7 +52,7 @@ const SSOPage = () => {
 
   const columns: Column<IdpConnection>[] = [
     column(t('table-column-name'), (ssoConnection) => (
-      <Link variant="ghost" href={`/admin/sso/${ssoConnection.id}`} prefetch={false}>
+      <Link variant="ghost" href={`/admin/sso/${ssoConnection.id}`} native>
         {ssoConnection.name}
       </Link>
     )),

@@ -33,32 +33,47 @@ interface Params extends VariantProps<typeof linkVariants> {
   children: string
   className?: string
   // Under static export, a link to a dynamic segment (an id only known at
-  // runtime) can never have a pre-baked prefetch payload — Next's default
-  // hover-prefetch just 404s harmlessly but noisily. Pass `false` for those.
-  prefetch?: boolean
+  // runtime) can never have a pre-baked navigation payload. Next's <Link>
+  // still intercepts the click and attempts a client-side transition first,
+  // unmounting the current page before it discovers it has to fall back to
+  // a hard navigation — that unmount is what shows as a blank flash. Pass
+  // `native` for those links so the click goes through a plain <a> instead:
+  // no Next router involvement, so the browser keeps the current page
+  // painted (its normal loading behavior) until the new one is ready.
+  native?: boolean
 }
 
-const Link = ({ href, children, variant, size, className, icon, iconSize, prefetch }: Params) => {
+const Link = ({ href, children, variant, size, className, icon, iconSize, native }: Params) => {
   const Icon = icon
+  const linkClassName = `${linkVariants({ variant, size })} ${className ?? ''}`
+  if (native) {
+    return (
+      <a href={href} className={linkClassName}>
+        {Icon && <Icon size={iconSize ?? 18} />}
+        {children}
+      </a>
+    )
+  }
   return (
-    <NextLink
-      href={href}
-      prefetch={prefetch}
-      className={`${linkVariants({ variant, size })} ${className ?? ''}`}
-    >
+    <NextLink href={href} className={linkClassName}>
       {Icon && <Icon size={iconSize ?? 18} />}
       {children}
     </NextLink>
   )
 }
 
-const AvatarLink = ({ href, children, variant, size, prefetch }: Params) => {
+const AvatarLink = ({ href, children, variant, size, native }: Params) => {
+  const avatarClassName = cn(linkVariants({ variant, size }), 'items-center gap-2')
+  if (native) {
+    return (
+      <a href={href} className={avatarClassName}>
+        <LetterAvatar name={children} />
+        <span className="justify-center">{children}</span>
+      </a>
+    )
+  }
   return (
-    <NextLink
-      href={href}
-      prefetch={prefetch}
-      className={cn(linkVariants({ variant, size }), 'items-center gap-2')}
-    >
+    <NextLink href={href} className={avatarClassName}>
       <LetterAvatar name={children} />
       <span className="justify-center">{children}</span>
     </NextLink>

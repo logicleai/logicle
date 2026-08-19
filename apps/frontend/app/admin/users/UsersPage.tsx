@@ -63,7 +63,7 @@ const UsersPage = () => {
 
   const columns: Column<dto.AdminUser>[] = [
     column(t('table-column-name'), (user) => (
-      <Link variant="ghost" href={`/admin/users/${user.id}`} prefetch={false}>
+      <Link variant="ghost" href={`/admin/users/${user.id}`} native>
         {user.name}
       </Link>
     )),
