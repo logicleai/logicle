@@ -37,11 +37,11 @@ import {
 // that route is actually visited. Two reasons, not one: it's what keeps the
 // production build from shipping a single ~9MB entry chunk (every route's
 // dependencies eagerly bundled together), and it isolates any one route's
-// broken dependency (e.g. admin/tools/create pulls in
-// @readme/openapi-parser, which throws at module-evaluation time under
-// Vite/Rolldown's CJS interop — a real pre-existing incompatibility,
-// unrelated to routing) to that one route's chunk instead of poisoning
-// the app's entire static import graph.
+// broken dependency to that one route's chunk instead of poisoning the
+// app's entire static import graph — this is what contained
+// admin/tools/create's crash (see RouteError.tsx) to a friendly error page
+// while it was still broken, before vite.config.ts's nodePolyfills actually
+// fixed the underlying @readme/openapi-parser incompatibility.
 const page = (loader: () => Promise<{ default: ComponentType }>) => ({
   lazy: () => loader().then((m) => ({ Component: m.default })),
 })

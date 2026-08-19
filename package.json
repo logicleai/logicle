@@ -221,6 +221,7 @@
     "tsup": "^8.5.1",
     "tsx": "^4.20.5",
     "typescript": "^7.0.2",
+    "vite-plugin-node-polyfills": "^0.28.0",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^3.2.4"
   },

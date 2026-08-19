@@ -1,14 +1,11 @@
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router-dom'
 
 // Root-level errorElement — catches anything an individual route's lazy
-// module throws, either at import time (e.g. admin/tools/create's
-// @readme/openapi-parser dependency, which throws during module evaluation
-// under Vite/Rolldown's CJS interop — a real pre-existing incompatibility,
-// unrelated to routing) or during render, and shows a branded page instead
-// of React Router's raw default error screen (a bare stack trace, no
-// navigation back into the app). Also serves as the element for the `*`
-// catch-all route (see router.tsx) for a genuinely unmatched URL, via the
-// `isRouteErrorResponse` 404 branch below.
+// module throws, either at import time or during render, and shows a
+// branded page instead of React Router's raw default error screen (a bare
+// stack trace, no navigation back into the app). Also serves as the element
+// for the `*` catch-all route (see router.tsx) for a genuinely unmatched
+// URL, via the `isRouteErrorResponse` 404 branch below.
 export function RouteError() {
   const error = useRouteError()
   // No error at all means this rendered as the plain `*` catch-all match

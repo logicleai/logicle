@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import path from 'node:path'
 
 // Spike counterpart to apps/frontend/next.config.ts. `next build`'s
@@ -30,6 +31,24 @@ export default defineConfig(({ command }) => ({
     // exactly as it does today, without duplicating that alias table here.
     tsconfigPaths({ root: repoRoot, projects: [path.join(repoRoot, 'tsconfig.json')] }),
     react(),
+    // Some real backend-shared code reachable from the client bundle
+    // (packages/core/src/openapi.ts, via @readme/openapi-parser and its own
+    // dependency tree — used by the admin tools OpenAPI-import form) checks
+    // for bare Node globals (`process`, not just `process.env`) and imports
+    // Node core modules (path, util, http, https, ...) that a browser build
+    // just externalizes rather than provides, which crashed that one route
+    // outright. This polyfills both — a browser-safe `process`/`Buffer`/
+    // `global` plus stand-ins for the Node builtins those dependencies
+    // import — for the whole app, replacing the narrower manual
+    // `define: {'process.env': '{}'}` below.
+    nodePolyfills({
+      // Only `process` needs to actually resolve to something at runtime for
+      // this to stop crashing; the Node builtins (path/util/http/https/...)
+      // just need to not be `undefined` at import time; unused. Excluding
+      // Buffer avoids pulling its (nontrivial) polyfill into every page's
+      // bundle for functionality nothing here needs.
+      globals: { process: true, Buffer: false, global: true },
+    }),
   ],
   resolve: {
     alias: {
@@ -91,14 +110,6 @@ export default defineConfig(({ command }) => ({
     // globs resolved against the wrong cwd) and producing an effectively
     // unstyled app.
     postcss: path.resolve(dirname, 'postcss.config.cjs'),
-  },
-  define: {
-    // packages/core/src/env.ts (imported client-side as `@/lib/env`) reads
-    // plain `process.env.X` at module scope. Next's build silently replaces
-    // these with `undefined` (client bundles never get real values for
-    // non-NEXT_PUBLIC_ vars); this reproduces that instead of a
-    // `process is not defined` crash, since Vite doesn't polyfill `process`.
-    'process.env': '{}',
   },
   server: {
     // Only relevant when run standalone via `pnpm run dev:frontend` (not the
