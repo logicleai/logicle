@@ -11,7 +11,7 @@ FROM ${FILE_ANALYZER_IMAGE} AS file-analyzer
 # ---------------------
 # Stage 2: Builder
 # ---------------------
-# This is the build stage where we build the NextJS application.
+# This is the build stage where we build the application.
 FROM node:24-bookworm-slim AS builder
 
 # Accept optional version at build time: --build-arg APP_VERSION=1.2.3
@@ -58,13 +58,12 @@ RUN if [ -n "${APP_VERSION}" ]; then \
       echo 'APP_VERSION not provided; leaving package.json as-is'; \
     fi
 
-# Build the application which also compiles all assets — reuse Next.js cache.
-# apps/frontend builds to a fully static export (output: 'export' in
-# next.config.ts — no Next server runtime, so nothing left to trace/bundle
-# incorrectly); dist-server (the custom backend + static-file server) is a
-# separate tsup bundle that still needs real node_modules at runtime.
-RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
-    NODE_ENV=production pnpm build
+# Build the application which also compiles all assets.
+# apps/frontend-vite builds to a fully static SPA (`vite build` — no server
+# runtime, so nothing left to trace/bundle incorrectly); dist-server (the
+# custom backend + static-file server) is a separate tsup bundle that still
+# needs real node_modules at runtime.
+RUN NODE_ENV=production pnpm build
 
 # apps/backend is its own workspace package (apps/backend/package.json)
 # declaring only what backend code — plus packages/core and
@@ -80,11 +79,10 @@ RUN --mount=type=cache,id=next-cache,target=/app/.next/cache \
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm --filter=@logicleai/backend deploy --prod /app/deploy-backend
 
-# `pnpm deploy --prod` already excludes `next` (it's a devDependency of
+# `pnpm deploy --prod` already excludes `vite` (it's a devDependency of
 # apps/backend/package.json — only ever imported dynamically in server.ts,
-# gated on dev mode, see the `await import('next')` there — never resolved
-# once NODE_ENV=production) and its own transitive deps (@next/swc-*, plus
-# an orphaned second copy of sharp that `next` itself optionally depends on).
+# gated on dev mode, see the `await import('vite')` there — never resolved
+# once NODE_ENV=production) and its transitive deps.
 #
 # `remark-docx` (a real, actively-used dependency — see
 # apps/backend/lib/docx/export.ts) hard-depends on `mermaid` for an optional
@@ -182,9 +180,9 @@ RUN mkdir -p /data/sqlite /data/files \
     && chown -R node:node /data
 
 # Copy built assets from the 'builder' stage to appropriate locations.
-# apps/frontend/out is the static export served directly by dist-server
-# (see apps/backend/lib/staticFrontend.ts) — no `.next/standalone` dance.
-COPY --from=builder /app/apps/frontend/out ./apps/frontend/out
+# apps/frontend-vite/dist is the Vite SPA build served directly by
+# dist-server (see apps/backend/lib/staticFrontendVite.ts).
+COPY --from=builder /app/apps/frontend-vite/dist ./apps/frontend-vite/dist
 COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/deploy-backend/node_modules ./node_modules
@@ -196,6 +194,6 @@ USER node
 EXPOSE 3000
 
 ENV NODE_ENV=production
-# apps/frontend is a static export served by dist-server itself (see
-# apps/backend/lib/staticFrontend.ts) — there is no separate Next server.
+# apps/frontend-vite is a static SPA build served by dist-server itself (see
+# apps/backend/lib/staticFrontendVite.ts) — there is no separate frontend server.
 CMD ["node", "--enable-source-maps", "dist-server/server.js"]

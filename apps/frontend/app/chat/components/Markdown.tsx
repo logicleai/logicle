@@ -1,16 +1,26 @@
-import { CodeBlock } from './markdown/CodeBlock'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import ReactMarkdown, { Components } from 'react-markdown'
 import rehypeExternalLinks from 'rehype-external-links'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
-import React, { memo, MutableRefObject } from 'react'
+import React, { memo, MutableRefObject, Suspense } from 'react'
 
 import { visit } from 'unist-util-visit'
 import type { Root, Code } from 'mdast'
-import { MermaidDiagram } from './MermaidDiagram'
 import { Table } from './Table'
+
+// Lazy: `react-syntax-highlighter`'s Prism build bundles ~250 language
+// grammars, and `mermaid` (diagram rendering) is its own multi-hundred-KB
+// dependency tree — together the single largest chunk in the app by far,
+// yet most messages contain neither. Deferring both to first actual use
+// keeps that weight out of every /chat page load.
+const CodeBlock = React.lazy(() =>
+  import('./markdown/CodeBlock').then((m) => ({ default: m.CodeBlock }))
+)
+const MermaidDiagram = React.lazy(() =>
+  import('./MermaidDiagram').then((m) => ({ default: m.MermaidDiagram }))
+)
 
 export function remarkAddBlockCodeFlag() {
   return (tree: Root) => {
@@ -77,20 +87,29 @@ export const Markdown: React.FC<{
         if (isBlockCode) {
           const match = /language-(\w+)/.exec(className || '')
           const language = match ? match[1] : undefined
+          const fallback = (
+            <pre>
+              <code>{children}</code>
+            </pre>
+          )
           if (language === 'mermaid') {
             return (
-              <MermaidDiagram className="bg-white" {...props}>
-                {String(children)}
-              </MermaidDiagram>
+              <Suspense fallback={fallback}>
+                <MermaidDiagram className="bg-white" {...props}>
+                  {String(children)}
+                </MermaidDiagram>
+              </Suspense>
             )
           } else {
             return (
-              <CodeBlock
-                language={language}
-                value={String(children).replace(/\n$/, '')}
-                forExport={forExport}
-                {...props}
-              />
+              <Suspense fallback={fallback}>
+                <CodeBlock
+                  language={language}
+                  value={String(children).replace(/\n$/, '')}
+                  forExport={forExport}
+                  {...props}
+                />
+              </Suspense>
             )
           }
         }

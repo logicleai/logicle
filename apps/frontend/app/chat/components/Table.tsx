@@ -1,5 +1,4 @@
 import { ReactNode, useRef } from 'react'
-import ExcelJS from 'exceljs'
 
 interface Props {
   children: ReactNode
@@ -8,7 +7,13 @@ import { IconClipboard } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 import { IconDownloadWithType } from './icons'
 
+// Dynamically imported: exceljs is one of the heaviest dependencies pulled
+// in anywhere in the chat tree, yet every markdown table renders this
+// component whether or not its download-as-Excel button is ever clicked.
+// Deferring the import to the click handler keeps it out of the chunk every
+// chat message pays for.
 const htmlTableToXlsx = async (table: HTMLTableElement) => {
+  const { default: ExcelJS } = await import('exceljs')
   const workbook = new ExcelJS.Workbook()
   const worksheet = workbook.addWorksheet('Worksheet')
   const rows = table.querySelectorAll('tr')

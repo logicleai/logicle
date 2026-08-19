@@ -1,0 +1,41 @@
+<!doctype html>
+<html translate="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="google" content="notranslate" />
+    <!-- Real app/layout.tsx set this via Next's `metadata.icons.icon`
+         (env.icons.favicon, defaulting to /favicon.ico — see
+         packages/core/src/env.ts). A brand-configured FAVICON_PATH isn't
+         wired up dynamically here yet; this covers the default case. -->
+    <link rel="icon" href="/favicon.ico" />
+    <!-- Real app/layout.tsx applied this via next/font/google's
+         Red_Hat_Display({...}).className on <html> — self-hosted at build
+         time, so it never made an external request. Not replicated that way
+         here (would mean adding a font-loading npm dependency); loaded from
+         Google Fonts' CDN instead, which is the same typeface but not
+         byte-identical self-hosting — if that request ever fails/is
+         blocked, the page falls back to the sans-serif stack below instead
+         of silently rendering a system font mismatch. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@300..900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html {
+        font-family:
+          'Red Hat Display',
+          ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+    </style>
+    <title>Logicle</title>
+  </head>
+  <body class="overflow-hidden h-full">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

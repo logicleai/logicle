@@ -18,6 +18,9 @@
     "incremental": true,
     "noImplicitAny": false,
     "paths": {
+      "next/navigation": ["./apps/frontend-vite/src/shims/nextNavigationShim.tsx"],
+      "next/link": ["./apps/frontend-vite/src/shims/nextLinkShim.tsx"],
+      "next/image": ["./apps/frontend-vite/src/shims/nextImageShim.tsx"],
       "@/lib/fetch": ["./apps/frontend/lib/fetch/index.ts"],
       "@/lib/fetch/*": ["./apps/frontend/lib/fetch/*"],
       "@/lib/savefile": ["./apps/frontend/lib/savefile.ts"],
@@ -36,6 +39,7 @@
       "@/lib/models": ["./apps/backend/lib/models.ts"],
       "@/lib/app-config": ["./apps/backend/lib/app-config.ts"],
       "@/lib/staticFrontend": ["./apps/backend/lib/staticFrontend.ts"],
+      "@/lib/staticFrontendVite": ["./apps/backend/lib/staticFrontendVite.ts"],
       "@/lib/parameters": ["./apps/backend/lib/parameters.ts"],
       "@/lib/properties": ["./apps/backend/lib/properties.ts"],
       "@/lib/provision": ["./apps/backend/lib/provision.ts"],
@@ -135,16 +139,10 @@
       "@logicle/file-analyzer/analyzers": ["./packages/file-analyzer/src/analyzers.ts"],
       "@logicle/file-analyzer/worker": ["./packages/file-analyzer/src/worker/runtime.ts"]
     },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "strictNullChecks": true
   },
   "include": [
     "./apps/frontend/i18next-extend.d.ts",
-    "apps/frontend/next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     "next-auth.d.ts",

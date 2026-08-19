@@ -62,7 +62,13 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Type check
-        run: pnpm exec tsc --project apps/backend/tsconfig.json --pretty --noEmit
+        # Whole-repo tsc, not just apps/backend/tsconfig.json: that narrower
+        # scope used to be enough because `next build` (in the docker job)
+        # separately type-checked the frontend as a side effect of the
+        # build. `vite build` doesn't type-check at all (esbuild/rolldown
+        # just strip types) — this is now the only job that catches a
+        # frontend/apps/frontend-vite type error before merge.
+        run: pnpm run check-types
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -180,10 +186,10 @@ jobs:
           load: true
           tags: ${{ env.SMOKE_IMAGE }}
           build-args: APP_VERSION=${{ steps.buildver.outputs.version }}
-          cache-from: type=gha,scope=nextjs-build
+          cache-from: type=gha,scope=docker-build
           # Export only layers in the final image. The builder cache is large enough
           # that mode=max costs more to upload than it saves on the next CI run.
-          cache-to: type=gha,mode=min,scope=nextjs-build
+          cache-to: type=gha,mode=min,scope=docker-build
 
       - name: Verify bundled file analyzer
         run: |

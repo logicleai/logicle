@@ -15,7 +15,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { ProviderType } from '@/types/provider'
-import { Metadata } from 'next'
 import * as dto from '@/types/dto'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
@@ -23,10 +22,6 @@ import { AdminPage } from '../components/AdminPage'
 import { IconTrash } from '@tabler/icons-react'
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { useEnvironment } from '@/app/context/environmentProvider'
-
-export const metadata: Metadata = {
-  title: 'Backends',
-}
 
 export const BackendsPage = () => {
   const { t } = useTranslation()
