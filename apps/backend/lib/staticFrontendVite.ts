@@ -1,0 +1,124 @@
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import { lookup as lookupMimeType } from 'mime-types'
+import { toNodeRequestUrl, toWebRequest } from '@/lib/router'
+import { readSessionFromRequest } from '@/lib/auth/session'
+import { getEnvironmentPayload, getProvisionedBrandAssets } from '@/lib/app-config'
+import {
+  BRAND_CSS_ELEMENT_ID,
+  BRAND_I18N_ELEMENT_ID,
+  ENVIRONMENT_ELEMENT_ID,
+} from '@/lib/bootstrapPlaceholders'
+
+// Spike counterpart to staticFrontend.ts, for a `vite build` of
+// apps/frontend-vite instead of `next build --output export` of
+// apps/frontend. The auth gate and bootstrap injection are byte-for-byte
+// the same idea (and could share code with staticFrontend.ts verbatim in a
+// real migration — duplicated here only so the spike doesn't touch the Next
+// version at all). What's gone:
+//   - resolveExportedHtmlFile's per-route HTML lookup: a Next static export
+//     has one prebuilt HTML file per statically-known route; a Vite SPA
+//     build has exactly one (index.html) for every route, since every page
+//     in this app is already 'use client' (no server-rendered markup to
+//     preserve per-route in the first place — see RootLayout.tsx). So this
+//     always serves the one shell.
+//   - the `.txt` flight-payload passthrough: that exists only to feed
+//     Next's own client router; React Router does all of its navigation
+//     client-side against the already-loaded app, no per-navigation fetch
+//     to the server at all.
+const PUBLIC_PATH_PREFIXES = ['/assets/']
+const PUBLIC_EXACT_PATHS = new Set(['/favicon.ico', '/openapi.yaml', '/robots.txt'])
+
+const isPubliclyServable = (pathname: string) =>
+  PUBLIC_EXACT_PATHS.has(pathname) || PUBLIC_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+
+function escapeForScriptTag(json: string): string {
+  return json.replace(/</g, '\\u003c')
+}
+
+function escapeForStyleTag(css: string): string {
+  return css.replace(/<\/style>/gi, '<\\/style>')
+}
+
+export async function injectBootstrapData(html: string): Promise<string> {
+  const [environment, brand] = await Promise.all([getEnvironmentPayload(), getProvisionedBrandAssets()])
+
+  const brandCss = brand.styles.map((s) => s.content).join('\n')
+  const headInjection = `<style id="${BRAND_CSS_ELEMENT_ID}">${escapeForStyleTag(brandCss)}</style></head>`
+  const bodyInjection =
+    `<script id="${ENVIRONMENT_ELEMENT_ID}" type="application/json">` +
+    `${escapeForScriptTag(JSON.stringify(environment))}</script>` +
+    `<script id="${BRAND_I18N_ELEMENT_ID}" type="application/json">` +
+    `${escapeForScriptTag(JSON.stringify(brand.i18n))}</script></body>`
+
+  return html.replace('</head>', headInjection).replace('</body>', bodyInjection)
+}
+
+function redirect(res: ServerResponse, location: string) {
+  res.writeHead(307, { Location: location }).end()
+}
+
+// Same proxy.ts-derived auth gate as staticFrontend.ts, factored out so
+// server.ts's vite-dev-middleware branch (see viteDevServer there) can apply
+// it before handing off to Vite's own transformIndexHtml, the same way the
+// prod path below applies it before reading the built index.html.
+// Returns true if the request was fully handled (redirected).
+export async function applyAuthGate(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+  const url = toNodeRequestUrl(req)
+  const pathname = url.pathname
+  const webRequest = toWebRequest(req, new AbortController().signal)
+  const session = await readSessionFromRequest(webRequest)
+  if (pathname === '/auth/login') {
+    if (session) {
+      redirect(res, '/chat')
+      return true
+    }
+    return false
+  }
+  if (!session && pathname !== '/auth/join') {
+    const callbackUrl = encodeURIComponent(url.pathname + url.search)
+    redirect(res, `/auth/login?callbackUrl=${callbackUrl}`)
+    return true
+  }
+  return false
+}
+
+export async function serveStaticFrontendVite(
+  req: IncomingMessage,
+  res: ServerResponse,
+  outDir: string
+): Promise<boolean> {
+  const url = toNodeRequestUrl(req)
+  const pathname = url.pathname
+
+  if (pathname === '/') {
+    redirect(res, '/chat')
+    return true
+  }
+
+  if (isPubliclyServable(pathname)) {
+    const filePath = path.join(outDir, pathname)
+    if (!filePath.startsWith(outDir) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      return false
+    }
+    const contentType = lookupMimeType(filePath) || 'application/octet-stream'
+    res.writeHead(200, { 'Content-Type': contentType })
+    fs.createReadStream(filePath).pipe(res)
+    return true
+  }
+
+  if (await applyAuthGate(req, res)) {
+    return true
+  }
+
+  const htmlFile = path.join(outDir, 'index.html')
+  const html = await fs.promises.readFile(htmlFile, 'utf-8')
+  const withBootstrap = await injectBootstrapData(html)
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'X-Robots-Tag': 'noindex, nofollow, noarchive',
+  })
+  res.end(withBootstrap)
+  return true
+}
