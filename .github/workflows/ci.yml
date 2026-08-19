@@ -180,10 +180,10 @@ jobs:
           load: true
           tags: ${{ env.SMOKE_IMAGE }}
           build-args: APP_VERSION=${{ steps.buildver.outputs.version }}
-          cache-from: type=gha,scope=nextjs-build
+          cache-from: type=gha,scope=docker-build
           # Export only layers in the final image. The builder cache is large enough
           # that mode=max costs more to upload than it saves on the next CI run.
-          cache-to: type=gha,mode=min,scope=nextjs-build
+          cache-to: type=gha,mode=min,scope=docker-build
 
       - name: Verify bundled file analyzer
         run: |

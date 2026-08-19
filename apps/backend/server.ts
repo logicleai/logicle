@@ -1,7 +1,6 @@
 import { createServer } from 'node:http'
 import { parse } from 'node:url'
 import { existsSync } from 'node:fs'
-import * as fs from 'node:fs'
 import path from 'node:path'
 
 const dev = process.env.NODE_ENV !== 'production'
@@ -33,9 +32,7 @@ loadProcessEnv()
 const { handleApiRequest } = await import('@/lib/router')
 const { bootstrapBackendRuntime } = await import('@/lib/bootstrap')
 const { attachSatelliteServer, SATELLITE_RPC_PATH } = await import('@/lib/satellite/server')
-const { serveStaticFrontendVite, applyAuthGate, injectBootstrapData } = await import(
-  '@/lib/staticFrontendVite'
-)
+const { serveStaticFrontendVite, serveViteDevRequest } = await import('@/lib/staticFrontendVite')
 
 const port = process.env.PORT || 3000
 
@@ -83,36 +80,7 @@ async function main() {
       }
 
       if (viteDevServer) {
-        // Let Vite serve/transform its own module graph (/src/*, /@vite/*,
-        // /@react-refresh, etc.) first. If nothing in there matched, `next()`
-        // fires and we fall through to rendering the (transformed) HTML
-        // shell below — the dev-mode analogue of serveStaticFrontendVite's
-        // prod path, just built from Vite's live template instead of a
-        // `vite build` output file.
-        let fellThrough = false
-        await new Promise<void>((resolve) => {
-          viteDevServer.middlewares(req, res, () => {
-            fellThrough = true
-            resolve()
-          })
-          res.once('finish', resolve)
-        })
-        if (!fellThrough) return
-
-        if (pathname === '/') {
-          res.writeHead(307, { Location: '/chat' }).end()
-          return
-        }
-        if (await applyAuthGate(req, res)) return
-
-        const template = await fs.promises.readFile(
-          path.join(frontendViteRoot, 'index.html'),
-          'utf-8'
-        )
-        const transformed = await viteDevServer.transformIndexHtml(req.url || '/', template)
-        const withBootstrap = await injectBootstrapData(transformed)
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-        res.end(withBootstrap)
+        await serveViteDevRequest(req, res, viteDevServer, frontendViteRoot)
         return
       }
 

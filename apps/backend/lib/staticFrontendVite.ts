@@ -84,6 +84,57 @@ export async function applyAuthGate(req: IncomingMessage, res: ServerResponse): 
   return false
 }
 
+// Minimal structural type for the bits of Vite's ViteDevServer this needs —
+// avoids importing `vite` itself at the type level, which would pull the
+// ~380MB dev-only package into production type-checking/bundling paths that
+// never construct one (see server.ts's own comment on why `vite` is only
+// ever dynamically imported).
+interface ViteDevServerLike {
+  middlewares: (req: IncomingMessage, res: ServerResponse, next: () => void) => void
+  transformIndexHtml: (url: string, html: string) => Promise<string>
+}
+
+// Dev-mode counterpart to serveStaticFrontendVite below, for a Vite dev
+// server running in middlewareMode instead of a `vite build` output — used
+// by both apps/backend/server.ts (embedded, for `pnpm run dev`) and
+// apps/frontend-vite/dev.ts (standalone, for `pnpm run dev:frontend` — the
+// "Dev: Split" launch config). Factored out so both actually apply the same
+// auth gate and bootstrap injection instead of one silently serving Vite's
+// raw, ungated index.html.
+export async function serveViteDevRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  viteDevServer: ViteDevServerLike,
+  frontendViteRoot: string
+): Promise<void> {
+  // Let Vite serve/transform its own module graph (/src/*, /@vite/*,
+  // /@react-refresh, etc.) first. If nothing in there matched, `next()`
+  // fires and we fall through to rendering the (transformed) HTML shell
+  // below.
+  let fellThrough = false
+  await new Promise<void>((resolve) => {
+    viteDevServer.middlewares(req, res, () => {
+      fellThrough = true
+      resolve()
+    })
+    res.once('finish', resolve)
+  })
+  if (!fellThrough) return
+
+  const pathname = toNodeRequestUrl(req).pathname
+  if (pathname === '/') {
+    redirect(res, '/chat')
+    return
+  }
+  if (await applyAuthGate(req, res)) return
+
+  const template = await fs.promises.readFile(path.join(frontendViteRoot, 'index.html'), 'utf-8')
+  const transformed = await viteDevServer.transformIndexHtml(req.url || '/', template)
+  const withBootstrap = await injectBootstrapData(transformed)
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+  res.end(withBootstrap)
+}
+
 export async function serveStaticFrontendVite(
   req: IncomingMessage,
   res: ServerResponse,

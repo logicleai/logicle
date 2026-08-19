@@ -20,7 +20,7 @@
   "scripts": {
     "dev": "tsx apps/backend/server.ts",
     "dev:backend": "API_ONLY=true PORT=3001 tsx watch --ignore 'apps/frontend/**' apps/backend/server.ts",
-    "dev:frontend": "PORT=3002 vite --config apps/frontend-vite/vite.config.ts",
+    "dev:frontend": "PORT=3002 tsx apps/frontend-vite/dev.ts",
     "dev:proxy": "tsx watch apps/proxy.ts",
     "build": "vite build apps/frontend-vite && tsup",
     "build:smoke": "tsup --config tsup.smoke.config.js && rm -rf dist-scripts/data && mkdir -p dist-scripts/data && cp -r apps/backend/scripts/data/. dist-scripts/data",
