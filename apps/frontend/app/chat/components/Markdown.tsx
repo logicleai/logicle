@@ -1,6 +1,8 @@
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
+import rehypeRaw from 'rehype-raw'
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import ReactMarkdown, { Components } from 'react-markdown'
 import rehypeExternalLinks from 'rehype-external-links'
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
@@ -21,6 +23,26 @@ const CodeBlock = React.lazy(() =>
 const MermaidDiagram = React.lazy(() =>
   import('./MermaidDiagram').then((m) => ({ default: m.MermaidDiagram }))
 )
+
+const safeColorStyle =
+  /^(?:color|background-color)\s*:\s*(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\([\d\s.,%+-]+\)|[a-z]+)\s*;?$/i
+const safeTextDecorationStyle = /^text-decoration\s*:\s*(?:underline|line-through)\s*;?$/i
+
+export const markdownSanitizeSchema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), 'mark', 'u'],
+  attributes: {
+    ...defaultSchema.attributes,
+    mark: [
+      ...(defaultSchema.attributes?.mark ?? []),
+      ['style', safeColorStyle, safeTextDecorationStyle],
+    ],
+    span: [
+      ...(defaultSchema.attributes?.span ?? []),
+      ['style', safeColorStyle, safeTextDecorationStyle],
+    ],
+  },
+}
 
 export function remarkAddBlockCodeFlag() {
   return (tree: Root) => {
@@ -128,7 +150,7 @@ export const Markdown: React.FC<{
       td({ children }) {
         return <td className="break-words px-3 py-1">{children}</td>
       },
-      a({ children, ...props }) {
+      a({ children, node: _node, ...props }) {
         return <CustomAnchor {...props}>{children}</CustomAnchor>
       },
     }),
@@ -141,8 +163,10 @@ export const Markdown: React.FC<{
         className={className}
         remarkPlugins={[remarkGfm, remarkMath, [remarkAddBlockCodeFlag]]}
         rehypePlugins={[
-          [rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }],
+          rehypeRaw,
+          [rehypeSanitize, markdownSanitizeSchema],
           rehypeKatex,
+          [rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }],
         ]}
         components={components}
       >
