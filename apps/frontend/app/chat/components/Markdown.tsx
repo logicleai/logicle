@@ -10,6 +10,7 @@ import React, { memo, MutableRefObject, Suspense } from 'react'
 
 import { visit } from 'unist-util-visit'
 import type { Root, Code } from 'mdast'
+import type { Element, Root as HastRoot } from 'hast'
 import { Table } from './Table'
 
 // Lazy: `react-syntax-highlighter`'s Prism build bundles ~250 language
@@ -24,23 +25,49 @@ const MermaidDiagram = React.lazy(() =>
   import('./MermaidDiagram').then((m) => ({ default: m.MermaidDiagram }))
 )
 
-const safeColorStyle =
-  /^(?:color|background-color)\s*:\s*(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\([\d\s.,%+-]+\)|[a-z]+)\s*;?$/i
-const safeTextDecorationStyle = /^text-decoration\s*:\s*(?:underline|line-through)\s*;?$/i
+const safeInlineStyleValues: Record<string, RegExp> = {
+  color: /^(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\([\d\s.,%+-]+\)|[a-z]+)$/i,
+  'background-color': /^(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\([\d\s.,%+-]+\)|[a-z]+)$/i,
+  'font-style': /^(?:italic|normal|oblique)$/i,
+  'font-weight': /^(?:bold|bolder|lighter|normal|[1-9]00)$/i,
+  'text-decoration': /^(?:line-through|underline)$/i,
+}
+
+const sanitizeInlineStyle = (style: string) =>
+  style
+    .split(';')
+    .map((declaration) => {
+      const separator = declaration.indexOf(':')
+      if (separator === -1) return undefined
+      const property = declaration.slice(0, separator).trim().toLowerCase()
+      const value = declaration.slice(separator + 1).trim()
+      return safeInlineStyleValues[property]?.test(value) ? `${property}: ${value}` : undefined
+    })
+    .filter((declaration): declaration is string => declaration !== undefined)
+    .join('; ')
+
+export function rehypeFilterInlineStyles() {
+  return (tree: HastRoot) => {
+    visit(tree, 'element', (node: Element) => {
+      const style = node.properties.style
+      if (typeof style !== 'string') return
+      const sanitizedStyle = sanitizeInlineStyle(style)
+      if (sanitizedStyle) {
+        node.properties.style = sanitizedStyle
+      } else {
+        delete node.properties.style
+      }
+    })
+  }
+}
 
 export const markdownSanitizeSchema = {
   ...defaultSchema,
   tagNames: [...(defaultSchema.tagNames ?? []), 'mark', 'u'],
   attributes: {
     ...defaultSchema.attributes,
-    mark: [
-      ...(defaultSchema.attributes?.mark ?? []),
-      ['style', safeColorStyle, safeTextDecorationStyle],
-    ],
-    span: [
-      ...(defaultSchema.attributes?.span ?? []),
-      ['style', safeColorStyle, safeTextDecorationStyle],
-    ],
+    mark: [...(defaultSchema.attributes?.mark ?? []), 'style'],
+    span: [...(defaultSchema.attributes?.span ?? []), 'style'],
   },
 }
 
@@ -164,6 +191,7 @@ export const Markdown: React.FC<{
         remarkPlugins={[remarkGfm, remarkMath, [remarkAddBlockCodeFlag]]}
         rehypePlugins={[
           rehypeRaw,
+          rehypeFilterInlineStyles,
           [rehypeSanitize, markdownSanitizeSchema],
           rehypeKatex,
           [rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }],

@@ -11,6 +11,8 @@ describe('Markdown HTML sanitization', () => {
     const html = renderMarkdown(`
 <mark>highlight</mark> <u>underline</u>
 
+<sub>subscript</sub> <sup>superscript</sup> <del>deleted</del> <ins>inserted</ins>
+
 <a href="https://example.com/docs">docs</a>
 
 <img src="https://example.com/image.png" alt="example">
@@ -18,6 +20,10 @@ describe('Markdown HTML sanitization', () => {
 
     expect(html).toContain('<mark>highlight</mark>')
     expect(html).toContain('<u>underline</u>')
+    expect(html).toContain('<sub>subscript</sub>')
+    expect(html).toContain('<sup>superscript</sup>')
+    expect(html).toContain('<del>deleted</del>')
+    expect(html).toContain('<ins>inserted</ins>')
     expect(html).toContain('<a href="https://example.com/docs"')
     expect(html).toContain('target="_blank"')
     expect(html).toContain('rel="noopener noreferrer"')
@@ -27,13 +33,14 @@ describe('Markdown HTML sanitization', () => {
 
   test('allows only presentation-safe inline text styles', () => {
     const html = renderMarkdown(
-      '<span style="color: red">styled</span>\n\n' +
-        '<span style="position: fixed; inset: 0">unsafe</span>'
+      '<span style="color:green;font-weight:bold">styled</span>\n\n' +
+        '<span style="color: red; position: fixed; inset: 0">partially safe</span>'
     )
 
-    expect(html).toContain('<span style="color:red">styled</span>')
-    expect(html).toContain('<span>unsafe</span>')
+    expect(html).toContain('<span style="color:green;font-weight:bold">styled</span>')
+    expect(html).toContain('<span style="color:red">partially safe</span>')
     expect(html).not.toContain('position')
+    expect(html).not.toContain('inset')
   })
 
   test('removes executable markup and unsafe URLs', () => {
