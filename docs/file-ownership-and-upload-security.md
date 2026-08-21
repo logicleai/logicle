@@ -5,9 +5,7 @@
 Every `File` row belongs to an owner: `USER`, `CHAT`, `ASSISTANT`, or `TOOL`. Reading a
 file and writing (uploading) its content are different permissions, and must be checked
 differently — being able to view/use a chat, tool, or assistant must never imply being
-able to overwrite the bytes of a file attached to it. This document exists because that
-distinction was lost once already (see "History" below) and cost real debugging time to
-recover.
+able to overwrite the bytes of a file attached to it.
 
 ## The three-step upload flow
 
@@ -69,26 +67,4 @@ removing that fallback (making them unreadable, including to admins) would be a
 regression, not a hardening.
 
 See `apps/backend/lib/files/__tests__/authorization.test.ts` for executable coverage
-of every row of this matrix, including the exact regression below.
-
-## History
-
-PR #1022 ("Harden exposed security boundaries") correctly identified a real hole: the
-upload endpoint used the same read-level check as downloads (`canAccessFile`), so
-anyone with mere *read* access to a shared conversation, a public tool, or a shared
-assistant could overwrite that entity's file content — never intended, since sharing a
-conversation is explicitly meant to be read-only. Its fix (`canWriteFile` requiring
-`ownerType === 'USER'`) was the right shape but didn't account for the fact that three
-frontend flows (chat attachments, assistant knowledge, tool knowledge) created files
-directly with their final, non-`USER` owner when the target entity already existed —
-breaking uploads for all of them. The same commit also removed the legacy-unowned
-read fallback without a migration path, making pre-existing files unreadable by
-everyone, including admins.
-
-The fix applied afterward (this document, `canWriteFile`, and the three upload
-components) restores the original one-line `canWriteFile` check and the legacy-read
-fallback, and instead makes the three affected frontend flows always create `USER`-
-owned files — relying on the transfer mechanisms above, which already ran
-unconditionally on every save, not just creation. This closes the original hole
-(read access no longer implies write access) without reintroducing the upload
-regression.
+of every row of this matrix.
