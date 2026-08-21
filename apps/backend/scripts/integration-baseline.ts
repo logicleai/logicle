@@ -447,7 +447,7 @@ async function main() {
     },
     allowStatus: [403],
   })
-  await request('POST', '/api/files', {
+  const ownedFileCreated = await request('POST', '/api/files', {
     expectedStatus: 201,
     headers: jsonHeaders,
     json: {
@@ -457,6 +457,59 @@ async function main() {
       owner: userOwner,
     },
   })
+  const ownedFileId = parseJson(ownedFileCreated.text, '/api/files POST (owned)').id as string
+
+  console.log('Integration: upload content to a USER-owned file')
+  await request('PUT', `/api/files/${ownedFileId}/content`, {
+    expectedStatus: 204,
+    headers: sameOriginHeaders,
+    body: 'hello integration baseline',
+  })
+  const ownedFileContent = await request('GET', `/api/files/${ownedFileId}/content`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  if (ownedFileContent.text !== 'hello integration baseline') {
+    throw new Error(`Unexpected uploaded file content: ${ownedFileContent.text}`)
+  }
+
+  console.log('Integration: re-uploading content to the same file is rejected (one-shot upload)')
+  await request('PUT', `/api/files/${ownedFileId}/content`, {
+    headers: sameOriginHeaders,
+    body: 'second upload attempt',
+    allowStatus: [400],
+  })
+
+  console.log('Integration: a second user cannot read or write another user-owned file')
+  const secondUserEmail = `user2-${runId}@example.com`
+  await login(adminEmail, password)
+  await request('POST', '/api/users', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      name: 'Second Regular User',
+      email: secondUserEmail,
+      password,
+      role: 'USER',
+      ssoUser: false,
+      preferences: '{}',
+      image: null,
+      properties: {},
+    },
+  })
+  await login(secondUserEmail, password)
+  await request('GET', `/api/files/${ownedFileId}/content`, {
+    headers: sameOriginHeaders,
+    allowStatus: [403],
+  })
+  await request('PUT', `/api/files/${ownedFileId}/content`, {
+    headers: sameOriginHeaders,
+    body: 'attempted takeover',
+    allowStatus: [403],
+  })
+
+  console.log('Integration: switch back to the first regular user')
+  await login(userEmail, password)
 
   console.log('Integration: CRUD side-effects for folder resource')
   const folderCreated = await request('POST', '/api/me/folders', {
