@@ -6,6 +6,9 @@ import {
   gemini31FlashLite,
   gemini31ProModel,
   gemini35FlashModel,
+  gemini36FlashModel,
+  gemini37FlashModel,
+  geminiFlashLatest,
   geminiProLatest,
 } from './vertex'
 
@@ -35,7 +38,19 @@ export const geminiModels: LlmModel[] = [
     provider: 'google-ai-studio',
   },
   {
+    ...gemini36FlashModel,
+    provider: 'google-ai-studio',
+  },
+  {
+    ...gemini37FlashModel,
+    provider: 'google-ai-studio',
+  },
+  {
     ...geminiProLatest,
+    provider: 'google-ai-studio',
+  },
+  {
+    ...geminiFlashLatest,
     provider: 'google-ai-studio',
   },
 ]
