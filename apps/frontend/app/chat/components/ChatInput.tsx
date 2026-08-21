@@ -382,9 +382,7 @@ export const ChatInput = ({
       size: file.size,
       type: type,
       name: fileName,
-      owner: conversationId
-        ? { ownerType: 'CHAT', ownerId: conversationId }
-        : { ownerType: 'USER', ownerId: userProfile!.id },
+      owner: { ownerType: 'USER', ownerId: userProfile!.id },
     }
     const response = await post<dto.File>('/api/files', insertRequest)
     if (response.error) {

@@ -99,7 +99,7 @@ export const ToolKnowledgeSection = ({ form, toolId }: ToolKnowledgeSectionProps
   }
 
   const processAndUploadFile = async (file: Blob, fileName: string) => {
-    if (!toolId && !userProfile?.id) {
+    if (!userProfile?.id) {
       toast.error('User context is required for file uploads')
       return
     }
@@ -108,9 +108,7 @@ export const ToolKnowledgeSection = ({ form, toolId }: ToolKnowledgeSectionProps
       size: file.size,
       type: file.type,
       name: fileName,
-      owner: toolId
-        ? { ownerType: 'TOOL', ownerId: toolId }
-        : { ownerType: 'USER', ownerId: userProfile!.id },
+      owner: { ownerType: 'USER', ownerId: userProfile.id },
     }
     const response = await post<dto.File>(`/api/files`, insertRequest)
     if (response.error) {

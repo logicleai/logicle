@@ -92,12 +92,21 @@ export const canAccessFile = async (user: AccessUser, fileId: string): Promise<b
   if (!file) {
     return false
   }
-  if (!file.ownerType || !file.ownerId) return false
+  if (!file.ownerType || !file.ownerId) {
+    // Legacy migration window behavior: unowned files stay readable.
+    return true
+  }
   return await canAccess(user, file.ownerType, file.ownerId)
 }
 
-/** Uploads are only allowed while a newly-created file is owned by its creator.
- * Shared conversations grant read access only and must never grant mutation.
+/** Uploads are only allowed while a newly-created file is still owned by its
+ * creator. Ownership of the entity a file will end up attached to (a chat,
+ * assistant, or tool) is established separately, server-side, once that
+ * entity is actually saved with the file attached (see
+ * reassignUserOwnedFilesToConversation, transferFilesToAssistantOwner,
+ * transferFilesToToolOwner) — a file is never uploaded to while already
+ * owned by one of those entities. Shared conversations, public tools, and
+ * shared assistants grant read access only and must never grant mutation.
  */
 export const canWriteFile = async (user: AccessUser, fileId: string): Promise<boolean> => {
   const file = await db
