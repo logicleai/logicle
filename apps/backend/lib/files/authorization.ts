@@ -4,6 +4,34 @@ import { canUserAccessAssistant } from '@/models/assistant'
 import { getUserWorkspaceMemberships } from '@/models/user'
 import { UserRole } from '@/types/dto'
 
+/**
+ * File ownership and authorization model
+ * ---------------------------------------
+ * Every `File` row has an owner: `USER` (a person), `CHAT` (a conversation),
+ * `ASSISTANT`, or `TOOL`. Read and write access are deliberately different
+ * permissions, checked by different functions:
+ *
+ * | ownerType  | read (canAccess)                                    | write (canWriteFile)          |
+ * |------------|------------------------------------------------------|--------------------------------|
+ * | USER       | caller is the owner                                   | caller is the owner            |
+ * | CHAT       | conversation owner, or anyone holding a share on it   | never (see below)               |
+ * | ASSISTANT  | canUserAccessAssistant (owner, public/workspace share)| never (see below)               |
+ * | TOOL       | public → anyone; workspace → member; private → admin  | never (see below)               |
+ * | unowned (legacy, no ownerType/ownerId) | readable (permissive fallback) | never (no owner to check) |
+ *
+ * Uploads (`PUT /api/files/{id}/content`) only ever happen while a file is
+ * still `USER`-owned: every upload flow creates the `File` row as `USER`-owned
+ * first, uploads content, and only afterwards does the file get reassigned to
+ * its final owner — server-side, as a side effect of saving the entity it's
+ * attached to (`reassignUserOwnedFilesToConversation` on message send,
+ * `transferFilesToAssistantOwner` on assistant draft save,
+ * `transferFilesToToolOwner` on tool save). Because of that, `canWriteFile`
+ * only ever needs to check `USER` ownership — a file is never re-uploaded to
+ * once it belongs to a chat/assistant/tool. In particular, being able to
+ * *read* a file via a conversation share, a public tool, or a shared
+ * assistant must never imply being able to *write* it.
+ */
+
 type AccessUser = {
   userId: string
   userRole?: schema.UserRole
