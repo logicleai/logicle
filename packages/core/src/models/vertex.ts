@@ -176,6 +176,40 @@ export const gemini35FlashModel: LlmModel = {
   supportedReasoningEfforts: ['minimal', 'low', 'medium', 'high'],
 }
 
+export const gemini36FlashModel: LlmModel = {
+  id: 'gemini-3.6-flash',
+  model: 'gemini-3.6-flash',
+  name: 'Gemini 3.6 Flash',
+  description:
+    "Google's most intelligent model family to date, built on a foundation of state-of-the-art reasoning",
+  provider: 'gcp-vertex',
+  owned_by: 'google',
+  context_length: 1000000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    web_search: true,
+  },
+  supportedReasoningEfforts: ['minimal', 'low', 'medium', 'high'],
+}
+
+export const gemini37FlashModel: LlmModel = {
+  id: 'gemini-3.7-flash',
+  model: 'gemini-3.7-flash',
+  name: 'Gemini 3.7 Flash',
+  description:
+    "Google's most intelligent model family to date, built on a foundation of state-of-the-art reasoning",
+  provider: 'gcp-vertex',
+  owned_by: 'google',
+  context_length: 1000000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    web_search: true,
+  },
+  supportedReasoningEfforts: ['minimal', 'low', 'medium', 'high'],
+}
+
 export const geminiProLatest: LlmModel = {
   ...gemini31ProModel,
   id: 'gemini-pro-latest',
@@ -183,8 +217,16 @@ export const geminiProLatest: LlmModel = {
   tags: ['latest'],
 }
 
+export const geminiFlashLatest: LlmModel = {
+  ...gemini37FlashModel,
+  id: 'gemini-flash-latest',
+  name: 'Gemini flash latest (3.7)',
+  tags: ['latest'],
+}
+
 export const vertexModels: LlmModel[] = [
   geminiProLatest,
+  geminiFlashLatest,
   gemini15ProModel,
   gemini15FlashModel,
   gemini20ProModel,
@@ -196,4 +238,6 @@ export const vertexModels: LlmModel[] = [
   gemini31FlashLite,
   gemini31ProModel,
   gemini35FlashModel,
+  gemini36FlashModel,
+  gemini37FlashModel,
 ]
