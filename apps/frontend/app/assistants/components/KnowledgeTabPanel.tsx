@@ -27,7 +27,7 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
   const uploadFileRef = useRef<HTMLInputElement>(null)
   const lastWarningStateRef = useRef<boolean | undefined>(undefined)
   const { t } = useTranslation()
-  const _userProfile = useUserProfile()
+  const userProfile = useUserProfile()
   const [isDragActive, setIsDragActive] = useState(false)
   const draggingUploadIdRef = useRef<string | null>(null)
 
@@ -170,8 +170,8 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
   }
 
   const processAndUploadFile = async (file: Blob, fileName: string) => {
-    if (!assistantId) {
-      toast.error('Assistant context is required for file uploads')
+    if (!userProfile?.id) {
+      toast.error('User context is required for file uploads')
       return
     }
 
@@ -179,7 +179,7 @@ export const KnowledgeTabPanel = ({ form, visible, className, modelId, assistant
       size: file.size,
       type: file.type,
       name: fileName,
-      owner: { ownerType: 'ASSISTANT', ownerId: assistantId },
+      owner: { ownerType: 'USER', ownerId: userProfile.id },
     }
     const response = await post<dto.File>(`/api/files`, insertRequest)
     if (response.error) {

@@ -140,10 +140,10 @@ describe('file authorization', () => {
     await expect(canAccess({ userId: 'u-user' }, 'TOOL', 't-private')).resolves.toBe(false)
   })
 
-  test('canAccessFile denies legacy unowned files until explicitly migrated', async () => {
+  test('canAccessFile keeps legacy unowned files readable', async () => {
     tables.File.push({ id: 'f-legacy' })
     const { canAccessFile } = await import('@/backend/lib/files/authorization')
-    await expect(canAccessFile({ userId: 'u1' }, 'f-legacy')).resolves.toBe(false)
+    await expect(canAccessFile({ userId: 'u1' }, 'f-legacy')).resolves.toBe(true)
   })
 
   test('canAccessFile enforces ownership and supports shared-access fallback', async () => {
@@ -169,5 +169,53 @@ describe('file authorization', () => {
 
     const { canAccessFile } = await import('@/backend/lib/files/authorization')
     await expect(canAccessFile({ userId: 'u-non-owner' }, 'f-shared')).resolves.toBe(true)
+  })
+
+  test('canWriteFile denies writes when the file does not exist', async () => {
+    const { canWriteFile } = await import('@/backend/lib/files/authorization')
+    await expect(canWriteFile({ userId: 'u1' }, 'missing')).resolves.toBe(false)
+  })
+
+  test('canWriteFile allows only the creator of a USER-owned file', async () => {
+    tables.File.push({ id: 'f1', ownerType: 'USER', ownerId: 'u-owner' })
+    const { canWriteFile } = await import('@/backend/lib/files/authorization')
+    await expect(canWriteFile({ userId: 'u-owner' }, 'f1')).resolves.toBe(true)
+    await expect(canWriteFile({ userId: 'u-nope' }, 'f1')).resolves.toBe(false)
+  })
+
+  test('canWriteFile denies writes to a legacy unowned file', async () => {
+    tables.File.push({ id: 'f-legacy' })
+    const { canWriteFile } = await import('@/backend/lib/files/authorization')
+    await expect(canWriteFile({ userId: 'u1' }, 'f-legacy')).resolves.toBe(false)
+  })
+
+  test('canWriteFile denies writes to files already reassigned to CHAT/ASSISTANT/TOOL, even for their true owner', async () => {
+    tables.Conversation.push({ id: 'c1', ownerId: 'u-chat-owner' })
+    tables.File.push({ id: 'f-chat', ownerType: 'CHAT', ownerId: 'c1' })
+    tables.File.push({ id: 'f-assistant', ownerType: 'ASSISTANT', ownerId: 'a1' })
+    tables.File.push({ id: 'f-tool', ownerType: 'TOOL', ownerId: 't1' })
+
+    const { canWriteFile } = await import('@/backend/lib/files/authorization')
+    await expect(canWriteFile({ userId: 'u-chat-owner' }, 'f-chat')).resolves.toBe(false)
+    await expect(canWriteFile({ userId: 'assistant-owner' }, 'f-assistant')).resolves.toBe(false)
+    await expect(
+      canWriteFile({ userId: 'admin-user', userRole: 'ADMIN' as never }, 'f-tool')
+    ).resolves.toBe(false)
+  })
+
+  test('a user with only read access to a shared conversation cannot write its files', async () => {
+    // This is the exact regression PR #1022 fixed: a shared-conversation reader
+    // must be able to read but never write the conversation's files.
+    tables.Conversation.push({ id: 'c-shared-file', ownerId: 'u-owner' })
+    tables.File.push({ id: 'f-shared', ownerType: 'CHAT', ownerId: 'c-shared-file' })
+    tables.ConversationSharing.push({
+      id: 'share-file-2',
+      lastMessageId: 'msg-shared-2',
+      'Message.conversationId': 'c-shared-file',
+    })
+
+    const { canAccessFile, canWriteFile } = await import('@/backend/lib/files/authorization')
+    await expect(canAccessFile({ userId: 'u-shared-reader' }, 'f-shared')).resolves.toBe(true)
+    await expect(canWriteFile({ userId: 'u-shared-reader' }, 'f-shared')).resolves.toBe(false)
   })
 })
