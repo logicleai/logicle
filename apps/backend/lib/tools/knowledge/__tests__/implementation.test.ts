@@ -5,6 +5,7 @@ import type { ToolFunction, ToolInvokeParams, ToolParams } from '@/lib/chat/tool
 const mockExecuteTakeFirst = vi.fn()
 const mockExtractFromFile = vi.fn()
 const mockDtoFileToLlmFilePart = vi.fn()
+const mockCanAccessFile = vi.fn()
 const envMock = vi.hoisted(() => ({ knowledge: { alwaysConvertToText: false } }))
 
 vi.mock('@/db/database', () => ({
@@ -31,10 +32,16 @@ vi.mock('@/backend/lib/chat/conversion', () => ({
   dtoFileToLlmFilePart: (...args: unknown[]) => mockDtoFileToLlmFilePart(...args),
 }))
 
+vi.mock('@/backend/lib/files/authorization', () => ({
+  canAccessFile: (...args: unknown[]) => mockCanAccessFile(...args),
+}))
+
 beforeEach(() => {
   mockExecuteTakeFirst.mockReset()
   mockExtractFromFile.mockReset()
   mockDtoFileToLlmFilePart.mockReset()
+  mockCanAccessFile.mockReset()
+  mockCanAccessFile.mockResolvedValue(true)
   envMock.knowledge.alwaysConvertToText = false
 })
 
@@ -74,6 +81,19 @@ describe('KnowledgePlugin GetFile', () => {
 
     const result = await fns.GetFile.invoke(makeInvokeParams('missing'))
 
+    expect(result).toEqual({ type: 'error-text', value: 'File not found' })
+  })
+
+  it('returns an error without reading file metadata when the user cannot access the file', async () => {
+    mockCanAccessFile.mockResolvedValue(false)
+    mockExecuteTakeFirst.mockResolvedValue(fileEntry)
+    const plugin = new KnowledgePlugin(toolParams, {})
+    const fns = (await plugin.functions({} as any, { userId: 'user-1' })) as Record<string, ToolFunction>
+
+    const result = await fns.GetFile.invoke(makeInvokeParams('other-tenant-file'))
+
+    expect(mockCanAccessFile).toHaveBeenCalledWith({ userId: 'user-1' }, 'other-tenant-file')
+    expect(mockExecuteTakeFirst).not.toHaveBeenCalled()
     expect(result).toEqual({ type: 'error-text', value: 'File not found' })
   })
 
