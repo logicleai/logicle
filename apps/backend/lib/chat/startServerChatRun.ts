@@ -12,7 +12,7 @@ import { MessageAuditor } from '@/lib/MessageAuditor'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { setRootSpanAttrs } from '@/lib/tracing/root-registry'
 import { getUserParameters } from '@/lib/parameters'
-import { assistantVersionFiles } from '@/models/assistant'
+import { assistantVersionFiles, canUserAccessAssistant } from '@/models/assistant'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { reassignUserOwnedFilesToConversation } from '@/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
@@ -87,6 +87,14 @@ export const startServerChatRun = async ({
       ok: false,
       status: 403,
       message: 'This assistant has been deleted',
+    }
+  }
+
+  if (!(await canUserAccessAssistant(session.userId, assistant.assistantId))) {
+    return {
+      ok: false,
+      status: 403,
+      message: 'You no longer have access to this assistant',
     }
   }
 

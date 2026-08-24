@@ -117,6 +117,9 @@ export const POST = operation({
     if (conversation.ownerId !== session.userId) {
       return forbidden('Trying to add a message to a non owned conversation')
     }
+    if (!(await canUserAccessAssistant(session.userId, assistant.assistantId))) {
+      return forbidden('You no longer have access to this assistant')
+    }
     if (userMessage.attachments && userMessage.attachments.length > 0) {
       const accessChecks = await Promise.all(
         userMessage.attachments.map((id) => canAccessFile({ userId: session.userId }, id))
