@@ -318,7 +318,7 @@ describe('PUT /api/files/:fileId/content', () => {
 // ── POST /api/files ──────────────────────────────────────────────────────────
 
 describe('POST /api/files', () => {
-  test('creates chat upload metadata with CHAT ownership', async () => {
+  test('always creates metadata as USER-owned by the uploader, ignoring the requested owner', async () => {
     await insertConversation({ id: 'chat-1', ownerId: testUserId })
 
     const response = await filesRoute.POST(
@@ -345,10 +345,10 @@ describe('POST /api/files', () => {
       .select(['ownerType', 'ownerId'])
       .where('id', '=', body.id)
       .executeTakeFirstOrThrow()
-    expect(file).toEqual({ ownerType: 'CHAT', ownerId: 'chat-1' })
+    expect(file).toEqual({ ownerType: 'USER', ownerId: testUserId })
   })
 
-  test('returns 403 when creating metadata for an owner the user cannot access', async () => {
+  test('ignores a client-supplied owner pointing at another user', async () => {
     const response = await filesRoute.POST(
       new Request('http://localhost/api/files', {
         method: 'POST',
@@ -357,7 +357,7 @@ describe('POST /api/files', () => {
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          name: 'private.txt',
+          name: 'spoofed.txt',
           type: 'text/plain',
           size: 12,
           owner: { ownerType: 'USER', ownerId: 'other-user' },
@@ -366,7 +366,14 @@ describe('POST /api/files', () => {
       { params: Promise.resolve({}) }
     )
 
-    expect(response.status).toBe(403)
+    expect(response.status).toBe(201)
+    const body = await response.json()
+    const file = await db
+      .selectFrom('File')
+      .select(['ownerType', 'ownerId'])
+      .where('id', '=', body.id)
+      .executeTakeFirstOrThrow()
+    expect(file).toEqual({ ownerType: 'USER', ownerId: testUserId })
   })
 })
 

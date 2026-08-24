@@ -1,6 +1,5 @@
 
-import { forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
-import { canAccess } from '@/backend/lib/files/authorization'
+import { ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { addFile } from '@/models/file'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
@@ -11,14 +10,15 @@ export const POST = operation({
   description: 'Create file metadata entry.',
   authentication: 'user',
   requestBodySchema: dto.insertableFileSchema,
-  responses: [responseSpec(201, dto.fileSchema), errorSpec(400), errorSpec(403)] as const,
+  responses: [responseSpec(201, dto.fileSchema), errorSpec(400)] as const,
   implementation: async ({ body, session }) => {
     const id = nanoid()
     const path = `${id}-${body.name.replace(/(\W+)/gi, '-')}`
-    const { owner, ...bodyWithoutOwner } = body
-    if (!(await canAccess({ userId: session.userId, userRole: session.userRole }, owner.ownerType, owner.ownerId))) {
-      return forbidden()
-    }
+    // Uploads always create the File row as USER-owned by the uploader — the client-supplied
+    // `owner` is ignored. Ownership transfers to its final owner (CHAT/ASSISTANT/TOOL) happens
+    // server-side afterward, as a side effect of saving the entity the file is attached to.
+    const { owner: _clientSuppliedOwner, ...bodyWithoutOwner } = body
+    const owner: dto.FileOwner = { ownerType: 'USER', ownerId: session.userId }
     const fileEncryption = getConfiguredFileEncryption()
     const created = await addFile(bodyWithoutOwner, path, fileEncryption, owner)
     return ok(
