@@ -15,6 +15,7 @@ import { getUserParameters } from '@/lib/parameters'
 import { assistantVersionFiles } from '@/models/assistant'
 import { getConversationWithBackendAssistant } from '@/models/conversation'
 import { reassignUserOwnedFilesToConversation } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { getMessages, saveMessage } from '@/models/message'
 import { getUserSecretValue } from '@/models/userSecrets'
 import { db } from 'db/database'
@@ -90,8 +91,19 @@ export const startServerChatRun = async ({
   }
 
   if (userMessage.role === 'user' && userMessage.attachments.length > 0) {
+    const attachmentIds = userMessage.attachments.map((attachment) => attachment.id)
+    const accessChecks = await Promise.all(
+      attachmentIds.map((id) => canAccessFile({ userId: session.userId }, id))
+    )
+    if (accessChecks.some((allowed) => !allowed)) {
+      return {
+        ok: false,
+        status: 403,
+        message: 'Message references files that are not accessible to the current user',
+      }
+    }
     await reassignUserOwnedFilesToConversation({
-      fileIds: userMessage.attachments.map((attachment) => attachment.id),
+      fileIds: attachmentIds,
       userId: session.userId,
       conversationId: conversation.id,
     })

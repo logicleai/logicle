@@ -10,6 +10,7 @@ import { nanoid } from 'nanoid'
 import { MessageAuditor } from '@/lib/MessageAuditor'
 import { assistantVersionFiles, getAssistant } from '@/models/assistant'
 import { getFileWithId, reassignUserOwnedFilesToConversation } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
 import { getUserParameters } from '@/lib/parameters'
 import { error, forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
@@ -114,6 +115,12 @@ export const POST = operation({
       return forbidden('Trying to add a message to a non owned conversation')
     }
     if (userMessage.attachments && userMessage.attachments.length > 0) {
+      const accessChecks = await Promise.all(
+        userMessage.attachments.map((id) => canAccessFile({ userId: session.userId }, id))
+      )
+      if (accessChecks.some((allowed) => !allowed)) {
+        return forbidden('Message references files that are not accessible to the current user')
+      }
       await reassignUserOwnedFilesToConversation({
         fileIds: userMessage.attachments,
         userId: session.userId,
