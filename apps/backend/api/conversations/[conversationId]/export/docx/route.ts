@@ -19,7 +19,10 @@ export const POST = operation({
       return forbidden()
     }
 
-    const doc = await renderDocxFromMarkdown(body.markdown)
+    const doc = await renderDocxFromMarkdown(body.markdown, {
+      userId: session.userId,
+      userRole: session.userRole,
+    })
     return new Response(Buffer.from(doc), {
       status: 200,
       headers: {

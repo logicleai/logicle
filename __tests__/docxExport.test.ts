@@ -15,7 +15,7 @@ const problematicMarkdown = `**ISTRUZIONE OPERATIVA**
 `
 
 async function renderDocx(markdown: string) {
-  const out = await renderDocxFromMarkdown(markdown)
+  const out = await renderDocxFromMarkdown(markdown, { userId: 'test-user' })
   return Buffer.from(out)
 }
 
