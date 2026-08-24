@@ -15,6 +15,7 @@ import * as dto from '@/types/dto'
 import * as ai from 'ai'
 import { LlmModel } from '@/lib/chat/models'
 import { dtoFileToLlmFilePart } from '@/backend/lib/chat/conversion'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import type { FileDbRow } from '@/backend/models/file'
 
@@ -78,8 +79,12 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
         additionalProperties: false,
         required: ['id'],
       },
-      invoke: async ({ llmModel, params }): Promise<dto.ToolCallResultOutput> => {
-        const fileEntry = await fetchFileEntry(`${params.id}`)
+      invoke: async ({ llmModel, params, userId }): Promise<dto.ToolCallResultOutput> => {
+        const fileId = `${params.id}`
+        if (!(await canAccessFile({ userId }, fileId))) {
+          return { type: 'error-text', value: 'File not found' }
+        }
+        const fileEntry = await fetchFileEntry(fileId)
         if (!fileEntry) {
           return { type: 'error-text', value: 'File not found' }
         }
