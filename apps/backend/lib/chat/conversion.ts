@@ -1,6 +1,7 @@
 import * as ai from 'ai'
 import { type FileDbRow } from '@/backend/models/file'
 import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import * as dto from '@/types/dto'
 import { ensureFileAnalysis } from '@/lib/file-analysis'
 import { UserVisibleError } from '@/backend/lib/chat'
@@ -155,10 +156,13 @@ const dtoFileToToolResultOutputPart = async (
   return dtoFileToTextPart(fileEntry)
 }
 
+export type ConversionPrincipal = { userId: string }
+
 export const dtoMessageToLlmMessage = async (
   m: dto.Message,
   capabilities: LlmModelCapabilities,
-  providerName: string
+  providerName: string,
+  principal: ConversionPrincipal
 ): Promise<ai.ModelMessage | undefined> => {
   const projected = projectMessageForEstimationCached(m)
   if (projected.role === 'ignored') return undefined
@@ -180,6 +184,9 @@ export const dtoMessageToLlmMessage = async (
               if (v.type === 'text') {
                 parts.push(v)
               } else {
+                if (!(await canAccessFile(principal, v.id))) {
+                  throw new Error(`Not authorized to access attachment ${v.id}`)
+                }
                 const fileEntry = await getFileWithId(v.id)
                 if (!fileEntry) {
                   throw new Error(`Can't find entry for attachment ${v.id}`)
@@ -267,6 +274,10 @@ export const dtoMessageToLlmMessage = async (
       if (item.kind === 'text') {
         parts.push({ type: 'text', text: item.text })
       } else if (item.kind === 'attachment') {
+        if (!(await canAccessFile(principal, item.attachment.id))) {
+          logger.warn(`Not authorized to access attachment ${item.attachment.id}`)
+          continue
+        }
         const fileEntry = await getFileWithId(item.attachment.id)
         if (!fileEntry) {
           logger.warn(`Can't find entry for attachment ${item.attachment.id}`)

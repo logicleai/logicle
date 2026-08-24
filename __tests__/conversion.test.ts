@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import type { LlmModelCapabilities } from '@/lib/chat/models'
 import type * as dto from '@/types/dto'
 import { fileDescriptorText } from '@/backend/lib/chat/message-projection'
@@ -7,11 +7,16 @@ const ensureFileAnalysis = vi.fn()
 const readBuffer = vi.fn()
 const extractFromFile = vi.fn()
 const getFileWithId = vi.fn()
+const canAccessFile = vi.fn(async () => true)
 const warn = vi.fn()
 const info = vi.fn()
 
 vi.mock('@/models/file', () => ({
   getFileWithId,
+}))
+
+vi.mock('@/backend/lib/files/authorization', () => ({
+  canAccessFile,
 }))
 
 vi.mock('@/lib/file-analysis', () => ({
@@ -48,6 +53,7 @@ const pdfCapabilities: LlmModelCapabilities = {
 
 const openaiLanguageModel = { provider: 'openai.responses' } as any
 const litellmLanguageModel = { provider: 'litellm.chat' } as any
+const testPrincipal = { userId: 'test-user' }
 
 const pdfFile = {
   fileBlobId: 'blob-1',
@@ -226,7 +232,8 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         ],
       },
       pdfCapabilities,
-      openaiLanguageModel.provider
+      openaiLanguageModel.provider,
+      testPrincipal
     )
 
     expect(message).toEqual({
@@ -241,9 +248,20 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
             value: [
               {
                 type: 'text',
-                text: fileDescriptorText(pdfFile.name, pdfFile.id, pdfFile.type, pdfFile.size, 1, 'Attachment'),
+                text: fileDescriptorText(
+                  pdfFile.name,
+                  pdfFile.id,
+                  pdfFile.type,
+                  pdfFile.size,
+                  1,
+                  'Attachment'
+                ),
               },
-              { type: 'file-data', data: Buffer.from('pdf-bytes').toString('base64'), mediaType: pdfFile.type },
+              {
+                type: 'file-data',
+                data: Buffer.from('pdf-bytes').toString('base64'),
+                mediaType: pdfFile.type,
+              },
             ],
           },
         },
@@ -307,7 +325,8 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         ],
       },
       pdfCapabilities,
-      openaiLanguageModel.provider
+      openaiLanguageModel.provider,
+      testPrincipal
     )
 
     expect(message).toEqual({
@@ -322,7 +341,14 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
             value: [
               {
                 type: 'text',
-                text: fileDescriptorText(pdfFile.name, pdfFile.id, pdfFile.type, pdfFile.size, 1, 'Attachment'),
+                text: fileDescriptorText(
+                  pdfFile.name,
+                  pdfFile.id,
+                  pdfFile.type,
+                  pdfFile.size,
+                  1,
+                  'Attachment'
+                ),
               },
               {
                 type: 'file-data',
@@ -391,7 +417,8 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         ],
       },
       pdfCapabilities,
-      litellmLanguageModel.provider
+      litellmLanguageModel.provider,
+      testPrincipal
     )
 
     expect(message).toEqual({
@@ -406,7 +433,14 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
             value: [
               {
                 type: 'text',
-                text: fileDescriptorText(pdfFile.name, pdfFile.id, pdfFile.type, pdfFile.size, 1, 'Attachment'),
+                text: fileDescriptorText(
+                  pdfFile.name,
+                  pdfFile.id,
+                  pdfFile.type,
+                  pdfFile.size,
+                  1,
+                  'Attachment'
+                ),
               },
               {
                 type: 'text',
@@ -455,7 +489,8 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         ],
       },
       { vision: false, function_calling: true, supportedMedia: [] },
-      openaiLanguageModel.provider
+      openaiLanguageModel.provider,
+      testPrincipal
     )
 
     expect(message).toEqual({
@@ -470,7 +505,14 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
             value: [
               {
                 type: 'text',
-                text: fileDescriptorText(pdfFile.name, pdfFile.id, pdfFile.type, pdfFile.size, 1, 'Attachment'),
+                text: fileDescriptorText(
+                  pdfFile.name,
+                  pdfFile.id,
+                  pdfFile.type,
+                  pdfFile.size,
+                  1,
+                  'Attachment'
+                ),
               },
               {
                 type: 'text',
@@ -527,7 +569,8 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
         ],
       },
       { ...pdfCapabilities, vision: true, supportedMedia: ['image/png'] },
-      litellmLanguageModel.provider
+      litellmLanguageModel.provider,
+      testPrincipal
     )
 
     expect(message).toEqual({
@@ -542,7 +585,14 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
             value: [
               {
                 type: 'text',
-                text: fileDescriptorText(imageFile.name, imageFile.id, imageFile.type, imageFile.size, 1, 'Attachment'),
+                text: fileDescriptorText(
+                  imageFile.name,
+                  imageFile.id,
+                  imageFile.type,
+                  imageFile.size,
+                  1,
+                  'Attachment'
+                ),
               },
               {
                 type: 'text',
@@ -556,6 +606,88 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
     expect(getFileWithId).toHaveBeenCalledWith(imageFile.id)
     expect(readBuffer).not.toHaveBeenCalled()
     expect(ensureFileAnalysis).not.toHaveBeenCalled()
+  })
+})
+
+describe('dtoMessageToLlmMessage authorization', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    canAccessFile.mockResolvedValue(true)
+  })
+
+  test('skips a user attachment the principal cannot access instead of resolving its content', async () => {
+    canAccessFile.mockResolvedValue(false)
+
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
+    const message = await dtoMessageToLlmMessage(
+      {
+        id: 'u-auth-1',
+        conversationId: 'c1',
+        parent: null,
+        sentAt: new Date().toISOString(),
+        citations: [],
+        role: 'user',
+        content: 'hello',
+        attachments: [{ id: 'other-tenant-file', name: 'secret.pdf', mimetype: 'application/pdf', size: 10 }],
+      },
+      { vision: false, function_calling: true, supportedMedia: ['application/pdf'] },
+      openaiLanguageModel.provider,
+      testPrincipal
+    )
+
+    expect(canAccessFile).toHaveBeenCalledWith(testPrincipal, 'other-tenant-file')
+    expect(getFileWithId).not.toHaveBeenCalled()
+    // The descriptor text below only echoes name/mimetype/size the client supplied in its own
+    // request — not anything looked up server-side — so skipping the attachment part itself is
+    // what matters: no file content or server-verified metadata is ever resolved or sent.
+    expect(message).toEqual({
+      role: 'user',
+      content: [
+        { type: 'text', text: 'hello' },
+        {
+          type: 'text',
+          text: 'Attachment 1: secret.pdf (id other-tenant-file, application/pdf, 10 bytes)',
+        },
+      ],
+    })
+  })
+
+  test('throws instead of resolving a tool-result file the principal cannot access', async () => {
+    canAccessFile.mockResolvedValue(false)
+
+    const { dtoMessageToLlmMessage } = await import('@/backend/lib/chat/conversion')
+    await expect(
+      dtoMessageToLlmMessage(
+        {
+          id: 't-auth-1',
+          conversationId: 'c1',
+          parent: null,
+          sentAt: new Date().toISOString(),
+          citations: [],
+          role: 'tool',
+          parts: [
+            {
+              type: 'tool-result',
+              toolCallId: 'call1',
+              toolName: 'some_tool',
+              result: {
+                type: 'content',
+                value: [{ type: 'file', id: 'other-tenant-file', mimetype: 'application/pdf', name: 'secret.pdf', size: 10 }],
+              },
+            },
+          ],
+        },
+        pdfCapabilities,
+        openaiLanguageModel.provider,
+        testPrincipal
+      )
+    ).rejects.toThrow(/Not authorized/)
+
+    expect(getFileWithId).not.toHaveBeenCalled()
   })
 })
 
@@ -579,7 +711,8 @@ describe('dtoMessageToLlmMessage contract', () => {
         attachments: [],
       },
       { vision: false, function_calling: true, supportedMedia: [] },
-      openaiLanguageModel.provider
+      openaiLanguageModel.provider,
+      testPrincipal
     )
 
     expect(message).toEqual({ role: 'user', content: 'hello' })
@@ -608,10 +741,18 @@ describe('dtoMessageToLlmMessage contract', () => {
         role: 'user',
         content: 'hello',
         metadata: { locale: 'en-US' },
-        attachments: [{ id: imageFile.id, name: imageFile.name, mimetype: imageFile.type, size: imageFile.size }],
+        attachments: [
+          {
+            id: imageFile.id,
+            name: imageFile.name,
+            mimetype: imageFile.type,
+            size: imageFile.size,
+          },
+        ],
       },
       { vision: true, function_calling: true, supportedMedia: ['image/png'] },
-      openaiLanguageModel.provider
+      openaiLanguageModel.provider,
+      testPrincipal
     )
 
     expect(message).toEqual({
@@ -621,7 +762,14 @@ describe('dtoMessageToLlmMessage contract', () => {
         { type: 'text', text: 'hello' },
         {
           type: 'text',
-          text: fileDescriptorText(imageFile.name, imageFile.id, imageFile.type, imageFile.size, 1, 'Attachment'),
+          text: fileDescriptorText(
+            imageFile.name,
+            imageFile.id,
+            imageFile.type,
+            imageFile.size,
+            1,
+            'Attachment'
+          ),
         },
         {
           type: 'image',
@@ -648,7 +796,8 @@ describe('dtoMessageToLlmMessage contract', () => {
         ],
       },
       { vision: false, function_calling: true, supportedMedia: [] },
-      openaiLanguageModel.provider
+      openaiLanguageModel.provider,
+      testPrincipal
     )
 
     expect(message).toEqual({

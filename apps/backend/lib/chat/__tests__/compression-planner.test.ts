@@ -34,6 +34,10 @@ vi.mock('@/models/file', () => ({
   }),
 }))
 
+vi.mock('@/backend/lib/files/authorization', () => ({
+  canAccessFile: vi.fn(async () => true),
+}))
+
 vi.mock('@/models/compressed-message', () => ({
   getCompressedMessage: mockGetCompressedMessage,
   saveCompressedMessage: mockSaveCompressedMessage,
@@ -293,7 +297,7 @@ describe('applyCompressionPlan', () => {
 
     const { compressed } = await compress(makeGeneratedDocxHistory())
 
-    const segments = await buildHistorySegments(compressed, modelWithoutDocxNativeSupport, languageModel)
+    const segments = await buildHistorySegments(compressed, modelWithoutDocxNativeSupport, languageModel, { userId: 'test-user' })
     const promptText = JSON.stringify(segments.map((segment) => segment.message))
 
     expect(promptText).toContain('File available on demand: documento_semplice.docx')
@@ -312,7 +316,7 @@ describe('applyCompressionPlan', () => {
   test('uncompressed generated DOCX tool result is still converted through text extraction when not natively supported', async () => {
     mockExtractFromFile.mockResolvedValueOnce('EXTRACTED DOCX CONTENT')
 
-    const segments = await buildHistorySegments(makeGeneratedDocxHistory(), modelWithoutDocxNativeSupport, languageModel)
+    const segments = await buildHistorySegments(makeGeneratedDocxHistory(), modelWithoutDocxNativeSupport, languageModel, { userId: 'test-user' })
     const promptText = JSON.stringify(segments.map((segment) => segment.message))
 
     expect(promptText).toContain('Attachment 1: documento_semplice.docx')
@@ -323,7 +327,7 @@ describe('applyCompressionPlan', () => {
   test('compressed generated image tool result never upgrades to image-data / native bytes, and never calls a model to describe it', async () => {
     const { compressed } = await compress(makeGeneratedHorseImageHistory())
 
-    const segments = await buildHistorySegments(compressed, modelWithoutDocxNativeSupport, languageModel)
+    const segments = await buildHistorySegments(compressed, modelWithoutDocxNativeSupport, languageModel, { userId: 'test-user' })
     const promptText = JSON.stringify(segments.map((segment) => segment.message))
 
     expect(promptText).toContain('File available on demand: horse.png')
@@ -341,7 +345,7 @@ describe('applyCompressionPlan', () => {
   test('uncompressed generated image tool result still sends image bytes (provider adapters do not change full-policy semantics)', async () => {
     mockReadBuffer.mockResolvedValueOnce(Buffer.from('horse-image-bytes'))
 
-    const segments = await buildHistorySegments(makeGeneratedHorseImageHistory(), modelWithoutDocxNativeSupport, languageModel)
+    const segments = await buildHistorySegments(makeGeneratedHorseImageHistory(), modelWithoutDocxNativeSupport, languageModel, { userId: 'test-user' })
     const promptText = JSON.stringify(segments.map((segment) => segment.message))
 
     expect(promptText).toContain('Attachment 1: horse.png')

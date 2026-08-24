@@ -25,10 +25,12 @@ const ensureFileAnalysis = vi.fn()
 const readBuffer = vi.fn()
 const extractFromFile = vi.fn()
 const getFileWithId = vi.fn()
+const canAccessFile = vi.fn(async () => true)
 const warn = vi.fn()
 const info = vi.fn()
 
 vi.mock('@/models/file', () => ({ getFileWithId }))
+vi.mock('@/backend/lib/files/authorization', () => ({ canAccessFile }))
 vi.mock('@/lib/file-analysis', () => ({
   ensureFileAnalysis,
   isReadyFileAnalysis: (analysis: dto.FileAnalysis | undefined) =>
@@ -281,7 +283,8 @@ describe('dtoMessageToLlmMessage', () => {
         attachments: [{ id: pngFile.id, name: pngFile.name, mimetype: pngFile.type, size: pngFile.size }],
       },
       visionCapabilities,
-      'openai.chat'
+      'openai.chat',
+      { userId: 'test-user' }
     )
 
     expect(msg).toBeDefined()
@@ -318,7 +321,8 @@ describe('dtoMessageToLlmMessage', () => {
         ],
       },
       visionCapabilities,
-      'openai.chat'
+      'openai.chat',
+      { userId: 'test-user' }
     )
 
     const parts = msg!.content as Array<{ type: string; text?: string }>
@@ -349,7 +353,8 @@ describe('dtoMessageToLlmMessage', () => {
         attachments: [{ id: pdfFile.id, name: pdfFile.name, mimetype: pdfFile.type, size: pdfFile.size }],
       },
       noVisionCapabilities, // no PDF support → text fallback
-      'openai.chat'
+      'openai.chat',
+      { userId: 'test-user' }
     )
 
     const parts = msg!.content as Array<{ type: string; text?: string }>
@@ -384,7 +389,8 @@ describe('dtoMessageToLlmMessage', () => {
         ],
       },
       visionCapabilities,
-      'openai.chat'
+      'openai.chat',
+      { userId: 'test-user' }
     )
 
     const parts = msg!.content as Array<{ type: string }>

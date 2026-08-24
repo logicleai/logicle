@@ -5,7 +5,11 @@ import env from '@/lib/env'
 import { LlmModel } from '@/lib/chat/models'
 import { ToolImplementation } from '@/lib/chat/tools'
 import type { ParameterValueAndDescription } from '@/models/user'
-import { dtoMessageToLlmMessage, sanitizeOrphanToolCalls } from '@/backend/lib/chat/conversion'
+import {
+  dtoMessageToLlmMessage,
+  sanitizeOrphanToolCalls,
+  type ConversionPrincipal,
+} from '@/backend/lib/chat/conversion'
 import { fileDescriptorText } from '@/backend/lib/chat/message-projection'
 
 async function mapWithConcurrency<T, R>(
@@ -237,6 +241,7 @@ export async function buildHistorySegments(
   messages: dto.Message[],
   llmModel: LlmModel,
   languageModel: LanguageModelV3,
+  principal: ConversionPrincipal,
   draftMessageId?: string,
   cache?: Map<string, ai.ModelMessage>
 ): Promise<PromptSegment[]> {
@@ -246,8 +251,12 @@ export async function buildHistorySegments(
         let converted = cache?.get(message.id)
         if (!converted) {
           converted =
-            (await dtoMessageToLlmMessage(message, llmModel.capabilities, languageModel.provider)) ??
-            undefined
+            (await dtoMessageToLlmMessage(
+              message,
+              llmModel.capabilities,
+              languageModel.provider,
+              principal
+            )) ?? undefined
           if (converted && cache) cache.set(message.id, converted)
         }
         return converted
@@ -278,6 +287,7 @@ export async function buildPromptSegments({
   parameters,
   knowledge,
   messages,
+  principal,
   draftMessageId,
 }: {
   assistantParams: AssistantParamsLike
@@ -287,9 +297,10 @@ export async function buildPromptSegments({
   parameters: Record<string, ParameterValueAndDescription>
   knowledge: dto.AssistantFile[]
   messages: dto.Message[]
+  principal: ConversionPrincipal
   draftMessageId?: string
 }): Promise<PromptSegment[]> {
   const preamble = await buildPreambleSegments({ assistantParams, llmModel, tools, parameters, knowledge })
-  const history = await buildHistorySegments(messages, llmModel, languageModel, draftMessageId)
+  const history = await buildHistorySegments(messages, llmModel, languageModel, principal, draftMessageId)
   return [...preamble, ...history]
 }
