@@ -90,7 +90,7 @@ export const PATCH = operation({
     ) {
       return forbidden(`You're not authorized to modify assistant ${params.assistantId}`)
     }
-    await updateAssistantDraft(params.assistantId, body)
+    await updateAssistantDraft(params.assistantId, body, userId)
     return noBody()
   },
 })

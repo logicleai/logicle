@@ -229,7 +229,7 @@ const provisionAssistants = async (assistants: Record<string, ProvisionableAssis
 
     if (existing) {
       // Update the version with same id of the assistant...
-      await updateAssistantVersion(id, insertableAssistantDraft)
+      await updateAssistantVersion(id, insertableAssistantDraft, owner)
       // TODO: handle owner / deleted changes
     } else {
       await createAssistantWithId(id, insertableAssistantDraft, owner, true)
