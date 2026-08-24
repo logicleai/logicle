@@ -10,7 +10,7 @@ export const POST = operation({
   authentication: 'user',
   requestBodySchema: dto.conversationDocxExportRequestSchema,
   responses: [responseSpec(200, z.any()), errorSpec(404)] as const,
-  implementation: async ({ params, body }) => {
+  implementation: async ({ params, body, session }) => {
     const sharedConversation = await db
       .selectFrom('ConversationSharing')
       .select('id')
@@ -21,7 +21,10 @@ export const POST = operation({
       return notFound(`No shared conversation with id ${params.shareId}`)
     }
 
-    const doc = await renderDocxFromMarkdown(body.markdown)
+    const doc = await renderDocxFromMarkdown(body.markdown, {
+      userId: session.userId,
+      userRole: session.userRole,
+    })
     return new Response(Buffer.from(doc), {
       status: 200,
       headers: {

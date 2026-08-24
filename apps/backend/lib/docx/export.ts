@@ -1,7 +1,9 @@
 import { TextRun } from 'docx'
 import type { IRunOptions } from 'docx'
 import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
+import type * as schema from '@/db/schema'
 import type { Image as MdastImage, InlineCode as MdastInlineCode, Root, RootContent, Text as MdastText } from 'mdast'
 import docx from 'remark-docx'
 import { htmlPlugin } from 'remark-docx/plugins/html'
@@ -201,7 +203,12 @@ export const coloredHtmlPlugin = (): RemarkDocxPlugin => {
 
 const FILE_URL_PATTERN = /^\/api\/files\/([^/]+)\/content$/
 
-const remarkNonImageFileLinks: Plugin<[string], Root> = (baseUrl: string) => {
+type AccessPrincipal = { userId: string; userRole?: schema.UserRole }
+
+const remarkNonImageFileLinks: Plugin<[string, AccessPrincipal], Root> = (
+  baseUrl: string,
+  principal: AccessPrincipal
+) => {
   return async (tree: Root) => {
       type Replacement = { parent: { children: RootContent[] }; index: number; text: string; url: string }
       const replacements: Replacement[] = []
@@ -216,7 +223,9 @@ const remarkNonImageFileLinks: Plugin<[string], Root> = (baseUrl: string) => {
         const idx = index
 
         tasks.push(
-          getFileWithId(fileId).then((file) => {
+          canAccessFile(principal, fileId).then(async (allowed) => {
+            if (!allowed) return
+            const file = await getFileWithId(fileId)
             if (!file?.type.startsWith('image/')) {
               replacements.push({
                 parent: p,
@@ -248,56 +257,65 @@ function dataUrlToArrayBuffer(url: string): ArrayBuffer {
   return Uint8Array.from(buffer).buffer
 }
 
-async function loadImageData(url: string): Promise<ArrayBuffer> {
-  if (url.startsWith('data:')) {
-    return dataUrlToArrayBuffer(url)
-  }
-
-  const pathname = (() => {
-    if (url.startsWith('/')) return url
-    try {
-      return new URL(url).pathname
-    } catch {
-      return url
+function createLoadImageData(principal: AccessPrincipal) {
+  return async function loadImageData(url: string): Promise<ArrayBuffer> {
+    if (url.startsWith('data:')) {
+      return dataUrlToArrayBuffer(url)
     }
-  })()
 
-  const fileMatch = pathname.match(/^\/api\/files\/([^/]+)\/content$/)
-  if (fileMatch) {
-    const file = await getFileWithId(fileMatch[1])
-    if (!file) {
-      throw new Error(`Missing file for DOCX export image: ${fileMatch[1]}`)
+    const pathname = (() => {
+      if (url.startsWith('/')) return url
+      try {
+        return new URL(url).pathname
+      } catch {
+        return url
+      }
+    })()
+
+    const fileMatch = pathname.match(/^\/api\/files\/([^/]+)\/content$/)
+    if (fileMatch) {
+      const fileId = fileMatch[1]
+      if (!(await canAccessFile(principal, fileId))) {
+        throw new Error(`Not authorized to access file for DOCX export image: ${fileId}`)
+      }
+      const file = await getFileWithId(fileId)
+      if (!file) {
+        throw new Error(`Missing file for DOCX export image: ${fileId}`)
+      }
+      const data = await storage.readBuffer(file.path, file.encryption)
+      return Uint8Array.from(data).buffer
     }
-    const data = await storage.readBuffer(file.path, file.encryption)
-    return Uint8Array.from(data).buffer
-  }
 
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Failed to load image: ${url}`)
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`Failed to load image: ${url}`)
+    }
+    return await response.arrayBuffer()
   }
-  return await response.arrayBuffer()
 }
 
 async function fallbackSvgToBuffer({ buffer }: { buffer: ArrayBuffer }) {
   return buffer
 }
 
-export async function renderDocxFromMarkdown(markdown: string): Promise<Uint8Array> {
+export async function renderDocxFromMarkdown(
+  markdown: string,
+  principal: AccessPrincipal
+): Promise<Uint8Array> {
   const baseUrl = process.env.APP_URL ?? ''
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)
     .use(remarkMath)
     .use(remarkColoredSpans)
-    .use(remarkNonImageFileLinks, baseUrl)
+    .use(remarkNonImageFileLinks, baseUrl, principal)
     .use(docx, {
       thematicBreak: 'line',
       plugins: [
         coloredHtmlPlugin(),
         latexPlugin(),
         shikiPlugin({ theme: 'github-light' }),
-        imagePlugin({ load: loadImageData, fallbackSvg: fallbackSvgToBuffer }),
+        imagePlugin({ load: createLoadImageData(principal), fallbackSvg: fallbackSvgToBuffer }),
       ],
     })
 
