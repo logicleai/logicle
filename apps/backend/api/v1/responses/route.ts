@@ -8,7 +8,7 @@ import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { MessageAuditor } from '@/lib/MessageAuditor'
-import { assistantVersionFiles, getAssistant } from '@/models/assistant'
+import { assistantVersionFiles, canUserAccessAssistant, getAssistant } from '@/models/assistant'
 import { getFileWithId, reassignUserOwnedFilesToConversation } from '@/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
@@ -96,6 +96,9 @@ export const POST = operation({
       const assistant = await getAssistant(userMessage.assistant)
       if (!assistant) {
         return error(400, 'No such assistant')
+      }
+      if (!(await canUserAccessAssistant(session.userId, userMessage.assistant))) {
+        return forbidden('Trying to create a conversation with an inaccessible assistant')
       }
       const conversation = await createConversation(session.userId, {
         assistantId: userMessage.assistant,

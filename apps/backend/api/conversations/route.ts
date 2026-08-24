@@ -1,8 +1,8 @@
 import { createConversation, getConversationsWithFolder } from '@/models/conversation'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
-import { updateAssistantUserData } from '@/models/assistant'
-import { ok, operation, responseSpec } from '@/lib/routes'
+import { canUserAccessAssistant, updateAssistantUserData } from '@/models/assistant'
+import { forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,8 +26,11 @@ export const POST = operation({
   description: 'Create a new conversation for the session user.',
   authentication: 'user',
   requestBodySchema: dto.insertableConversationSchema,
-  responses: [responseSpec(201, dto.ConversationWithFolderIdSchema)] as const,
+  responses: [responseSpec(201, dto.ConversationWithFolderIdSchema), errorSpec(403)] as const,
   implementation: async ({ session, body }) => {
+    if (!(await canUserAccessAssistant(session.userId, body.assistantId))) {
+      return forbidden()
+    }
     const createdConversation = await createConversation(session.userId, body)
     await updateAssistantUserData(createdConversation.assistantId, session.userId, {
       lastUsed: new Date().toISOString(),

@@ -1513,6 +1513,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ConversationWithFolderId"
+        "403":
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:
