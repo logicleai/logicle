@@ -21,6 +21,7 @@ import { ClientSink } from '@/backend/lib/chat/ClientSink'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 
 export interface SubAssistantEntry {
   id: string
@@ -134,8 +135,13 @@ export class SubAssistantTool implements ToolImplementation {
               rootOwner,
             })
 
+            const accessibleAttachmentIds = (
+              await Promise.all(
+                attachmentIds.map(async ({ id }) => ((await canAccessFile({ userId }, id)) ? id : null))
+              )
+            ).filter((id): id is string => id != null)
             const attachments: dto.Attachment[] = (
-              await Promise.all(attachmentIds.map(({ id }) => getFileWithId(id)))
+              await Promise.all(accessibleAttachmentIds.map((id) => getFileWithId(id)))
             )
               .filter((f): f is NonNullable<typeof f> => f != null)
               .map((f) => ({ id: f.id, mimetype: f.type, name: f.name, size: f.size ?? 0 }))
