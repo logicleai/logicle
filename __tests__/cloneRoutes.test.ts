@@ -269,4 +269,91 @@ describe('clone routes duplicate files', () => {
     expect(clonedFile.ownerId).toBe(clonedConversationId)
     expect(clonedFile.fileBlobId).toBe(sourceFile.fileBlobId)
   })
+
+  test('shared chat clone does not duplicate a file id planted in the conversation that the cloning user cannot access', async () => {
+    const sourceOwner = await createUser({
+      name: 'Source User 2',
+      email: 'clone-source-2@example.com',
+      ssoUser: 0,
+    })
+    const victim = await createUser({
+      name: 'Victim User',
+      email: 'clone-victim@example.com',
+      ssoUser: 0,
+    })
+    const targetUser = await createUser({
+      name: 'Target User 2',
+      email: 'clone-target-2@example.com',
+      ssoUser: 0,
+    })
+    const targetSession = await createSession(
+      targetUser.id,
+      new Date(Date.now() + 60_000),
+      'password',
+      null
+    )
+    const targetCookie = `${SESSION_COOKIE_NAME}=${targetSession.id}`
+
+    const assistant = await createAssistant(makeDraft('b1', []), targetUser.id)
+    const sourceConversation = await createConversation(sourceOwner.id, {
+      assistantId: assistant.assistantId,
+      name: 'Shared conversation with a planted attachment',
+    })
+
+    // Simulates a malicious/legacy message that references a file the sender never
+    // owned — a file privately owned by a third, unrelated user.
+    await insertUploadedFile({
+      id: 'f-victim-private',
+      ownerType: 'USER',
+      ownerId: victim.id,
+      name: 'private.txt',
+    })
+
+    const sourceMessage: dto.UserMessage = {
+      id: 'm-source-user-2',
+      conversationId: sourceConversation.id,
+      parent: null,
+      sentAt: new Date().toISOString(),
+      role: 'user',
+      content: 'hello',
+      attachments: [
+        {
+          id: 'f-victim-private',
+          mimetype: 'text/plain',
+          name: 'private.txt',
+          size: 123,
+        },
+      ],
+    }
+    await saveMessage(sourceMessage)
+
+    await db
+      .insertInto('ConversationSharing')
+      .values({ id: 'share-2', lastMessageId: sourceMessage.id })
+      .execute()
+
+    const response = await sharedConversationCloneRoute.POST(
+      new Request('http://localhost/api/share/share-2/clone', {
+        method: 'POST',
+        headers: { cookie: targetCookie },
+      }),
+      { params: Promise.resolve({ shareId: 'share-2' }) }
+    )
+
+    expect(response.status).toBe(200)
+    const body = (await response.json()) as dto.ConversationWithMessages
+    const clonedUserMessage = body.messages.find((message) => message.role === 'user') as dto.UserMessage
+    expect(clonedUserMessage).toBeTruthy()
+    // The unauthorized attachment id is left unmapped, not duplicated into a new
+    // CHAT-owned row the cloning user could then read directly.
+    expect(clonedUserMessage.attachments[0]?.id).toBe('f-victim-private')
+
+    const clonedRows = await db
+      .selectFrom('File')
+      .select(['id'])
+      .where('ownerType', '=', 'CHAT')
+      .where('ownerId', '=', body.conversation.id)
+      .execute()
+    expect(clonedRows).toHaveLength(0)
+  })
 })

@@ -51,6 +51,7 @@ export const POST = operation({
     const clonedFileIds = await cloneFilesForOwner({
       fileIds: originalFiles.map((file) => file.id),
       owner: { ownerType: 'ASSISTANT', ownerId: newAssistantId },
+      userId: session.userId,
     })
     const clonedFiles = originalFiles.map((file) => ({
       ...file,

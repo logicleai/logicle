@@ -118,6 +118,7 @@ export const POST = operation({
     const clonedFileIds = await cloneFilesForOwner({
       fileIds: linear.flatMap((message) => collectFileIdsFromMessage(message)),
       owner: { ownerType: 'CHAT', ownerId: newConversation.id },
+      userId: session.userId,
     })
     const linearWithClonedFiles = linear.map((message) => remapMessageFileIds(message, clonedFileIds))
     const idMap = new Map(linear.map((m) => [m.id, nanoid()]))
