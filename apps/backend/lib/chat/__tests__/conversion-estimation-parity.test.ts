@@ -32,6 +32,10 @@ vi.mock('@/models/file', () => ({
   },
 }))
 
+vi.mock('@/backend/lib/files/authorization', () => ({
+  canAccessFile: async () => true,
+}))
+
 vi.mock('@/lib/storage', () => ({
   storage: {
     readBuffer: async () => Buffer.from(ONE_BY_ONE_PNG_BASE64, 'base64'),
@@ -272,9 +276,15 @@ describe('message projection parity', () => {
     const assistantLlm = await dtoMessageToLlmMessage(
       assistantMessage,
       approxModel.capabilities,
-      approxModel.provider
+      approxModel.provider,
+      { userId: 'test-user' }
     )
-    const toolLlm = await dtoMessageToLlmMessage(toolMessage, approxModel.capabilities, approxModel.provider)
+    const toolLlm = await dtoMessageToLlmMessage(
+      toolMessage,
+      approxModel.capabilities,
+      approxModel.provider,
+      { userId: 'test-user' }
+    )
 
     expect(assistantLlm?.role).toBe('assistant')
     expect(toolLlm?.role).toBe('tool')
@@ -326,7 +336,12 @@ describe('message projection parity', () => {
       ])
     )
 
-    const llm = await dtoMessageToLlmMessage(toolMessage, approxModel.capabilities, 'litellm')
+    const llm = await dtoMessageToLlmMessage(
+      toolMessage,
+      approxModel.capabilities,
+      'litellm',
+      { userId: 'test-user' }
+    )
     expect(llm?.role).toBe('tool')
     if (llm?.role !== 'tool') return
     const content = llm.content
@@ -405,7 +420,9 @@ describe('token invariant for non-file history', () => {
     const llmMessages = (
       await Promise.all(
         history.map((message) =>
-          dtoMessageToLlmMessage(message, approxModel.capabilities, approxModel.provider)
+          dtoMessageToLlmMessage(message, approxModel.capabilities, approxModel.provider, {
+            userId: 'test-user',
+          })
         )
       )
     ).filter((m): m is NonNullable<typeof m> => Boolean(m))
@@ -465,7 +482,9 @@ describe('token invariant for non-file history', () => {
     const llmMessages = (
       await Promise.all(
         history.map((message) =>
-          dtoMessageToLlmMessage(message, approxModel.capabilities, approxModel.provider)
+          dtoMessageToLlmMessage(message, approxModel.capabilities, approxModel.provider, {
+            userId: 'test-user',
+          })
         )
       )
     ).filter((m): m is NonNullable<typeof m> => Boolean(m))
@@ -501,7 +520,12 @@ describe('token invariant for non-file history', () => {
       history,
       draft: null,
     })
-    const llm = await dtoMessageToLlmMessage(history[0]!, parityMediaModel.capabilities as any, 'openai')
+    const llm = await dtoMessageToLlmMessage(
+      history[0]!,
+      parityMediaModel.capabilities as any,
+      'openai',
+      { userId: 'test-user' }
+    )
     expect(llm?.role).toBe('user')
     const runtimeTokens = llm ? await countModelMessageTokens(parityMediaModel as any, llm) : 0
     expect(estimate.estimate.history).toBe(runtimeTokens)
@@ -541,7 +565,12 @@ describe('token invariant for non-file history', () => {
       history,
       draft: null,
     })
-    const llm = await dtoMessageToLlmMessage(history[0]!, parityMediaModel.capabilities as any, 'openai')
+    const llm = await dtoMessageToLlmMessage(
+      history[0]!,
+      parityMediaModel.capabilities as any,
+      'openai',
+      { userId: 'test-user' }
+    )
     expect(llm?.role).toBe('user')
     const runtimeTokens = llm ? await countModelMessageTokens(parityMediaModel as any, llm) : 0
     expect(estimate.estimate.history).toBe(runtimeTokens)

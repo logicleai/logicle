@@ -75,6 +75,8 @@ const fakeLanguageModel = {
   provider: 'openai.responses',
 } as LanguageModelV3
 
+const fakePrincipal = { userId: 'test-user' }
+
 // --- buildHistorySegments tests ---
 
 describe('buildHistorySegments', () => {
@@ -92,7 +94,8 @@ describe('buildHistorySegments', () => {
     const segments = await ChatAssistant.buildHistorySegments(
       [msg1, msg2],
       fakeLlmModel,
-      fakeLanguageModel
+      fakeLanguageModel,
+      fakePrincipal
     )
 
     expect(segments).toHaveLength(2)
@@ -109,6 +112,7 @@ describe('buildHistorySegments', () => {
       [msg],
       fakeLlmModel,
       fakeLanguageModel,
+      fakePrincipal,
       'm1'
     )
 
@@ -123,7 +127,8 @@ describe('buildHistorySegments', () => {
     const segments = await ChatAssistant.buildHistorySegments(
       [msg1, msg2],
       fakeLlmModel,
-      fakeLanguageModel
+      fakeLanguageModel,
+      fakePrincipal
     )
 
     expect(segments).toHaveLength(1)
@@ -143,6 +148,7 @@ describe('buildHistorySegments', () => {
       [msg1, msg2, msg3],
       fakeLlmModel,
       fakeLanguageModel,
+      fakePrincipal,
       undefined,
       cache
     )
@@ -151,6 +157,7 @@ describe('buildHistorySegments', () => {
       [msg2, msg3],
       fakeLlmModel,
       fakeLanguageModel,
+      fakePrincipal,
       undefined,
       cache
     )
@@ -163,8 +170,8 @@ describe('buildHistorySegments', () => {
     const msg = makeMessage('m1')
     mockDtoMessageToLlmMessage.mockImplementation(async (m: dto.Message) => makeLlmMessage(m.id))
 
-    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel, fakeLanguageModel)
-    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel, fakeLanguageModel)
+    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel, fakeLanguageModel, fakePrincipal)
+    await ChatAssistant.buildHistorySegments([msg], fakeLlmModel, fakeLanguageModel, fakePrincipal)
 
     expect(mockDtoMessageToLlmMessage).toHaveBeenCalledTimes(2)
   })

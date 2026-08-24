@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
-const { mockEstimateNativeImageTokens, mockGetFileWithId } = vi.hoisted(() => ({
+const { mockEstimateNativeImageTokens, mockGetFileWithId, mockCanAccessFile } = vi.hoisted(() => ({
   mockEstimateNativeImageTokens: vi.fn(),
   mockGetFileWithId: vi.fn(),
+  mockCanAccessFile: vi.fn(async () => true),
 }))
 
 vi.mock('@/backend/lib/chat/image-token-estimator', () => ({
@@ -11,6 +12,10 @@ vi.mock('@/backend/lib/chat/image-token-estimator', () => ({
 
 vi.mock('@/models/file', () => ({
   getFileWithId: mockGetFileWithId,
+}))
+
+vi.mock('@/backend/lib/files/authorization', () => ({
+  canAccessFile: mockCanAccessFile,
 }))
 
 import {
@@ -105,7 +110,8 @@ describe('countModelMessageTokens', () => {
         ],
       },
       fakeModel.capabilities,
-      'litellm.chat'
+      'litellm.chat',
+      { userId: 'test-user' }
     )
 
     expect(llmMessage).toBeDefined()

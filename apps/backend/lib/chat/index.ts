@@ -209,13 +209,9 @@ export class ChatAssistant {
   }
 
   static async buildHistorySegments(
-    messages: dto.Message[],
-    llmModel: LlmModel,
-    languageModel: LanguageModelV3,
-    draftMessageId?: string,
-    cache?: Map<string, ai.ModelMessage>
+    ...args: Parameters<typeof buildHistorySegments>
   ): Promise<PromptSegment[]> {
-    return buildHistorySegments(messages, llmModel, languageModel, draftMessageId, cache)
+    return buildHistorySegments(...args)
   }
 
   static async buildPromptSegments(
@@ -549,6 +545,7 @@ export class ChatAssistant {
       parameters: this.parameters,
       knowledge: this.knowledge,
       messages,
+      principal: { userId: this.options.user },
     })
     return segments.map((segment) => segment.message)
   }
@@ -608,7 +605,8 @@ export class ChatAssistant {
     const historySegments = await buildHistorySegments(
       truncatedChat,
       this.llmModel,
-      this.languageModel
+      this.languageModel,
+      { userId: this.options.user }
     )
 
     const isAnthropic = this.languageModel.provider === 'anthropic.messages'
