@@ -2,6 +2,7 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import { nanoid } from 'nanoid'
 import { isFileEncrypted, type StoredFileEncryption } from '@/lib/storage/encryption'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 
 export interface FileDbRow {
   id: string
@@ -89,11 +90,17 @@ export const reassignUserOwnedFilesToConversation = async ({
 export const cloneFilesForOwner = async ({
   fileIds,
   owner,
+  userId,
 }: {
   fileIds: string[]
   owner: dto.FileOwner
+  userId: string
 }): Promise<Map<string, string>> => {
-  const uniqueIds = [...new Set(fileIds)]
+  const dedupedIds = [...new Set(fileIds)]
+  const accessible = await Promise.all(
+    dedupedIds.map(async (id) => ((await canAccessFile({ userId }, id)) ? id : null))
+  )
+  const uniqueIds = accessible.filter((id): id is string => id != null)
   if (uniqueIds.length === 0) {
     return new Map()
   }
