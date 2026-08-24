@@ -128,7 +128,8 @@ export const startServerChatRun = async ({
   const linearThread = extractLinearConversation(dbMessages, userMessage)
   const availableTools = await availableToolsForAssistantVersion(
     assistant.assistantVersionId,
-    assistant.model
+    assistant.model,
+    { userId: session.userId }
   )
 
   const updateChatTitle = async (title: string) => {

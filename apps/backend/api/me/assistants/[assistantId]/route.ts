@@ -64,7 +64,10 @@ export const GET = operation({
     let toolSupportedMedia: string[] = []
     try {
       toolSupportedMedia = (
-        await availableToolsForAssistantVersion(assistant.versionId, assistant.model)
+        await availableToolsForAssistantVersion(assistant.versionId, assistant.model, {
+          userId: session.userId,
+          userRole: session.userRole,
+        })
       ).flatMap((t) => t.supportedMedia)
     } catch (error) {
       logger.error('Failed loading assistant tools for user assistant route', {

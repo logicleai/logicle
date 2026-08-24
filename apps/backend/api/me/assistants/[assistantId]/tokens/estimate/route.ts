@@ -80,7 +80,8 @@ export const POST = operation({
     const files = await assistantVersionFiles(assistantVersion.id)
     const availableTools = await availableToolsForAssistantVersion(
       assistantVersion.id,
-      assistantVersion.model
+      assistantVersion.model,
+      { userId: session.userId, userRole: session.userRole }
     )
     const collector = query?.detail ? createTokenDetailCollector() : undefined
     const result = await estimateInputTokens(

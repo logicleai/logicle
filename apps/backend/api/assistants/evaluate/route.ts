@@ -33,7 +33,12 @@ export const POST = operation({
         ? messages
         : messages.map((msg) => (msg.conversationId ? msg : { ...msg, conversationId }))
 
-    const availableTools = await availableToolsFiltered(assistant.tools, assistant.model, assistant.subAssistants)
+    const availableTools = await availableToolsFiltered(
+      assistant.tools,
+      assistant.model,
+      { userId: session.userId, userRole: session.userRole },
+      assistant.subAssistants
+    )
 
     if ('apiKey' in backend && isUserProvidedApiKey(backend.apiKey)) {
       const resolution = await getUserSecretValue(session.userId, backend.id, USER_SECRET_TYPE)

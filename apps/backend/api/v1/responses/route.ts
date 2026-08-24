@@ -143,7 +143,8 @@ export const POST = operation({
     const linearThread = extractLinearConversation(dbMessages, dtoUserMessage)
     const availableTools = await availableToolsForAssistantVersion(
       assistant.assistantVersionId,
-      assistant.model
+      assistant.model,
+      { userId: session.userId, userRole: session.userRole }
     )
 
     const updateChatTitle = async (title: string) => {
