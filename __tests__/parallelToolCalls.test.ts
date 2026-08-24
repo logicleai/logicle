@@ -40,6 +40,10 @@ vi.mock('@/models/file', () => ({
   addFile: vi.fn(),
 }))
 
+vi.mock('@/backend/lib/files/authorization', () => ({
+  canAccessFile: vi.fn().mockResolvedValue(true),
+}))
+
 vi.mock('@/lib/logging', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), log: vi.fn() },
   loggingFetch: vi.fn(),
