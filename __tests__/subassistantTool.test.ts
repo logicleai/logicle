@@ -10,6 +10,8 @@ const {
   mockAvailableToolsForAssistantVersion,
   mockGetUserParameters,
   mockExecuteTakeFirst,
+  mockGetFileWithId,
+  mockCanAccessFile,
 } = vi.hoisted(() => ({
   mockStreamText: vi.fn(),
   mockCanUserAccessAssistant: vi.fn().mockResolvedValue(true),
@@ -18,6 +20,8 @@ const {
   mockAvailableToolsForAssistantVersion: vi.fn().mockResolvedValue([]),
   mockGetUserParameters: vi.fn().mockResolvedValue({}),
   mockExecuteTakeFirst: vi.fn(),
+  mockGetFileWithId: vi.fn(),
+  mockCanAccessFile: vi.fn().mockResolvedValue(true),
 }))
 
 // ESM modules can't be spied on at runtime — mock the whole module,
@@ -99,6 +103,14 @@ vi.mock('@/backend/lib/tools/enumerate', () => ({
 
 vi.mock('@/lib/parameters', () => ({
   getUserParameters: mockGetUserParameters,
+}))
+
+vi.mock('@/models/file', () => ({
+  getFileWithId: mockGetFileWithId,
+}))
+
+vi.mock('@/backend/lib/files/authorization', () => ({
+  canAccessFile: mockCanAccessFile,
 }))
 
 vi.mock('@/lib/models', () => ({
@@ -203,6 +215,7 @@ describe('SubAssistantTool.invoke_assistant', () => {
     mockCanUserAccessAssistant.mockResolvedValue(true)
     mockGetPublishedAssistantVersion.mockResolvedValue(fakeAssistantVersion)
     mockExecuteTakeFirst.mockResolvedValue(fakeBackend)
+    mockCanAccessFile.mockResolvedValue(true)
 
     const tool = new SubAssistantTool(fakeToolParams, [
       { id: 'asst-1', name: 'Sub Bot', description: 'A sub-assistant for testing' },
@@ -308,6 +321,38 @@ describe('SubAssistantTool.invoke_assistant', () => {
       type: 'error-text',
       value: 'Sub-assistant "Sub Bot" backend not found',
     })
+  })
+
+  test('drops attachments the user cannot access before invoking the sub-assistant', async () => {
+    mockStreamText.mockReturnValue(makeStreamResult('done'))
+    mockCanAccessFile.mockImplementation(async (_user: unknown, id: string) => id === 'own-file')
+    mockGetFileWithId.mockImplementation(async (id: string) => ({
+      id,
+      name: `${id}.txt`,
+      type: 'text/plain',
+      size: 10,
+    }))
+
+    const buildSpy = vi.spyOn(ChatAssistant, 'build')
+
+    await invoke({
+      llmModel: fakeLlmModel,
+      messages: [],
+      assistantId: 'parent',
+      userId: 'user-1',
+      params: {
+        assistantId: 'asst-1',
+        input: 'hello',
+        attachments: [{ id: 'own-file' }, { id: 'other-tenant-file' }],
+      },
+      uiLink: fakeUiLink,
+    })
+
+    expect(mockCanAccessFile).toHaveBeenCalledWith({ userId: 'user-1' }, 'own-file')
+    expect(mockCanAccessFile).toHaveBeenCalledWith({ userId: 'user-1' }, 'other-tenant-file')
+    expect(mockGetFileWithId).toHaveBeenCalledWith('own-file')
+    expect(mockGetFileWithId).not.toHaveBeenCalledWith('other-tenant-file')
+    expect(buildSpy).toHaveBeenCalled()
   })
 
   test('propagates rootOwner to nested chat assistant build', async () => {
