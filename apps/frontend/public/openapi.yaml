@@ -336,6 +336,10 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AssistantVersion"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
       parameters:
         - name: assistantId
           in: path
