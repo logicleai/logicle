@@ -52,15 +52,48 @@ function toAssistantToolAssociation(
   })
 }
 
+/** Only a file the acting user currently owns, or one already belonging to this
+ * same assistant (kept across an edit), may be attached to an assistant's
+ * knowledge set — assistant knowledge files are trusted server-side and sent
+ * to the LLM for any user of the assistant without a further per-viewer
+ * access check, so anything else must be rejected before it is associated. */
+const assertFilesAttachableToAssistant = async (
+  assistantId: string,
+  fileIds: string[],
+  userId: string
+): Promise<void> => {
+  const uniqueIds = [...new Set(fileIds)]
+  if (uniqueIds.length === 0) return
+  const rows = await db
+    .selectFrom('File')
+    .select(['id', 'ownerType', 'ownerId'])
+    .where('id', 'in', uniqueIds)
+    .execute()
+  const rowById = new Map(rows.map((r) => [r.id, r]))
+  for (const id of uniqueIds) {
+    const row = rowById.get(id)
+    const allowed =
+      row !== undefined &&
+      ((row.ownerType === 'USER' && row.ownerId === userId) ||
+        (row.ownerType === 'ASSISTANT' && row.ownerId === assistantId))
+    if (!allowed) {
+      throw new Error(`File ${id} cannot be attached to assistant ${assistantId}`)
+    }
+  }
+}
+
 const transferFilesToAssistantOwner = async (
   assistantId: string,
-  fileIds: string[]
+  fileIds: string[],
+  userId: string
 ): Promise<void> => {
   if (fileIds.length === 0) return
   await db
     .updateTable('File')
     .set({ ownerType: 'ASSISTANT', ownerId: assistantId })
     .where('id', 'in', fileIds)
+    .where('ownerType', '=', 'USER')
+    .where('ownerId', '=', userId)
     .execute()
 }
 
@@ -489,11 +522,10 @@ export const createAssistantWithId = async (
   }
   const files = toAssistantFileAssociation(id, dtoFiles)
   if (files.length !== 0) {
+    const fileIds = files.map((f) => f.fileId)
+    await assertFilesAttachableToAssistant(id, fileIds, owner)
     await db.insertInto('AssistantVersionFile').values(files).execute()
-    await transferFilesToAssistantOwner(
-      id,
-      files.map((f) => f.fileId)
-    )
+    await transferFilesToAssistantOwner(id, fileIds, owner)
   }
 
   const created = await getAssistantVersion(id)
@@ -566,7 +598,8 @@ export const cloneAssistantVersion = async (assistantVersionId: string) => {
 
 export const updateAssistantDraft = async (
   assistantId: string,
-  changeSet: dto.UpdateableAssistantDraft
+  changeSet: dto.UpdateableAssistantDraft,
+  userId: string
 ) => {
   const assistant = await getAssistant(assistantId)
   if (!assistant) {
@@ -589,7 +622,7 @@ export const updateAssistantDraft = async (
       .where('Assistant.id', '=', assistantId)
       .execute()
   }
-  return updateAssistantVersion(assistantVersionId, changeSet)
+  return updateAssistantVersion(assistantVersionId, changeSet, userId)
 }
 
 export const updateAssistantHidden = async (assistantId: string, hidden: boolean) => {
@@ -604,7 +637,8 @@ export const updateAssistantHidden = async (assistantId: string, hidden: boolean
 
 export const updateAssistantVersion = async (
   assistantVersionId: string,
-  assistant: dto.UpdateableAssistantDraft
+  assistant: dto.UpdateableAssistantDraft,
+  userId: string
 ) => {
   const {
     files: dtoFiles,
@@ -620,16 +654,24 @@ export const updateAssistantVersion = async (
       .where('id', '=', assistantVersionId)
       .executeTakeFirstOrThrow()
 
+    const fileAssociations = toAssistantFileAssociation(assistantVersionId, assistant.files)
+    if (fileAssociations.length !== 0) {
+      await assertFilesAttachableToAssistant(
+        assistantVersion.assistantId,
+        fileAssociations.map((f) => f.fileId),
+        userId
+      )
+    }
     await db
       .deleteFrom('AssistantVersionFile')
       .where('assistantVersionId', '=', assistantVersionId)
       .execute()
-    const fileAssociations = toAssistantFileAssociation(assistantVersionId, assistant.files)
     if (fileAssociations.length !== 0) {
       await db.insertInto('AssistantVersionFile').values(fileAssociations).execute()
       await transferFilesToAssistantOwner(
         assistantVersion.assistantId,
-        fileAssociations.map((f) => f.fileId)
+        fileAssociations.map((f) => f.fileId),
+        userId
       )
     }
   }
