@@ -3,7 +3,8 @@ import { ChatAssistant } from '@/backend/lib/chat'
 import { getBackend } from '@/models/backend'
 import { availableToolsFiltered } from '@/backend/lib/tools/enumerate'
 import { getUserParameters } from '@/lib/parameters'
-import { error, operation, responseSpec, errorSpec } from '@/lib/routes'
+import { canAccessFile } from '@/backend/lib/files/authorization'
+import { error, forbidden, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { z } from 'zod'
 import { getUserSecretValue } from '@/models/userSecrets'
 import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecretMessages'
@@ -15,7 +16,7 @@ export const POST = operation({
   description: 'Evaluate an assistant draft with a message list.',
   authentication: 'user',
   requestBodySchema: dto.evaluateAssistantRequestSchema,
-  responses: [responseSpec(200, z.any()), errorSpec(400)] as const,
+  responses: [responseSpec(200, z.any()), errorSpec(400), errorSpec(403)] as const,
   implementation: async ({ session, body }) => {
     const { assistant, messages } = body
     const backend = await getBackend(assistant.backendId)
@@ -25,6 +26,13 @@ export const POST = operation({
 
     if (messages.length === 0) {
       return error(400, 'No messages provided')
+    }
+
+    const fileAccessChecks = await Promise.all(
+      assistant.files.map((f) => canAccessFile({ userId: session.userId, userRole: session.userRole }, f.id))
+    )
+    if (fileAccessChecks.some((allowed) => !allowed)) {
+      return forbidden('Assistant references files that are not accessible to the current user')
     }
 
     const conversationId = messages[0].conversationId || assistant.id || 'preview'
