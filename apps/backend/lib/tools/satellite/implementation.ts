@@ -115,10 +115,10 @@ export class SatelliteTool extends SatelliteInterface implements ToolImplementat
 
   supportedMedia = []
 
-  functions = async (_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> => {
+  functions = async (_model: LlmModel, context: ToolFunctionContext): Promise<ToolFunctions> => {
     const { connections } = await import('@/lib/satellite/hub')
     const conn = connections.get(this.satelliteId)
-    if (!conn) {
+    if (!conn || conn.userId !== context.userId) {
       throw new UserVisibleError(`Satellite "${this.toolParams.name}" is currently offline`)
     }
 
