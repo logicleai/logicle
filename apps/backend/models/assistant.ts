@@ -2,7 +2,7 @@ import * as dto from '@/types/dto'
 import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
-import { BuildableTool, dbToolToBuildableTool } from './tool'
+import { BuildableTool, dbToolToBuildableTool, filterVisibleToolIds } from './tool'
 import { Expression, SqlBool, SqliteAdapter, sql } from 'kysely'
 import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
@@ -78,6 +78,25 @@ const assertFilesAttachableToAssistant = async (
         (row.ownerType === 'ASSISTANT' && row.ownerId === assistantId))
     if (!allowed) {
       throw new Error(`File ${id} cannot be attached to assistant ${assistantId}`)
+    }
+  }
+}
+
+/** A tool not visible to the acting editor (private tool they're not an admin
+ * for, or a workspace tool outside their workspaces) must never be attached
+ * to an assistant — the tool's own visibility rules are the only thing that
+ * decides who can ever invoke it, so an assistant referencing an invisible
+ * tool would otherwise let it slip into a run undetected. */
+const assertToolsAttachableToAssistant = async (
+  toolIds: string[],
+  editorId: string
+): Promise<void> => {
+  const uniqueIds = [...new Set(toolIds)]
+  if (uniqueIds.length === 0) return
+  const visible = await filterVisibleToolIds({ userId: editorId }, uniqueIds)
+  for (const id of uniqueIds) {
+    if (!visible.has(id)) {
+      throw new Error(`Tool ${id} is not accessible and cannot be attached to an assistant`)
     }
   }
 }
@@ -518,6 +537,7 @@ export const createAssistantWithId = async (
     .execute()
   const tools = toAssistantToolAssociation(id, dtoTools)
   if (tools.length !== 0) {
+    await assertToolsAttachableToAssistant(dtoTools, owner)
     await db.insertInto('AssistantVersionToolAssociation').values(tools).execute()
   }
   const files = toAssistantFileAssociation(id, dtoFiles)
@@ -676,9 +696,12 @@ export const updateAssistantVersion = async (
     }
   }
   if (assistant.tools) {
+    const tools = toAssistantToolAssociation(assistantVersionId, assistant.tools)
+    if (tools.length !== 0) {
+      await assertToolsAttachableToAssistant(assistant.tools, userId)
+    }
     // TODO: delete all and insert all might be replaced by differential logic
     await deleteAssistantVersionToolAssociations(assistantVersionId)
-    const tools = toAssistantToolAssociation(assistantVersionId, assistant.tools)
     if (tools.length !== 0) {
       await db.insertInto('AssistantVersionToolAssociation').values(tools).execute()
     }

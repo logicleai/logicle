@@ -3,9 +3,14 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 type Row = Record<string, unknown>
 
 const tables: Record<string, Row[]> = {
+  Assistant: [],
   AssistantVersion: [],
   File: [],
   AssistantVersionFile: [],
+  Tool: [],
+  ToolSharing: [],
+  User: [],
+  AssistantVersionToolAssociation: [],
 }
 
 const insertedInto: Record<string, Row[]> = {}
@@ -81,8 +86,18 @@ vi.mock('db/database', () => ({
 
 vi.mock('./images', () => ({ getOrCreateImageFromDataUri: vi.fn() }))
 vi.mock('@/models/images', () => ({ getOrCreateImageFromDataUri: vi.fn() }))
-vi.mock('./tool', () => ({ dbToolToBuildableTool: vi.fn() }))
-vi.mock('@/models/tool', () => ({ dbToolToBuildableTool: vi.fn() }))
+// Keep the real filterVisibleToolIds so these tests exercise the actual
+// visibility policy (against the same mocked db), only stubbing the
+// unrelated dbToolToBuildableTool export.
+vi.mock('./tool', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/models/tool')>()),
+  dbToolToBuildableTool: vi.fn(),
+}))
+vi.mock('@/models/tool', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/models/tool')>()),
+  dbToolToBuildableTool: vi.fn(),
+}))
+vi.mock('@/models/user', () => ({ getUserWorkspaceMemberships: vi.fn().mockResolvedValue([]) }))
 vi.mock('./backend', () => ({ getBackendsWithModels: vi.fn() }))
 vi.mock('@/models/backend', () => ({ getBackendsWithModels: vi.fn() }))
 vi.mock('./userSecrets', () => ({ listUserSecretStatuses: vi.fn() }))
@@ -160,5 +175,106 @@ describe('updateAssistantVersion file authorization', () => {
     expect(insertedInto.AssistantVersionFile).toEqual([
       { assistantVersionId: 'av1', fileId: 'already-attached', order: 0 },
     ])
+  })
+})
+
+describe('updateAssistantVersion tool authorization', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    for (const key of Object.keys(tables)) tables[key] = []
+    for (const key of Object.keys(insertedInto)) delete insertedInto[key]
+    deletedFrom.length = 0
+    updatedFileRows.length = 0
+  })
+
+  test('rejects and never associates a tool the acting editor cannot see', async () => {
+    tables.AssistantVersion.push({ id: 'av1', assistantId: 'a1' })
+    tables.Tool.push({ id: 'private-tool', sharing: 'private' })
+    tables.User.push({ id: 'editor', role: 'USER' })
+
+    const { updateAssistantVersion } = await import('@/models/assistant')
+
+    await expect(
+      updateAssistantVersion('av1', { tools: ['private-tool'] } as any, 'editor')
+    ).rejects.toThrow(/not accessible/)
+
+    expect(insertedInto.AssistantVersionToolAssociation).toBeUndefined()
+    expect(deletedFrom).not.toContain('AssistantVersionToolAssociation')
+  })
+
+  test('allows a public tool', async () => {
+    tables.AssistantVersion.push({ id: 'av1', assistantId: 'a1' })
+    tables.Tool.push({ id: 'public-tool', sharing: 'public' })
+
+    const { updateAssistantVersion } = await import('@/models/assistant')
+
+    await expect(
+      updateAssistantVersion('av1', { tools: ['public-tool'] } as any, 'editor')
+    ).resolves.not.toThrow()
+
+    expect(insertedInto.AssistantVersionToolAssociation).toEqual([
+      { assistantVersionId: 'av1', toolId: 'public-tool' },
+    ])
+  })
+
+  test('allows a private tool for an admin editor', async () => {
+    tables.AssistantVersion.push({ id: 'av1', assistantId: 'a1' })
+    tables.Tool.push({ id: 'private-tool', sharing: 'private' })
+    tables.User.push({ id: 'admin-editor', role: 'ADMIN' })
+
+    const { updateAssistantVersion } = await import('@/models/assistant')
+
+    await expect(
+      updateAssistantVersion('av1', { tools: ['private-tool'] } as any, 'admin-editor')
+    ).resolves.not.toThrow()
+
+    expect(insertedInto.AssistantVersionToolAssociation).toEqual([
+      { assistantVersionId: 'av1', toolId: 'private-tool' },
+    ])
+  })
+})
+
+describe('createAssistantWithId tool authorization', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    for (const key of Object.keys(tables)) tables[key] = []
+    for (const key of Object.keys(insertedInto)) delete insertedInto[key]
+    deletedFrom.length = 0
+    updatedFileRows.length = 0
+  })
+
+  test('rejects creation and never associates a tool the acting owner cannot see', async () => {
+    tables.Tool.push({ id: 'private-tool', sharing: 'private' })
+    tables.User.push({ id: 'owner', role: 'USER' })
+
+    const { createAssistantWithId } = await import('@/models/assistant')
+
+    await expect(
+      createAssistantWithId(
+        'a1',
+        {
+          backendId: 'b1',
+          description: 'desc',
+          model: 'gpt-4o-mini',
+          name: 'assistant',
+          versionName: null,
+          systemPrompt: 'hi',
+          temperature: 0,
+          tokenLimit: 4096,
+          reasoning_effort: null,
+          contextCompression: null,
+          tags: [],
+          prompts: [],
+          tools: ['private-tool'],
+          files: [],
+          iconUri: null,
+          subAssistants: [],
+        } as any,
+        'owner',
+        false
+      )
+    ).rejects.toThrow(/not accessible/)
+
+    expect(insertedInto.AssistantVersionToolAssociation).toBeUndefined()
   })
 })
