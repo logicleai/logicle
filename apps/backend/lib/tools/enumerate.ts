@@ -1,7 +1,13 @@
-import { assistantVersionTools, getPublishedAssistantVersion } from '@/models/assistant'
+import { assistantVersionTools, canUserAccessAssistant, getPublishedAssistantVersion } from '@/models/assistant'
 import { ToolBuilder, ToolImplementation } from '@/lib/chat/tools'
 import { TimeOfDay } from './timeofday/implementation'
-import { getToolsFiltered, getBuildableTools, BuildableTool } from '@/models/tool'
+import {
+  getToolsFiltered,
+  getBuildableTools,
+  BuildableTool,
+  filterVisibleToolIds,
+  ToolAccessPrincipal,
+} from '@/models/tool'
 import { OpenApiPlugin } from './openapi/implementation'
 import { ImageGeneratorPlugin } from './imagegenerator/implementation'
 import {
@@ -72,14 +78,18 @@ export const availableTools = async (model: string) => {
 
 export const availableToolsForAssistantVersion = async (
   assistantVersionId: string,
-  model: string
+  model: string,
+  principal: ToolAccessPrincipal
 ) => {
   const tools = await assistantVersionTools(assistantVersionId)
+  const visibleToolIds = await filterVisibleToolIds(principal, tools.map((t) => t.id))
   const implementations = (
     await Promise.all(
-      tools.map((t) => {
-        return buildTool(t, model)
-      })
+      tools
+        .filter((t) => visibleToolIds.has(t.id))
+        .map((t) => {
+          return buildTool(t, model)
+        })
     )
   ).filter((t) => !(t === undefined)) as ToolImplementation[]
 
@@ -92,7 +102,7 @@ export const availableToolsForAssistantVersion = async (
 
   if (assistantVersionRow?.subAssistants) {
     const subAssistantIds: string[] = JSON.parse(assistantVersionRow.subAssistants)
-    const subTool = await buildSubAssistantTool(subAssistantIds)
+    const subTool = await buildSubAssistantTool(subAssistantIds, principal)
     if (subTool) implementations.push(subTool)
   }
 
@@ -100,11 +110,13 @@ export const availableToolsForAssistantVersion = async (
 }
 
 export const buildSubAssistantTool = async (
-  subAssistantIds: string[]
+  subAssistantIds: string[],
+  principal: ToolAccessPrincipal
 ): Promise<SubAssistantTool | undefined> => {
   const entries = (
     await Promise.all(
       subAssistantIds.map(async (id) => {
+        if (!(await canUserAccessAssistant(principal.userId, id))) return undefined
         const version = await getPublishedAssistantVersion(id)
         if (!version) return undefined
         return { id, name: version.name, description: version.description ?? '' }
@@ -133,15 +145,17 @@ export const buildSubAssistantTool = async (
 export const availableToolsFiltered = async (
   ids: string[],
   model: string,
+  principal: ToolAccessPrincipal,
   subAssistantIds?: string[]
 ) => {
-  const tools = await getToolsFiltered(ids)
+  const visibleToolIds = await filterVisibleToolIds(principal, ids)
+  const tools = await getToolsFiltered([...visibleToolIds])
   const implementations = (await Promise.all(tools.map((t) => buildTool(t, model)))).filter(
     (t) => t !== undefined
   ) as ToolImplementation[]
 
   if (subAssistantIds && subAssistantIds.length > 0) {
-    const subTool = await buildSubAssistantTool(subAssistantIds)
+    const subTool = await buildSubAssistantTool(subAssistantIds, principal)
     if (subTool) implementations.push(subTool)
   }
 

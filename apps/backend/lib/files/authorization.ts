@@ -1,8 +1,7 @@
 import { db } from '@/db/database'
 import type * as schema from '@/db/schema'
 import { canUserAccessAssistant } from '@/models/assistant'
-import { getUserWorkspaceMemberships } from '@/models/user'
-import { UserRole } from '@/types/dto'
+import { canUserAccessTool } from '@/models/tool'
 
 /**
  * File ownership and authorization model
@@ -37,15 +36,6 @@ type AccessUser = {
   userRole?: schema.UserRole
 }
 
-const isAdminUser = async (userId: string, userRoleHint?: schema.UserRole): Promise<boolean> => {
-  if (userRoleHint) {
-    return userRoleHint === UserRole.ADMIN
-  }
-
-  const row = await db.selectFrom('User').select('role').where('id', '=', userId).executeTakeFirst()
-  return row?.role === UserRole.ADMIN
-}
-
 export const canAccess = async (
   user: AccessUser,
   ownerType: schema.FileOwnerType,
@@ -76,37 +66,8 @@ export const canAccess = async (
     }
     case 'ASSISTANT':
       return await canUserAccessAssistant(userId, ownerId)
-    case 'TOOL': {
-      const tool = await db
-        .selectFrom('Tool')
-        .select('sharing')
-        .where('id', '=', ownerId)
-        .executeTakeFirst()
-      if (!tool) {
-        return false
-      }
-
-      if (tool.sharing === 'public') {
-        return true
-      }
-
-      if (tool.sharing === 'workspace') {
-        const memberships = await getUserWorkspaceMemberships(userId)
-        if (memberships.length === 0) {
-          return false
-        }
-        const workspaceIds = memberships.map((m) => m.id)
-        const shared = await db
-          .selectFrom('ToolSharing')
-          .select('id')
-          .where('toolId', '=', ownerId)
-          .where('workspaceId', 'in', workspaceIds)
-          .executeTakeFirst()
-        return !!shared
-      }
-
-      return await isAdminUser(userId, user.userRole)
-    }
+    case 'TOOL':
+      return await canUserAccessTool(user, ownerId)
   }
 }
 

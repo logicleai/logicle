@@ -106,7 +106,9 @@ export class SubAssistantTool implements ToolImplementation {
             }
 
             const [tools, files, parameters] = await Promise.all([
-              availableToolsForAssistantVersion(assistantVersion.id, assistantVersion.model),
+              availableToolsForAssistantVersion(assistantVersion.id, assistantVersion.model, {
+                userId,
+              }),
               assistantVersionFiles(assistantVersion.id),
               getUserParameters(userId),
             ])

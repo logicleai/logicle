@@ -35,7 +35,10 @@ export const POST = operation({
         : messages[0].conversationId === conversationId
         ? messages
         : messages.map((msg) => (msg.conversationId ? msg : { ...msg, conversationId }))
-    const availableTools = await availableToolsFiltered(assistant.tools, assistant.model)
+    const availableTools = await availableToolsFiltered(assistant.tools, assistant.model, {
+      userId: session.userId,
+      userRole: session.userRole,
+    })
     const collector = query?.detail ? createTokenDetailCollector() : undefined
     const result = await estimateConversationWindowTokens(
       {

@@ -3,6 +3,8 @@ import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
 import * as schema from '@/db/schema'
 import { getOrCreateImageFromDataUri } from './images'
+import { getUserWorkspaceMemberships } from './user'
+import { UserRole } from '@/types/dto'
 
 export interface BuildableTool {
   id: string
@@ -49,6 +51,69 @@ const toolWorkspaceSharingData = async (toolIds: string[]): Promise<Map<string, 
 
   // Turn the plain object into a Map<string, dto.Sharing[]>
   return new Map(Object.entries(grouped))
+}
+
+export type ToolAccessPrincipal = { userId: string; userRole?: schema.UserRole }
+
+const isAdminUser = async (user: ToolAccessPrincipal): Promise<boolean> => {
+  if (user.userRole) {
+    return user.userRole === UserRole.ADMIN
+  }
+  const row = await db.selectFrom('User').select('role').where('id', '=', user.userId).executeTakeFirst()
+  return row?.role === UserRole.ADMIN
+}
+
+/** Which of the given tool ids are visible to this user: public tools to
+ * anyone, workspace tools to members of a sharing workspace, private tools
+ * to admins only. Tools attached to an assistant/sub-assistant/evaluate
+ * request must always be filtered through this before being built or
+ * exposed to a run, since a tool a user can't see may hold server-side
+ * credentials or reach another user's satellite connection. */
+export const filterVisibleToolIds = async (
+  user: ToolAccessPrincipal,
+  toolIds: string[]
+): Promise<Set<string>> => {
+  const uniqueIds = [...new Set(toolIds)]
+  if (uniqueIds.length === 0) {
+    return new Set()
+  }
+  const tools = await db
+    .selectFrom('Tool')
+    .select(['id', 'sharing'])
+    .where('id', 'in', uniqueIds)
+    .execute()
+  const isAdmin = await isAdminUser(user)
+  const visible = new Set(
+    tools
+      .filter((t) => t.sharing === 'public' || (t.sharing === 'private' && isAdmin))
+      .map((t) => t.id)
+  )
+  const workspaceToolIds = tools.filter((t) => t.sharing === 'workspace').map((t) => t.id)
+  if (workspaceToolIds.length === 0) {
+    return visible
+  }
+  const memberships = await getUserWorkspaceMemberships(user.userId)
+  if (memberships.length === 0) {
+    return visible
+  }
+  const workspaceIds = memberships.map((m) => m.id)
+  const shared = await db
+    .selectFrom('ToolSharing')
+    .select('toolId')
+    .where('toolId', 'in', workspaceToolIds)
+    .where('workspaceId', 'in', workspaceIds)
+    .execute()
+  for (const row of shared) {
+    visible.add(row.toolId)
+  }
+  return visible
+}
+
+export const canUserAccessTool = async (
+  user: ToolAccessPrincipal,
+  toolId: string
+): Promise<boolean> => {
+  return (await filterVisibleToolIds(user, [toolId])).has(toolId)
 }
 
 export const makeSharing = (type: string, workspaces: string[]): dto.Sharing2 => {
