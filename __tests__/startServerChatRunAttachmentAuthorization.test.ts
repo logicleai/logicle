@@ -28,7 +28,8 @@ vi.mock('@/backend/lib/tools/enumerate', () => ({
 vi.mock('@/lib/MessageAuditor', () => ({ MessageAuditor: vi.fn() }))
 vi.mock('@/lib/chat/conversationUtils', () => ({ extractLinearConversation: vi.fn() }))
 vi.mock('@/lib/parameters', () => ({ getUserParameters: vi.fn() }))
-vi.mock('@/models/assistant', () => ({ assistantVersionFiles: vi.fn() }))
+const canUserAccessAssistant = vi.fn()
+vi.mock('@/models/assistant', () => ({ assistantVersionFiles: vi.fn(), canUserAccessAssistant }))
 vi.mock('@/models/message', () => ({ getMessages: vi.fn(), saveMessage: vi.fn() }))
 vi.mock('@/models/userSecrets', () => ({ getUserSecretValue: vi.fn() }))
 vi.mock('db/database', () => ({ db: {} }))
@@ -59,6 +60,26 @@ describe('startServerChatRun attachment authorization', () => {
       conversation: { id: 'c1', ownerId: 'attacker' },
       assistant: { deleted: false, assistantId: 'a1', assistantVersionId: 'av1', model: 'gpt' },
       backend: {},
+    })
+    canUserAccessAssistant.mockResolvedValue(true)
+  })
+
+  test('rejects the message when the user no longer has access to the assistant', async () => {
+    canUserAccessAssistant.mockResolvedValue(false)
+    const { startServerChatRun } = await import('@/backend/lib/chat/startServerChatRun')
+
+    const result = await startServerChatRun({
+      userMessage: { ...baseUserMessage, attachments: [] },
+      headers: new Headers(),
+      session,
+    })
+
+    expect(canUserAccessAssistant).toHaveBeenCalledWith('attacker', 'a1')
+    expect(createChatRun).not.toHaveBeenCalled()
+    expect(result).toEqual({
+      ok: false,
+      status: 403,
+      message: 'You no longer have access to this assistant',
     })
   })
 
