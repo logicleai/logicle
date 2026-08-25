@@ -64,36 +64,34 @@ These are files with substantial *pure* logic (schema/request shaping,
 branching, calculation) that are currently undertested and are cheap to
 cover with plain vitest unit tests — no DB, no network:
 
-1. `apps/backend/lib/chat/echo-language-model.ts` (~23%) — the mock LLM
-   itself gained real tool-call branching in the smoke-coverage PR; it has
-   zero dedicated unit tests despite being pure and fully deterministic.
-2. `apps/backend/lib/tools/timeofday/implementation.ts` (~25%) and other
-   small `functions()`/schema-building halves of tool implementations —
-   distinct from their `invoke()` halves (see above), the tool-schema
-   construction is pure and worth covering directly rather than only via
-   smoke.ts.
-3. `apps/backend/lib/tools/openapi/implementation.ts` (~7%, 382 lines) —
-   almost entirely request/response shaping from an OpenAPI spec; likely the
-   single highest-value target in the repo by lines-not-covered.
-4. `apps/backend/lib/tools/mcp/implementation.ts` (~17%) and `file-bridge.ts`
+1. `apps/backend/lib/tools/mcp/implementation.ts` (~17%) and `file-bridge.ts`
    (~21%) — protocol/message shaping, separate from the actual MCP transport.
-5. `apps/backend/lib/chat/summarizer.ts` (~20%), `startServerChatRun.ts`
+2. `apps/backend/lib/chat/summarizer.ts` (~20%), `startServerChatRun.ts`
    (~33%, error branches only partially covered), `chat/index.ts` (~61%,
    large file, worth incremental coverage rather than a single pass).
-6. `apps/backend/lib/chat/litellm/litellm-provider.ts` (~7%) — provider
+3. `apps/backend/lib/chat/litellm/litellm-provider.ts` (~7%) — provider
    config/factory logic.
-7. `apps/backend/lib/imagegen/metering.ts` (~13%) and
+4. `apps/backend/lib/imagegen/metering.ts` (~13%) and
    `apps/backend/lib/tools/audio_transcription/metering.ts` (~13%) — thin
    wrappers around the OpenMeter SDK, but the guard clauses (no-op when
    unconfigured) and the try/catch-and-log-a-warning around the ingest call
    are pure branching worth covering with the SDK client mocked.
-8. `packages/core/src/bootstrapPlaceholders.ts` (0%, small) — DOM-dependent
+5. `packages/core/src/bootstrapPlaceholders.ts` (0%, small) — DOM-dependent
    (`readBootstrapJson` reads `document`), needs a `jsdom` environment via
    `// @vitest-environment jsdom` (no existing test file uses that pragma
    yet, so this is also the first one) — quick win once that's set up.
-9. `apps/backend/lib/router.ts` (~71%, branch coverage 50%) and
+6. `apps/backend/lib/router.ts` (~71%, branch coverage 50%) and
    `apps/backend/lib/logging.ts` (~35%, mixed — some pure formatting, some
    transport wiring) — partial gaps worth closing incrementally.
+7. `apps/backend/lib/tools/openapi/implementation.ts`'s multipart-response
+   branch (the file overall went 7% -> 90%, but parsing a
+   `multipart/`-content-type response — `parseMultipart` + per-part
+   text-vs-attachment handling — is still uncovered; needs a hand-built
+   multipart body in the mocked `fetch` response).
+
+Done: `echo-language-model.ts` (23% -> 95%), `tools/timeofday/implementation.ts`
+(25% -> 100%), `tools/openapi/implementation.ts` (7% -> 90%, see the
+multipart caveat above).
 
 When picking up an item here: confirm with a quick read that the file is
 still mostly pure logic (code moves), write the unit test, and cross it off
