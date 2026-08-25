@@ -78,6 +78,9 @@ export const PUT = operation({
     if (message.conversationId !== conversation.id) {
       return error(400, `No such message in conversation`)
     }
+    if (message.role !== 'user' && message.role !== 'assistant') {
+      return forbidden(`Messages with role ${message.role} cannot be edited`)
+    }
     const content = JSON.stringify({
       ...putMessage,
       id: undefined,

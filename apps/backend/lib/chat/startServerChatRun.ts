@@ -98,6 +98,14 @@ export const startServerChatRun = async ({
     }
   }
 
+  if (userMessage.role !== 'user' && userMessage.role !== 'user-response') {
+    return {
+      ok: false,
+      status: 400,
+      message: 'A chat run can only be started with a user message or a response to a pending request',
+    }
+  }
+
   if (userMessage.role === 'user' && userMessage.attachments.length > 0) {
     const attachmentIds = userMessage.attachments.map((attachment) => attachment.id)
     const accessChecks = await Promise.all(
