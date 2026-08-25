@@ -40,7 +40,7 @@ export const finalizeUploadedFile = async (params: {
     .where('contentHash', '=', params.contentHash)
     .executeTakeFirstOrThrow()
 
-  if (blob.id !== createdBlobId) {
+  if (blob.id !== createdBlobId && blob.path !== params.filePath) {
     await storage.rm(params.filePath)
   }
 
@@ -56,6 +56,6 @@ export const finalizeUploadedFile = async (params: {
       encrypted: isFileEncrypted(blob.encryption) ? 1 : 0,
     } as any)
     .where('id', '=', params.fileId)
+    .where('fileBlobId', 'is', null)
     .execute()
-
 }
