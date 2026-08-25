@@ -3,6 +3,7 @@ import type { IRunOptions } from 'docx'
 import { getFileWithId } from '@/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
+import { safeFetch } from '@/backend/lib/net/safeFetch'
 import type * as schema from '@/db/schema'
 import type { Image as MdastImage, InlineCode as MdastInlineCode, Root, RootContent, Text as MdastText } from 'mdast'
 import docx from 'remark-docx'
@@ -286,11 +287,7 @@ function createLoadImageData(principal: AccessPrincipal) {
       return Uint8Array.from(data).buffer
     }
 
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`Failed to load image: ${url}`)
-    }
-    return await response.arrayBuffer()
+    return await safeFetch(url)
   }
 }
 
