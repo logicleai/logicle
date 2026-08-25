@@ -64,8 +64,12 @@ These are files with substantial *pure* logic (schema/request shaping,
 branching, calculation) that are currently undertested and are cheap to
 cover with plain vitest unit tests — no DB, no network:
 
-1. `apps/backend/lib/tools/mcp/implementation.ts` (~17%) and `file-bridge.ts`
-   (~21%) — protocol/message shaping, separate from the actual MCP transport.
+1. `apps/backend/lib/tools/mcp/implementation.ts` (~17%) — the harder half:
+   `file-bridge.ts` is done (see below), but `implementation.ts` itself wraps
+   an LRU client cache, the `@modelcontextprotocol/sdk` `Client` and its
+   transports (stdio/SSE/streamable-HTTP), sandboxing, and OAuth token
+   resolution — meaningfully testing it means mocking the SDK `Client` class
+   and transport constructors, not just one dependency.
 2. `apps/backend/lib/chat/summarizer.ts` (~20%), `startServerChatRun.ts`
    (~33%, error branches only partially covered), `chat/index.ts` (~61%,
    large file, worth incremental coverage rather than a single pass).
@@ -91,7 +95,7 @@ cover with plain vitest unit tests — no DB, no network:
 
 Done: `echo-language-model.ts` (23% -> 95%), `tools/timeofday/implementation.ts`
 (25% -> 100%), `tools/openapi/implementation.ts` (7% -> 90%, see the
-multipart caveat above).
+multipart caveat above), `tools/mcp/file-bridge.ts` (21% -> 99%).
 
 When picking up an item here: confirm with a quick read that the file is
 still mostly pure logic (code moves), write the unit test, and cross it off
