@@ -621,6 +621,25 @@ async function main() {
     throw new Error(`User tools did not include the shared tool: ${visibleTools.text}`)
   }
 
+  console.log('Smoke: create a real function-calling tool for the chat run below')
+  const timeOfDayToolCreated = await requestAdmin('POST', '/api/tools', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      type: 'timeofday',
+      name: `Smoke TimeOfDay Tool ${runId}`,
+      description: 'Smoke time of day tool',
+      configuration: {},
+      tags: ['smoke'],
+      icon: null,
+      sharing: { type: 'workspace', workspaces: [workspaceJson.id] },
+      promptFragment: 'smoke-timeofday',
+    },
+  })
+  const timeOfDayToolId = (
+    parseJson(timeOfDayToolCreated.text, '/api/tools POST (timeofday)') as { id: string }
+  ).id
+
   console.log('Smoke: file upload baseline')
   const fileCreated = await requestUser('POST', '/api/files', {
     expectedStatus: 201,
@@ -867,6 +886,120 @@ async function main() {
   const errorEvent = chatEvents.find((event) => event.part?.type === 'error')
   if (errorEvent?.part?.error) {
     throw new Error(`Chat response contained error part: ${errorEvent.part.error}`)
+  }
+
+  console.log('Smoke: chat message with a file attachment reassigns file ownership to the conversation')
+  const attachmentChat = await requestUser('POST', '/api/chat', {
+    expectedStatus: 200,
+    headers: { ...jsonHeaders, accept: 'text/event-stream' },
+    json: {
+      id: `msg-attach-${runId}`,
+      conversationId,
+      parent: chatMessageId,
+      role: 'user',
+      content: 'here is a file',
+      attachments: [{ id: fileId, name: `smoke-${runId}.txt`, mimetype: 'text/plain', size: 11 }],
+    },
+  })
+  const attachmentChatEvents = parseSseData(
+    attachmentChat.text,
+    '/api/chat SSE (attachment)'
+  ) as Array<{ type?: string; text?: string; part?: { type?: string; error?: string } }>
+  const attachmentStreamedText = attachmentChatEvents
+    .filter((event) => event.type === 'text')
+    .map((event) => event.text ?? '')
+    .join('')
+  if (attachmentStreamedText !== 'Echo: here is a file') {
+    throw new Error(`Chat response with attachment did not echo as expected: ${attachmentChat.text}`)
+  }
+  const attachmentErrorEvent = attachmentChatEvents.find((event) => event.part?.type === 'error')
+  if (attachmentErrorEvent?.part?.error) {
+    throw new Error(`Chat response with attachment contained error part: ${attachmentErrorEvent.part.error}`)
+  }
+  const attachedFileDetails = await requestUser('GET', `/api/files/${fileId}`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  const attachedFileJson = parseJson(attachedFileDetails.text, `/api/files/${fileId} after attach`) as {
+    owner: { ownerType: string; ownerId: string }
+  }
+  if (attachedFileJson.owner.ownerType !== 'CHAT' || attachedFileJson.owner.ownerId !== conversationId) {
+    throw new Error(`Attached file was not reassigned to the conversation: ${attachedFileDetails.text}`)
+  }
+
+  console.log('Smoke: chat run actually invokes a real function-calling tool')
+  const toolAssistantCreated = await requestUser('POST', '/api/assistants', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      backendId,
+      description: 'Smoke tool-calling assistant',
+      model: 'mock-echo',
+      name: 'Smoke Tool Assistant',
+      systemPrompt: 'You are a smoke test assistant with tool access.',
+      temperature: 0.2,
+      tokenLimit: 4096,
+      reasoning_effort: null,
+      tags: [],
+      prompts: [],
+      tools: [timeOfDayToolId],
+      files: [],
+      iconUri: null,
+    },
+  })
+  const toolAssistantId = (
+    parseJson(toolAssistantCreated.text, '/api/assistants POST (tools)') as { assistantId: string }
+  ).assistantId
+  await requestUser('POST', `/api/assistants/${toolAssistantId}/sharing`, {
+    expectedStatus: 200,
+    headers: jsonHeaders,
+    json: [{ type: 'workspace', workspaceId: workspaceJson.id, workspaceName: workspaceJson.name }],
+  })
+  await requestUser('POST', `/api/assistants/${toolAssistantId}/publish`, {
+    expectedStatus: 200,
+    headers: jsonHeaders,
+    json: { versionName: `Smoke Tool Publish ${runId}` },
+  })
+  const toolConversationCreated = await requestUser('POST', '/api/conversations', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: { assistantId: toolAssistantId, name: 'Smoke Tool Conversation' },
+  })
+  const toolConversationId = (
+    parseJson(toolConversationCreated.text, '/api/conversations POST (tools)') as { id: string }
+  ).id
+
+  const toolChat = await requestUser('POST', '/api/chat', {
+    expectedStatus: 200,
+    headers: { ...jsonHeaders, accept: 'text/event-stream' },
+    json: {
+      id: `msg-tool-${runId}`,
+      conversationId: toolConversationId,
+      parent: null,
+      role: 'user',
+      content: 'what time is it',
+      attachments: [],
+    },
+  })
+  const toolChatEvents = parseSseData(toolChat.text, '/api/chat SSE (tools)') as Array<{
+    type?: string
+    text?: string
+    part?: { type?: string; toolName?: string; error?: string }
+  }>
+  const toolCallEvent = toolChatEvents.find((event) => event.part?.type === 'tool-call')
+  if (!toolCallEvent?.part?.toolName?.endsWith('timeOfDay')) {
+    throw new Error(`Chat run did not invoke the timeOfDay tool: ${toolChat.text}`)
+  }
+  const toolStreamedText = toolChatEvents
+    .filter((event) => event.type === 'text')
+    .map((event) => event.text ?? '')
+    .join('')
+  if (!toolStreamedText.startsWith('Echo: what time is it [tool result:')) {
+    throw new Error(`Chat run final answer did not include the tool result: ${toolChat.text}`)
+  }
+  const toolErrorEvent = toolChatEvents.find((event) => event.part?.type === 'error')
+  if (toolErrorEvent?.part?.error) {
+    throw new Error(`Tool chat response contained error part: ${toolErrorEvent.part.error}`)
   }
 
   console.log('Smoke: conversation share and feedback')

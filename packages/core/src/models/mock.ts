@@ -10,7 +10,7 @@ export const mockEchoModel: LlmModel = {
   context_length: 128000,
   capabilities: {
     vision: false,
-    function_calling: false,
+    function_calling: true,
   },
 }
 
