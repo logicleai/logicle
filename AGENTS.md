@@ -51,6 +51,7 @@ The frontend builds with `output: 'export'` (see `apps/frontend/next.config.ts`)
 
 - If you notice missing, outdated, or incomplete instructions here, propose specific additions or edits to the user.
 - To verify type correctness, run `npm run check-types`.
+- Two different layers own coverage: `apps/backend/scripts/smoke.ts`/`integration-baseline.ts` (real Docker deploy, CI) prove routes/auth/DB wiring end-to-end and should stay scoped to that, not be used to chase statement coverage; `vitest` unit tests under `__tests__/` are where statement coverage on pure logic (`packages/core/src/**`, `apps/backend/lib/**`) should be pushed up. See [`docs/testing-strategy.md`](docs/testing-strategy.md) before adding either kind — it lists what's legitimately untestable (type-only files, generated code, process bootstraps) versus the prioritized backlog of real gaps.
 - DTO naming convention: prefer `Entity`, `InsertableEntity`, `UpdateableEntity` in `packages/core/src/types/dto/**`.
 - Avoid upsert endpoints unless explicitly requested; prefer create + update with explicit errors on duplicates.
 - Use `PATCH` for update endpoints.
