@@ -437,16 +437,32 @@ async function main() {
     json: { name: `integration-${runId}.txt`, type: 'text/plain', size: 1 },
     allowStatus: [400],
   })
-  await request('POST', '/api/files', {
+  console.log('Integration: file creation ignores a client-supplied owner')
+  const forgedOwnerFileCreated = await request('POST', '/api/files', {
+    expectedStatus: 201,
     headers: jsonHeaders,
     json: {
-      name: `integration-${runId}-forbidden.txt`,
+      name: `integration-${runId}-client-owner-ignored.txt`,
       type: 'text/plain',
       size: 1,
       owner: { ownerType: 'USER', ownerId: adminUserId },
     },
-    allowStatus: [403],
   })
+  const forgedOwnerFileId = parseJson(
+    forgedOwnerFileCreated.text,
+    '/api/files POST (client owner ignored)'
+  ).id as string
+  const forgedOwnerFileDetails = await request('GET', `/api/files/${forgedOwnerFileId}`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  const forgedOwner = parseJson(
+    forgedOwnerFileDetails.text,
+    `/api/files/${forgedOwnerFileId} GET (client owner ignored)`
+  ).owner as { ownerType?: string; ownerId?: string }
+  if (forgedOwner.ownerType !== 'USER' || forgedOwner.ownerId !== profileJson.id) {
+    throw new Error(`Client-supplied file owner was not ignored: ${forgedOwnerFileDetails.text}`)
+  }
   const ownedFileCreated = await request('POST', '/api/files', {
     expectedStatus: 201,
     headers: jsonHeaders,
