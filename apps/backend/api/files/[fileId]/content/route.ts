@@ -1,4 +1,5 @@
 import { db } from '@/db/database'
+import { sql } from 'kysely'
 import { canAccessFile, canWriteFile } from '@/backend/lib/files/authorization'
 import { error, noBody, notFound, forbidden, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { storage } from '@/lib/storage'
@@ -85,8 +86,29 @@ export const PUT = operation({
     if (file.fileBlobId) {
       return error(400, 'File content has already been uploaded')
     }
+    // Atomically claim the row so a second, concurrent PUT for the same file can't also pass
+    // the check above and race this one to write the same storage path / finalize the blob.
+    const claim = await db
+      .updateTable('File')
+      .set({ uploaded: 1 } as never)
+      .where('id', '=', params.fileId)
+      .where('fileBlobId', 'is', null)
+      .where(sql.ref('uploaded'), '=', 0)
+      .executeTakeFirst()
+    if (!claim || Number(claim.numUpdatedRows) !== 1) {
+      return error(400, 'File content has already been uploaded')
+    }
+    const releaseClaim = async () => {
+      await db
+        .updateTable('File')
+        .set({ uploaded: 0 } as never)
+        .where('id', '=', params.fileId)
+        .where('fileBlobId', 'is', null)
+        .execute()
+    }
     const contentLength = headers.get('content-length')
     if (contentLength && (!/^\d+$/.test(contentLength) || Number(contentLength) > env.chat.attachments.maxSize)) {
+      await releaseClaim()
       return error(400, 'File exceeds the maximum upload size')
     }
     let clientDisconnected = false
@@ -96,6 +118,7 @@ export const PUT = operation({
     signal.addEventListener('abort', onAbortLike)
     const requestBodyStream = request.stream
     if (!requestBodyStream) {
+      await releaseClaim()
       return error(400, 'Missing body')
     }
 
@@ -117,6 +140,7 @@ export const PUT = operation({
     try {
       await storage.writeStream(file.path, hashingStream, getConfiguredFileEncryption())
     } catch (e) {
+      await releaseClaim()
       if (clientDisconnected) {
         logger.error('Upload aborted by user')
         return error(500, 'Upload aborted')

@@ -274,6 +274,60 @@ describe('PUT /api/files/:fileId/content', () => {
     expect(newFile.fileBlobId).toEqual(canonicalFile.fileBlobId)
   })
 
+  test('rejects a second concurrent upload for the same file and keeps only one blob', async () => {
+    await insertFile({ id: 'f-race', path: 'f-race.txt' })
+    mocks.writeStream.mockImplementation(
+      async (_path: string, stream: ReadableStream<Uint8Array>) => consumeStream(stream)
+    )
+
+    const makeRequest = () =>
+      contentRoute.PUT(
+        new Request('http://localhost/api/files/f-race/content', {
+          method: 'PUT',
+          headers: { cookie: sessionCookie },
+          body: 'racing content',
+        }),
+        { params: Promise.resolve({ fileId: 'f-race' }) }
+      )
+
+    const [first, second] = await Promise.all([makeRequest(), makeRequest()])
+    const statuses = [first.status, second.status].sort()
+
+    expect(statuses).toEqual([204, 400])
+    const blobs = await db.selectFrom('FileBlob').selectAll().execute()
+    expect(blobs).toHaveLength(1)
+    const file = await db.selectFrom('File').selectAll().where('id', '=', 'f-race').executeTakeFirstOrThrow()
+    expect(file.fileBlobId).toEqual(blobs[0].id)
+  })
+
+  test('lets a retry succeed after a failed upload releases its claim', async () => {
+    await insertFile({ id: 'f-retry', path: 'f-retry.txt' })
+    mocks.writeStream.mockRejectedValueOnce(new Error('disk full'))
+
+    const failed = await contentRoute.PUT(
+      new Request('http://localhost/api/files/f-retry/content', {
+        method: 'PUT',
+        headers: { cookie: sessionCookie },
+        body: 'content',
+      }),
+      { params: Promise.resolve({ fileId: 'f-retry' }) }
+    )
+    expect(failed.status).toBe(500)
+
+    mocks.writeStream.mockImplementation(
+      async (_path: string, stream: ReadableStream<Uint8Array>) => consumeStream(stream)
+    )
+    const retried = await contentRoute.PUT(
+      new Request('http://localhost/api/files/f-retry/content', {
+        method: 'PUT',
+        headers: { cookie: sessionCookie },
+        body: 'content',
+      }),
+      { params: Promise.resolve({ fileId: 'f-retry' }) }
+    )
+    expect(retried.status).toBe(204)
+  })
+
   test('returns 500 Upload failure when storage write throws a server error', async () => {
     await insertFile({ id: 'f1', path: 'f1.txt' })
     mocks.writeStream.mockRejectedValue(new Error('disk full'))

@@ -66,7 +66,8 @@ describe('finalizeUploadedFile', () => {
     })
 
     const updateExecuteMock = vi.fn().mockResolvedValue(undefined)
-    const updateWhere1 = vi.fn(() => ({ execute: updateExecuteMock }))
+    const updateWhere2 = vi.fn(() => ({ execute: updateExecuteMock }))
+    const updateWhere1 = vi.fn(() => ({ where: updateWhere2 }))
     updateTableMock.mockReturnValueOnce({ set: vi.fn(() => ({ where: updateWhere1 })) })
 
     const { finalizeUploadedFile } = await import('@/backend/lib/files/upload-dedup')
@@ -105,7 +106,8 @@ describe('finalizeUploadedFile', () => {
     })
 
     const updateExecuteMock = vi.fn().mockResolvedValue(undefined)
-    const updateWhere1 = vi.fn(() => ({ execute: updateExecuteMock }))
+    const updateWhere2 = vi.fn(() => ({ execute: updateExecuteMock }))
+    const updateWhere1 = vi.fn(() => ({ where: updateWhere2 }))
     updateTableMock.mockReturnValueOnce({ set: vi.fn(() => ({ where: updateWhere1 })) })
 
     const { finalizeUploadedFile } = await import('@/backend/lib/files/upload-dedup')
