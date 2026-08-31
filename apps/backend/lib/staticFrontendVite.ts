@@ -34,6 +34,52 @@ const PUBLIC_EXACT_PATHS = new Set(['/favicon.ico', '/openapi.yaml', '/robots.tx
 const isPubliclyServable = (pathname: string) =>
   PUBLIC_EXACT_PATHS.has(pathname) || PUBLIC_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 
+// Content-Security-Policy for the SPA shell. Verified against the built
+// frontend with a headless-browser sweep of chat (KaTeX / mermaid / code
+// highlighting / rich HTML), the recharts analytics dashboards, the Zod-heavy
+// admin tool/backend/SSO forms and the styleguide: the only violation is a
+// single guarded `Function("")` capability probe in Zod's `allowsEval`, which
+// catches, reports once, and falls back to non-JIT validation with identical
+// results — so `script-src 'self'` (no `'unsafe-eval'`) is functionally safe.
+//
+//  - style-src needs 'unsafe-inline': the head has an inline <style>, the
+//    per-deployment brand CSS is injected as a <style> element, and KaTeX /
+//    Prism / mermaid all set inline styles at runtime. Inline styles cannot
+//    execute, and assistant-authored ones are already filtered in Markdown.tsx.
+//  - Google Fonts: stylesheet from fonts.googleapis.com, files from
+//    fonts.gstatic.com (see apps/frontend-vite/index.html).
+//  - img-src keeps https:: model/provider logos are currently hotlinked from
+//    www.cdnlogo.com, and assistants embed external images. Tightening this to
+//    'self' data: blob: additionally closes chat-image exfiltration but needs
+//    those logos self-hosted first — tracked separately.
+//  - connect-src 'self' covers the same-origin API, chat streaming and the
+//    satellite WebSocket (/api/rpc).
+export const CSP_DIRECTIVES = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "frame-src 'none'",
+  "object-src 'none'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' blob: data:",
+  "connect-src 'self'",
+  "worker-src 'self' blob:",
+].join('; ')
+
+// `CSP_DISABLE=1` opts out entirely; `CSP_REPORT_ONLY=1` observes without
+// enforcing (useful for the first rollout on an unfamiliar deployment).
+export function applyCspHeaders(headers: Record<string, string>) {
+  if (process.env.CSP_DISABLE === '1') return
+  const name =
+    process.env.CSP_REPORT_ONLY === '1'
+      ? 'Content-Security-Policy-Report-Only'
+      : 'Content-Security-Policy'
+  headers[name] = CSP_DIRECTIVES
+}
+
 function escapeForScriptTag(json: string): string {
   return json.replace(/</g, '\\u003c')
 }
@@ -236,14 +282,16 @@ export async function serveStaticFrontendVite(
   const htmlFile = path.join(outDir, 'index.html')
   const html = await fs.promises.readFile(htmlFile, 'utf-8')
   const withBootstrap = await injectBootstrapData(html)
-  res.writeHead(200, {
+  const shellHeaders: Record<string, string> = {
     'Content-Type': 'text/html; charset=utf-8',
     'X-Robots-Tag': 'noindex, nofollow, noarchive',
     // Never cache the shell itself — it's what references the hashed
     // /assets/* filenames above, so a cached stale index.html would keep
     // pointing at assets a new deploy has already deleted.
     'Cache-Control': 'no-cache',
-  })
+  }
+  applyCspHeaders(shellHeaders)
+  res.writeHead(200, shellHeaders)
   res.end(withBootstrap)
   return true
 }
