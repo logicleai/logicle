@@ -1,5 +1,7 @@
 import * as dto from '@/types/dto'
 
+export const PROTECTED_CREDENTIALS = '<redacted>'
+
 export function protect(str: string) {
   const len = str.length
   const clearText = Math.min(12, Math.max(0, (len >> 1) - 4))
@@ -18,6 +20,11 @@ export function protectApiKey(backend: dto.Backend): dto.Backend {
     return {
       ...backend,
       apiKey: backend.apiKey === undefined ? undefined : protect(backend.apiKey),
+    } as dto.Backend
+  } else if ('credentials' in backend) {
+    return {
+      ...backend,
+      credentials: backend.credentials === undefined ? undefined : PROTECTED_CREDENTIALS,
     } as dto.Backend
   } else {
     return backend
