@@ -16,39 +16,77 @@
 // try to detect a new deploy while the user sits on one page — that is
 // deliberately out of scope.
 
-// Guard against a reload loop: if a chunk is genuinely missing or broken (a
-// bad build, not a stale tab) the reload won't fix it, so only retry once
-// per cooldown window and otherwise let the error surface via the route's
-// errorElement.
+// Loop protection. If a chunk is genuinely missing or broken (a bad build,
+// not a stale tab) the reload won't fix it, so we must never reload more
+// than once for it within a short window. Two independent guards, OR'd
+// together — a reload loop needs BOTH to fail at the same time — and both
+// self-re-arm after RELOAD_COOLDOWN_MS so a later, unrelated deploy is still
+// handled by the same long-lived tab:
+//
+//  1. A sessionStorage timestamp. Survives the reload; the primary guard.
+//  2. Navigation Timing. `location.reload()` makes the next load's
+//     navigation type `"reload"` (per spec), so a freshly-reloaded document
+//     has already spent its attempt. Needs no storage — this is what stops
+//     a loop when sessionStorage is blocked entirely (locked-down browser,
+//     partitioned context). Only counted while the load is still fresh
+//     (`performance.now() < cooldown`) so a tab reloaded long ago isn't
+//     permanently barred from recovering.
 const LAST_RELOAD_KEY = 'logicle:chunk-error-reload-at'
 const RELOAD_COOLDOWN_MS = 15_000
 
-function tryHardReload(): boolean {
-  let lastReloadAt = 0
+let installed = false
+
+function reloadedRecentlyPerStorage(): boolean {
   try {
-    lastReloadAt = Number(window.sessionStorage.getItem(LAST_RELOAD_KEY)) || 0
+    const last = Number(window.sessionStorage.getItem(LAST_RELOAD_KEY)) || 0
+    return last > 0 && Date.now() - last < RELOAD_COOLDOWN_MS
   } catch {
-    // sessionStorage can throw (privacy mode, storage disabled) — fall
-    // through and reload anyway; one extra reload is acceptable.
+    // sessionStorage blocked (privacy mode, storage disabled, partitioned
+    // context) — guard #2 takes over.
+    return false
   }
-  if (Date.now() - lastReloadAt < RELOAD_COOLDOWN_MS) return false
+}
+
+function reloadedRecentlyPerNavigationTiming(): boolean {
+  try {
+    if (performance.now() >= RELOAD_COOLDOWN_MS) return false
+    const [nav] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
+    if (nav) return nav.type === 'reload'
+    // Deprecated Navigation Timing L1, but present in browsers too old for
+    // the L2 entry type above (e.g. Safari < 15). type 1 === TYPE_RELOAD.
+    const legacyNav = (performance as { navigation?: { type: number } }).navigation
+    return legacyNav?.type === 1
+  } catch {
+    return false
+  }
+}
+
+function alreadyReloadedForThis(): boolean {
+  return reloadedRecentlyPerStorage() || reloadedRecentlyPerNavigationTiming()
+}
+
+function tryHardReload(): boolean {
+  if (alreadyReloadedForThis()) return false
   try {
     window.sessionStorage.setItem(LAST_RELOAD_KEY, String(Date.now()))
   } catch {
-    // ignore — see above
+    // ignore — guard #2 (Navigation Timing) still applies after the reload
   }
   window.location.reload()
   return true
 }
 
 export function installChunkErrorReload(): void {
+  if (installed) return
+  installed = true
   window.addEventListener('vite:preloadError', (event) => {
     if (tryHardReload()) {
       // Suppress Vite's default re-throw so React Router doesn't paint the
       // error page for a frame before the reload takes over.
       event.preventDefault()
     }
-    // Otherwise we're inside the cooldown: a genuinely broken chunk. Let
-    // Vite re-throw so the route's errorElement shows instead of looping.
+    // Otherwise we've already reloaded once for this: a genuinely broken
+    // chunk. Let Vite re-throw so the route's errorElement shows instead of
+    // looping.
   })
 }
