@@ -48,10 +48,12 @@ not a gap:
 - **Process entrypoints / worker-thread bootstraps**: `apps/backend/lib/bootstrap.ts`,
   `apps/backend/lib/provision.ts`, `apps/backend/lib/chat/tokenizer-worker/{runtime,script}.ts`,
   `apps/backend/lib/search/{runtime,script}.ts`, `apps/backend/lib/satellite/server.ts`,
-  `apps/backend/lib/tracing/telemetry.ts`, `apps/backend/lib/staticFrontendVite.ts`
-  (dev-only Vite middleware, never runs in production). These only make sense
+  `apps/backend/lib/tracing/telemetry.ts`. These only make sense
   exercised by actually booting the process — i.e. smoke.ts already does,
-  implicitly, every time it hits `/api/health`.
+  implicitly, every time it hits `/api/health`. `apps/backend/lib/staticFrontendVite.ts`
+  is mostly in this bucket (request routing, auth gate, asset streaming — all
+  exercised by smoke), but its `injectBootstrapData` HTML rewriting is pure
+  string logic and is unit-tested directly in `__tests__/injectBootstrapData.test.ts`.
 - **Thin external-API wrappers whose only logic is "make the HTTP/SDK call"**:
   the `invoke()` half of most `apps/backend/lib/tools/*/implementation.ts`
   tool implementations (calls to a real search/image/transcription provider).

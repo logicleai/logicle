@@ -42,18 +42,39 @@ function escapeForStyleTag(css: string): string {
   return css.replace(/<\/style>/gi, '<\\/style>')
 }
 
+function escapeHtmlText(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function escapeHtmlAttr(value: string): string {
+  return escapeHtmlText(value).replace(/"/g, '&quot;')
+}
+
 export async function injectBootstrapData(html: string): Promise<string> {
   const [environment, brand] = await Promise.all([getEnvironmentPayload(), getProvisionedBrandAssets()])
 
   const brandCss = brand.styles.map((s) => s.content).join('\n')
-  const headInjection = `<style id="${BRAND_CSS_ELEMENT_ID}">${escapeForStyleTag(brandCss)}</style></head>`
+  // Brand CSS goes at the very end of <body>, after everything else: its
+  // `:root` overrides (e.g. --primary) collide by name with the defaults in
+  // globals.css, so it only wins on document order, and it must beat both
+  // the built `<link>` stylesheet (prod) and the `<style>` Vite's dev server
+  // appends to <head> at runtime when main.tsx imports globals.css.
   const bodyInjection =
     `<script id="${ENVIRONMENT_ELEMENT_ID}" type="application/json">` +
     `${escapeForScriptTag(JSON.stringify(environment))}</script>` +
     `<script id="${BRAND_I18N_ELEMENT_ID}" type="application/json">` +
-    `${escapeForScriptTag(JSON.stringify(brand.i18n))}</script></body>`
+    `${escapeForScriptTag(JSON.stringify(brand.i18n))}</script>` +
+    `<style id="${BRAND_CSS_ELEMENT_ID}">${escapeForStyleTag(brandCss)}</style></body>`
 
-  return html.replace('</head>', headInjection).replace('</body>', bodyInjection)
+  // Title and favicon come from the same per-deployment environment payload
+  // rather than being fixed in index.html — set here so a brand's values are
+  // already in the served HTML, with no post-hydration swap (flash).
+  const faviconPath = environment.faviconPath || '/favicon.ico'
+
+  return html
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtmlText(environment.appDisplayName)}</title>`)
+    .replace(/<link\s+rel="icon"[^>]*>/i, `<link rel="icon" href="${escapeHtmlAttr(faviconPath)}" />`)
+    .replace('</body>', bodyInjection)
 }
 
 function redirect(res: ServerResponse, location: string) {
