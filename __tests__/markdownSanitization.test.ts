@@ -31,16 +31,37 @@ describe('Markdown HTML sanitization', () => {
     expect(html).toContain('<img src="https://example.com/image.png" alt="example"/>')
   })
 
-  test('allows only presentation-safe inline text styles', () => {
+  test('allows presentation styles but strips overlay/clickjacking properties', () => {
     const html = renderMarkdown(
       '<span style="color:green;font-weight:bold">styled</span>\n\n' +
-        '<span style="color: red; position: fixed; inset: 0">partially safe</span>'
+        '<span style="color: red; position: fixed; inset: 0; z-index: 99">partially safe</span>\n\n' +
+        '<p style="font-size:20px;text-align:center;font-family:Georgia,serif">rich</p>\n\n' +
+        '<span style="transform:translateY(-200px)">shifted</span>\n\n' +
+        '<div style="background:red;border-radius:16px;padding:14px 20px;color:white">box</div>'
     )
 
     expect(html).toContain('<span style="color:green;font-weight:bold">styled</span>')
     expect(html).toContain('<span style="color:red">partially safe</span>')
     expect(html).not.toContain('position')
     expect(html).not.toContain('inset')
+    expect(html).not.toContain('z-index')
+    expect(html).not.toContain('transform')
+    expect(html).toContain('font-size:20px')
+    expect(html).toContain('text-align:center')
+    expect(html).toContain('border-radius:16px')
+  })
+
+  test('strips style values that can fetch or execute', () => {
+    const html = renderMarkdown(
+      '<div style="background-image:url(https://evil.example/track.png)">tracked</div>\n\n' +
+        '<span style="color:red;background:url(javascript:alert(1))">x</span>\n\n' +
+        '<p style="width:@import url(x)">y</p>'
+    )
+
+    expect(html).not.toContain('evil.example')
+    expect(html).not.toContain('url(')
+    expect(html).not.toContain('@import')
+    expect(html).toContain('<span style="color:red">x</span>')
   })
 
   test('removes executable markup and unsafe URLs', () => {

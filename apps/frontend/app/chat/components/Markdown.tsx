@@ -25,13 +25,30 @@ const MermaidDiagram = React.lazy(() =>
   import('./MermaidDiagram').then((m) => ({ default: m.MermaidDiagram }))
 )
 
-const safeInlineStyleValues: Record<string, RegExp> = {
-  color: /^(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\([\d\s.,%+-]+\)|[a-z]+)$/i,
-  'background-color': /^(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\([\d\s.,%+-]+\)|[a-z]+)$/i,
-  'font-style': /^(?:italic|normal|oblique)$/i,
-  'font-weight': /^(?:bold|bolder|lighter|normal|[1-9]00)$/i,
-  'text-decoration': /^(?:line-through|underline)$/i,
-}
+// Inline styles from assistant output are allowed broadly — the product
+// deliberately supports rich HTML formatting — with two carve-outs that keep
+// the surface safe without an ever-growing property allowlist:
+//
+//  1. Properties that let an element escape the message flow and overlay the
+//     rest of the page (clickjacking) are dropped.
+//  2. Any value that can trigger a network fetch or code execution is dropped:
+//     `url(...)`, `image-set(...)`, `expression(...)`, `@import`, `javascript:`.
+//     This is the cheap equivalent of "strip attributes that carry URLs" —
+//     `background-image`, `list-style-image`, `cursor`, `content`, `mask`, …
+//     all funnel through `url()`, so one value check covers them.
+const blockedStyleProperties = new Set([
+  'position',
+  'inset',
+  'top',
+  'right',
+  'bottom',
+  'left',
+  'z-index',
+  'transform',
+  'pointer-events',
+])
+
+const unsafeStyleValue = /url\(|image-set\(|expression\(|@import|javascript:|[<>]/i
 
 const sanitizeInlineStyle = (style: string) =>
   style
@@ -41,7 +58,11 @@ const sanitizeInlineStyle = (style: string) =>
       if (separator === -1) return undefined
       const property = declaration.slice(0, separator).trim().toLowerCase()
       const value = declaration.slice(separator + 1).trim()
-      return safeInlineStyleValues[property]?.test(value) ? `${property}: ${value}` : undefined
+      if (!property || !value) return undefined
+      if (property.startsWith('--')) return undefined
+      if (blockedStyleProperties.has(property)) return undefined
+      if (unsafeStyleValue.test(value)) return undefined
+      return `${property}: ${value}`
     })
     .filter((declaration): declaration is string => declaration !== undefined)
     .join('; ')
@@ -63,11 +84,17 @@ export function rehypeFilterInlineStyles() {
 
 export const markdownSanitizeSchema = {
   ...defaultSchema,
+  // `defaultSchema` (GitHub's list) already covers the tags assistants actually
+  // emit for display — headings, lists, tables, `blockquote`, `details`/
+  // `summary`, `a`, `img`, `sub`/`sup`/`del`/`ins`, … — so this only adds the
+  // two inline-formatting tags GitHub omits. `<iframe>`, `<style>`, `<script>`,
+  // `<object>`, `<form>` and friends stay excluded.
   tagNames: [...(defaultSchema.tagNames ?? []), 'mark', 'u'],
   attributes: {
     ...defaultSchema.attributes,
-    mark: [...(defaultSchema.attributes?.mark ?? []), 'style'],
-    span: [...(defaultSchema.attributes?.span ?? []), 'style'],
+    // `style` is allowed on every element; its declarations are already
+    // filtered by `rehypeFilterInlineStyles` (runs before `rehypeSanitize`).
+    '*': [...(defaultSchema.attributes?.['*'] ?? []), 'style'],
   },
 }
 
