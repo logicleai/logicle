@@ -249,8 +249,7 @@ jobs:
           run_smoke "sqlite" "file:///data/sqlite/logicle.sqlite"
           run_smoke "postgres" "postgresql://admin:admin@host.docker.internal:5432/logicle"
 
-      - name: Run integration baseline checks (main/dispatch)
-        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+      - name: Run integration baseline checks
         run: |
           set -euo pipefail
           trap 'status=$?; if [ "$status" -ne 0 ]; then echo "Baseline test failed; dumping container logs"; docker logs logicle-smoke || true; fi' EXIT
