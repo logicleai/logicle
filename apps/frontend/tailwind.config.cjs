@@ -94,6 +94,9 @@ module.exports = {
       xl: ['24px', '32px'],
     },
     extend: {
+      fontFamily: {
+        sans: ['"Red Hat Display"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
       transitionProperty: {
         width: 'width',
         opacity: 'opacity',
