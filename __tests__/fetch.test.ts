@@ -3,11 +3,7 @@ import { fetchApiResponse, get, post, put, delete_, patch } from '@/lib/fetch'
 import * as authRedirect from '@/lib/authRedirect'
 
 // Helper to create a minimal Response-like object
-function makeResponse(
-  status: number,
-  body: unknown,
-  contentType = 'application/json'
-): Response {
+function makeResponse(status: number, body: unknown, contentType = 'application/json'): Response {
   return {
     ok: status >= 200 && status < 300,
     status,
@@ -43,9 +39,38 @@ describe('fetchApiResponse', () => {
     expect(result).toEqual({ data: undefined })
   })
 
-  test('throws when 200 but not JSON', async () => {
+  test('returns an error when 200 but not JSON', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeResponse(200, 'hello', 'text/plain')))
-    await expect(fetchApiResponse('/api/test')).rejects.toThrow('Expected application/json response')
+    const result = await fetchApiResponse('/api/test')
+    expect(result).toEqual({ error: { message: 'unexpected-response', values: {} } })
+  })
+
+  test('returns an error when fetch itself rejects (network failure)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
+    const result = await fetchApiResponse('/api/test')
+    expect(result).toEqual({ error: { message: 'network-error', values: {} } })
+  })
+
+  test('returns an error when 200 JSON body is malformed', async () => {
+    const response = makeResponse(200, null)
+    response.json = () => Promise.reject(new SyntaxError('Unexpected end of JSON input'))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
+    const result = await fetchApiResponse('/api/test')
+    expect(result).toEqual({ error: { message: 'unexpected-response', values: {} } })
+  })
+
+  test('falls back to the status error when a non-ok JSON body is malformed', async () => {
+    const response = makeResponse(500, null)
+    response.json = () => Promise.reject(new SyntaxError('Unexpected end of JSON input'))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
+    const result = await fetchApiResponse('/api/test')
+    expect(result).toEqual({ error: { code: 500, message: 'OK', values: {} } })
+  })
+
+  test('falls back to the status error when a non-ok JSON body has no error field', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeResponse(502, {})))
+    const result = await fetchApiResponse('/api/test')
+    expect(result).toEqual({ error: { code: 502, message: 'OK', values: {} } })
   })
 
   test('returns error body for non-ok JSON response', async () => {
@@ -84,7 +109,10 @@ describe('get', () => {
     const mockFetch = vi.fn().mockResolvedValue(makeResponse(200, { ok: true }))
     vi.stubGlobal('fetch', mockFetch)
     await get('/api/resource')
-    expect(mockFetch).toHaveBeenCalledWith('/api/resource', expect.objectContaining({ method: 'GET' }))
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/resource',
+      expect.objectContaining({ method: 'GET' })
+    )
   })
 })
 

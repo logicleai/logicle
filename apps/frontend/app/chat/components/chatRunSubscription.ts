@@ -45,7 +45,19 @@ export const maintainChatRunSubscription = async ({
       return
     }
 
-    const activeRun = await getActiveRun(conversationId)
+    // If we can't even find out whether the run is still active (backend
+    // unreachable, error response...), surface a failure rather than
+    // finishing silently or leaving the caller hanging.
+    let activeRun: dto.ChatRun | null | undefined
+    try {
+      activeRun = await getActiveRun(conversationId)
+    } catch (lookupError) {
+      if (signal.aborted || isCanceled()) {
+        return
+      }
+      onFailed(error ?? lookupError)
+      return
+    }
     if (signal.aborted || isCanceled()) {
       return
     }
