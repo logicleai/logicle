@@ -22,6 +22,8 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { userSecretRequiredMessage, userSecretUnreadableMessage } from '@/lib/userSecretMessages'
 import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
+import { UserVisibleError } from '@/backend/lib/chat/exceptions'
+import { logger } from '@/lib/logging'
 import { type SimpleSession } from '@/types/session'
 import { type Usage } from '@/backend/lib/chat/usage'
 import { warmCompressionCache } from '@/backend/lib/chat/compression-planner'
@@ -102,7 +104,8 @@ export const startServerChatRun = async ({
     return {
       ok: false,
       status: 400,
-      message: 'A chat run can only be started with a user message or a response to a pending request',
+      message:
+        'A chat run can only be started with a user message or a response to a pending request',
     }
   }
 
@@ -205,26 +208,35 @@ export const startServerChatRun = async ({
 
   const sink = publishQueuedEvents()
 
+  // Persist and publish an assistant message carrying only an error part, so
+  // that a failed run is visible both to live subscribers and after a reload.
+  const publishAssistantErrorMessage = async (errorText: string) => {
+    const chatState = new ChatState(linearThread)
+    const assistantMessage = chatState.appendMessage(chatState.createEmptyAssistantMsg())
+    const errorPart: dto.ErrorPart = { type: 'error', error: errorText }
+    chatState.applyStreamPart({ type: 'part', part: errorPart })
+    const updatedAssistantMessage =
+      chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
+    await saveAndAuditMessage(updatedAssistantMessage)
+    sink.enqueue({ type: 'message', msg: assistantMessage })
+    sink.enqueue({ type: 'part', part: errorPart })
+    await sink.drain()
+  }
+
   const execute = async () => {
     try {
       let resolvedProviderConfig = providerConfig
-      if ('apiKey' in resolvedProviderConfig && isUserProvidedApiKey(resolvedProviderConfig.apiKey)) {
+      if (
+        'apiKey' in resolvedProviderConfig &&
+        isUserProvidedApiKey(resolvedProviderConfig.apiKey)
+      ) {
         const resolution = await getUserSecretValue(session.userId, backend.id, USER_SECRET_TYPE)
         if (resolution.status !== 'ok') {
           const errorText =
             resolution.status === 'unreadable'
               ? userSecretUnreadableMessage
               : userSecretRequiredMessage()
-          const chatState = new ChatState(linearThread)
-          const assistantMessage = chatState.appendMessage(chatState.createEmptyAssistantMsg())
-          const errorPart: dto.ErrorPart = { type: 'error', error: errorText }
-          chatState.applyStreamPart({ type: 'part', part: errorPart })
-          const updatedAssistantMessage =
-            chatState.getLastMessageAssert<dto.AssistantMessage>('assistant')
-          await saveAndAuditMessage(updatedAssistantMessage)
-          sink.enqueue({ type: 'message', msg: assistantMessage })
-          sink.enqueue({ type: 'part', part: errorPart })
-          await sink.drain()
+          await publishAssistantErrorMessage(errorText)
           finalizeChatRun({ runId: run.id, status: 'failed' })
           return
         }
@@ -263,12 +275,20 @@ export const startServerChatRun = async ({
       })
     } catch (error) {
       await sink.drain().catch(() => undefined)
+      const stopped =
+        isChatRunAbortError(error, abortController.signal) ||
+        !!getChatRunById(run.id)?.stopRequestedAt
+      if (!stopped) {
+        // Failures reaching this point (e.g. provider construction) have not
+        // published any event: without a terminal error event subscribers
+        // would just see the stream close and report nothing at all.
+        logger.error('Chat run failed', error)
+        const errorText = error instanceof UserVisibleError ? error.message : 'Internal error'
+        await publishAssistantErrorMessage(errorText).catch(() => undefined)
+      }
       finalizeChatRun({
         runId: run.id,
-        status:
-          isChatRunAbortError(error, abortController.signal) || getChatRunById(run.id)?.stopRequestedAt
-            ? 'stopped'
-            : 'failed',
+        status: stopped ? 'stopped' : 'failed',
         error: error instanceof Error ? error.message : String(error),
       })
     }

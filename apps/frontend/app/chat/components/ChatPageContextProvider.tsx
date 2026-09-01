@@ -243,11 +243,26 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         },
         onFinished() {
           if (subscriptionNonceRef.current !== nonce) return
+          const machineState = chatRunMachineRef.current
+          const stopRequested =
+            isRunAttachedToConversation(machineState, conversationId, runId) &&
+            'stopRequested' in machineState &&
+            machineState.stopRequested
           const currentConversation = selectedConversationRef.current
           if (currentConversation?.id === conversationId) {
             const cleaned = removePlaceholderIfPresent(currentConversation)
             if (cleaned !== currentConversation) {
-              setSelectedConversationState(cleaned)
+              // The run finished without ever producing an assistant message.
+              // Unless the user stopped it, that's a failure the backend could
+              // not report: show it instead of silently dropping the placeholder.
+              setSelectedConversationState(
+                stopRequested
+                  ? cleaned
+                  : applyChatRunFailureToConversation({
+                      conversation: currentConversation,
+                      error: t('chat-response-failure'),
+                    })
+              )
             }
           }
           setChatRunMachineState(
