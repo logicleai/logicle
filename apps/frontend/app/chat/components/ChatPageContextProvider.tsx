@@ -17,7 +17,11 @@ import { ImageEditorModal } from './ImageEditorModal'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import { getActiveChatRun, startChatRun, stopChatRun, subscribeToChatRun } from '@/services/chat'
-import { createConversation, getConversation, getConversationMessages } from '@/services/conversation'
+import {
+  createConversation,
+  getConversation,
+  getConversationMessages,
+} from '@/services/conversation'
 import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { imageGenToolNames } from '@/lib/tools/tools'
@@ -46,7 +50,9 @@ interface Props {
 // /chat/<x> unambiguously means "an existing chat", never one of those.
 const chatIdFromPathname = (pathname: string): string | undefined => {
   const segments = pathname.split('/').filter(Boolean)
-  return segments.length === 2 && segments[0] === 'chat' ? decodeURIComponent(segments[1]) : undefined
+  return segments.length === 2 && segments[0] === 'chat'
+    ? decodeURIComponent(segments[1])
+    : undefined
 }
 
 export const ChatPageContextProvider: FC<Props> = ({ children }) => {
@@ -188,7 +194,12 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
           }),
         getActiveRun: async (conversationId) => {
           const response = await getActiveChatRun(conversationId)
-          return response.data?.run
+          if (response.error) {
+            // Don't mistake "couldn't ask" for "no active run": returning
+            // undefined here would end the run silently with no error shown.
+            throw new Error(response.error.message)
+          }
+          return response.data.run
         },
         waitForReconnect,
         onOpen() {
@@ -429,30 +440,43 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
       })
     )
 
-    const response = await startChatRun(userMessage)
-    if (response.error) {
+    const conversationId = conversation.id
+    const failSend = (message?: string) => {
       const latestConversation = selectedConversationRef.current
-      if (latestConversation?.id === conversation.id) {
+      if (latestConversation?.id === conversationId) {
         setSelectedConversationState(
           applyChatRunFailureToConversation({
             conversation: latestConversation,
-            error: t(response.error.message || 'chat-response-failure'),
+            error: t(message || 'chat-response-failure'),
           })
         )
       }
       setChatRunMachineState(
         transitionChatRunMachine(chatRunMachineRef.current, {
           type: 'run-finished',
-          conversationId: conversation.id,
+          conversationId,
         })
       )
-      return
     }
 
-    await subscribeRun({
-      conversationId: conversation.id,
-      runId: response.data.id,
-    })
+    // Callers fire and forget: nothing above us handles a rejection, so any
+    // throw here must be converted into a visible failure, or the chat would
+    // stay stuck on the thinking placeholder with no error shown.
+    try {
+      const response = await startChatRun(userMessage)
+      if (response.error) {
+        failSend(response.error.message)
+        return
+      }
+
+      await subscribeRun({
+        conversationId,
+        runId: response.data.id,
+      })
+    } catch (error) {
+      console.error(error)
+      failSend()
+    }
   }
 
   useEffect(() => {

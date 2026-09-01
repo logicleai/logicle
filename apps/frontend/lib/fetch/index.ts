@@ -84,11 +84,28 @@ export async function patchWithSignal<T = never>(
   })
 }
 
+const errorResponse = <T>(message: string): ApiResponse<T> => {
+  return {
+    error: {
+      message,
+      values: {},
+    },
+  } as ApiResponse<T>
+}
+
+// Never throws: transport failures and malformed bodies are converted to
+// ApiResponse errors, so that fire-and-forget callers can't be left hanging
+// on an unhandled rejection.
 export async function fetchApiResponse<T>(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<ApiResponse<T>> {
-  const response = await fetch(input, init)
+  let response: Response
+  try {
+    response = await fetch(input, init)
+  } catch {
+    return errorResponse('network-error')
+  }
   const isJson = response.headers.get('content-type')?.includes('application/json')
 
   if (response.status === 401) {
@@ -99,21 +116,30 @@ export async function fetchApiResponse<T>(
     if (response.status === 204) {
       return { data: undefined } as ApiResponse<T>
     } else if (!isJson) {
-      throw new Error('Expected application/json response')
-    } else {
+      return errorResponse('unexpected-response')
+    }
+    try {
       return { data: (await response.json()) as T } as ApiResponse<T>
+    } catch {
+      return errorResponse('unexpected-response')
     }
   } else {
     if (isJson) {
-      return (await response.json()) as ApiResponse<T>
-    } else {
-      return {
-        error: {
-          code: response.status,
-          message: response.statusText,
-          values: {},
-        },
-      } as ApiResponse<T>
+      try {
+        const body = (await response.json()) as ApiResponse<T>
+        if (body && typeof body === 'object' && body.error?.message) {
+          return body
+        }
+      } catch {
+        // fall through to the status-based error below
+      }
     }
+    return {
+      error: {
+        code: response.status,
+        message: response.statusText || 'unexpected-response',
+        values: {},
+      },
+    } as ApiResponse<T>
   }
 }
