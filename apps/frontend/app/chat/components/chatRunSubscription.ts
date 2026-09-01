@@ -2,6 +2,18 @@ import * as dto from '@/types/dto'
 
 const reconnectDelayMs = (attempt: number) => Math.min(250 * attempt, 1000)
 
+// Give up after this many consecutive reconnect attempts that make no
+// progress (no event received): an unreachable events endpoint would
+// otherwise be polled forever with the chat stuck in "receiving".
+const maxConsecutiveReconnectAttempts = 10
+
+// Keeps a subscription to a chat run alive until the run is no longer active.
+//
+// The subscribe promise resolving means the stream closed (cleanly or not):
+// as long as the server still reports the run as active we reconnect from the
+// last applied sequence, resetting the attempt counter whenever a connection
+// made progress. Every exit goes through exactly one of onFinished/onFailed,
+// unless the subscription was aborted or superseded.
 export const maintainChatRunSubscription = async ({
   conversationId,
   runId,
@@ -40,7 +52,30 @@ export const maintainChatRunSubscription = async ({
   onFailed: (error: unknown) => void
   isCanceled: () => boolean
 }) => {
-  const reconnectOrFinish = async (error?: unknown) => {
+  let currentAttempt = attempt
+  for (;;) {
+    if (signal.aborted || isCanceled()) {
+      return
+    }
+
+    let subscribeError: unknown
+    let receivedEvent = false
+    try {
+      await subscribe({
+        runId,
+        afterSequence: getAfterSequence(),
+        signal,
+        onOpen,
+        onEvent(event, sequence) {
+          receivedEvent = true
+          onEvent(event, sequence)
+        },
+        onClose() {},
+      })
+    } catch (error) {
+      subscribeError = error
+    }
+
     if (signal.aborted || isCanceled()) {
       return
     }
@@ -52,61 +87,36 @@ export const maintainChatRunSubscription = async ({
     try {
       activeRun = await getActiveRun(conversationId)
     } catch (lookupError) {
-      if (signal.aborted || isCanceled()) {
-        return
+      if (!signal.aborted && !isCanceled()) {
+        onFailed(subscribeError ?? lookupError)
       }
-      onFailed(error ?? lookupError)
       return
     }
     if (signal.aborted || isCanceled()) {
       return
     }
 
-    if (activeRun?.id === runId) {
-      const nextAttempt = attempt + 1
-      onReconnect(nextAttempt)
-      await waitForReconnect(reconnectDelayMs(nextAttempt), signal)
-      if (signal.aborted || isCanceled()) {
-        return
+    if (activeRun?.id !== runId) {
+      if (subscribeError) {
+        onFailed(subscribeError)
+      } else {
+        onFinished()
       }
-      await maintainChatRunSubscription({
-        conversationId,
-        runId,
-        attempt: nextAttempt,
-        signal,
-        getAfterSequence,
-        subscribe,
-        getActiveRun,
-        waitForReconnect,
-        onEvent,
-        onReconnect,
-        onFinished,
-        onFailed,
-        isCanceled,
-      })
       return
     }
 
-    if (error) {
-      onFailed(error)
+    currentAttempt = receivedEvent ? 1 : currentAttempt + 1
+    if (currentAttempt > maxConsecutiveReconnectAttempts) {
+      onFailed(subscribeError ?? new Error('Chat run subscription kept failing'))
       return
     }
 
-    onFinished()
-  }
-
-  try {
-    await subscribe({
-      runId,
-      afterSequence: getAfterSequence(),
-      signal,
-      onOpen,
-      onEvent,
-      onClose() {
-        void reconnectOrFinish()
-      },
-    })
-  } catch (error) {
-    await reconnectOrFinish(error)
+    onReconnect(currentAttempt)
+    try {
+      await waitForReconnect(reconnectDelayMs(currentAttempt), signal)
+    } catch {
+      // aborted while waiting
+      return
+    }
   }
 }
