@@ -7,7 +7,7 @@ import { Link } from '@/components/ui/link'
 import { PasswordInput } from '@/components/ui/password-input'
 import * as dto from '@/types/dto'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { FC, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -29,7 +29,6 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
 
   const searchParams = useSearchParams()
   const [errorMessage, setErrorMessage] = useState<string | null>(searchParams.get('error'))
-  const router = useRouter()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
@@ -79,7 +78,11 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
     }
   }
   const onSubmitSso = async (client_id: string) => {
-    router.push(`/api/auth/saml/login?connection=${encodeURIComponent(client_id)}`)
+    // SSO initiation is a backend route that answers with a redirect to the
+    // IdP — it must be a real browser navigation, not a client-side router
+    // push (which the SPA router would try to match against its own routes
+    // and 404 without ever hitting the server).
+    window.location.href = `/api/auth/saml/login?connection=${encodeURIComponent(client_id)}`
   }
   return (
     <div className="flex flex-col">
