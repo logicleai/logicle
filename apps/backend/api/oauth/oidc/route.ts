@@ -1,6 +1,6 @@
 import env from '@/lib/env'
 import { getClientConfig, getSsoFlowSession } from '@/lib/auth/oidc'
-import { resolveOidcEmailClaim } from '@/lib/auth/ssoIdentity'
+import { resolveOidcEmailClaim, resolveOidcNameClaim } from '@/lib/auth/ssoIdentity'
 import * as client from 'openid-client'
 import { getOrCreateUserByEmail } from '@/models/user'
 import { addSessionCookie } from '@/lib/auth/session'
@@ -52,7 +52,10 @@ export const GET = operation({
       }
 
       try {
-        const user = await getOrCreateUserByEmail(normalizedEmailOrSub)
+        const user = await getOrCreateUserByEmail(
+          normalizedEmailOrSub,
+          resolveOidcNameClaim(claims as Record<string, unknown>)
+        )
         if (!user.enabled) {
           return error(403, 'user-disabled')
         }

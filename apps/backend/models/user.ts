@@ -79,12 +79,37 @@ export const getUserByEmail = async (email: string): Promise<schema.User | undef
     .executeTakeFirst()
 }
 
-export const getOrCreateUserByEmail = async (email: string): Promise<schema.User> => {
+export const getOrCreateUserByEmail = async (
+  email: string,
+  displayName?: string | null
+): Promise<schema.User> => {
   const normalizedEmail = email.trim().toLowerCase()
-  const user = await getUserByEmail(normalizedEmail)
-  if (user) return user
+  const emailLocalPart = normalizedEmail.split('@')[0] || 'user'
+  const resolvedDisplayName = displayName?.trim() || null
 
-  const userName = normalizedEmail.split('@')[0] || 'user'
+  const user = await getUserByEmail(normalizedEmail)
+  if (user) {
+    // Older SSO logins provisioned users with their email local part as the
+    // display name because no name claim was read from the IdP. Backfill the
+    // real name once it becomes available, but never touch a SCIM-provisioned
+    // user or one an admin has since renamed.
+    if (
+      resolvedDisplayName &&
+      !user.provisioned &&
+      user.name === emailLocalPart &&
+      user.name !== resolvedDisplayName
+    ) {
+      await db
+        .updateTable('User')
+        .set({ name: resolvedDisplayName, updatedAt: new Date().toISOString() })
+        .where('id', '=', user.id)
+        .execute()
+      return { ...user, name: resolvedDisplayName }
+    }
+    return user
+  }
+
+  const userName = resolvedDisplayName || emailLocalPart
 
   try {
     return await createUser({

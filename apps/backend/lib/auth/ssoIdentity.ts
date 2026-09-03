@@ -27,6 +27,38 @@ function normalizeClaim(value: unknown): string | null {
   return normalized || null
 }
 
+function cleanName(value: unknown): string | null {
+  const normalized = String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return normalized || null
+}
+
+export function resolveOidcNameClaim(claims: Record<string, unknown>): string | null {
+  return (
+    cleanName(claims.name) ||
+    cleanName([claims.given_name, claims.family_name].filter(Boolean).join(' '))
+  )
+}
+
+export function findNameInSamlProfile(profile: Profile): string | null {
+  const p = profile as Record<string, unknown>
+  return (
+    cleanName(p.displayName) ||
+    cleanName(p['http://schemas.microsoft.com/identity/claims/displayname']) ||
+    cleanName(
+      [
+        p.givenName ??
+          p['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'],
+        p.surname ?? p['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname'],
+      ]
+        .filter(Boolean)
+        .join(' ')
+    )
+  )
+}
+
 export function findEmailInSamlProfile(profile: Profile): string | null {
   return (
     // Match the old BoxyHQ/Jackson outcome as closely as possible:
