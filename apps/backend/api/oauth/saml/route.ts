@@ -1,5 +1,5 @@
 // app/api/oauth/saml/route.ts (ACS URL)
-import { createSaml, findEmailInSamlProfile } from '@/lib/auth/saml'
+import { createSaml, findEmailInSamlProfile, findNameInSamlProfile } from '@/lib/auth/saml'
 import { addSessionCookie } from '@/lib/auth/session'
 import env from '@/lib/env'
 import { findIdpConnection } from '@/models/sso'
@@ -76,7 +76,7 @@ export const POST = operation({
       if (!email) {
         return error(400, 'SAML claims missing usable email')
       }
-      const user = await getOrCreateUserByEmail(email)
+      const user = await getOrCreateUserByEmail(email, findNameInSamlProfile(profile))
       if (!user.enabled) {
         return error(403, 'user-disabled')
       }

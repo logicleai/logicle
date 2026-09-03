@@ -3,7 +3,7 @@ export const runtime = 'nodejs'
 import { SAML } from '@node-saml/node-saml'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
-export { findEmailInSamlProfile } from './ssoIdentity'
+export { findEmailInSamlProfile, findNameInSamlProfile } from './ssoIdentity'
 
 export function createSaml(config: dto.SAMLConfig) {
   return new SAML({
