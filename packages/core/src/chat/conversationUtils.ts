@@ -18,13 +18,15 @@ export function extractLinearConversation(
 ): dto.Message[] {
   const msgMap = new Map<string, dto.Message>()
   messages.forEach((msg) => {
-    msgMap[msg.id] = msg
+    msgMap.set(msg.id, msg)
   })
 
   const list: dto.Message[] = []
   do {
     list.push(from)
-    from = msgMap[from.parent ?? 'none']
+    const parent = msgMap.get(from.parent ?? 'none')
+    if (!parent) break
+    from = parent
   } while (from)
   return list.slice().reverse()
 }

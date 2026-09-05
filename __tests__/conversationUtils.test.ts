@@ -47,6 +47,18 @@ describe('extractLinearConversation', () => {
     const m3 = userMsg('m3', 'm2') as dto.Message
     expect(extractLinearConversation([m1, m2, m3], m3)).toEqual([m1, m2, m3])
   })
+
+  test('resolves the persisted parent chain instead of dropping history', () => {
+    const root = userMsg('root', null) as dto.Message
+    const assistant = assistantMsg('assistant', 'root') as dto.Message
+    const current = userMsg('current', 'assistant') as dto.Message
+
+    expect(extractLinearConversation([root, assistant, current], current)).toEqual([
+      root,
+      assistant,
+      current,
+    ])
+  })
 })
 
 // ---- flatten ----
