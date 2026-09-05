@@ -64,6 +64,7 @@ export interface ChatPageContextProps {
     attachment: dto.Attachment,
     options?: { conversationId?: string; startNewChat?: boolean }
   ) => void
+  canEditImages?: boolean
 }
 
 const ChatPageContext = createContext<ChatPageContextProps>(undefined!)

@@ -76,21 +76,29 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
 
   const [imageEditorState, setImageEditorState] = useState<ImageEditorState | null>(null)
 
+  const {
+    state: { selectedConversation },
+    dispatch,
+  } = contextValue
+
+  const canEditImages = Boolean(
+    selectedConversation &&
+      userProfile?.assistants
+        .find((assistant) => assistant.id === selectedConversation.assistantId)
+        ?.tools.some((tool) => imageGenToolNames.has(tool.type))
+  )
+
   const openImageEditor = useCallback(
     (attachment: dto.Attachment, options?: { conversationId?: string; startNewChat?: boolean }) => {
+      if (!options?.startNewChat && !canEditImages) return
       setImageEditorState({
         attachment,
         conversationId: options?.conversationId,
         startNewChat: options?.startNewChat,
       })
     },
-    []
+    [canEditImages]
   )
-
-  const {
-    state: { selectedConversation },
-    dispatch,
-  } = contextValue
 
   const selectedConversationRef = useRef<ConversationWithMessages | undefined>(undefined)
   const chatRunMachineRef = useRef<ChatRunMachineState>(idleChatRunMachineState)
@@ -555,6 +563,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
         requestStopActiveRun,
         setSideBarContent,
         openImageEditor,
+        canEditImages,
       }}
     >
       {children}
