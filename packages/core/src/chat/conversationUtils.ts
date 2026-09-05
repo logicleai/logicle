@@ -24,7 +24,9 @@ export function extractLinearConversation(
   const list: dto.Message[] = []
   do {
     list.push(from)
-    from = msgMap.get(from.parent ?? 'none')
+    const parent = msgMap.get(from.parent ?? 'none')
+    if (!parent) break
+    from = parent
   } while (from)
   return list.slice().reverse()
 }
