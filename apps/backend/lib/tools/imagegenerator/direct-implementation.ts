@@ -23,6 +23,7 @@ import { recordImageGenerationEvent } from '@/backend/lib/imagegen/metering'
 import {
   generatedImageExtensionForMimeType,
   normalizeGeneratedImageMimeType,
+  prepareImageForEditing,
 } from '@/backend/lib/imagegen/files'
 import {
   isGeminiImageModel,
@@ -246,11 +247,11 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
       throw new Error(`Tool invocation required non existing file: ${fileId}`)
     }
     const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
-    return {
+    return await prepareImageForEditing({
       data: Buffer.from(ensureABView(fileContent)),
       fileName: fileEntry.name || 'upload.png',
       mimeType: fileEntry.type,
-    }
+    })
   }
 
   private async invokeEdit({

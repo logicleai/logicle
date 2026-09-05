@@ -22,6 +22,7 @@ import { ImagesResponse } from 'openai/resources/images'
 import { ensureABView } from '@/backend/lib/utils'
 import { LlmModel } from '@/lib/chat/models'
 import { shouldExposeImageEditingTool } from '@/backend/lib/imagegen/models'
+import { prepareImageForEditing } from '@/backend/lib/imagegen/files'
 import { materializeFile } from '@/backend/lib/files/materialize'
 import { resolveFileOwner } from '@/backend/lib/tools/ownership'
 
@@ -135,8 +136,13 @@ export class ImageGeneratorPlugin
     }
     // FIXME: doing an unsafe cast. There should be no problems with node
     const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
-    const blob = new Blob([ensureABView(fileContent)], { type: fileEntry.type })
-    return new File([blob], 'upload.png', { type: fileEntry.type })
+    const image = await prepareImageForEditing({
+      data: Buffer.from(ensureABView(fileContent)),
+      fileName: fileEntry.name || 'upload.png',
+      mimeType: fileEntry.type,
+    })
+    const blob = new Blob([ensureABView(image.data)], { type: image.mimeType })
+    return new File([blob], image.fileName, { type: image.mimeType })
   }
 
   private async invokeEdit({
