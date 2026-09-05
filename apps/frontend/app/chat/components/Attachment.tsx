@@ -21,7 +21,7 @@ export const isImage = (mimeType: string) => {
 
 export const Attachment = ({ file, uiHidden, className, conversationId }: AttachmentProps) => {
   const { t } = useTranslation()
-  const { openImageEditor } = useContext(ChatPageContext)
+  const { openImageEditor, canEditImages } = useContext(ChatPageContext)
 
   if (uiHidden) return null
 
@@ -47,7 +47,7 @@ export const Attachment = ({ file, uiHidden, className, conversationId }: Attach
           </div>
         )}
         <div className="flex flex-horz m-2 gap-1 absolute top-0 right-0 invisible group-hover/attachment:visible">
-          {isImage(file.fileType) && openImageEditor && file.fileId && (
+          {isImage(file.fileType) && canEditImages && openImageEditor && file.fileId && (
             <button
               type="button"
               title={t('edit-image')}

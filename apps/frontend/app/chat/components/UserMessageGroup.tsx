@@ -42,7 +42,14 @@ export const UserMessageGroup: FC<Props> = ({ group }) => {
         {uploads.length !== 0 && (
           <div className="flex flex-col gap-2">
             {uploads.map((file) => {
-              return <Attachment key={file.fileId} file={file} className="w-[250px]"></Attachment>
+              return (
+                <Attachment
+                  key={file.fileId}
+                  file={file}
+                  className="w-[250px]"
+                  conversationId={group.message.conversationId}
+                />
+              )
             })}
           </div>
         )}
