@@ -396,6 +396,31 @@ export const AssistantMessageGroup: FC<Props> = ({ assistant, group, isLast, sha
                   assistantSubAssistants={assistant.subAssistants}
                   assistantId={assistant.id}
                 ></AssistantGroupMessage>
+                {message.role === 'assistant' &&
+                  message.finishReason === 'length' &&
+                  isLast &&
+                  index + 1 === group.messages.length && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>{t('response-truncated')}</span>
+                      {chatStatus.state === 'idle' && sendMessage && (
+                        <Button
+                          variant="secondary"
+                          size="small"
+                          onClick={() =>
+                            sendMessage({
+                              msg: {
+                                role: 'user',
+                                content: t('continue-response-prompt'),
+                                attachments: [],
+                              },
+                            })
+                          }
+                        >
+                          {t('continue')}
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 {message.error && (
                   <MessageError error={message.error} msgId={message.id}></MessageError>
                 )}

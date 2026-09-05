@@ -200,6 +200,14 @@ export type MessageRole =
   | 'user-request'
   | 'user-response'
 
+export type FinishReason =
+  | 'stop'
+  | 'length'
+  | 'content-filter'
+  | 'tool-calls'
+  | 'error'
+  | 'other'
+
 export interface BaseMessage {
   id: string
   conversationId: string
@@ -262,6 +270,8 @@ export type AssistantMessagePart =
 export type AssistantMessage = BaseMessage & {
   role: 'assistant'
   parts: AssistantMessagePart[]
+  /** Why the model stopped generating this assistant response. */
+  finishReason?: FinishReason
 }
 
 export type UserRequestMessage = BaseMessage & {
@@ -351,6 +361,11 @@ interface TextStreamPartSummary extends TextStreamPartGeneric {
   summary: string
 }
 
+interface TextStreamPartFinish extends TextStreamPartGeneric {
+  type: 'finish'
+  finishReason: FinishReason
+}
+
 /** Emitted once per assistant turn, right after the LLM call finishes — carries the same token
  * counts already computed for DB persistence (see apps/backend/lib/chat/usage.ts's `Usage`), just
  * surfaced to the stream consumer too. Never mutates message history (see streamApply.ts). */
@@ -370,6 +385,7 @@ export type TextStreamPart =
   | TextStreamPartCitations
   | TextStreamPartUserRequest
   | TextStreamPartSummary
+  | TextStreamPartFinish
   | TextStreamPartUsage
 
 export const messageSchema = z.record(z.string(), z.unknown()) as unknown as z.ZodType<Message>

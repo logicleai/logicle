@@ -33,6 +33,7 @@
   "allow-workspace": "Allow workspace members to login using an Identity Provider.",
   "connect": "Connect",
   "continue": "Continue",
+  "continue-response-prompt": "Continue the previous response from where you stopped.",
   "continue-after-connect": "Continue after connect",
   "already-have-an-account": "Already have an account?",
   "analytics": "Analytics",

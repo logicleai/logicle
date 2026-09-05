@@ -1031,6 +1031,8 @@ export class ChatAssistant {
               message: chunk.rawFinishReason ?? 'LLM sent an error finish chunk',
             })
           }
+          chatState.applyStreamPart({ type: 'finish', finishReason: chunk.finishReason })
+          clientSink.enqueue({ type: 'finish', finishReason: chunk.finishReason })
         } else if (chunk.type === 'error') {
           if (ai.AISDKError.isInstance(chunk.error)) {
             throw chunk.error
