@@ -76,6 +76,16 @@ export function applyStreamPartToMessage(
     }
   }
 
+  if (streamPart.type === 'finish') {
+    if (message.role !== 'assistant') {
+      throw new Error('Received finish event for non-assistant message')
+    }
+    return {
+      ...message,
+      finishReason: streamPart.finishReason,
+    }
+  }
+
   if (streamPart.type === 'citations') {
     return {
       ...message,

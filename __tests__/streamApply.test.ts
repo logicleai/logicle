@@ -148,6 +148,26 @@ describe('applyStreamPartToMessage – citations', () => {
   })
 })
 
+describe('applyStreamPartToMessage – finish reason', () => {
+  test('persists the model finish reason on an assistant message', () => {
+    const result = applyStreamPartToMessage(assistantMsg(), {
+      type: 'finish',
+      finishReason: 'length',
+    }) as dto.AssistantMessage
+
+    expect(result.finishReason).toBe('length')
+  })
+
+  test('throws for a finish event on a non-assistant message', () => {
+    expect(() =>
+      applyStreamPartToMessage(userMsg(), {
+        type: 'finish',
+        finishReason: 'stop',
+      })
+    ).toThrow('non-assistant message')
+  })
+})
+
 describe('applyStreamPartToMessage – attachment', () => {
   test('appends attachment to user message', () => {
     const attachment: dto.Attachment = { id: 'f1', mimetype: 'image/png', name: 'img.png', size: 100 }
