@@ -22,6 +22,7 @@ import {
 import { IconArrowNarrowDown, IconCalendar, IconClock, IconSortAZ } from '@tabler/icons-react'
 import { useUiState } from '@/components/providers/uistate'
 import * as RovingFocus from '@radix-ui/react-roving-focus'
+import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 
 const EMPTY_ASSISTANT_NAME = ''
 
@@ -33,6 +34,7 @@ const SelectAssistantPage = () => {
   const { t } = useTranslation()
   const router = useRouter()
   const profile = useUserProfile()
+  const { isMobile } = useLayoutConfig()
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [tagsFilter, setTagsFilter] = useState<string | null>(null)
   const [ordering, setOrdering] = useUiState<Ordering>('assistants_select_ordering', 'lastused')
@@ -100,36 +102,31 @@ const SelectAssistantPage = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex flex-1 h-full w-full justify-center">
-        <div className="flex flex-1 flex-col gap-2 max-w-[1440px] w-5/6 px-4 py-6">
-          <div className="relative">
+      <div className="flex h-full w-full flex-1 justify-center">
+        <div className="flex w-full max-w-[1440px] flex-1 flex-col gap-3 px-3 py-4 sm:w-5/6 sm:px-4 sm:py-6">
+          <div className="flex items-center justify-between gap-3">
             <h1 className="text-center">{t('select-assistant')}</h1>
-            <Button
-              className="absolute right-0 top-1/2 -translate-y-1/2"
-              onClick={gotoMyAssistants}
-            >
-              {t('my-assistants')}
-            </Button>
+            {!isMobile && <Button onClick={gotoMyAssistants}>{t('my-assistants')}</Button>}
           </div>
-          <div className="flex-1 flex min-h-0 flex-row gap-2">
-            <div className="h-full w-[220px] flex flex-col">
-              <h2 className="p-2">{t('tags')}</h2>
-              <ScrollArea className="scroll-workaround h-full p-2">
-                <RovingFocus.Root orientation="vertical" loop>
-                  <ul>
+          <div className="flex min-h-0 flex-1 flex-col gap-3 md:flex-row">
+            <div className="flex w-full shrink-0 flex-col md:h-full md:w-[220px]">
+              <h2 className="hidden p-2 md:block">{t('tags')}</h2>
+              <ScrollArea className="scroll-workaround w-full md:h-full md:p-2">
+                <RovingFocus.Root orientation={isMobile ? 'horizontal' : 'vertical'} loop>
+                  <ul className="flex gap-1 pb-1 md:block md:space-y-1">
                     {tags.map((tag) => (
-                    <li
-                      key={tag?.key ?? ''}
-                      className={`flex items-center py-1 px-1 gap-2 rounded hover:bg-gray-100 ${
-                        tagsFilter === tag?.key ? 'bg-secondary-hover' : ''
-                      }`}
-                    >
+                      <li
+                        key={tag?.key ?? ''}
+                        className={`flex shrink-0 items-center gap-2 rounded px-1 py-1 hover:bg-gray-100 ${
+                          tagsFilter === tag?.key ? 'bg-secondary-hover' : ''
+                        }`}
+                      >
                         <RovingFocus.Item asChild>
                           <button
                             type="button"
                             role="option"
                             aria-selected={tagsFilter === tag?.key}
-                            className="w-full text-left px-2 py-1 text-small rounded ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            className="w-full whitespace-nowrap rounded px-2 py-1 text-left text-small ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             onClick={() => setTagsFilter(tag?.key ?? null)}
                           >
                             <span className="flex-1 first-letter:capitalize truncate block overflow-hidden">
@@ -143,7 +140,7 @@ const SelectAssistantPage = () => {
                 </RovingFocus.Root>
               </ScrollArea>
             </div>
-            <div className="h-full flex-1 flex flex-col gap-3">
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
               <SearchBarWithButtonsOnRight
                 searchTerm={searchTerm}
                 onSearchTermChange={setSearchTerm}
@@ -176,7 +173,7 @@ const SelectAssistantPage = () => {
                 {
                   //     grid-template-columns: repeat(auto-fill, minmax(max(var(--max-item-width), calc((100% - var(--gap) * (var(--rows) - 1)) / var(--rows))), 1fr));
                 }
-                <div className="grid grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(max(300px,calc((100%-1rem*2)/3)),1fr))] m-auto">
+                <div className="m-auto grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {availableAssistants
                     .filter(filterWithSearch)
                     .filter(filterWithTags)

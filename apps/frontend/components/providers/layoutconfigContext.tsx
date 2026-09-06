@@ -19,7 +19,12 @@ type Props = {
  * @returns {boolean}
  */
 function useBetterMediaQuery(mediaQueryString): boolean {
-  const [matches, setMatches] = useState<boolean>(undefined!)
+  // The frontend is client-rendered, so read the initial value synchronously.
+  // Apart from avoiding a desktop-layout flash on a phone, this prevents
+  // mobile-only route guards from briefly mounting their expensive page.
+  const [matches, setMatches] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.matchMedia(mediaQueryString).matches
+  )
 
   useEffect(() => {
     const mediaQueryList = window.matchMedia(mediaQueryString)

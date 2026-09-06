@@ -97,7 +97,8 @@ export const ChatInput = ({
   const environment = useEnvironment()
   const model = environment.models.find((candidate) => candidate.id === modelId)
   const hardLimitReached =
-    (environment.hardMessageLimit !== undefined && (userMessageCount ?? 0) >= environment.hardMessageLimit) ||
+    (environment.hardMessageLimit !== undefined &&
+      (userMessageCount ?? 0) >= environment.hardMessageLimit) ||
     !!locked
   const [isTyping, setIsTyping] = useState<boolean>(false)
   // using useState to keep the state of the uploads does not work, as xhr callbacks will not "pick up"
@@ -475,7 +476,11 @@ export const ChatInput = ({
     setRefresh(Math.random())
   }
   return (
-    <div onDrop={handleDrop} onDragOver={(event) => event.preventDefault()} className="pt-.5 px-4">
+    <div
+      onDrop={handleDrop}
+      onDragOver={(event) => event.preventDefault()}
+      className="px-3 pt-0.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-4"
+    >
       <div className="max-w-[48em] mx-auto w-full">
         <div className="relative flex flex-col rounded-md border">
           <UploadList files={uploadedFiles.current} onDelete={handleDelete} modelId={modelId} />
@@ -504,7 +509,11 @@ export const ChatInput = ({
               className="absolute right-2 bottom-2 opacity-60"
               size="icon"
               variant="secondary"
-              disabled={disabled || hardLimitReached || (chatStatus.state === 'receiving' && !!chatStatus.stopRequested)}
+              disabled={
+                disabled ||
+                hardLimitReached ||
+                (chatStatus.state === 'receiving' && !!chatStatus.stopRequested)
+              }
               onClick={() => handleStopConversation()}
             >
               <IconPlayerStopFilled size={18} />

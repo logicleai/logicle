@@ -21,7 +21,10 @@ import * as dto from '@/types/dto'
 import { UserDialog } from './UserDialog'
 import { redirect } from 'next/navigation'
 
-type Params = Record<string, never>
+type Params = {
+  /** Keep the mobile shell focused on conversations; logout remains available. */
+  chatOnly?: boolean
+}
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
@@ -41,7 +44,7 @@ DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 
 DropdownMenuContent.displayName = 'DropdownMenuContent'
 
-export const AppMenu: FC<Params> = () => {
+export const AppMenu: FC<Params> = ({ chatOnly = false }) => {
   const { t } = useTranslation()
   const dropdownContainer = createRef<HTMLDivElement>()
   const userProfile = useUserProfile()
@@ -62,18 +65,22 @@ export const AppMenu: FC<Params> = () => {
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuButton icon={IconUser} onClick={async () => setShowUserDialog(true)}>
-            {t('my-profile')}
-          </DropdownMenuButton>
-          <DropdownMenuLink href="/chat/assistants/mine" icon={IconUserCode}>
-            {t('my-assistants')}
-          </DropdownMenuLink>
-          {userProfile?.role === dto.UserRole.ADMIN && (
-            <DropdownMenuLink href="/admin/analytics" icon={IconSettings}>
-              {t('administrator-settings')}
-            </DropdownMenuLink>
+          {!chatOnly && (
+            <>
+              <DropdownMenuButton icon={IconUser} onClick={async () => setShowUserDialog(true)}>
+                {t('my-profile')}
+              </DropdownMenuButton>
+              <DropdownMenuLink href="/chat/assistants/mine" icon={IconUserCode}>
+                {t('my-assistants')}
+              </DropdownMenuLink>
+              {userProfile?.role === dto.UserRole.ADMIN && (
+                <DropdownMenuLink href="/admin/analytics" icon={IconSettings}>
+                  {t('administrator-settings')}
+                </DropdownMenuLink>
+              )}
+              <DropdownMenuSeparator />
+            </>
           )}
-          <DropdownMenuSeparator />
           <DropdownMenuButton
             variant="destructive"
             onClick={async () => await signOut()}
@@ -84,7 +91,9 @@ export const AppMenu: FC<Params> = () => {
         </DropdownMenuContent>
         <DropdownMenuPortal container={dropdownContainer.current}></DropdownMenuPortal>
       </DropdownMenu>
-      {showUserDialog && <UserDialog onClose={() => setShowUserDialog(false)}></UserDialog>}
+      {!chatOnly && showUserDialog && (
+        <UserDialog onClose={() => setShowUserDialog(false)}></UserDialog>
+      )}
     </div>
   )
 }
