@@ -17,6 +17,8 @@ data:
   CHAT_ATTACHMENTS_ALLOWED_FORMATS: "{{ .Values.config.CHAT_ATTACHMENTS_ALLOWED_FORMATS }}"
   PROVISION_PATH: "/provisioning"
   FILE_STORAGE_LOCATION: "{{ if eq .Values.storage.type "s3" }}s3://{{ .Values.storage.s3.bucket_name }}{{ else }}/data/files{{ end }}"
+  FILE_STORAGE_ENCRYPTION_ENABLE: "{{ if .Values.storage.encryption.enabled }}1{{ else }}0{{ end }}"
+  FILE_STORAGE_ENCRYPTION_PROVIDER: "{{ .Values.storage.encryption.provider }}"
   ASSISTANT_KNOWLEDGE: "prompt"
   OPENAI_USE_RESPONSE_APIS: "1"
   OTEL_EXPORTER_OTLP_ENDPOINT: "{{ .Values.opentelemetry.endpoint }}"
