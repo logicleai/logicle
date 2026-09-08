@@ -95,6 +95,11 @@ export const markdownSanitizeSchema = {
     // `style` is allowed on every element; its declarations are already
     // filtered by `rehypeFilterInlineStyles` (runs before `rehypeSanitize`).
     '*': [...(defaultSchema.attributes?.['*'] ?? []), 'style'],
+    // `remarkAddBlockCodeFlag` tags fenced-code nodes with this so the `code`
+    // renderer can tell a block fence from inline code; without it in the
+    // allowlist `rehypeSanitize` strips it and every fence falls back to plain
+    // inline `<code>` (no copy/word-wrap controls, no syntax highlighting).
+    code: [...(defaultSchema.attributes?.code ?? []), 'isBlockCode'],
   },
 }
 
