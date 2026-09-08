@@ -11,6 +11,7 @@ const LEDGER_TABLE = 'FileBlobEncryptionRewrite'
 type Options = {
   apply: boolean
   limit?: number
+  continueOnError: boolean
 }
 
 type BlobRow = {
@@ -30,7 +31,7 @@ type LedgerRow = {
 }
 
 const usage = () => {
-  console.error('Usage: reencrypt-file-blobs [--apply] [--limit N]')
+  console.error('Usage: reencrypt-file-blobs [--apply] [--limit N] [--continue-on-error]')
   console.error('Without --apply the command only reports the plaintext backlog.')
 }
 
@@ -38,6 +39,7 @@ const parseOptions = (): Options => {
   const args = process.argv.slice(2)
   let apply = false
   let limit: number | undefined
+  let continueOnError = false
   for (let index = 0; index < args.length; index++) {
     const arg = args[index]
     if (arg === '--apply') {
@@ -53,10 +55,14 @@ const parseOptions = (): Options => {
       limit = value
       continue
     }
+    if (arg === '--continue-on-error') {
+      continueOnError = true
+      continue
+    }
     usage()
     process.exit(2)
   }
-  return { apply, limit }
+  return { apply, limit, continueOnError }
 }
 
 const hash = (buffer: Uint8Array) => createHash('sha256').update(buffer).digest('hex')
@@ -243,32 +249,43 @@ const rewriteOne = async (blob: BlobRow) => {
   await cleanupCommittedLedger({ fileBlobId: blob.id, oldPath, newPath, status: 'committed' })
 }
 
-const resumePendingLedgers = async () => {
+const resumePendingLedgers = async (continueOnError: boolean) => {
   for (const ledger of await getPendingLedgers()) {
-    if (ledger.status === 'committed') {
-      await cleanupCommittedLedger(ledger)
-      continue
-    }
+    try {
+      if (ledger.status === 'committed') {
+        await cleanupCommittedLedger(ledger)
+        continue
+      }
 
-    const blob = await db
-      .selectFrom('FileBlob')
-      .select(['id', 'contentHash', 'path', 'type', 'size', 'encryption'])
-      .where('id', '=', ledger.fileBlobId)
-      .executeTakeFirst()
-    if (!blob) {
-      throw new Error(`FileBlob ${ledger.fileBlobId} from rewrite ledger no longer exists`)
-    }
-    if (blob.encryption === TARGET_ENCRYPTION && blob.path === ledger.newPath) {
-      await markLedger(ledger.fileBlobId, 'committed')
-      await cleanupCommittedLedger({ ...ledger, status: 'committed' })
-      continue
-    }
-    if (blob.encryption !== null) {
-      throw new Error(
-        `refusing to resume ${ledger.fileBlobId}: unexpected encryption ${String(blob.encryption)}`
+      const blob = await db
+        .selectFrom('FileBlob')
+        .select(['id', 'contentHash', 'path', 'type', 'size', 'encryption'])
+        .where('id', '=', ledger.fileBlobId)
+        .executeTakeFirst()
+      if (!blob) {
+        throw new Error(`FileBlob ${ledger.fileBlobId} from rewrite ledger no longer exists`)
+      }
+      if (blob.encryption === TARGET_ENCRYPTION && blob.path === ledger.newPath) {
+        await markLedger(ledger.fileBlobId, 'committed')
+        await cleanupCommittedLedger({ ...ledger, status: 'committed' })
+        continue
+      }
+      if (blob.encryption !== null) {
+        throw new Error(
+          `refusing to resume ${ledger.fileBlobId}: unexpected encryption ${String(
+            blob.encryption
+          )}`
+        )
+      }
+      await rewriteOne(blob as BlobRow)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      await markLedger(ledger.fileBlobId, 'prepared', message).catch(() => undefined)
+      if (!continueOnError) throw error
+      console.error(
+        JSON.stringify({ action: 'rewrite-error', fileBlobId: ledger.fileBlobId, error: message })
       )
     }
-    await rewriteOne(blob as BlobRow)
   }
 }
 
@@ -286,7 +303,7 @@ const main = async () => {
   try {
     const backlog = await countPlaintext()
     console.log(JSON.stringify({ mode: 'apply', ...backlog }))
-    await resumePendingLedgers()
+    await resumePendingLedgers(options.continueOnError)
 
     let query = db
       .selectFrom('FileBlob')
@@ -311,7 +328,10 @@ const main = async () => {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         await markLedger(blob.id, 'prepared', message).catch(() => undefined)
-        throw new Error(`blob ${blob.id} failed: ${message}`)
+        if (!options.continueOnError) throw new Error(`blob ${blob.id} failed: ${message}`)
+        console.error(
+          JSON.stringify({ action: 'rewrite-error', fileBlobId: blob.id, error: message })
+        )
       }
     }
   } finally {

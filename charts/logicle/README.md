@@ -47,4 +47,8 @@ The chart passes the encryption switch and provider through the ConfigMap and
 stores the key in the generated Secret. Existing plaintext blobs are not
 rewritten automatically. Use the explicit `dist-reencrypt/reencrypt-file-blobs.js`
 utility after reviewing its dry-run output before enabling encryption for a
-tenant with existing files.
+tenant with existing files. The utility stops on the first read or verification
+error by default. For a tenant with known missing legacy objects, pass
+`--continue-on-error` only after recording those objects for manual recovery;
+each failed blob remains plaintext and is kept in the rewrite ledger with its
+error instead of being marked encrypted.
