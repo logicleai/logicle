@@ -64,6 +64,18 @@ describe('Markdown HTML sanitization', () => {
     expect(html).toContain('<span style="color:red">x</span>')
   })
 
+  test('keeps the fenced-code flag so blocks render as CodeBlock, not inline <code>', async () => {
+    const { markdownSanitizeSchema } = await import('@/frontend/app/chat/components/Markdown')
+    // `rehypeSanitize` must not strip the `isBlockCode` hProperty set by
+    // `remarkAddBlockCodeFlag`; otherwise every fence falls back to inline
+    // <code> (no copy/word-wrap buttons, no syntax highlighting).
+    expect(markdownSanitizeSchema.attributes.code).toContain('isBlockCode')
+
+    // And a fenced block must not come out as an inline language-tagged <code>.
+    const html = renderMarkdown('```js\nconst a = 1\n```\n')
+    expect(html).not.toContain('<code class="language-js"')
+  })
+
   test('removes executable markup and unsafe URLs', () => {
     const html = renderMarkdown(`
 <script>alert('xss')</script>
