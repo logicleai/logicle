@@ -32,12 +32,15 @@ async function search(query: string, userId: string): Promise<dto.ConversationWi
       )
       .selectAll('Conversation')
       .select('ConversationFolderMembership.folderId')
-      .where((eb) =>
-        eb.or([
-          eb('Conversation.name', 'like', `%${query}%`),
-          eb('Message.content', 'like', `%${query}%`),
+      .where((eb) => {
+        // Case-insensitive match. SQLite's LIKE already ignores ASCII case, but
+        // Postgres' does not, so lower() both sides for consistent behavior.
+        const needle = `%${query.toLowerCase()}%`
+        return eb.or([
+          eb(eb.fn('lower', ['Conversation.name']), 'like', needle),
+          eb(eb.fn('lower', ['Message.content']), 'like', needle),
         ])
-      )
+      })
       .where('Conversation.ownerId', '=', userId)
       .distinct()
       .limit(20)
