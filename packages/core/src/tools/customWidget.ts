@@ -30,24 +30,30 @@ export const imageItemSchema = z.object({
 })
 export type ImageItem = z.infer<typeof imageItemSchema>
 
-export const imageCompareSpecSchema = z
-  .object({
-    type: z.literal('image-compare'),
-    autoplay: z.boolean().optional(),
-    duration: z.number().positive().optional(),
-    items: z
-      .tuple([imageItemSchema, imageItemSchema])
-      .describe('Exactly two images: [0] is shown first, [1] on toggle'),
-  })
-  .strict()
+// Widget schemas intentionally strip (not reject) unknown keys: models tend to
+// pass presentation hints like `autoplay`/`duration` on every widget out of
+// habit, and failing the whole call over an extra key is worse than ignoring
+// it. Typos in known fields are still caught. `autoplay`/`duration` are
+// accepted on any widget and currently ignored by the renderers.
+const widgetCommon = {
+  autoplay: z.boolean().optional(),
+  duration: z.number().nonnegative().optional(),
+}
+
+export const imageCompareSpecSchema = z.object({
+  type: z.literal('image-compare'),
+  ...widgetCommon,
+  items: z
+    .tuple([imageItemSchema, imageItemSchema])
+    .describe('Exactly two images: [0] is shown first, [1] on toggle'),
+})
 export type ImageCompareSpec = z.infer<typeof imageCompareSpecSchema>
 
-export const imageCarouselSpecSchema = z
-  .object({
-    type: z.literal('image-carousel'),
-    items: z.array(imageItemSchema).min(1).max(24),
-  })
-  .strict()
+export const imageCarouselSpecSchema = z.object({
+  type: z.literal('image-carousel'),
+  ...widgetCommon,
+  items: z.array(imageItemSchema).min(1).max(24),
+})
 export type ImageCarouselSpec = z.infer<typeof imageCarouselSpecSchema>
 
 export const widgetSpecSchema = z.discriminatedUnion('type', [
@@ -111,11 +117,11 @@ export const renderWidgetParametersJsonSchema = {
     },
     autoplay: {
       type: 'boolean',
-      description: 'image-compare only; optional; may be ignored by the renderer',
+      description: 'Optional presentation hint; currently ignored by the renderer',
     },
     duration: {
       type: 'number',
-      description: 'image-compare only; optional autoplay interval in ms; may be ignored',
+      description: 'Optional autoplay interval in ms (>= 0); currently ignored by the renderer',
     },
   },
 } as const

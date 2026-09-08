@@ -73,6 +73,29 @@ describe('custom_widget render_widget', () => {
     expect(canAccessFile).not.toHaveBeenCalled()
   })
 
+  test('accepts stray presentation hints (autoplay, duration:0) on any widget', async () => {
+    const fn = await getRenderWidget()
+    const result = await fn.invoke(
+      invokeParams({
+        type: 'image-carousel',
+        items: [{ fileId: 'a' }],
+        autoplay: false,
+        duration: 0,
+      })
+    )
+    expect(result).toEqual({
+      type: 'json',
+      value: {
+        customWidget: {
+          type: 'image-carousel',
+          autoplay: false,
+          duration: 0,
+          items: [{ fileId: 'a' }],
+        },
+      },
+    })
+  })
+
   test('rejects image-compare without exactly two items', async () => {
     const fn = await getRenderWidget()
     const result = await fn.invoke(

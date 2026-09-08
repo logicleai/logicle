@@ -80,8 +80,8 @@ Single function exposed to the model. Parameters (JSON Schema in
 | ---------- | ------------------------------------- | ------------------------------------------------------------------------ |
 | `type`     | `"image-compare" \| "image-carousel"` | required                                                                 |
 | `items`    | array of `{ fileId, label?, alt? }`   | required; **exactly two** for `image-compare`, 1–24 for `image-carousel` |
-| `autoplay` | boolean                               | `image-compare` only, optional, currently ignored by the renderer        |
-| `duration` | number (ms)                           | `image-compare` only, optional, currently ignored                        |
+| `autoplay` | boolean                               | optional presentation hint, currently ignored by the renderer            |
+| `duration` | number (ms, >= 0)                     | optional, currently ignored                                              |
 
 `fileId` must reference an **image** file already present in the conversation
 (uploaded by the user or produced by an earlier tool call).
@@ -180,5 +180,8 @@ looks image-related). Not worth the indirection for two widgets.
   user can still reference their own image from another of their conversations.)
 - No HTML/CSS/JS from the model is ever parsed or rendered. Widget markup is
   emitted entirely by trusted React components.
-- `image-compare` extra fields (`autoplay`, `duration`) are accepted but not
-  acted upon; `.strict()` schemas reject any other unknown field.
+- `autoplay` / `duration` are accepted on any widget but not acted upon. The
+  spec schemas **strip** unknown keys rather than rejecting them: models tend to
+  attach stray presentation hints, and failing the whole call over an extra key
+  is worse than ignoring it. Typos in known fields are still validation errors,
+  and an unknown `type` still fails closed.
