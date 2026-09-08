@@ -62,7 +62,7 @@ async function fetchUpdatedAfter(
 ): Promise<ConversationRow[]> {
   return db
     .selectFrom('Conversation')
-    .select(['id', 'lastMsgSentAt'])
+    .select(['id', 'name as title', 'lastMsgSentAt'])
     .where('lastMsgSentAt', '>', since)
     .orderBy('lastMsgSentAt', 'asc')
     .limit(limit)
@@ -76,7 +76,7 @@ async function fetchAfterId(
 ): Promise<ConversationRow[]> {
   return db
     .selectFrom('Conversation')
-    .select(['id', 'lastMsgSentAt'])
+    .select(['id', 'name as title', 'lastMsgSentAt'])
     .where('id', '>', fromId)
     .orderBy('id', 'asc')
     .limit(maxResults)
@@ -139,7 +139,13 @@ export function diffRanges(
   const toUpsert = db
     .filter((row) => {
       const existing = indexById.get(row.id)
-      return !existing || row.lastMsgSentAt !== existing.lastMsgSentAt
+      // Re-index when a new message arrived (lastMsgSentAt moved) or when the
+      // conversation was renamed (title changed without a new message).
+      return (
+        !existing ||
+        row.lastMsgSentAt !== existing.lastMsgSentAt ||
+        row.title !== existing.title
+      )
     })
     .map((row) => row.id)
 

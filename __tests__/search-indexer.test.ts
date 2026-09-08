@@ -2,8 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { diffRanges } from '@/lib/search/indexer'
 import type { ConversationIndexDoc } from '@/lib/search/Index'
 
-const doc = (id: string, lastMsgSentAt: string | null = null): ConversationIndexDoc => ({
+const doc = (
+  id: string,
+  lastMsgSentAt: string | null = null,
+  title = 'title'
+): ConversationIndexDoc => ({
   id,
+  title,
   lastMsgSentAt,
 })
 
@@ -40,6 +45,14 @@ describe('diffRanges', () => {
   it('upserts entries whose lastMsgSentAt changed', () => {
     const db = [doc('a', 't2'), doc('b', 't1')]
     const idx = [doc('a', 't1'), doc('b', 't1')]
+    const result = diffRanges(db, idx, BATCH)
+    expect(result!.toUpsert).toEqual(['a'])
+    expect(result!.toDelete).toEqual([])
+  })
+
+  it('upserts entries whose title changed even when lastMsgSentAt is unchanged', () => {
+    const db = [doc('a', 't1', 'Renamed'), doc('b', 't1', 'title')]
+    const idx = [doc('a', 't1', 'Original'), doc('b', 't1', 'title')]
     const result = diffRanges(db, idx, BATCH)
     expect(result!.toUpsert).toEqual(['a'])
     expect(result!.toDelete).toEqual([])

@@ -29,11 +29,12 @@ export class MeiliSearchIndex implements ConversationIndex {
     const res = await this.index.search(null, {
       filter: `id > "${toHex(fromId)}"`,
       sort: ['id:asc'],
-      attributesToRetrieve: ['id', 'lastMsgSentAt'],
+      attributesToRetrieve: ['id', 'title', 'lastMsgSentAt'],
       limit: maxResults,
     })
     return res.hits.map((h) => ({
       id: fromHex(h.id),
+      title: h.title,
       lastMsgSentAt: h.lastMsgSentAt,
     })) satisfies ConversationRow[]
   }

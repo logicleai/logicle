@@ -37,7 +37,7 @@ describe('MeiliSearchIndex', () => {
 
   it('fetchEntriesAfterId filters by the hex-encoded cursor and decodes ids back from hex', async () => {
     const search = vi.fn().mockResolvedValue({
-      hits: [{ id: toHex('conv-2'), lastMsgSentAt: '2024-01-02' }],
+      hits: [{ id: toHex('conv-2'), title: 'Renamed', lastMsgSentAt: '2024-01-02' }],
     })
     const index = new MeiliSearchIndex({ search } as any)
 
@@ -49,9 +49,10 @@ describe('MeiliSearchIndex', () => {
         filter: `id > "${toHex('conv-1')}"`,
         sort: ['id:asc'],
         limit: 50,
+        attributesToRetrieve: ['id', 'title', 'lastMsgSentAt'],
       })
     )
-    expect(result).toEqual([{ id: 'conv-2', lastMsgSentAt: '2024-01-02' }])
+    expect(result).toEqual([{ id: 'conv-2', title: 'Renamed', lastMsgSentAt: '2024-01-02' }])
   })
 
   it('searchConversations combines ownerId/assistantId into an AND filter only when provided', async () => {
