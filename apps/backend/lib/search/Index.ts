@@ -1,5 +1,6 @@
 export interface ConversationIndexDoc {
   id: string
+  title: string
   lastMsgSentAt: string | null
 }
 
@@ -24,6 +25,7 @@ export interface ConversationSearchResult {
 
 export interface ConversationRow {
   id: string
+  title: string
   lastMsgSentAt: string | null
 }
 
