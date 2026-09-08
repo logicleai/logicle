@@ -1,6 +1,7 @@
 {
   "audiotranscribe.assemblyai": "Audio transcription (AssemblyAI)",
   "dall-e": "Image generation",
+  "custom_widget": "Custom widget",
   "dummy": "Prompt only",
   "file-manager": "File manager",
   "imagegen.google": "Image generation (Google)",

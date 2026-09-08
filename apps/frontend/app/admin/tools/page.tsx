@@ -36,6 +36,7 @@ import { Badge } from '@/components/ui/badge'
 import { McpInterface } from '@/lib/tools/schemas'
 import { DummyToolInterface } from '@/lib/tools/schemas'
 import { AudioTranscriptionInterface } from '@/lib/tools/schemas'
+import { CustomWidgetInterface } from '@/lib/tools/schemas'
 
 const creatableTools: ToolType[] = [
   AudioTranscriptionInterface.toolName,
@@ -52,6 +53,7 @@ const creatableTools: ToolType[] = [
   GoogleAiStudioWebSearchInterface.toolName,
   McpInterface.toolName,
   DummyToolInterface.toolName,
+  CustomWidgetInterface.toolName,
 ]
 
 const AllTools = () => {
