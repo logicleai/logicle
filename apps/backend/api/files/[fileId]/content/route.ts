@@ -185,6 +185,16 @@ export const PUT = operation({
   },
 })
 
+// Image types every browser can render safely inline. SVG is intentionally excluded
+// (it can carry scripts). For these, serve the file inline so links open it in a new
+// tab instead of downloading it; anything else stays an attachment.
+const INLINE_VIEWABLE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+function contentDispositionFor(type: string, name: string): string {
+  const disposition = INLINE_VIEWABLE_TYPES.includes(type) ? 'inline' : 'attachment'
+  return `${disposition}; filename="${name.replace(/[\\"\r\n]/g, '_')}"`
+}
+
 function parseRangeHeader(header: string, totalSize: number): { start: number; end: number } | null {
   const match = /^bytes=(\d*)-(\d*)$/.exec(header)
   if (!match) return null
@@ -244,7 +254,7 @@ export const GET = operation({
         status: 206,
         headers: {
           'content-type': file.type,
-          'content-disposition': `attachment; filename="${file.name.replace(/[\\"\r\n]/g, '_')}"`,
+          'content-disposition': contentDispositionFor(file.type, file.name),
           'x-content-type-options': 'nosniff',
           'content-range': `bytes ${start}-${end}/${file.size}`,
           'content-length': `${end - start + 1}`,
@@ -260,7 +270,7 @@ export const GET = operation({
     return new Response(fileContent, {
       headers: {
         'content-type': file.type,
-        'content-disposition': `attachment; filename="${file.name.replace(/[\\"\r\n]/g, '_')}"`,
+        'content-disposition': contentDispositionFor(file.type, file.name),
         'x-content-type-options': 'nosniff',
         ...(typeof file.size === 'number' ? { 'content-length': `${file.size}` } : {}),
         'accept-ranges': supportsRanges ? 'bytes' : 'none',
