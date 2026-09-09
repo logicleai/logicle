@@ -8,12 +8,14 @@ import type {
 } from '@/lib/chat/tools'
 
 const mockSearchBox = vi.fn()
+const mockSearchBoxDocuments = vi.fn()
 const mockListBoxDocuments = vi.fn()
 const mockLoadBoxProjections = vi.fn()
 const mockLoadFileChunkRange = vi.fn()
 
 vi.mock('@/backend/lib/knowledge/retrieval', () => ({
   searchBox: (...args: unknown[]) => mockSearchBox(...args),
+  searchBoxDocuments: (...args: unknown[]) => mockSearchBoxDocuments(...args),
 }))
 vi.mock('@/backend/lib/knowledge/store', () => ({
   listBoxDocuments: (...args: unknown[]) => mockListBoxDocuments(...args),
@@ -60,6 +62,7 @@ const readyDocument = (fileId: string, chunkCount: number) => ({
 
 beforeEach(() => {
   mockSearchBox.mockReset().mockResolvedValue([])
+  mockSearchBoxDocuments.mockReset().mockResolvedValue([])
   mockListBoxDocuments.mockReset().mockResolvedValue([])
   mockLoadBoxProjections.mockReset().mockResolvedValue([])
   mockLoadFileChunkRange.mockReset().mockResolvedValue([])
@@ -120,6 +123,75 @@ describe('KnowledgeBoxTool', () => {
     it('reports files that were never indexed', async () => {
       const result = await invoke(buildTool({ files: [files[0]] }), 'list_documents', {})
       expect(result.value as string).toContain('status: not indexed')
+    })
+
+    it('does not rank when no query is given', async () => {
+      await invoke(buildTool(), 'list_documents', {})
+      expect(mockSearchBoxDocuments).not.toHaveBeenCalled()
+    })
+
+    it('ranks documents by the query and returns them in that order', async () => {
+      mockListBoxDocuments.mockResolvedValue([readyDocument('f1', 1), readyDocument('f2', 1)])
+      mockSearchBoxDocuments.mockResolvedValue(['f2', 'f1'])
+      const result = await invoke(buildTool(), 'list_documents', { query: 'privacy' })
+      const value = result.value as string
+      expect(mockSearchBoxDocuments).toHaveBeenCalledWith('box1', 'privacy', 10)
+      expect(value.indexOf('privacy.docx')).toBeLessThan(value.indexOf('contract.pdf'))
+    })
+
+    it('tops up with unranked documents when the query matched fewer than the limit', async () => {
+      mockListBoxDocuments.mockResolvedValue([readyDocument('f1', 1), readyDocument('f2', 1)])
+      mockSearchBoxDocuments.mockResolvedValue(['f2'])
+      const value = (await invoke(buildTool(), 'list_documents', { query: 'privacy' }))
+        .value as string
+      expect(value).toContain('privacy.docx')
+      expect(value).toContain('contract.pdf')
+    })
+
+    it('caps the number of documents and says how many were left out', async () => {
+      const many = Array.from({ length: 30 }, (_, index) => ({
+        id: `f${index}`,
+        name: `doc-${index}.pdf`,
+        type: 'application/pdf',
+        size: 1,
+      }))
+      const value = (await invoke(buildTool({ files: many }), 'list_documents', { limit: 3 }))
+        .value as string
+      expect(value).toContain('showing 3 of 30 documents')
+      expect(value).toContain('doc-0.pdf')
+      expect(value).not.toContain('doc-4.pdf')
+    })
+
+    it('clamps an absurd limit instead of returning the whole box', async () => {
+      const many = Array.from({ length: 80 }, (_, index) => ({
+        id: `f${index}`,
+        name: `doc-${index}.pdf`,
+        type: 'application/pdf',
+        size: 1,
+      }))
+      const value = (await invoke(buildTool({ files: many }), 'list_documents', { limit: 9999 }))
+        .value as string
+      expect(value).toContain('showing 50 of 80 documents')
+    })
+
+    it('keeps the listing bounded when projections are long', async () => {
+      // Thirty documents, each with a 1kB answer: without a budget this listing would be ~30kB.
+      const many = Array.from({ length: 30 }, (_, index) => ({
+        id: `f${index}`,
+        name: `doc-${index}.pdf`,
+        type: 'application/pdf',
+        size: 1,
+      }))
+      mockListBoxDocuments.mockResolvedValue(many.map((file) => readyDocument(file.id, 1)))
+      mockLoadBoxProjections.mockResolvedValue(
+        many.map((file) => ({ fileId: file.id, questionId: 'q1', answer: 'x'.repeat(1000) }))
+      )
+      const value = (await invoke(buildTool({ files: many }), 'list_documents', { limit: 30 }))
+        .value as string
+      expect(value.length).toBeLessThan(12_000)
+      expect(value).toContain('answers omitted')
+      // Every document is still listed by id, so the model can reach the ones that were trimmed.
+      expect(value).toContain('id: f29')
     })
   })
 

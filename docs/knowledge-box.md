@@ -48,14 +48,29 @@ flowchart TD
 
 ## Tool functions
 
-| function                  | cost                 | purpose                                                          |
-| ------------------------- | -------------------- | ---------------------------------------------------------------- |
-| `list_documents()`        | ~50 tokens per file  | the map: file name, id, chunk range, and every projection answer |
-| `search(query, fileIds?)` | one page of passages | BM25 over the box's chunks, returning file id + chunk index      |
-| `read(fileId, from, to)`  | on demand            | a contiguous run of chunks, capped at 12 per call                |
+| function                         | cost                 | purpose                                                     |
+| -------------------------------- | -------------------- | ----------------------------------------------------------- |
+| `list_documents(query?, limit?)` | bounded, see below   | the map: file name, id, chunk range, and projection answers |
+| `search(query, fileIds?)`        | one page of passages | BM25 over the box's chunks, returning file id + chunk index |
+| `read(fileId, from, to)`         | on demand            | a contiguous run of chunks, capped at 12 per call           |
 
 `read` only accepts a file that is in the box's own configuration, and every query is scoped by box
 id, so there is no id a caller can pass to reach outside it.
+
+### Why the listing is ranked and budgeted
+
+Projections cost about 250 tokens per document. Returning all of them for all documents makes the
+listing grow with the size of the box — at 50 documents it is ~12k tokens, at 200 it is ~50k, and
+the "cheap map" ends up costing more than the documents it was meant to keep out of the prompt.
+Benchmarking caught this inverting at five documents: a box _with_ ingestion questions lost to the
+same box without them, because it paid for the whole map before deciding it still had to search.
+
+So `list_documents` takes an optional query, ranks documents against a second BM25 index built over
+their projections (falling back to the chunk index for a box configured without questions), and
+returns at most `limit` of them (default 10, hard maximum 50). The projection text is then rendered
+against a character budget in rank order: the highest-ranked documents arrive with their answers in
+full, and the rest arrive as bare entries the model can still search or read by id. The listing is
+bounded by construction rather than by how the box happens to be configured.
 
 ## Ingestion
 

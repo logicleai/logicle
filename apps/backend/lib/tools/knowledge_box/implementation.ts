@@ -12,7 +12,7 @@ import {
   KnowledgeBoxSchema,
   type KnowledgeBoxParams,
 } from '@/lib/tools/schemas'
-import { searchBox } from '@/backend/lib/knowledge/retrieval'
+import { searchBox, searchBoxDocuments } from '@/backend/lib/knowledge/retrieval'
 import {
   listBoxDocuments,
   loadBoxProjections,
@@ -25,7 +25,8 @@ import {
  *
  * Three functions, in increasing cost:
  *  - `list_documents` returns the admin's ingestion questions answered per file. This is the map:
- *    it tells the model which document is worth looking at before a single page is read.
+ *    it tells the model which document is worth looking at before a single page is read. It is
+ *    ranked and budgeted, because a map that grows with the size of the box stops being cheap.
  *  - `search` returns ranked chunks (BM25 over the box's own chunk set).
  *  - `read` returns a contiguous run of chunks, for when a search hit needs its surroundings.
  *
@@ -35,6 +36,21 @@ import {
 
 /** Chunks a single `read` call may return, to keep one call from swallowing the context window. */
 const MAX_READ_CHUNKS = 12
+
+/** Documents a `list_documents` call returns when the caller does not say otherwise. */
+const DEFAULT_LIST_LIMIT = 10
+const MAX_LIST_LIMIT = 50
+
+/**
+ * Character budget for the projection text in one listing.
+ *
+ * The listing is a directory, and a directory that grows with the size of the box defeats the
+ * purpose of having one: at roughly 250 tokens of projections per document, returning them all
+ * costs more than the documents the box was built to keep out of the prompt. The budget is spent
+ * in rank order, so the documents most likely to matter arrive complete and the tail arrives as
+ * bare entries the model can still ask about by id.
+ */
+const LIST_PROJECTION_BUDGET_CHARS = 6000
 
 const formatHeading = (heading: string | null) => (heading ? ` — ${heading}` : '')
 
@@ -63,21 +79,65 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
     return new Map(this.params.files.map((file) => [file.id, file.name]))
   }
 
+  /**
+   * Orders the box's configured files by relevance to a query, best first.
+   *
+   * Ranking can return fewer files than asked for — a query that matches nothing returns none —
+   * so the remainder is topped up in configured order. A listing that came back empty because the
+   * query was unlucky would be worse than one that is merely unsorted.
+   */
+  private async rankFiles(query: string, limit: number): Promise<KnowledgeBoxParams['files']> {
+    const byId = new Map(this.params.files.map((file) => [file.id, file]))
+    const rankedIds = await searchBoxDocuments(this.boxId, query, limit)
+
+    const ordered: KnowledgeBoxParams['files'] = []
+    const taken = new Set<string>()
+    for (const fileId of rankedIds) {
+      const file = byId.get(fileId)
+      if (!file || taken.has(fileId)) continue
+      taken.add(fileId)
+      ordered.push(file)
+    }
+    for (const file of this.params.files) {
+      if (ordered.length >= limit) break
+      if (taken.has(file.id)) continue
+      ordered.push(file)
+    }
+    return ordered.slice(0, limit)
+  }
+
   functions_: ToolFunctions = {
     list_documents: {
       description:
-        'List the documents in this knowledge box, each with pre-computed answers to the questions this box was configured with. Call this first: it is cheap and it tells you which documents are worth searching.',
+        'List documents in this knowledge box with pre-computed answers to the questions it was configured with. Call this first: it tells you which documents are worth searching. Pass a query to rank the documents by relevance — on a box with many documents that is the difference between a short answer and a truncated one.',
       parameters: {
         type: 'object',
-        properties: {},
+        properties: {
+          query: {
+            type: 'string',
+            description:
+              'Optional: what you are looking for. Ranks documents by their pre-computed answers and returns the most relevant first.',
+          },
+          limit: {
+            type: 'number',
+            description: `Optional: how many documents to return (default ${DEFAULT_LIST_LIMIT}, maximum ${MAX_LIST_LIMIT}).`,
+          },
+        },
         additionalProperties: false,
         required: [],
       },
-      invoke: async (): Promise<dto.ToolCallResultOutput> => {
+      invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
         const names = this.fileNames()
         if (names.size === 0) {
           return { type: 'text', value: 'This knowledge box contains no documents.' }
         }
+
+        const query = `${params.query ?? ''}`.trim()
+        const requestedLimit = Number(params.limit)
+        const limit = Math.min(
+          MAX_LIST_LIMIT,
+          Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : DEFAULT_LIST_LIMIT)
+        )
 
         const documents = await listBoxDocuments(this.boxId)
         const statusByFile = new Map(documents.map((document) => [document.fileId, document]))
@@ -93,7 +153,14 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
           answers.set(projection.questionId, projection.answer)
         }
 
-        const sections = this.params.files.map((file) => {
+        const ordered = query
+          ? await this.rankFiles(query, limit)
+          : this.params.files.slice(0, limit)
+
+        // Spend the projection budget in rank order: the documents most likely to matter get their
+        // answers in full, and the rest still appear as entries the model can search or read by id.
+        let remainingBudget = LIST_PROJECTION_BUDGET_CHARS
+        const sections = ordered.map((file) => {
           const document = statusByFile.get(file.id)
           const lines = [`## ${file.name}`, `id: ${file.id}`]
           if (document?.status !== 'ready') {
@@ -103,12 +170,33 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
           }
           lines.push(`chunks: 0..${Math.max(0, document.chunkCount - 1)}`)
           const answers = answersByFile.get(file.id)
+          let omitted = false
           for (const question of this.params.questions) {
             const answer = answers?.get(question.id)
-            if (answer) lines.push(`${question.title}: ${answer}`)
+            if (!answer) continue
+            const entry = `${question.title}: ${answer}`
+            if (entry.length > remainingBudget) {
+              omitted = true
+              continue
+            }
+            remainingBudget -= entry.length
+            lines.push(entry)
+          }
+          if (omitted) {
+            lines.push(
+              '(answers omitted to keep this listing short — search or read this document)'
+            )
           }
           return lines.join('\n')
         })
+
+        if (ordered.length < this.params.files.length) {
+          sections.push(
+            `(showing ${ordered.length} of ${this.params.files.length} documents${
+              query ? '' : ' — pass a query to rank them by relevance'
+            })`
+          )
+        }
 
         return { type: 'text', value: sections.join('\n\n') }
       },
