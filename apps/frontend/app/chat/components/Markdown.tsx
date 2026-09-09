@@ -24,6 +24,11 @@ const CodeBlock = React.lazy(() =>
 const MermaidDiagram = React.lazy(() =>
   import('./MermaidDiagram').then((m) => ({ default: m.MermaidDiagram }))
 )
+// `custom_widget` fences (image-compare / image-carousel) pull in a YAML parser
+// plus the widget renderers — dead weight on the many messages that have none.
+const CustomWidgetFence = React.lazy(() =>
+  import('./widgets/CustomWidgetFence').then((m) => ({ default: m.CustomWidgetFence }))
+)
 
 // Inline styles from assistant output are allowed broadly — the product
 // deliberately supports rich HTML formatting — with two carve-outs that keep
@@ -157,7 +162,8 @@ export const Markdown: React.FC<{
         if (
           arr.length === 1 &&
           React.isValidElement(arr[0]) &&
-          (arr[0].props as { className?: string }).className === 'language-mermaid'
+          ((arr[0].props as { className?: string }).className === 'language-mermaid' ||
+            (arr[0].props as { className?: string }).className === 'language-custom_widget')
         ) {
           return arr[0]
         }
@@ -179,6 +185,12 @@ export const Markdown: React.FC<{
                 <MermaidDiagram className="bg-white" {...props}>
                   {String(children)}
                 </MermaidDiagram>
+              </Suspense>
+            )
+          } else if (language === 'custom_widget') {
+            return (
+              <Suspense fallback={fallback}>
+                <CustomWidgetFence source={String(children).replace(/\n$/, '')} />
               </Suspense>
             )
           } else {
