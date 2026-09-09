@@ -57,7 +57,7 @@ export const ConversationSidebar = ({
           <IconX></IconX>
         </Button>
       </div>
-      <ScrollArea className="w-[400px] flex-1 overflow-hidden scroll-workaround p-2">
+      <ScrollArea className="w-full md:w-[400px] flex-1 overflow-hidden scroll-workaround p-2">
         <div className="flex flex-col gap-4">
           {content.type === 'tool-call-result' && (
             <div className="whitespace-pre-wrap break-all">

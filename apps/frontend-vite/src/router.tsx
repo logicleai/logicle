@@ -9,6 +9,8 @@ import {
   ImagesRouteLayout,
   SatellitesRouteLayout,
   AuthRouteLayout,
+  MobileChatOnlyRoute,
+  MobileAssistantManagementRoute,
 } from './layoutAdapters'
 
 // Full route tree, mechanically ported from apps/frontend/app/**/page.tsx +
@@ -83,8 +85,19 @@ export const router = createBrowserRouter([
             path: 'chat/:chatId?',
             ...named('ChatSection')(() => import('@/app/chat/components/ChatSection')),
           },
-          { path: 'chat/assistants/select', ...page(() => import('@/app/chat/assistants/select/page')) },
-          { path: 'chat/assistants/mine', ...page(() => import('@/app/chat/assistants/mine/page')) },
+          {
+            path: 'chat/assistants/select',
+            ...page(() => import('@/app/chat/assistants/select/page')),
+          },
+          {
+            element: <MobileAssistantManagementRoute />,
+            children: [
+              {
+                path: 'chat/assistants/mine',
+                ...page(() => import('@/app/chat/assistants/mine/page')),
+              },
+            ],
+          },
           {
             path: 'chat/folders/:folderId',
             ...page(() => import('@/app/chat/folders/[folderId]/PageClient')),
@@ -93,101 +106,131 @@ export const router = createBrowserRouter([
       },
 
       {
-        element: <ImagesRouteLayout />,
-        children: [{ path: 'images', ...page(() => import('@/app/images/page')) }],
-      },
-
-      {
-        element: <SatellitesRouteLayout />,
+        element: <MobileChatOnlyRoute />,
         children: [
-          { path: 'satellites', ...page(() => import('@/app/satellites/page')) },
-          { path: 'satellites/create', element: <Navigate to="/satellites" replace /> },
-          { path: 'satellites/:id', ...page(() => import('@/app/satellites/[id]/PageClient')) },
-        ],
-      },
-
-      { path: 'assistants/:id', ...page(() => import('@/app/assistants/[id]/PageClient')) },
-      {
-        path: 'assistants/:id/history',
-        ...page(() => import('@/app/assistants/[id]/history/PageClient')),
-      },
-
-      { path: 'share/:shareId', ...page(() => import('@/app/share/[shareId]/PageClient')) },
-
-      { path: 'internals/palette', ...page(() => import('@/app/internals/palette/page')) },
-      { path: 'internals/styleguide', ...page(() => import('@/app/internals/styleguide/page')) },
-
-      {
-        element: <AdminRouteLayout />,
-        children: [
-          { path: 'admin', element: <Navigate to="/admin/analytics" replace /> },
-          { path: 'admin/analytics', ...page(() => import('@/app/admin/analytics/AnalyticsPage')) },
           {
-            path: 'admin/assistants',
-            ...named('AssistantsAdminPage')(
-              () => import('@/app/admin/assistants/components/AssistantsAdminPage')
-            ),
+            element: <ImagesRouteLayout />,
+            children: [{ path: 'images', ...page(() => import('@/app/images/page')) }],
           },
           {
-            path: 'admin/backends',
-            ...named('BackendsPage')(() => import('@/app/admin/backends/BackendsPage')),
+            element: <SatellitesRouteLayout />,
+            children: [
+              { path: 'satellites', ...page(() => import('@/app/satellites/page')) },
+              { path: 'satellites/create', element: <Navigate to="/satellites" replace /> },
+              { path: 'satellites/:id', ...page(() => import('@/app/satellites/[id]/PageClient')) },
+            ],
+          },
+          { path: 'assistants/:id', ...page(() => import('@/app/assistants/[id]/PageClient')) },
+          {
+            path: 'assistants/:id/history',
+            ...page(() => import('@/app/assistants/[id]/history/PageClient')),
+          },
+          { path: 'share/:shareId', ...page(() => import('@/app/share/[shareId]/PageClient')) },
+          { path: 'internals/palette', ...page(() => import('@/app/internals/palette/page')) },
+          {
+            path: 'internals/styleguide',
+            ...page(() => import('@/app/internals/styleguide/page')),
           },
           {
-            path: 'admin/backends/create',
-            ...page(() => import('@/app/admin/backends/create/page')),
+            element: <AdminRouteLayout />,
+            children: [
+              { path: 'admin', element: <Navigate to="/admin/analytics" replace /> },
+              {
+                path: 'admin/analytics',
+                ...page(() => import('@/app/admin/analytics/AnalyticsPage')),
+              },
+              {
+                path: 'admin/assistants',
+                ...named('AssistantsAdminPage')(
+                  () => import('@/app/admin/assistants/components/AssistantsAdminPage')
+                ),
+              },
+              {
+                path: 'admin/backends',
+                ...named('BackendsPage')(() => import('@/app/admin/backends/BackendsPage')),
+              },
+              {
+                path: 'admin/backends/create',
+                ...page(() => import('@/app/admin/backends/create/page')),
+              },
+              {
+                path: 'admin/backends/:id',
+                ...page(() => import('@/app/admin/backends/[id]/PageClient')),
+              },
+              {
+                path: 'admin/organization',
+                ...page(() => import('@/app/admin/organization/page')),
+              },
+              { path: 'admin/satellites', ...page(() => import('@/app/admin/satellites/page')) },
+              {
+                path: 'admin/satellites/create',
+                ...page(() => import('@/app/admin/satellites/create/page')),
+              },
+              {
+                path: 'admin/satellites/:id',
+                ...page(() => import('@/app/admin/satellites/[id]/PageClient')),
+              },
+              {
+                path: 'admin/settings',
+                ...page(() => import('@/app/admin/settings/AppSettingsPage')),
+              },
+              { path: 'admin/sso', ...page(() => import('@/app/admin/sso/SSOPage')) },
+              {
+                path: 'admin/sso/:clientId',
+                ...page(() => import('@/app/admin/sso/[clientId]/PageClient')),
+              },
+              { path: 'admin/tools', ...page(() => import('@/app/admin/tools/page')) },
+              {
+                path: 'admin/tools/create',
+                ...page(() => import('@/app/admin/tools/create/page')),
+              },
+              {
+                path: 'admin/tools/:id',
+                ...page(() => import('@/app/admin/tools/[id]/PageClient')),
+              },
+              { path: 'admin/users', ...page(() => import('@/app/admin/users/UsersPage')) },
+              {
+                path: 'admin/users/:userId',
+                ...page(() => import('@/app/admin/users/[userId]/PageClient')),
+              },
+              {
+                path: 'admin/workspaces',
+                ...page(() => import('@/app/admin/workspaces/components/WorkspacesPage')),
+              },
+              {
+                path: 'admin/workspaces/:workspaceId',
+                ...page(() => import('@/app/admin/workspaces/[workspaceId]/PageClient')),
+              },
+            ],
           },
           {
-            path: 'admin/backends/:id',
-            ...page(() => import('@/app/admin/backends/[id]/PageClient')),
+            element: <MeRouteLayout />,
+            children: [
+              { path: 'me/apikeys', ...page(() => import('@/app/me/apikeys/page')) },
+              {
+                path: 'me/parameters',
+                ...named('ParametersPage')(() => import('@/app/me/components/ParametersPage')),
+              },
+              {
+                path: 'me/password',
+                ...named('UpdatePasswordPage')(
+                  () => import('@/app/me/components/UpdatePasswordPage')
+                ),
+              },
+              {
+                path: 'me/preferences',
+                ...named('UserPreferencesPage')(
+                  () => import('@/app/me/components/UserPreferencesPage')
+                ),
+              },
+              {
+                path: 'me/profile',
+                ...named('ProfilePage')(() => import('@/app/me/components/ProfilePage')),
+              },
+              { path: 'me/secrets', ...page(() => import('@/app/me/secrets/page')) },
+              { path: 'me/sessions', ...page(() => import('@/app/me/sessions/page')) },
+            ],
           },
-          { path: 'admin/organization', ...page(() => import('@/app/admin/organization/page')) },
-          { path: 'admin/satellites', ...page(() => import('@/app/admin/satellites/page')) },
-          {
-            path: 'admin/satellites/create',
-            ...page(() => import('@/app/admin/satellites/create/page')),
-          },
-          {
-            path: 'admin/satellites/:id',
-            ...page(() => import('@/app/admin/satellites/[id]/PageClient')),
-          },
-          { path: 'admin/settings', ...page(() => import('@/app/admin/settings/AppSettingsPage')) },
-          { path: 'admin/sso', ...page(() => import('@/app/admin/sso/SSOPage')) },
-          { path: 'admin/sso/:clientId', ...page(() => import('@/app/admin/sso/[clientId]/PageClient')) },
-          { path: 'admin/tools', ...page(() => import('@/app/admin/tools/page')) },
-          { path: 'admin/tools/create', ...page(() => import('@/app/admin/tools/create/page')) },
-          { path: 'admin/tools/:id', ...page(() => import('@/app/admin/tools/[id]/PageClient')) },
-          { path: 'admin/users', ...page(() => import('@/app/admin/users/UsersPage')) },
-          { path: 'admin/users/:userId', ...page(() => import('@/app/admin/users/[userId]/PageClient')) },
-          {
-            path: 'admin/workspaces',
-            ...page(() => import('@/app/admin/workspaces/components/WorkspacesPage')),
-          },
-          {
-            path: 'admin/workspaces/:workspaceId',
-            ...page(() => import('@/app/admin/workspaces/[workspaceId]/PageClient')),
-          },
-        ],
-      },
-
-      {
-        element: <MeRouteLayout />,
-        children: [
-          { path: 'me/apikeys', ...page(() => import('@/app/me/apikeys/page')) },
-          {
-            path: 'me/parameters',
-            ...named('ParametersPage')(() => import('@/app/me/components/ParametersPage')),
-          },
-          {
-            path: 'me/password',
-            ...named('UpdatePasswordPage')(() => import('@/app/me/components/UpdatePasswordPage')),
-          },
-          {
-            path: 'me/preferences',
-            ...named('UserPreferencesPage')(() => import('@/app/me/components/UserPreferencesPage')),
-          },
-          { path: 'me/profile', ...named('ProfilePage')(() => import('@/app/me/components/ProfilePage')) },
-          { path: 'me/secrets', ...page(() => import('@/app/me/secrets/page')) },
-          { path: 'me/sessions', ...page(() => import('@/app/me/sessions/page')) },
         ],
       },
 

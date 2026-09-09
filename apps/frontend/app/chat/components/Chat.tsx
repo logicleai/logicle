@@ -15,6 +15,7 @@ import { useTokenRateLimit } from '@/components/providers/tokenRateLimitContext'
 import { TokenRateLimitBanner } from './TokenRateLimitBanner'
 import { MessageLimitBanner } from './MessageLimitBanner'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 
 export interface ChatProps {
   assistant: dto.AssistantIdentification & {
@@ -46,6 +47,7 @@ export const Chat = ({
   } = useContext(ChatPageContext)
   const tokenRateLimit = useTokenRateLimit()
   const environment = useEnvironment()
+  const { isMobile } = useLayoutConfig()
   const { t } = useTranslation()
 
   const [chatInput, setChatInput] = useChatInput(selectedConversation?.id ?? '')
@@ -136,8 +138,8 @@ export const Chat = ({
     userMessageCount >= environment.softMessageLimit
 
   return (
-    <div className={`flex overflow-hidden gap-4 ${className ?? ''}`}>
-      <div className={`flex flex-1 flex-col overflow-hidden`}>
+    <div className={`relative flex min-w-0 overflow-hidden gap-4 ${className ?? ''}`}>
+      <div className={`flex min-w-0 flex-1 flex-col overflow-hidden`}>
         <ScrollArea
           className="max-h-full flex-1 overflow-x-hidden relative"
           ref={chatContainerRef}
@@ -202,7 +204,12 @@ export const Chat = ({
         )}
         {tokenRateLimit?.enabled && tokenRateLimit.exceeded && <TokenRateLimitBanner />}
       </div>
-      {sideBarContent && <ConversationSidebar content={sideBarContent} />}
+      {sideBarContent && (
+        <ConversationSidebar
+          content={sideBarContent}
+          className={isMobile ? 'absolute inset-0 z-20 bg-background p-3 shadow-xl' : undefined}
+        />
+      )}
     </div>
   )
 }

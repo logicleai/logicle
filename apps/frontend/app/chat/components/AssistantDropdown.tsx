@@ -25,6 +25,7 @@ import { AssistantDetailsDialog } from '@/components/app/AssistantDetailsDialog'
 import toast from 'react-hot-toast'
 import { canEditAssistant } from '@/lib/rbac'
 import { useEnvironment } from '@/app/context/environmentProvider'
+import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -35,6 +36,7 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
   const userProfile = useUserProfile()
   const router = useRouter()
   const environment = useEnvironment()
+  const { isMobile } = useLayoutConfig()
   const [showDetailsDialog, setShowDetailsDialog] = useState<boolean>(false)
   const isAssistantMine = () => {
     return userProfile && canEditAssistant(assistant, userProfile?.id, userProfile.workspaces || [])
@@ -72,11 +74,11 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="px-1 py-1">
-            <div className="flex flex-row items-center gap-2">
+          <Button variant="ghost" size="small" className="max-w-[45vw] px-1 py-1">
+            <div className="flex min-w-0 flex-row items-center gap-2">
               <AssistantAvatar assistant={assistant} />
-              <h3 className=" flex justify-center py-2">{assistant?.name ?? ''}</h3>
-              <IconChevronDown size="16" color="gray"></IconChevronDown>
+              <h3 className="truncate py-2">{assistant?.name ?? ''}</h3>
+              <IconChevronDown className="shrink-0" size="16" color="gray"></IconChevronDown>
             </div>
           </Button>
         </DropdownMenuTrigger>
@@ -87,12 +89,12 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
           >
             {t(assistant.pinned ? 'hide-in-sidebar' : 'show-in-sidebar')}
           </DropdownMenuButton>
-          {isAssistantMine() && (
+          {!isMobile && isAssistantMine() && (
             <DropdownMenuButton onClick={onEditAssistant} icon={IconSettings}>
               {t('edit')}
             </DropdownMenuButton>
           )}
-          {(isAssistantMine() || isAssistantCloneable()) && (
+          {!isMobile && (isAssistantMine() || isAssistantCloneable()) && (
             <DropdownMenuButton onClick={onCloneAssistant} icon={IconCopy}>
               {t('duplicate')}
             </DropdownMenuButton>

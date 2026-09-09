@@ -8,6 +8,7 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { AssistantDropdown } from './AssistantDropdown'
 import { saveConversation } from '@/services/conversation'
 import { mutate } from 'swr'
+import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 
 interface Props {
   assistant: dto.UserAssistant
@@ -16,6 +17,7 @@ interface Props {
 export const ChatHeader: FC<Props> = ({ assistant }) => {
   const { t } = useTranslation()
   const environment = useEnvironment()
+  const { isMobile } = useLayoutConfig()
   const {
     state: { selectedConversation },
     setSelectedConversation,
@@ -53,44 +55,52 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
     setIsRenaming(false)
   }
   return (
-    <div className="group flex flex-row justify-center px-2 gap-3 h-16 items-center">
+    <div className="group flex h-14 flex-row items-center justify-center gap-2 px-3 sm:h-16 sm:gap-3">
       <AssistantDropdown assistant={assistant} />
-      <h3 className="flex-1 text-center">
-        {!isRenaming && (
-          <button
-            type="button"
-            className="cursor-text truncate"
-            onClick={() => {
-              if (!selectedConversation) return
-              setRenameValue(selectedConversation.name ?? '')
-              setIsRenaming(true)
-            }}
-          >
-            {selectedConversation?.name || t('untitled-conversation')}
-          </button>
-        )}
-        {isRenaming && (
-          <input
-            className="max-w-[360px] w-full bg-transparent text-center text-h3 outline-none"
-            type="text"
-            value={renameValue}
-            onChange={(e) => setRenameValue(e.target.value)}
-            onBlur={() => void handleSaveRename()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                void handleSaveRename()
-              } else if (e.key === 'Escape') {
-                e.preventDefault()
-                handleCancelRename()
-              }
-            }}
-            autoFocus
-          />
-        )}
-      </h3>
+      {!isMobile && (
+        <h3 className="min-w-0 flex-1 text-center">
+          {!isRenaming && (
+            <button
+              type="button"
+              className="cursor-text truncate"
+              onClick={() => {
+                if (!selectedConversation) return
+                setRenameValue(selectedConversation.name ?? '')
+                setIsRenaming(true)
+              }}
+            >
+              {selectedConversation?.name || t('untitled-conversation')}
+            </button>
+          )}
+          {isRenaming && (
+            <input
+              className="max-w-[360px] w-full bg-transparent text-center text-h3 outline-none"
+              type="text"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={() => void handleSaveRename()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  void handleSaveRename()
+                } else if (e.key === 'Escape') {
+                  e.preventDefault()
+                  handleCancelRename()
+                }
+              }}
+              autoFocus
+            />
+          )}
+        </h3>
+      )}
       {environment.enableChatSharing && (
-        <Button onClick={() => setShowSharingDialog(true)}>{t('share')}</Button>
+        <Button
+          className={isMobile ? 'ml-auto shrink-0 px-2 text-base' : undefined}
+          size={isMobile ? 'small' : undefined}
+          onClick={() => setShowSharingDialog(true)}
+        >
+          {t('share')}
+        </Button>
       )}
       {showSharingDialog && (
         <ChatSharingDialog

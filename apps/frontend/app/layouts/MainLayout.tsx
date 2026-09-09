@@ -7,7 +7,7 @@ import {
   IconSatellite,
 } from '@tabler/icons-react'
 import Link from 'next/link'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { MessageSquare, Compass, Images } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -40,43 +40,44 @@ export interface Props {
 const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }) => {
   const LeftBar = leftBar
   const [showDrawer, setShowDrawer] = useState<boolean>(false)
-  const environment = useEnvironment()
+  const pathname = usePathname()
+
+  // Selecting a conversation changes the route, but the chat shell remains
+  // mounted. Close the drawer explicitly so it never obscures the new chat.
+  useEffect(() => setShowDrawer(false), [pathname])
+
   return (
-    <main
-      className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
-    >
-      <div className="flex flex-col justify-between align-center justify-center gap-3 p-2">
-        <div className="flex flex-col flex-1 items-center gap-3">
-          {leftBarCollapsible && (
-            <Button size="icon" variant="ghost" onClick={() => setShowDrawer(true)}>
-              <IconMenu2 size={32}></IconMenu2>
+    <main className="flex h-[100dvh] min-h-0 w-full flex-col overflow-hidden text-sm">
+      <header className="flex h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b px-2 pt-[env(safe-area-inset-top)]">
+        <div className="flex items-center gap-1">
+          {leftBarCollapsible && LeftBar && (
+            <Button
+              size="icon"
+              variant="ghost"
+              title={t('show-sidebar')}
+              onClick={() => setShowDrawer(true)}
+            >
+              <IconMenu2 size={24} />
             </Button>
           )}
-          <Link href="/chat">
-            <MessageSquare size={28}></MessageSquare>
+          <Link
+            href="/chat"
+            title={t('goto-chats')}
+            className="p-2"
+            onClick={() => setShowDrawer(false)}
+          >
+            <MessageSquare size={22} />
           </Link>
-          <Link href="/chat/assistants/select">
-            <Compass size={28}></Compass>
-          </Link>
-          <Link href="/images">
-            <Images size={28}></Images>
-          </Link>
-          {environment.enableSatellitesUi && <SatelliteNavIcon />}
         </div>
-        <div>
-          <AppMenu />
-        </div>
-      </div>
-      {children}
+        <AppMenu chatOnly />
+      </header>
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">{children}</div>
       {LeftBar && (
-        <Dialog.Root open={showDrawer}>
+        <Dialog.Root open={showDrawer} onOpenChange={setShowDrawer}>
           <Dialog.Portal>
-            <Dialog.Overlay />
-            <Dialog.Content
-              className="border absolute left-0 top-0 bottom-0 md:w-[260px] w-[260px] max-w-[80%] md:max-w-[80%] overflow-hidden p-0 translate-x-[0%] translate-y-[0%] slide-in-from-left"
-              onInteractOutside={() => setShowDrawer(false)}
-              onPointerDownOutside={() => setShowDrawer(false)}
-            >
+            <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
+            <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-[min(22rem,85vw)] flex-col overflow-hidden border-r bg-background p-0 pt-[env(safe-area-inset-top)] shadow-xl">
+              <Dialog.Title className="sr-only">{t('show-sidebar')}</Dialog.Title>
               {leftBar}
             </Dialog.Content>
           </Dialog.Portal>
@@ -92,9 +93,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
   const environment = useEnvironment()
   const hideLeftBar = pathname === '/chat/assistants/select'
   return (
-    <main
-      className={`"grid lg:grid-cols-5 flex h-screen w-screen flex-row text-sm overflow-hidden divide-x`}
-    >
+    <main className="flex h-[100dvh] w-screen flex-row overflow-hidden divide-x text-sm">
       <div className="flex flex-col justify-between align-center justify-center gap-3 p-2">
         <div className="flex flex-col flex-1 items-center gap-3">
           <button
