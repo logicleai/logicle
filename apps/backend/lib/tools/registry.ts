@@ -6,8 +6,6 @@ import {
   AudioTranscriptionSchema,
   CodeInterpreterInterface,
   CodeInterpreterSchema,
-  CustomWidgetInterface,
-  CustomWidgetSchema,
   DummyToolInterface,
   DummyToolSchema,
   GoogleImageGeneratorPluginInterface,
@@ -103,10 +101,6 @@ export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
   [DummyToolInterface.toolName]: {
     toolName: DummyToolInterface.toolName,
     schema: DummyToolSchema,
-  },
-  [CustomWidgetInterface.toolName]: {
-    toolName: CustomWidgetInterface.toolName,
-    schema: CustomWidgetSchema,
   },
   [AnthropicWebSearchInterface.toolName]: {
     toolName: AnthropicWebSearchInterface.toolName,

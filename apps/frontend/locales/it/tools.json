@@ -1,7 +1,6 @@
 {
   "audiotranscribe.assemblyai": "Trascrizione audio (AssemblyAI)",
   "dall-e": "Generazione immagini",
-  "custom_widget": "Widget personalizzato",
   "dummy": "Solo prompt",
   "file-manager": "File",
   "imagegen.google": "Generazione immagini (Google)",

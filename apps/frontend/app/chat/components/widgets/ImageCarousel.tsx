@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { ImageCarouselSpec } from '@/lib/tools/customWidget'
+import type { ImageCarouselSpec } from '@/lib/widgets/customWidget'
 
 interface Props {
   spec: ImageCarouselSpec

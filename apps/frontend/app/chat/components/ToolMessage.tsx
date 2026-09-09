@@ -4,8 +4,6 @@ import React from 'react'
 import * as dto from '@/types/dto'
 import { Upload } from '@/components/app/upload'
 import { Attachment } from './Attachment'
-import { isCustomWidgetResultPayload } from '@/lib/tools/customWidget'
-import { CustomWidget, CustomWidgetFallback } from './widgets/CustomWidget'
 import {
   Accordion,
   AccordionContent,
@@ -50,12 +48,6 @@ export const ToolMessage: FC<Props> = ({ message }) => {
           return <ToolDebug key={index} debug={part} />
         } else {
           const result = part.result
-          if (result.type === 'json' && isCustomWidgetResultPayload(result.value)) {
-            return <CustomWidget key={index} spec={result.value.customWidget} />
-          }
-          if (result.type === 'error-text' && part.toolName === 'custom_widget') {
-            return <CustomWidgetFallback key={index} message={result.value} />
-          }
           if (result.type !== 'content') {
             return undefined
           }

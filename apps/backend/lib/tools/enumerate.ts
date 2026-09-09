@@ -27,7 +27,6 @@ import { Router } from './router/implementation'
 import { CodeInterpreter } from './code_interpreter/implementation'
 import { OpenaiImageGeneration } from './openai.image_generation/implementation'
 import { DummyTool } from './dummy/implementation'
-import { CustomWidget } from './customwidget/implementation'
 import { SubAssistantTool } from './subassistant/implementation'
 import { db } from 'db/database'
 import { AudioTranscription } from './audio_transcription/implementation'
@@ -48,7 +47,6 @@ const builders: Record<string, ToolBuilder> = {
   [TimeOfDay.toolName]: TimeOfDay.builder,
   [WebSearch.toolName]: WebSearch.builder,
   [DummyTool.toolName]: DummyTool.builder,
-  [CustomWidget.toolName]: CustomWidget.builder,
 
   // Provider specific tools
   [AnthropicWebSearch.toolName]: AnthropicWebSearch.builder,

@@ -37,12 +37,6 @@ export class DummyToolInterface {
   static toolName = 'dummy'
 }
 
-export const CustomWidgetSchema = z.object({}).strict()
-export type CustomWidgetParams = z.infer<typeof CustomWidgetSchema>
-export class CustomWidgetInterface {
-  static toolName = 'custom_widget'
-}
-
 export const LogicleCloudWebSearchSchema = z.object({}).strict()
 export type LogicleCloudWebSearchParams = z.infer<typeof LogicleCloudWebSearchSchema>
 export class LogicleCloudWebSearchInterface {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ImageCompareSpec } from '@/lib/tools/customWidget'
+import type { ImageCompareSpec } from '@/lib/widgets/customWidget'
 import { cn } from '@/frontend/lib/utils'
 
 interface Props {

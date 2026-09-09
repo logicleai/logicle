@@ -2,7 +2,7 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, test } from 'vitest'
 import { CustomWidget } from '@/frontend/app/chat/components/widgets/CustomWidget'
-import type { WidgetSpec } from '@/lib/tools/customWidget'
+import type { WidgetSpec } from '@/lib/widgets/customWidget'
 
 const render = (spec: WidgetSpec) =>
   renderToStaticMarkup(React.createElement(CustomWidget, { spec }))

@@ -1,14 +1,15 @@
 import { useTranslation } from 'react-i18next'
-import type { WidgetSpec } from '@/lib/tools/customWidget'
+import type { WidgetSpec } from '@/lib/widgets/customWidget'
 import { ImageCompare } from './ImageCompare'
 import { ImageCarousel } from './ImageCarousel'
 
 const resolveFileUrl = (fileId: string) => `/api/files/${encodeURIComponent(fileId)}/content`
 
 /**
- * Renders a `custom_widget` tool result. The spec has already been validated
- * (Zod) and every referenced file authorized server-side; this only maps a
- * widget `type` to its trusted component.
+ * Renders a parsed `custom_widget` fence spec. Validation happened in
+ * `parseCustomWidget`; this only maps a widget `type` to its trusted component.
+ * `resolveFileUrl` stays frontend-only — `/api/files/{id}/content` authorizes
+ * per user, so a bad `fileId` in a fence just fails to load.
  */
 export const CustomWidget = ({ spec }: { spec: WidgetSpec }) => {
   const { t } = useTranslation()
