@@ -13,30 +13,22 @@ import * as z from 'zod'
  *
  * This module is schema-only (Zod). The YAML parse lives in
  * `parseCustomWidget.ts` so the `yaml` dependency stays out of any eager bundle.
+ * The fence language (`custom_widget`) is wired in `Markdown.tsx`.
  */
 
-/** Fenced-code language that marks a custom widget: ```custom_widget */
-export const CUSTOM_WIDGET_FENCE_LANG = 'custom_widget'
-
-export const imageItemSchema = z.object({
-  fileId: z
-    .string()
-    .min(1)
-    .describe('Opaque id of an image file already present in the conversation'),
-  label: z.string().min(1).optional().describe('Short caption shown with the image'),
-  alt: z.string().optional().describe('Accessibility description of the image'),
+const imageItemSchema = z.object({
+  fileId: z.string().min(1),
+  label: z.string().min(1).optional(),
+  alt: z.string().optional(),
 })
-export type ImageItem = z.infer<typeof imageItemSchema>
 
-export const imageCompareSpecSchema = z.object({
+const imageCompareSpecSchema = z.object({
   type: z.literal('image-compare'),
-  items: z
-    .tuple([imageItemSchema, imageItemSchema])
-    .describe('Exactly two images: [0] is shown first, [1] on toggle'),
+  items: z.tuple([imageItemSchema, imageItemSchema]),
 })
 export type ImageCompareSpec = z.infer<typeof imageCompareSpecSchema>
 
-export const imageCarouselSpecSchema = z.object({
+const imageCarouselSpecSchema = z.object({
   type: z.literal('image-carousel'),
   items: z.array(imageItemSchema).min(1).max(24),
 })
@@ -47,4 +39,3 @@ export const widgetSpecSchema = z.discriminatedUnion('type', [
   imageCarouselSpecSchema,
 ])
 export type WidgetSpec = z.infer<typeof widgetSpecSchema>
-export type WidgetType = WidgetSpec['type']
