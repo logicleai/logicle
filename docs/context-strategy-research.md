@@ -1,0 +1,194 @@
+# Context strategy: what we are trying to prove
+
+## Why this document exists
+
+Knowledge boxes and context compression are bets. Both are almost certainly right, and neither is
+yet demonstrated. This work will take a long time, so the questions belong somewhere durable
+rather than in a conversation — otherwise the work drifts towards whatever is easiest to measure,
+which is never the thing that matters.
+
+This is the research agenda. It records what we are optimising, what the baseline is, which
+hypotheses are falsifiable and how, and what would make us abandon a direction. It is not a
+design doc: see [`docs/knowledge-box.md`](knowledge-box.md) for what exists and
+[`docs/evaluation-harness.md`](evaluation-harness.md) for how it is measured.
+
+## The thesis: where the information is _not_
+
+The default framing of retrieval is precision-shaped: _give me the k most relevant passages_.
+Every RAG tutorial optimises that number, and it is the wrong target for what Logicle's users
+actually do.
+
+In a corpus of company documents, the expensive part is not finding the needle. It is **ruling out
+the haystack**. "The penalty clause is in contract 47" is only useful alongside "and it is in no
+other contract" — otherwise the answer is a guess that happens to be right. A user asking about a
+supplier agreement needs to know whether the thing they are looking for exists at all, and a system
+that cannot distinguish _absent_ from _not retrieved_ cannot tell them.
+
+This is not a Logicle idiosyncrasy; it is a known and badly-solved problem:
+
+- **Completeness-sensitive negative reasoning** ([arXiv 2608.04591](https://arxiv.org/abs/2608.04591)):
+  a negative answer is licensed only when the evidence covers the query scope; otherwise the honest
+  answer is _unknown_. Across three model families the paper finds unstable closure judgements and
+  substantial **over-closure** — models treating partial evidence as if it covered the question.
+  Prompting redistributes the errors rather than fixing them.
+- **Over-searching** ([arXiv 2601.05503](https://arxiv.org/html/2601.05503)): models issue ~70%
+  more searches than needed, and search augmentation _improves_ answer accuracy by 24% while
+  _degrading_ abstention accuracy by 12.8%. Only 13–22% of documents retrieved for an unanswerable
+  query contain any negative evidence, because corpora record what is true, not what is absent.
+
+So the trap to avoid is building the definitive retriever. A better retriever raises precision on
+answerable questions and does nothing for the case that actually hurts: a confident answer, or a
+confident "not found", from a system that never covered the corpus.
+
+**What we optimise instead: the cost of justified coverage.** How cheaply can the system reach a
+state where it can say "the answer is here" or "it is nowhere in these documents" and be right
+about _both_?
+
+## The baseline: everything in context
+
+Fixed, and not to be moved: every document in the preamble, every turn. It is what Logicle does
+today, and it has one property nothing else has — **it is the coverage ceiling**. Whatever it
+answers, it answered having seen everything.
+
+Two caveats that must stay attached to it:
+
+- Coverage ceiling is not accuracy ceiling. Accuracy degrades with input length _even when
+  retrieval is perfect_ ([arXiv 2510.05381](https://arxiv.org/pdf/2510.05381)), and the
+  lost-in-the-middle U-curve costs >30% on mid-context facts. Above some size the baseline has
+  coverage and still gets it wrong, which is the worst combination: authoritative and mistaken.
+- It stops existing. Past the context window it is not expensive, it is impossible, and the
+  comparison stops being about cost.
+
+Those two facts are why the interesting result is a _curve_, not a table. Somewhere below a
+threshold the baseline wins on everything and an index is wasted effort; somewhere above it the
+baseline degrades; somewhere above that it is gone.
+
+## The experiment that tests the thesis: the flip test
+
+Measuring "does it know what it does not know" needs paired corpora.
+
+For each question, build two corpora identical except that one contains the answer and one has had
+it removed. Run the same question against both.
+
+| behaviour on positive corpus | behaviour on negative corpus            | verdict                                                                           |
+| ---------------------------- | --------------------------------------- | --------------------------------------------------------------------------------- |
+| answers correctly            | says "not in these documents"           | **coverage** — the only passing combination                                       |
+| answers correctly            | answers anyway                          | hallucination under absence                                                       |
+| says "not found"             | says "not found"                        | over-closure: right on the negative corpus by luck, and wrong on the positive one |
+| answers correctly            | searches until the turn budget runs out | over-searching                                                                    |
+
+A system that gives the same answer to both has told us nothing, however confident it sounds. This
+is what separates a retriever from a coverage mechanism, and it is cheap to run because it reuses
+the corpus generator with one clause deleted.
+
+**Projections are an exclusion device, not a retrieval device.** The current benchmark shows them
+helping because they _answered_ the question directly; that is a nice side effect, not the reason
+they exist. Their real job is to let the model discard a document without reading it. That
+reframing has a testable consequence: ingestion questions should be chosen for **discriminative
+power** — questions whose answers differ between documents — rather than for summary quality. A
+projection that says "this is a supply agreement" on all 200 documents excludes nothing and costs
+200 × its own length.
+
+## Axes to sweep
+
+Two independent dials, and their interaction is the real production case.
+
+**Corpus axis** (knowledge box): documents × words per document, from ~5k to ~2M tokens. Plus
+three shape dials that matter more than raw size:
+
+- _distractors_ — how many other documents state the same kind of fact with a different value.
+  This is what turns a retrieval miss from an obvious failure into a plausible wrong answer.
+- _needle depth_ — position within its document, for the U-curve.
+- _hops_ — how many documents must be combined. Single-shot retrieval finds one and stops.
+
+**Conversation axis** (compression): turns, and how much earlier turns matter later. Compression
+is about conversation length, not corpus size, and it has no arm in the harness yet.
+
+The combined cell — a long conversation over a large corpus — is where real users live and where
+neither mechanism has been measured.
+
+## Hypotheses
+
+Each states what would refute it. A hypothesis nothing could refute is a slogan.
+
+1. **There is a crossover size below which the knowledge box is not worth building.**
+   Refuted if the box is cheaper at every size once ingestion is amortised. Current data puts
+   break-even at 5–13 conversations on a 5k-token corpus, so the crossover is probably very low —
+   but that is two scenarios at one size.
+2. **Above some size the baseline loses accuracy while retaining coverage.** Refuted if success
+   rate stays flat up to the context limit. Expected to bite between 50k and 200k tokens.
+3. **The knowledge box beats the baseline on unanswerable questions, not just on cost.** This is
+   the thesis. Refuted if the flip test shows the same over-closure rate for both.
+4. **Discriminative projections exclude more per token than summary projections.** Refuted if
+   swapping the ingestion questions for deliberately discriminative ones does not reduce documents
+   read per correct answer.
+5. **Chunk retrieval and projections are complementary, not redundant.** Already dented: on the
+   two-document scenario `knowledge-box` (3 836 tokens) lost to `knowledge-box-no-projections`
+   (2 329) because the listing was dumped wholesale. Fixed by ranking and budgeting the listing;
+   needs re-measuring at 50+ documents, where it actually matters.
+6. **Compression and the knowledge box compose.** Refuted if a compressed conversation over a box
+   does worse than either alone — plausible, since compression can summarise away the tool results
+   the box just paid to retrieve.
+
+## Metrics we do not have yet
+
+The harness measures success, tokens, cost and break-even. The thesis needs three more:
+
+- **Exclusion recall / false exclusion.** What fraction of the corpus was ruled out, and how often
+  was the answer-bearing document among the ruled-out. False exclusion is the silent failure.
+- **Abstention calibration.** The flip test's verdict, as a rate. Related work uses a five-level
+  evidence scale (supportive / partial / irrelevant / absent / conflicting) — worth borrowing.
+- **`pass^k` rather than mean score.** From τ-bench: the probability that _all_ k trials succeed.
+  A 70%-mean system that is 70% on every run is a different product from one that is 100% on seven
+  runs and 0% on three, and the mean hides it.
+
+Also to fix before any large-scale conclusion: **the cost model is not cache-aware**. Logicle uses
+prompt caching, so a multi-turn baseline pays the corpus at a discount from turn two. The current
+numbers overstate the knowledge box's advantage on multi-turn conversations, and at large corpus
+sizes that is where the whole argument lives.
+
+## Threats to validity
+
+Written down so we do not discover them in the results.
+
+- **Simulated users are not users.** [arXiv 2601.17087](https://arxiv.org/pdf/2601.17087) finds
+  LLM-simulated users are unreliable proxies for human users in agentic evaluation. Our runs
+  compare arms under an _identical_ simulated user, which is the defensible use; absolute success
+  rates are not transferable to production.
+- **Judge bias.** Assistant, simulated user and judge currently share a provider. A judge from a
+  different family would reduce the risk of rewarding its own phrasing.
+- **Synthetic corpora.** The generator is built to have the right shape, not to be real text. The
+  miner (`eval-mine-scenarios.ts`) exists to pull scenarios from real conversations; its answer
+  keys need human verification before they mean anything.
+- **Answer keys as substring matching.** Cheap and unambiguous, and it cannot see a correct answer
+  phrased unexpectedly. The judge covers that gap; when the two disagree, suspect the scenario.
+- **Small samples.** Bootstrap intervals are reported and differences that include zero are
+  labelled not separable. Resist reading a ranking out of three runs.
+
+## Sequence
+
+Done:
+
+- Harness: simulated user, judge, answer keys, bootstrap intervals, break-even
+  ([`docs/evaluation-harness.md`](evaluation-harness.md)).
+- Arms: `all-in-context`, `knowledge-box`, `knowledge-box-no-projections`.
+- Parametric corpus generator with size, distractor, depth and hop dials.
+- Scenario miner for real conversations.
+
+Next, in order:
+
+1. **Cache-aware cost.** Everything downstream is wrong without it.
+2. **Size sweep** over the generated corpora, to place the crossover and find where the baseline
+   degrades — hypotheses 1 and 2.
+3. **Flip test**: paired corpora and the abstention metrics — hypothesis 3, the thesis.
+4. **Discriminative projections** as a fourth arm — hypothesis 4.
+5. **Compression as an arm**, then the combined cell — hypothesis 6.
+
+## References
+
+- [When Absence Is Evidence: Completeness-Sensitive Negative Reasoning in LLMs](https://arxiv.org/abs/2608.04591)
+- [Over-Searching in Search-Augmented Large Language Models](https://arxiv.org/html/2601.05503)
+- [Context Length Alone Hurts LLM Performance Despite Perfect Retrieval](https://arxiv.org/pdf/2510.05381)
+- [Lost in Simulation: LLM-Simulated Users are Unreliable Proxies for Human Users](https://arxiv.org/pdf/2601.17087)
+- [τ-bench: Tool-Agent-User Interaction Benchmark](https://sierra.ai/blog/benchmarking-ai-agents)
+- [Never Lost in the Middle: Position-Agnostic Decompositional Training](https://arxiv.org/pdf/2311.09198)

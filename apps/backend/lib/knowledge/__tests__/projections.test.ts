@@ -108,6 +108,15 @@ describe('answerQuestion', () => {
     expect(await answerQuestion(model, 'big.pdf', 'x'.repeat(90_000), question)).toBeNull()
   })
 
+  it('accumulates token usage across map and reduce passes', async () => {
+    const { emptyProjectionUsage } = await import('@/backend/lib/knowledge/projections')
+    const usage = emptyProjectionUsage()
+    const { model } = mockModel(['Part one.', 'Part two.', 'Merged answer.'])
+    await answerQuestion(model, 'big.pdf', 'x'.repeat(90_000), question, usage)
+    // The mock reports 1 input and 1 output token per call; three calls were made.
+    expect(usage).toEqual({ inputTokens: 3, outputTokens: 3, calls: 3 })
+  })
+
   it('caps the number of windows for an absurdly large document', async () => {
     const { model, calls } = mockModel(Array(40).fill('Something.'))
     await answerQuestion(model, 'huge.pdf', 'x'.repeat(60_000 * 30), question)
@@ -119,11 +128,15 @@ describe('answerQuestion', () => {
 describe('computeProjections', () => {
   it('does not resolve a model when there are no questions', async () => {
     const { findReasonableSummarizationBackend } = await import('@/backend/lib/chat/summarizer')
-    expect(await computeProjections('contract.pdf', 'text', [])).toEqual([])
+    const result = await computeProjections('contract.pdf', 'text', [])
+    expect(result.projections).toEqual([])
+    expect(result.usage).toEqual({ inputTokens: 0, outputTokens: 0, calls: 0 })
     expect(findReasonableSummarizationBackend).not.toHaveBeenCalled()
   })
 
   it('returns nothing when no backend is configured', async () => {
-    expect(await computeProjections('contract.pdf', 'text', [question])).toEqual([])
+    const result = await computeProjections('contract.pdf', 'text', [question])
+    expect(result.projections).toEqual([])
+    expect(result.usage.calls).toBe(0)
   })
 })

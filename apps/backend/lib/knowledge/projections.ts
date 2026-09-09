@@ -63,7 +63,32 @@ const splitIntoWindows = (text: string): string[] => {
   return windows
 }
 
-const generate = async (model: LanguageModelV3, system: string, user: string): Promise<string> => {
+/** Tokens spent answering a box's questions. Reported so the cost of building the index is
+ * visible rather than hidden behind the savings it produces at query time. */
+export interface ProjectionUsage {
+  inputTokens: number
+  outputTokens: number
+  calls: number
+}
+
+export const emptyProjectionUsage = (): ProjectionUsage => ({
+  inputTokens: 0,
+  outputTokens: 0,
+  calls: 0,
+})
+
+const addUsage = (into: ProjectionUsage, usage: ai.LanguageModelUsage): void => {
+  into.inputTokens += usage.inputTokens ?? 0
+  into.outputTokens += usage.outputTokens ?? 0
+  into.calls += 1
+}
+
+const generate = async (
+  model: LanguageModelV3,
+  system: string,
+  user: string,
+  usage: ProjectionUsage
+): Promise<string> => {
   // The instructions go through `system`, never as a system-role message: `user` carries
   // document text, and keeping the two apart is what stops a document from issuing orders.
   const result = await ai.generateText({
@@ -72,6 +97,7 @@ const generate = async (model: LanguageModelV3, system: string, user: string): P
     system,
     prompt: user,
   })
+  addUsage(usage, result.usage)
   return result.text.trim()
 }
 
@@ -103,7 +129,8 @@ export const answerQuestion = async (
   model: LanguageModelV3,
   fileName: string,
   text: string,
-  question: KnowledgeBoxQuestion
+  question: KnowledgeBoxQuestion,
+  usage: ProjectionUsage = emptyProjectionUsage()
 ): Promise<string | null> => {
   const windows = splitIntoWindows(text)
 
@@ -114,7 +141,8 @@ export const answerQuestion = async (
     const answer = await generate(
       model,
       answerSystemPrompt(fileName),
-      `Question: ${question.prompt}${label}\n\n---\n${window}`
+      `Question: ${question.prompt}${label}\n\n---\n${window}`,
+      usage
     )
     if (answer && answer !== NO_ANSWER) partials.push(answer)
   }
@@ -127,28 +155,35 @@ export const answerQuestion = async (
     reduceSystemPrompt(fileName),
     `Question: ${question.prompt}\n\nPartial answers:\n${partials
       .map((partial, index) => `[${index + 1}] ${partial}`)
-      .join('\n\n')}`
+      .join('\n\n')}`,
+    usage
   )
   return merged && merged !== NO_ANSWER ? merged : null
+}
+
+export interface ComputedProjections {
+  projections: { questionId: string; answer: string }[]
+  usage: ProjectionUsage
 }
 
 export const computeProjections = async (
   fileName: string,
   text: string,
   questions: KnowledgeBoxQuestion[]
-): Promise<{ questionId: string; answer: string }[]> => {
-  if (questions.length === 0) return []
+): Promise<ComputedProjections> => {
+  const usage = emptyProjectionUsage()
+  if (questions.length === 0) return { projections: [], usage }
 
   const model = await resolveIngestionModel()
   if (!model) {
     logger.warn('[knowledge-box] no LLM backend available, skipping projections', { fileName })
-    return []
+    return { projections: [], usage }
   }
 
   const projections: { questionId: string; answer: string }[] = []
   for (const question of questions) {
-    const answer = await answerQuestion(model, fileName, text, question)
+    const answer = await answerQuestion(model, fileName, text, question, usage)
     if (answer) projections.push({ questionId: question.id, answer })
   }
-  return projections
+  return { projections, usage }
 }
