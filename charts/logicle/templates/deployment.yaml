@@ -28,6 +28,11 @@ spec:
         - secretRef:
             name: {{ include "logicle.fullname" . }}
         volumeMounts:
+        {{- if .Values.provisioning.files }}
+        - name: provisioning-files
+          mountPath: /provisioning
+          readOnly: true
+        {{- else }}
         {{- if .Values.provisioning.backends }}
         - name: backends-config
           mountPath: /provisioning/00-backends.yaml
@@ -46,6 +51,7 @@ spec:
           subPath: 20-standard-tools.yaml
           readOnly: true
         {{- end }}
+        {{- end }}
         {{- if eq .Values.storage.type "pvc" }}
         - name: uploaded-files-data
           mountPath: /data/files
@@ -56,6 +62,11 @@ spec:
           readOnly: true
         {{- end }}
       volumes:
+      {{- if .Values.provisioning.files }}
+      - name: provisioning-files
+        configMap:
+          name: {{ include "logicle.fullname" . }}-provisioning
+      {{- else }}
       {{- if .Values.provisioning.standardTools }}
       - name: standard-tools-config
         configMap:
@@ -70,6 +81,7 @@ spec:
       - name: users-config
         configMap:
           name: {{ include "logicle.fullname" . }}-users
+      {{- end }}
       {{- end }}
       {{- if eq .Values.storage.type "pvc" }}
       - name: uploaded-files-data

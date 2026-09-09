@@ -8,10 +8,13 @@ release name convention as the former EE chart (`nameOverride: logicle-ee`
 by default) so existing `logicle-ee-$TENANT` releases can be upgraded onto
 this chart in place.
 
-The chart itself carries no product-specific provisioning content
-(backends, users, standard tools). Those are raw YAML blobs passed via
-`provisioning.backends` / `provisioning.users` / `provisioning.standardTools`
-and owned by the deployer (see `logicle-infra-deploy`).
+The chart itself carries no product-specific provisioning content. The
+preferred interface is `provisioning.files`, a map whose keys are filenames
+mounted under `/provisioning` (for example, `30-assistants.yaml`). This keeps
+each provisioning document separate and lets Logicle process them in filename
+order. The legacy `provisioning.backends`, `provisioning.users`, and
+`provisioning.standardTools` fields remain supported for older deployers (see
+`logicle-infra-deploy`).
 
 ## Prerequisites
 

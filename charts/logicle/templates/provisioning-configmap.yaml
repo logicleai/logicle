@@ -1,0 +1,13 @@
+{{- if .Values.provisioning.files }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "logicle.fullname" . }}-provisioning
+  labels:
+    {{- include "logicle.labels" . | nindent 4 }}
+data:
+  {{- range $filename, $content := .Values.provisioning.files }}
+  {{ $filename | quote }}: |
+{{ $content | indent 4 }}
+  {{- end }}
+{{- end }}
