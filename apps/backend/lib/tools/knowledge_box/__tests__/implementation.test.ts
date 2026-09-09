@@ -1,0 +1,208 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { KnowledgeBoxTool } from '@/backend/lib/tools/knowledge_box/implementation'
+import type {
+  ToolFunction,
+  ToolImplementation,
+  ToolInvokeParams,
+  ToolParams,
+} from '@/lib/chat/tools'
+
+const mockSearchBox = vi.fn()
+const mockListBoxDocuments = vi.fn()
+const mockLoadBoxProjections = vi.fn()
+const mockLoadFileChunkRange = vi.fn()
+
+vi.mock('@/backend/lib/knowledge/retrieval', () => ({
+  searchBox: (...args: unknown[]) => mockSearchBox(...args),
+}))
+vi.mock('@/backend/lib/knowledge/store', () => ({
+  listBoxDocuments: (...args: unknown[]) => mockListBoxDocuments(...args),
+  loadBoxProjections: (...args: unknown[]) => mockLoadBoxProjections(...args),
+  loadFileChunkRange: (...args: unknown[]) => mockLoadFileChunkRange(...args),
+}))
+
+const toolParams: ToolParams = { id: 'box1', name: 'kb', provisioned: false, promptFragment: '' }
+
+const files = [
+  { id: 'f1', name: 'contract.pdf', type: 'application/pdf', size: 10 },
+  { id: 'f2', name: 'privacy.docx', type: 'application/msword', size: 20 },
+]
+const questions = [
+  { id: 'q1', title: 'Topics', prompt: 'What is this about?' },
+  { id: 'q2', title: 'Parties', prompt: 'Who signed it?' },
+]
+
+const buildTool = (overrides: Record<string, unknown> = {}) =>
+  KnowledgeBoxTool.builder(
+    toolParams,
+    {
+      files,
+      questions,
+      maxSearchResults: 5,
+      ...overrides,
+    },
+    'gpt-4o-mini'
+  ) as KnowledgeBoxTool
+
+const invoke = async (tool: KnowledgeBoxTool, name: string, params: Record<string, unknown>) => {
+  const fn = tool.functions_[name] as ToolFunction
+  return fn.invoke({ params } as unknown as ToolInvokeParams)
+}
+
+const readyDocument = (fileId: string, chunkCount: number) => ({
+  boxId: 'box1',
+  fileId,
+  status: 'ready',
+  error: null,
+  chunkCount,
+  updatedAt: '2026-01-01T00:00:00.000Z',
+})
+
+beforeEach(() => {
+  mockSearchBox.mockReset().mockResolvedValue([])
+  mockListBoxDocuments.mockReset().mockResolvedValue([])
+  mockLoadBoxProjections.mockReset().mockResolvedValue([])
+  mockLoadFileChunkRange.mockReset().mockResolvedValue([])
+})
+
+describe('KnowledgeBoxTool', () => {
+  it('exposes exactly the three retrieval functions', () => {
+    expect(Object.keys(buildTool().functions_).sort()).toEqual(['list_documents', 'read', 'search'])
+  })
+
+  it('does not push its files into the prompt', () => {
+    // `knowledge` is what makes a tool's files part of the preamble; a box must never set it.
+    expect((buildTool() as ToolImplementation).knowledge).toBeUndefined()
+  })
+
+  describe('list_documents', () => {
+    it('reports an empty box', async () => {
+      const result = await invoke(buildTool({ files: [] }), 'list_documents', {})
+      expect(result).toEqual({ type: 'text', value: 'This knowledge box contains no documents.' })
+    })
+
+    it('renders the projection answers under each document', async () => {
+      mockListBoxDocuments.mockResolvedValue([readyDocument('f1', 4), readyDocument('f2', 2)])
+      mockLoadBoxProjections.mockResolvedValue([
+        { fileId: 'f1', questionId: 'q1', answer: 'Supply of widgets' },
+        { fileId: 'f1', questionId: 'q2', answer: 'Acme and Globex' },
+        { fileId: 'f2', questionId: 'q1', answer: 'Data retention' },
+      ])
+
+      const result = await invoke(buildTool(), 'list_documents', {})
+      expect(result.type).toBe('text')
+      const value = result.value as string
+      expect(value).toContain('## contract.pdf')
+      expect(value).toContain('id: f1')
+      expect(value).toContain('chunks: 0..3')
+      expect(value).toContain('Topics: Supply of widgets')
+      expect(value).toContain('Parties: Acme and Globex')
+      expect(value).toContain('Topics: Data retention')
+    })
+
+    it('omits questions that produced no answer', async () => {
+      mockListBoxDocuments.mockResolvedValue([readyDocument('f1', 1)])
+      mockLoadBoxProjections.mockResolvedValue([{ fileId: 'f1', questionId: 'q1', answer: null }])
+      const result = await invoke(buildTool({ files: [files[0]] }), 'list_documents', {})
+      expect(result.value as string).not.toContain('Topics:')
+    })
+
+    it('surfaces the ingestion status of documents that are not ready', async () => {
+      mockListBoxDocuments.mockResolvedValue([
+        { ...readyDocument('f1', 0), status: 'failed', error: 'No text could be extracted' },
+      ])
+      const result = await invoke(buildTool({ files: [files[0]] }), 'list_documents', {})
+      const value = result.value as string
+      expect(value).toContain('status: failed')
+      expect(value).toContain('error: No text could be extracted')
+    })
+
+    it('reports files that were never indexed', async () => {
+      const result = await invoke(buildTool({ files: [files[0]] }), 'list_documents', {})
+      expect(result.value as string).toContain('status: not indexed')
+    })
+  })
+
+  describe('search', () => {
+    it('rejects an empty query', async () => {
+      const result = await invoke(buildTool(), 'search', { query: '  ' })
+      expect(result).toEqual({ type: 'error-text', value: 'Empty search query' })
+      expect(mockSearchBox).not.toHaveBeenCalled()
+    })
+
+    it('scopes the search to the box and passes the configured limit', async () => {
+      await invoke(buildTool(), 'search', { query: 'payment' })
+      expect(mockSearchBox).toHaveBeenCalledWith('box1', 'payment', 5, undefined)
+    })
+
+    it('forwards a file filter', async () => {
+      await invoke(buildTool(), 'search', { query: 'payment', fileIds: ['f2', 7] })
+      expect(mockSearchBox).toHaveBeenCalledWith('box1', 'payment', 5, ['f2'])
+    })
+
+    it('renders hits with the document name, id and chunk index', async () => {
+      mockSearchBox.mockResolvedValue([
+        { fileId: 'f1', seq: 3, heading: 'Payment terms', text: 'Net 30 days.', score: 2 },
+      ])
+      const result = await invoke(buildTool(), 'search', { query: 'payment' })
+      const value = result.value as string
+      expect(value).toContain('contract.pdf')
+      expect(value).toContain('id: f1')
+      expect(value).toContain('chunk 3')
+      expect(value).toContain('Payment terms')
+      expect(value).toContain('Net 30 days.')
+    })
+
+    it('reports an empty result set', async () => {
+      const result = await invoke(buildTool(), 'search', { query: 'unicorn' })
+      expect(result.value).toBe('No passage matched "unicorn".')
+    })
+  })
+
+  describe('read', () => {
+    it('refuses a document that is not in the box', async () => {
+      const result = await invoke(buildTool(), 'read', { fileId: 'other' })
+      expect(result).toEqual({
+        type: 'error-text',
+        value: 'Document other is not in this knowledge box',
+      })
+      expect(mockLoadFileChunkRange).not.toHaveBeenCalled()
+    })
+
+    it('defaults to the first chunks of the document', async () => {
+      await invoke(buildTool(), 'read', { fileId: 'f1' })
+      expect(mockLoadFileChunkRange).toHaveBeenCalledWith('box1', 'f1', 0, 11)
+    })
+
+    it('caps the requested range', async () => {
+      await invoke(buildTool(), 'read', { fileId: 'f1', from: 5, to: 500 })
+      expect(mockLoadFileChunkRange).toHaveBeenCalledWith('box1', 'f1', 5, 16)
+    })
+
+    it('clamps a negative start', async () => {
+      await invoke(buildTool(), 'read', { fileId: 'f1', from: -4, to: 2 })
+      expect(mockLoadFileChunkRange).toHaveBeenCalledWith('box1', 'f1', 0, 2)
+    })
+
+    it('rejects an inverted range', async () => {
+      const result = await invoke(buildTool(), 'read', { fileId: 'f1', from: 8, to: 2 })
+      expect(result.type).toBe('error-text')
+      expect(mockLoadFileChunkRange).not.toHaveBeenCalled()
+    })
+
+    it('renders the chunks it found', async () => {
+      mockLoadFileChunkRange.mockResolvedValue([
+        { id: 'c1', fileId: 'f1', seq: 0, heading: 'Intro', text: 'First.' },
+        { id: 'c2', fileId: 'f1', seq: 1, heading: null, text: 'Second.' },
+      ])
+      const result = await invoke(buildTool(), 'read', { fileId: 'f1', from: 0, to: 1 })
+      expect(result.value).toBe('[chunk 0 — Intro]\nFirst.\n\n[chunk 1]\nSecond.')
+    })
+
+    it('explains an empty range instead of failing', async () => {
+      const result = await invoke(buildTool(), 'read', { fileId: 'f1', from: 40, to: 41 })
+      expect(result.type).toBe('text')
+      expect(result.value as string).toContain('may still be indexing')
+    })
+  })
+})

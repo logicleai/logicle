@@ -11,6 +11,7 @@ import { setTokenizerWorker } from '@/backend/lib/chat/prompt-token-counter'
 import { PgpS2kWorkerRuntime } from '@/ee/pgp-s2k-worker/runtime'
 import { setPgpS2kWorker } from '@/ee/PgpEncryptingStorage'
 import { startFileOrphanCleanupRuntime } from '@/backend/lib/files/orphan-cleanup'
+import { startKnowledgeIngestionRuntime } from '@/backend/lib/knowledge/runtime'
 
 let backendBootstrapped = false
 
@@ -45,6 +46,10 @@ export async function bootstrapBackendRuntime() {
   }
 
   startFileOrphanCleanupRuntime()
+
+  if (env.knowledgeBox.enabled) {
+    startKnowledgeIngestionRuntime()
+  }
 
   backendBootstrapped = true
   console.info('Backend runtime bootstrapped')

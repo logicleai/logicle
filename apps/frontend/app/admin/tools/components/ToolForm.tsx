@@ -47,7 +47,8 @@ import { WebSearchParams } from '@/lib/tools/schemas'
 import { McpPluginParams } from '@/lib/tools/schemas'
 import { useToolTagSuggestions } from '@/hooks/tags'
 import { ToolKnowledgeSection } from './ToolKnowledgeSection'
-import { DummyToolInterface } from '@/lib/tools/schemas'
+import { DummyToolInterface, KnowledgeBoxInterface, KnowledgeBoxSchema } from '@/lib/tools/schemas'
+import KnowledgeBoxToolFields from './KnowledgeBoxToolFields'
 import AudioTranscriptionToolFields from './AudioTranscriptionToolFields'
 
 interface Props {
@@ -77,6 +78,10 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
     return mcpPluginSchema
   } else if (type === SatelliteInterface.toolName) {
     return SatelliteSchema
+  } else if (type === KnowledgeBoxInterface.toolName) {
+    // `files` lives in the configuration but is edited through the shared knowledge section,
+    // which writes it into the form's own `files` field; handleSubmit merges it back in.
+    return KnowledgeBoxSchema.omit({ files: true })
   } else if (type === OpenApiInterface.toolName) {
     const apiKeyProps = Object.fromEntries(apiKeys.map((apiKey) => [apiKey, z.string()]))
     return z.object({
@@ -141,8 +146,8 @@ const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
         }
       } else if (!form.formState.dirtyFields[key]) delete v[key]
     }
-    // For dummy tools, always persist files into configuration
-    if (type === DummyToolInterface.toolName) {
+    // For file-backed tools, always persist files into configuration
+    if (type === DummyToolInterface.toolName || type === KnowledgeBoxInterface.toolName) {
       v.configuration = { ...(v.configuration ?? tool.configuration), files }
     }
     onSubmit(v)
@@ -250,10 +255,13 @@ const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
           }
         />
       )}
-      {type === DummyToolInterface.toolName && (
+      {(type === DummyToolInterface.toolName || type === KnowledgeBoxInterface.toolName) && (
         <FormItem label={t('knowledge')}>
           <ToolKnowledgeSection form={form} toolId={toolId} />
         </FormItem>
+      )}
+      {type === KnowledgeBoxInterface.toolName && (
+        <KnowledgeBoxToolFields form={form} toolId={toolId} />
       )}
       <Button type="button" onClick={form.handleSubmit(handleSubmit)}>
         {t('submit')}

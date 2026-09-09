@@ -168,6 +168,11 @@ const env = {
     sendInPrompt: process.env.KNOWLEDGE_SEND_IN_PROMPT !== '0',
     alwaysConvertToText: process.env.KNOWLEDGE_ALWAYS_CONVERT !== '0',
   },
+  knowledgeBox: {
+    enabled: process.env.KNOWLEDGE_BOX_INGESTION_ENABLED !== '0',
+    pollIntervalSeconds: parseOptionalInt(process.env.KNOWLEDGE_BOX_POLL_INTERVAL_SECONDS) ?? 30,
+    ingestBatchSize: parseOptionalInt(process.env.KNOWLEDGE_BOX_INGEST_BATCH_SIZE) ?? 4,
+  },
   provision: {
     config: process.env.PROVISION_PATH,
     brand: process.env.PROVISION_BRAND_PATH,

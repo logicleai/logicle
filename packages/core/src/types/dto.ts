@@ -26,6 +26,7 @@ export * from './dto/tokenestimate'
 export * from './dto/docx-export'
 export * from './dto/tokenratelimit'
 export * from './dto/compression'
+export * from './dto/knowledgebox'
 
 export interface Account {
   access_token: string | null

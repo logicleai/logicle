@@ -22,12 +22,13 @@ export class AudioTranscriptionInterface {
   static toolName = 'audiotranscribe.assemblyai'
 }
 
-export const dummyToolFileSchema = z.object({
+export const toolFileSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: z.string(),
   size: z.number(),
 })
+export const dummyToolFileSchema = toolFileSchema
 export const DummyToolSchema = z.object({
   files: z.array(dummyToolFileSchema).optional().default([]),
 })
@@ -84,6 +85,24 @@ export const SatelliteSchema = z.object({}).strict()
 export type SatelliteParams = z.infer<typeof SatelliteSchema>
 export class SatelliteInterface {
   static toolName = 'satellite'
+}
+
+export const knowledgeBoxQuestionSchema = z.object({
+  id: z.string().min(1),
+  // Short label the model sees next to the answer in `list_documents`.
+  title: z.string().min(1),
+  // The question actually asked to the LLM, per file, at ingestion time.
+  prompt: z.string().min(1),
+})
+export type KnowledgeBoxQuestion = z.infer<typeof knowledgeBoxQuestionSchema>
+export const KnowledgeBoxSchema = z.object({
+  files: z.array(toolFileSchema).optional().default([]),
+  questions: z.array(knowledgeBoxQuestionSchema).optional().default([]),
+  maxSearchResults: z.number().int().min(1).max(50).optional().default(8),
+})
+export type KnowledgeBoxParams = z.infer<typeof KnowledgeBoxSchema>
+export class KnowledgeBoxInterface {
+  static toolName = 'knowledge_box'
 }
 
 export const KnowledgePluginSchema = z.object({}).strict()

@@ -392,6 +392,40 @@ export interface UserTokenWindow {
   tokenWindowAccumulated: number
 }
 
+export interface KnowledgeBoxDocument {
+  boxId: string
+  fileId: string
+  status: KnowledgeIngestStatus
+  error: string | null
+  contentHash: string | null
+  ingestVersion: number
+  configHash: string
+  chunkCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type KnowledgeIngestStatus = 'pending' | 'running' | 'ready' | 'failed'
+
+export interface KnowledgeChunk {
+  id: string
+  boxId: string
+  fileId: string
+  seq: number
+  heading: string | null
+  text: string
+}
+
+export interface KnowledgeProjection {
+  id: string
+  boxId: string
+  fileId: string
+  questionId: string
+  answer: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface DB {
   Account: Account
   ApiKey: ApiKey
@@ -413,6 +447,9 @@ export interface DB {
   FileAnalysis: FileAnalysis
   IdpConnection: IdpConnection
   Image: Image
+  KnowledgeBoxDocument: KnowledgeBoxDocument
+  KnowledgeChunk: KnowledgeChunk
+  KnowledgeProjection: KnowledgeProjection
   Message: Message
   MessageFeedback: MessageFeedback
   MessageAudit: MessageAudit

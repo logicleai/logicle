@@ -9,6 +9,7 @@
   "imagegen.openai": "Image generation (OpenAI)",
   "imagegen.replicate": "Image generation (Replicate)",
   "imagegen.together": "Image generation (Together)",
+  "knowledge_box": "Knowledge box",
   "mcp": "Mcp",
   "mcp_sse_endpoint_placeholder": "Mcp sse endpoint...",
   "openapi": "OpenAPI",

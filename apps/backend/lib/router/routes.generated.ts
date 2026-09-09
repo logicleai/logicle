@@ -98,6 +98,7 @@ export const backendRouteModules = [
   { pathname: '/api/sso/oidc', load: () => import('@/backend/api/sso/oidc/route') },
   { pathname: '/api/sso', load: () => import('@/backend/api/sso/route') },
   { pathname: '/api/sso/saml', load: () => import('@/backend/api/sso/saml/route') },
+  { pathname: '/api/tools/[toolId]/knowledge-box', load: () => import('@/backend/api/tools/[toolId]/knowledge-box/route') },
   { pathname: '/api/tools/[toolId]', load: () => import('@/backend/api/tools/[toolId]/route') },
   { pathname: '/api/tools', load: () => import('@/backend/api/tools/route') },
   { pathname: '/api/tools/tags', load: () => import('@/backend/api/tools/tags/route') },
