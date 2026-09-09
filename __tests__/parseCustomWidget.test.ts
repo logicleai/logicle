@@ -53,6 +53,38 @@ items:
     expect(r.spec.items[1].label).toBe('3.0')
   })
 
+  test('image-compare accepts autoplay/duration, coerced from YAML strings, ignored otherwise', () => {
+    const r = parseCustomWidget(`
+type: image-compare
+autoplay: false
+duration: 1000
+items:
+  - fileId: a
+  - fileId: b
+`)
+    expect(r.ok).toBe(true)
+    if (!r.ok) throw new Error(r.error)
+    if (r.spec.type !== 'image-compare') throw new Error('wrong type')
+    expect(r.spec.autoplay).toBe(false)
+    expect(r.spec.duration).toBe(1000)
+  })
+
+  test('image-compare survives a garbage autoplay/duration value', () => {
+    const r = parseCustomWidget(`
+type: image-compare
+autoplay: maybe
+duration: soon
+items:
+  - fileId: a
+  - fileId: b
+`)
+    expect(r.ok).toBe(true)
+    if (!r.ok) throw new Error(r.error)
+    if (r.spec.type !== 'image-compare') throw new Error('wrong type')
+    expect(r.spec.autoplay).toBeUndefined()
+    expect(r.spec.duration).toBeUndefined()
+  })
+
   test('strips unknown keys instead of failing', () => {
     const r = parseCustomWidget(`
 type: image-carousel

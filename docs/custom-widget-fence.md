@@ -55,17 +55,22 @@ Consequences of the fence choice:
 
 YAML, parsed with the **`failsafe` schema** so every scalar stays a string:
 `label: No` stays `"No"` (not `false` — the "Norway problem"), `alt: 3.0` stays
-`"3.0"`. Every DSL field is a string, so nothing is lost. Structure is then
-validated with Zod (`packages/core/src/widgets/customWidget.ts`); unknown keys
-are stripped.
+`"3.0"`. Structure is then validated with Zod
+(`packages/core/src/widgets/customWidget.ts`); unknown keys are stripped.
 
-| Field    | Where     | Notes                                                                                            |
-| -------- | --------- | ------------------------------------------------------------------------------------------------ |
-| `type`   | top level | `image-compare` \| `image-carousel`, required                                                    |
-| `items`  | top level | list of `{ fileId, label?, alt? }`; **exactly 2** for `image-compare`, 1–24 for `image-carousel` |
-| `fileId` | item      | id of an image already in the conversation, required                                             |
-| `label`  | item      | short caption, optional                                                                          |
-| `alt`    | item      | accessibility text, optional                                                                     |
+| Field      | Where     | Notes                                                                                            |
+| ---------- | --------- | ------------------------------------------------------------------------------------------------ |
+| `type`     | top level | `image-compare` \| `image-carousel`, required                                                    |
+| `items`    | top level | list of `{ fileId, label?, alt? }`; **exactly 2** for `image-compare`, 1–24 for `image-carousel` |
+| `autoplay` | top level | `image-compare` only, optional boolean, **reserved for a future autoplay, currently ignored**    |
+| `duration` | top level | `image-compare` only, optional ms (`>= 0`), reserved with `autoplay`, currently ignored          |
+| `fileId`   | item      | id of an image already in the conversation, required                                             |
+| `label`    | item      | short caption, optional                                                                          |
+| `alt`      | item      | accessibility text, optional                                                                     |
+
+`autoplay` / `duration` are coerced from their YAML string form (`autoplay: false`
+→ `false`, `duration: 1000` → `1000`) and never fail the widget: a bad value is
+simply dropped.
 
 ### `image-compare`
 

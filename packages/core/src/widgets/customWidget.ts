@@ -22,8 +22,23 @@ const imageItemSchema = z.object({
   alt: z.string().optional(),
 })
 
+// `parseCustomWidget` uses the YAML `failsafe` schema, so every scalar arrives
+// as a string. These two coerce the string back to the type #298 documents and
+// never fail the whole widget over a bad value — they are reserved for a future
+// autoplay implementation and currently ignored by the renderer.
+const optionalBoolean = z
+  .preprocess(
+    (v) => (v === 'true' || v === true ? true : v === 'false' || v === false ? false : v),
+    z.boolean()
+  )
+  .optional()
+  .catch(undefined)
+const optionalMillis = z.coerce.number().nonnegative().optional().catch(undefined)
+
 const imageCompareSpecSchema = z.object({
   type: z.literal('image-compare'),
+  autoplay: optionalBoolean,
+  duration: optionalMillis,
   items: z.tuple([imageItemSchema, imageItemSchema]),
 })
 export type ImageCompareSpec = z.infer<typeof imageCompareSpecSchema>
