@@ -108,7 +108,20 @@ export async function generateAndSendSummary(
 ): Promise<void> {
   if (chatHistory.length < 2) return
   try {
-    const text = await summarize(chatHistory[0], chatHistory[1], currentLanguageModel, userLanguage)
+    const firstUserMessage = chatHistory.find(
+      (message): message is dto.UserMessage => message.role === 'user'
+    )
+    const lastAssistantMessage = chatHistory.slice().reverse().find(
+      (message): message is dto.AssistantMessage => message.role === 'assistant'
+    )
+    if (!firstUserMessage || !lastAssistantMessage) return
+
+    const text = await summarize(
+      firstUserMessage,
+      lastAssistantMessage,
+      currentLanguageModel,
+      userLanguage
+    )
     if (text) {
       await updateChatTitle(text)
       try {
