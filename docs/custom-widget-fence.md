@@ -117,17 +117,38 @@ No new route, migration, tool registration or admin UI.
 ## Teaching the model the DSL
 
 There is no auto-injected schema (that was the function-call design). The DSL
-description goes into the assistant's system prompt, ideally as a **skill** that
-is injected only when relevant (e.g. gated by a capability flag), so the
-capability stays dormant and costs nothing otherwise. Suggested fragment:
+description is a prompt fragment, and the reusable way to ship it is a
+**prompt-only tool** — a `dummy`-type tool (Admin → Tools → "Prompt only")
+whose `promptFragment` carries the instructions below:
 
-```
-You may render an interactive image widget by writing a fenced code block with
-language "custom_widget". Use type "image-compare" for a before/after toggle of
-exactly two images, and type "image-carousel" for a scrollable gallery. Put the
-fence exactly where the widget should appear in your reply. Reference images by
-their conversation file id. Do not emit HTML or Markdown image tags for this.
-```
+- An admin attaches it to whichever assistants should be able to render widgets.
+- It is dormant otherwise — not attached, nothing is injected, no cost.
+- No code: `dummy` already exists, is admin-creatable, and can be provisioned
+  (`ansible/base/logicle/provisioning/20-standard-tools.yaml.j2` in
+  `logicle-infra-deploy` ships one named "Widget grafici" to every tenant).
+
+Suggested `promptFragment` (indented so the nested fence reads literally):
+
+    Puoi mostrare widget grafici scrivendo un fenced code block con linguaggio
+    custom_widget, posizionato inline dove il widget deve apparire nella risposta.
+
+    - type: image-compare  -> esattamente due immagini, click per alternarle (prima/dopo)
+    - type: image-carousel -> 1-24 immagini, scroll orizzontale
+
+    Ogni item ha: fileId (l'id del file nella conversazione), label (opzionale),
+    alt (opzionale). Referenzia le immagini solo per fileId. Non usare HTML ne
+    sintassi immagine Markdown per questo scopo.
+
+    Esempio:
+
+    ```custom_widget
+    type: image-compare
+    items:
+      - fileId: <id>
+        label: Originale
+      - fileId: <id>
+        label: Modificata
+    ```
 
 ## Export
 
