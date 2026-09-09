@@ -80,6 +80,9 @@
   html {
     height: 100%;
   }
+  #root {
+    min-height: 100%;
+  }
   body {
     @apply bg-background text-foreground min-h-screen;
   }
@@ -202,6 +205,10 @@ h5 {
     linear-gradient(45deg, transparent 75%, #ccc 75%),
     linear-gradient(-45deg, transparent 75%, #ccc 75%);
   background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0px;
   background-color: #fff;
 }

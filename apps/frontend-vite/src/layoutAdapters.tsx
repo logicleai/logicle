@@ -1,10 +1,11 @@
-import { Outlet } from 'react-router-dom'
+import { Navigate, Outlet } from 'react-router-dom'
 import AdminLayout from '@/app/admin/layout'
 import MeLayout from '@/app/me/layout'
 import ChatLayout from '@/app/chat/layout'
 import ImagesLayout from '@/app/images/layout'
 import SatellitesLayout from '@/app/satellites/layout'
 import AuthPageLayout from '@/app/auth/layout'
+import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 
 // Real Next layout.tsx files all take a `children: ReactNode` prop (Next's
 // App Router convention) rather than rendering an <Outlet/> themselves —
@@ -48,3 +49,15 @@ export const AuthRouteLayout = () => (
     <Outlet />
   </AuthPageLayout>
 )
+
+// On phones Logicle deliberately exposes a focused chat experience, including
+// when somebody opens an old admin or management bookmark directly.
+export const MobileChatOnlyRoute = () => {
+  const { isMobile } = useLayoutConfig()
+  return isMobile ? <Navigate to="/chat" replace /> : <Outlet />
+}
+
+export const MobileAssistantManagementRoute = () => {
+  const { isMobile } = useLayoutConfig()
+  return isMobile ? <Navigate to="/chat/assistants/select" replace /> : <Outlet />
+}
