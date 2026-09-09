@@ -70,9 +70,9 @@ with the harness:
 | `knowledge-box`                | documents reachable only through the `knowledge_box` tool, with ingestion questions                 |
 | `knowledge-box-no-projections` | the same, with no ingestion questions — isolates chunk retrieval from projections                   |
 
-Anything expressible as "same scenario, different assistant configuration" belongs here. Context
-compression on versus off is an arm. Two chunk sizes are two arms. Adding one does not touch the
-runner.
+Anything expressible as "same scenario, different assistant configuration" belongs here. An arm
+can return `assistant.contextCompression` to compare compression on versus off; two chunk sizes
+are two arms. Adding one does not touch the runner.
 
 ## Counting the cost of building an index
 
@@ -97,8 +97,9 @@ at this sample size_ rather than as a result. With fewer than two runs per arm t
 to claim separability at all and says so at the bottom of the report. The bootstrap RNG is seeded,
 so re-rendering a report from stored runs gives the same intervals.
 
-`--runs-out` writes the raw run records, so a report can be regenerated — or a scenario re-scored
-against a corrected answer key — without paying to run anything again.
+`--runs-out` writes a versioned artifact with the raw run records and run metadata (revision,
+models, arms, scenarios and sweep configuration). Re-render it without an API key with
+`--runs-in runs.json --out report.md`; this also accepts the legacy raw-run-array format.
 
 ## Running it
 
@@ -116,7 +117,8 @@ The runner creates its own SQLite database and storage directory under the syste
 removes them afterwards. It needs no server and touches no existing database.
 
 Flags are documented in the header of `apps/backend/scripts/eval.ts`. The ones that matter:
-`--repeat`, `--arms`, `--baseline`, `--model`, `--user-model`, `--judge-model`, `--no-judge`.
+`--repeat`, `--arms`, `--baseline`, `--model`, `--user-model`, `--judge-model`, `--no-judge`,
+`--runs-out`, and `--runs-in`.
 
 ## Scenarios from real conversations
 

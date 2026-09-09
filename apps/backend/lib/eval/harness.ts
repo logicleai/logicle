@@ -89,7 +89,7 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
       temperature: 0,
       tokenLimit: assistant.tokenLimit,
       reasoning_effort: null,
-      contextCompression: null,
+      contextCompression: setup.assistant?.contextCompression ?? null,
     }
 
     const conversationId = `eval-conv-${runId}`
@@ -175,7 +175,11 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
     judge: judgeVerdict,
     setupCost,
     setupCostUsd: setupCost
-      ? computeCostUsd(assistant.model, setupCost.inputTokens, setupCost.outputTokens)
+      ? setupCost.calls === 0
+        ? 0
+        : setupCost.modelId
+        ? computeCostUsd(setupCost.modelId, setupCost.inputTokens, setupCost.outputTokens)
+        : undefined
       : undefined,
     score: 0,
   }

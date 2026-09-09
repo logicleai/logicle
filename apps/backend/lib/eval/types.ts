@@ -83,12 +83,21 @@ export interface SetupCost {
   /** Number of LLM calls made during setup. */
   calls: number
   wallMs: number
+  /** Model that incurred this cost. Omitted when setup used no model or it is unknown. */
+  modelId?: string
 }
 
 export interface ArmSetup {
   tools: ToolImplementation[]
   /** Files handed to the assistant as preamble knowledge — the "everything in context" lever. */
   knowledge: dto.AssistantFile[]
+  /**
+   * Assistant settings this arm changes. This keeps configuration comparisons in the harness,
+   * rather than requiring an arm to fork the production ChatAssistant construction path.
+   */
+  assistant?: {
+    contextCompression: dto.ContextCompressionConfig
+  }
   /** Appended to the scenario's system prompt, for arm-specific instructions. */
   systemPromptSuffix?: string
   /** Omitted by arms that need no preparation, such as the all-in-context baseline. */
@@ -166,4 +175,29 @@ export interface RunResult {
    * `scoreRun` in metrics.ts for how the two are reconciled.
    */
   score: number
+}
+
+/** Versioned, portable record emitted by the runner with --runs-out. */
+export interface EvaluationArtifact {
+  version: 1
+  createdAt: string
+  metadata: {
+    gitRevision?: string
+    provider: string
+    assistantModel: string
+    userModel: string
+    judgeModel?: string
+    baselineArm: string
+    arms: string[]
+    scenarios: string[]
+    repeat: number
+    sweep?: {
+      documents: number[]
+      wordsPerDocument: number
+      distractors: number
+      needleDepth: number
+      seed: number
+    }
+  }
+  runs: RunResult[]
 }

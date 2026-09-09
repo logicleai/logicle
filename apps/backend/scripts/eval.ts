@@ -27,17 +27,19 @@
  *   --judge-model <id>    model grading transcripts (default: same as --model)
  *   --no-judge            skip LLM grading, rely on the answer key alone
  *   --out <path>          write the markdown report here (default: stdout only)
- *   --runs-out <path>     write raw run records as JSON, for re-scoring without re-running
+ *   --runs-out <path>     write a versioned run artifact as JSON, for re-reporting without re-running
+ *   --runs-in <path>      re-render a previous --runs-out artifact (or legacy raw run array); no API key needed
  *   --verbose             stream the conversation as it happens
  */
 
 export {}
 
+import { execFileSync } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { writeFile } from 'node:fs/promises'
-import type { Arm, RunResult } from '@/backend/lib/eval/types'
+import { readFile, writeFile } from 'node:fs/promises'
+import type { Arm, EvaluationArtifact, RunResult } from '@/backend/lib/eval/types'
 
 const args = process.argv.slice(2).filter((arg) => arg !== '--')
 
@@ -57,9 +59,28 @@ const assistantModel = flag('model') ?? 'gpt-4o-mini'
 const userModelId = flag('user-model') ?? assistantModel
 const judgeModelId = flag('judge-model') ?? assistantModel
 const repeat = Number(flag('repeat') ?? 3)
-const baselineArm = flag('baseline') ?? 'all-in-context'
+const requestedBaselineArm = flag('baseline')
+const baselineArm = requestedBaselineArm ?? 'all-in-context'
 const verbose = bool('verbose')
 const useJudge = !bool('no-judge')
+const runsIn = flag('runs-in')
+const out = flag('out')
+
+if (runsIn) {
+  const { readRunsArtifact } = await import('@/backend/lib/eval/artifact')
+  const { renderMarkdown } = await import('@/backend/lib/eval/report')
+  const artifact = readRunsArtifact(JSON.parse(await readFile(runsIn, 'utf-8')))
+  const markdown = renderMarkdown(
+    artifact.runs,
+    requestedBaselineArm ?? artifact.metadata.baselineArm
+  )
+  process.stdout.write(`\n${markdown}\n`)
+  if (out) {
+    await writeFile(out, markdown, 'utf-8')
+    console.info(`Report written to ${out}`)
+  }
+  process.exit(0)
+}
 
 const apiKeyByProvider: Record<string, string | undefined> = {
   openai: process.env.OPENAI_API_KEY,
@@ -262,7 +283,6 @@ for (const scenario of scenarios) {
 const markdown = renderMarkdown(runs, baselineArm)
 process.stdout.write(`\n${markdown}\n`)
 
-const out = flag('out')
 if (out) {
   await writeFile(out, markdown, 'utf-8')
   console.info(`Report written to ${out}`)
@@ -270,8 +290,43 @@ if (out) {
 
 const runsOut = flag('runs-out')
 if (runsOut) {
-  await writeFile(runsOut, JSON.stringify(runs, null, 2), 'utf-8')
-  console.info(`Raw runs written to ${runsOut}`)
+  let gitRevision: string | undefined
+  try {
+    gitRevision = execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: process.cwd(),
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
+  } catch {
+    // The runner also works from a source archive; revision metadata is useful, not required.
+  }
+  const artifact: EvaluationArtifact = {
+    version: 1,
+    createdAt: new Date().toISOString(),
+    metadata: {
+      gitRevision,
+      provider: providerType,
+      assistantModel: assistantLlmModel.id,
+      userModel: userLlmModel.id,
+      judgeModel: useJudge ? judgeLlmModel.id : undefined,
+      baselineArm,
+      arms: arms.map((arm) => arm.name),
+      scenarios: scenarios.map((scenario) => scenario.id),
+      repeat,
+      sweep: sweepSizes
+        ? {
+            documents: sweepSizes,
+            wordsPerDocument: Number(flag('doc-words') ?? 700),
+            distractors: Number(flag('distractors') ?? 4),
+            needleDepth: Number(flag('needle-depth') ?? 0.5),
+            seed: 1,
+          }
+        : undefined,
+    },
+    runs,
+  }
+  await writeFile(runsOut, JSON.stringify(artifact, null, 2), 'utf-8')
+  console.info(`Run artifact written to ${runsOut}`)
 }
 
 await db.destroy()

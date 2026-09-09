@@ -69,6 +69,8 @@ export interface ProjectionUsage {
   inputTokens: number
   outputTokens: number
   calls: number
+  /** Model that generated the projections, for accurate ingestion-cost reporting. */
+  modelId?: string
 }
 
 export const emptyProjectionUsage = (): ProjectionUsage => ({
@@ -179,6 +181,7 @@ export const computeProjections = async (
     logger.warn('[knowledge-box] no LLM backend available, skipping projections', { fileName })
     return { projections: [], usage }
   }
+  usage.modelId = model.modelId
 
   const projections: { questionId: string; answer: string }[] = []
   for (const question of questions) {

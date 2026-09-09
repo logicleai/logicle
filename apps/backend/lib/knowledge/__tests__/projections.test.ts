@@ -139,4 +139,14 @@ describe('computeProjections', () => {
     expect(result.projections).toEqual([])
     expect(result.usage.calls).toBe(0)
   })
+
+  it('records the model that incurred projection usage', async () => {
+    const { findReasonableSummarizationBackend } = await import('@/backend/lib/chat/summarizer')
+    const { model } = mockModel(['Invoices.'])
+    vi.mocked(findReasonableSummarizationBackend).mockResolvedValue(model)
+
+    const result = await computeProjections('contract.pdf', 'text', [question])
+
+    expect(result.usage.modelId).toBe(model.modelId)
+  })
 })

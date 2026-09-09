@@ -104,6 +104,15 @@ export const createKnowledgeBoxArm = (options: KnowledgeBoxArmOptions = {}): Arm
         setupCost.inputTokens += result.projectionUsage.inputTokens
         setupCost.outputTokens += result.projectionUsage.outputTokens
         setupCost.calls += result.projectionUsage.calls
+        // Model selection is stable for a configured backend. If that invariant ever changes
+        // during setup, leave pricing unknown rather than attach a misleading dollar figure.
+        if (!setupCost.modelId) setupCost.modelId = result.projectionUsage.modelId
+        else if (
+          result.projectionUsage.modelId &&
+          setupCost.modelId !== result.projectionUsage.modelId
+        ) {
+          setupCost.modelId = undefined
+        }
       }
       setupCost.wallMs = Date.now() - startedAt
       invalidateBoxIndex(boxId)

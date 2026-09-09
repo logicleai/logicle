@@ -99,6 +99,27 @@ describe('computeBreakEven', () => {
     expect(result!.savingPerRunUsd).toBeLessThan(0)
   })
 
+  it('does not describe a more expensive arm as saving a negative amount', () => {
+    const markdown = renderMarkdown(
+      [
+        makeRun({ armName: 'baseline' }),
+        makeRun({ armName: 'baseline', repetition: 1 }),
+        makeRun({
+          armName: 'candidate',
+          totals: { ...makeRun({ armName: 'x' }).totals, costUsd: 0.002 },
+        }),
+        makeRun({
+          armName: 'candidate',
+          repetition: 1,
+          totals: { ...makeRun({ armName: 'x' }).totals, costUsd: 0.002 },
+        }),
+      ],
+      'baseline'
+    )
+    expect(markdown).toContain('costs')
+    expect(markdown).not.toContain('saves $-')
+  })
+
   it('breaks even immediately when there is nothing to repay', () => {
     expect(computeBreakEven(aggregateWith(0.001), aggregateWith(0.0004))?.queries).toBe(0)
   })
