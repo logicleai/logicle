@@ -16,6 +16,8 @@ import {
   DirectImageGeneratorSchema,
   ImageGeneratorPluginInterface,
   ImageGeneratorSchema,
+  KnowledgeBoxInterface,
+  KnowledgeBoxSchema,
   McpInterface,
   mcpPluginSchema,
   NativeToolInterface,
@@ -101,6 +103,10 @@ export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
   [DummyToolInterface.toolName]: {
     toolName: DummyToolInterface.toolName,
     schema: DummyToolSchema,
+  },
+  [KnowledgeBoxInterface.toolName]: {
+    toolName: KnowledgeBoxInterface.toolName,
+    schema: KnowledgeBoxSchema,
   },
   [AnthropicWebSearchInterface.toolName]: {
     toolName: AnthropicWebSearchInterface.toolName,

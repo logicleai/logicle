@@ -1,6 +1,11 @@
 import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
+import {
+  deleteKnowledgeBox,
+  isKnowledgeBoxType,
+  syncKnowledgeBoxConfiguration,
+} from '@/backend/lib/knowledge/lifecycle'
 import * as schema from '@/db/schema'
 import { getOrCreateImageFromDataUri } from './images'
 import { getUserWorkspaceMemberships } from './user'
@@ -198,6 +203,7 @@ export const createToolWithId = async (
   await db.insertInto('Tool').values(dbTool).executeTakeFirstOrThrow()
   await updateWorkspaceSharing(id, tool.sharing)
   await transferFilesToToolOwner(id, tool.configuration, ownerUserId)
+  await syncKnowledgeBoxConfiguration(id, tool.type, tool.configuration)
   const created = await getTool(id)
   if (!created) {
     throw new Error('Creation failed')
@@ -268,13 +274,25 @@ export const updateTool = async (
   await db.updateTable('Tool').set(update).where('id', '=', toolId).execute()
   if (data.configuration) {
     await transferFilesToToolOwner(toolId, data.configuration, ownerUserId)
+    const type = await getToolType(toolId)
+    if (type) {
+      await syncKnowledgeBoxConfiguration(toolId, type, data.configuration)
+    }
   }
   if (data.sharing) {
     await updateWorkspaceSharing(toolId, data.sharing)
   }
 }
 
+const getToolType = async (toolId: string): Promise<string | undefined> => {
+  const row = await db.selectFrom('Tool').select('type').where('id', '=', toolId).executeTakeFirst()
+  return row?.type
+}
+
 export const deleteTool = async (toolId: schema.Tool['id']) => {
+  if (isKnowledgeBoxType((await getToolType(toolId)) ?? '')) {
+    await deleteKnowledgeBox(toolId)
+  }
   return db.deleteFrom('Tool').where('id', '=', toolId).executeTakeFirstOrThrow()
 }
 
