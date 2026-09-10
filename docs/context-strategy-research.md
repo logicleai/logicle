@@ -167,6 +167,34 @@ Written down so we do not discover them in the results.
 
 ## Sequence
 
+### Compression TODO from production replay
+
+Real same-model replay found that the token-saving mechanism works, but attachment-only follow-up
+turns are not quality-safe yet. In the reviewed sample, historical-attachment compression reduced
+input by 93–97% and preserved quality when the current user message contained a useful query. It
+produced a material continuity regression when the current message contained only an attachment:
+the attachment itself was read correctly, but the immediately preceding assistant answer had been
+compressed and prefetch received an empty query. A long text-only replay remained usable with a
+minor drafting regression.
+
+- [ ] Add a prefetch-query fallback for an empty current user message. Start with the latest
+      non-empty user request in the parent lineage; consider the immediately preceding assistant
+      answer only if the user query alone is insufficient. Keep the planner's turn-stable
+      compression decisions unchanged.
+- [ ] Compare that fallback against `keepRecentTurns: 1` on the saved production bundles. Do not buy
+      an uncompressed high-token replay unless the cheaper compressed variants are inconclusive.
+- [ ] Add a synthetic attachment-only continuation case: the user asks a document question, the
+      assistant answers and requests a specific follow-up document, then the user uploads that
+      document with empty text. Success requires connecting the new document to the prior answer,
+      not asking what to do with it.
+- [ ] Use the two production cases that retained quality as regression controls. The attachment-only
+      case must recover continuity without materially erasing the measured token saving.
+- [ ] Record and review provider-call/tool-call counts. One successful prefetch replay invoked
+      context retrieval three times, so the real turn cost was substantially above the one-pass
+      compressed-history estimate even though it remained far below production.
+- [ ] Do not call context compression robust for attachment-heavy chats until the attachment-only
+      case passes and the result is repeated across more than one conversation.
+
 Done:
 
 - Harness: simulated user, judge, answer keys, bootstrap intervals, break-even
