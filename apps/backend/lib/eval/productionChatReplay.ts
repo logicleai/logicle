@@ -65,7 +65,7 @@ const replayJudgePrompt = [
 ].join('\n')
 
 export const createReplayJudge =
-  (model: LanguageModelV3) =>
+  (model: LanguageModelV3, options: { supportsTemperature?: boolean } = {}) =>
   async (
     finalUserMessage: string,
     productionReply: string,
@@ -74,7 +74,8 @@ export const createReplayJudge =
     const result = await ai.generateObject({
       model,
       schema: replayJudgmentSchema,
-      temperature: 0,
+      // Reasoning models (o-series, gpt-5*) reject an explicit temperature.
+      ...(options.supportsTemperature === false ? {} : { temperature: 0 }),
       system: replayJudgePrompt,
       prompt: [
         `Final user message:\n${finalUserMessage}`,

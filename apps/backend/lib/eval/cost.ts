@@ -20,6 +20,9 @@ export const modelPrices: Record<string, ModelPrice> = {
   'gpt-4o': { input: 2.5, output: 10.0 },
   'gpt-4.1-mini': { input: 0.4, output: 1.6 },
   'gpt-4.1': { input: 2.0, output: 8.0 },
+  // Replay-eval-only cheap tier (REPLAY_EXTRA_MODELS in eval-replay-production-chats.ts).
+  // TODO(luca): confirm the real gpt-5.6-luna list price — this is an estimate.
+  'gpt-5.6-luna': { input: 0.25, output: 2.0 },
   'gpt-4-turbo': { input: 10.0, output: 30.0 },
   'gpt-4': { input: 30.0, output: 60.0 },
   'gpt-3.5-turbo': { input: 0.5, output: 1.5 },

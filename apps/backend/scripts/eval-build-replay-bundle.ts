@@ -26,6 +26,12 @@
  *   --min-input-tokens <n>     MessageAudit input-token floor (default: 12000)
  *   --limit <n>                admitted turns (default: 20)
  *   --assistant <id>           restrict to one assistant
+ *   --distinct-conversations   admit at most one turn per conversation
+ *   --since <ISO date>         only turns sent on/after this date (default: 90 days ago)
+ *
+ * Only turns that can be replayed faithfully are considered: the assistant still exists, is not
+ * tool/knowledge/sub-assistant configured, still runs the model the turn actually used, and the
+ * turn did not error in production.
  */
 
 export {}
@@ -53,12 +59,20 @@ if (!sourceDb || !out) {
 const minimumAuditedInputTokens = Number(flag('min-input-tokens') ?? 12000)
 const limit = Number(flag('limit') ?? 20)
 const assistantFilter = flag('assistant')
+const distinctConversations = args.includes('--distinct-conversations')
 if (!Number.isFinite(minimumAuditedInputTokens) || minimumAuditedInputTokens < 1) {
   console.error('--min-input-tokens must be a positive number')
   process.exit(1)
 }
 if (!Number.isInteger(limit) || limit < 1) {
   console.error('--limit must be a positive integer')
+  process.exit(1)
+}
+// Replay is only faithful for turns whose assistant is still configured the way it was then.
+// Default to the last 90 days; pass `--since 1970-01-01` to disable.
+const sinceIso = flag('since') ?? new Date(Date.now() - 90 * 86_400_000).toISOString()
+if (Number.isNaN(Date.parse(sinceIso))) {
+  console.error('--since must be an ISO date')
   process.exit(1)
 }
 
@@ -142,6 +156,13 @@ let candidates = source
   ])
   .where('MessageAudit.type', '=', 'user')
   .where('MessageAudit.tokens', '>=', minimumAuditedInputTokens)
+  .where('MessageAudit.sentAt', '>=', sinceIso)
+  // The turn errored in production — not a clean baseline to compare a replay against.
+  .where('MessageAudit.errors', 'is', null)
+  // The assistant must still exist and still run the model this turn actually used, or the replay
+  // measures a different assistant than the one that incurred the cost.
+  .where('Assistant.deleted', '=', 0)
+  .whereRef('MessageAudit.model', '=', 'AssistantVersion.model')
   // Assistants with tools or knowledge files can't be replayed faithfully; exclude them in SQL so
   // `--limit` counts admissible turns rather than being eaten by the (often most expensive)
   // tool/knowledge cohort. Sub-assistants are checked per row below — `subAssistants` is jsonb on
@@ -202,6 +223,10 @@ const copyBlobBytes = async (blobPath: string, encryption: 'pgp' | 'aead' | null
 try {
   for (const candidate of await candidates.execute()) {
     if (admitted >= limit) break
+    if (distinctConversations && seenConversations.has(candidate.conversationId)) {
+      skip(candidate, 'another turn from this conversation is already admitted')
+      continue
+    }
 
     const messages = await source
       .selectFrom('Message')
