@@ -1,5 +1,9 @@
 /**
- * Replays the production turns in an offline bundle through the current code.
+ * Replays production turns from an offline bundle through the current code.
+ *
+ * By default it replays exactly one turn — the most expensive in the bundle — so a single
+ * invocation is a single LLM call and the spend is predictable. Pass `--case <messageId>` (repeat
+ * for a handful) or `--limit <n>` to widen it deliberately.
  *
  * For each turn the runner rebuilds the saved assistant, applies `--override` on top of its
  * configuration, runs the turn once, and records the response plus the real provider token usage
@@ -26,7 +30,11 @@
  *                          (model, systemPrompt, temperature, tokenLimit, reasoning_effort,
  *                          contextCompression). Use '{"contextCompression":null}' to disable it.
  *   --provider <type>      provider for the replay (default: the bundle's) — needs its API key
- *   --model <id>           shorthand for --override '{"model":"<id>"}'
+ *   --model <id>           shorthand for --override '{"model":"<id>"}' (Mode B: a cheap model for
+ *                          an off/on pair — see docs/evaluation-harness.md; ids in
+ *                          REPLAY_EXTRA_MODELS below are dev-only and not user-visible)
+ *   --case <messageId>     replay only this turn; repeat the flag to select several
+ *   --limit <n>            replay the n most expensive turns (default: 1; ignored when --case is used)
  *   --judge                also classify each response against the saved production reply
  *   --judge-model <id>     judge model (default: the replay model)
  */
@@ -49,6 +57,13 @@ const flag = (name: string): string | undefined => {
   return index === -1 ? undefined : args[index + 1]
 }
 const bool = (name: string) => args.includes(`--${name}`)
+const flagAll = (name: string): string[] => {
+  const values: string[] = []
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] === `--${name}` && args[index + 1]) values.push(args[index + 1]!)
+  }
+  return values
+}
 
 const bundlePath = flag('bundle')
 const out = flag('out')
@@ -88,20 +103,58 @@ const { EvalSink } = await import('@/backend/lib/eval/sink')
 const { setTokenizerCounter } = await import('@/backend/lib/chat/prompt-token-counter')
 const { countTextWithTokenizer } = await import('@/lib/chat/tokenizer')
 const { llmModels } = await import('@/lib/models')
+const { modelSupportsReasoning } = await import('@/lib/chat/models')
 const { createReplayJudge } = await import('@/backend/lib/eval/productionChatReplay')
+type LlmModel = (typeof llmModels)[number]
 
 setTokenizerCounter({
   countText: async (tokenizer, text) => countTextWithTokenizer(tokenizer, text),
 })
 
+// Cheap models for local off/on replay (Mode B in docs/evaluation-harness.md) that are not in the
+// shipped catalog. Dev-only — this list never reaches users. Add a matching price to
+// apps/backend/lib/eval/cost.ts or the cost column stays blank.
+const REPLAY_EXTRA_MODELS: LlmModel[] = [
+  {
+    id: 'gpt-5.6-luna',
+    model: 'gpt-5.6-luna',
+    name: 'GPT-5.6 Luna',
+    description: 'Cheap GPT-5.6 tier — replay eval only, not user-visible.',
+    provider: 'openai',
+    owned_by: 'openai',
+    context_length: 400000,
+    capabilities: { vision: true, function_calling: true, promptCaching: false },
+    supportedReasoningEfforts: ['none', 'low', 'medium', 'high'],
+    defaultReasoning: 'low',
+  },
+]
+const modelCatalog: LlmModel[] = [...llmModels, ...REPLAY_EXTRA_MODELS]
+
 // --- reconstruct the replay cases from the bundle ---
+// One turn per invocation by default: the most expensive in the bundle. `--case` picks specific
+// turns; `--limit` widens the window. Both are opt-in so an accidental run costs one LLM call.
+const caseIds = flagAll('case')
+const limit = caseIds.length > 0 ? Infinity : Math.max(1, Number(flag('limit') ?? 1))
 const cases: ProductionReplayCase[] = []
-const audits = await db
+let audits = await db
   .selectFrom('MessageAudit')
   .selectAll()
   .where('type', '=', 'user')
   .orderBy('tokens', 'desc')
   .execute()
+if (caseIds.length > 0) {
+  const wanted = new Set(caseIds)
+  audits = audits.filter((audit) => wanted.has(audit.messageId))
+  const missing = caseIds.filter((id) => !audits.some((audit) => audit.messageId === id))
+  if (missing.length > 0) {
+    console.error(`Bundle has no turn for --case ${missing.join(', ')}.`)
+    await db.destroy()
+    rmSync(workdir, { recursive: true, force: true })
+    process.exit(1)
+  }
+} else {
+  audits = audits.slice(0, limit)
+}
 
 for (const audit of audits) {
   const conversationMessages = await db
@@ -210,8 +263,14 @@ const providerConfig = {
 } as Parameters<typeof ChatAssistant.build>[0]
 
 const resolveModel = (id: string) => {
-  const model = llmModels.find((entry) => entry.id === id && entry.provider === providerType)
-  if (!model) throw new Error(`Model "${id}" is not defined for provider "${providerType}"`)
+  // Prefer the definition the replay provider actually lists; otherwise fall back to the model of
+  // that id from any provider. The replay deliberately points the provider config at one backend
+  // (e.g. a logiclecloud proxy that also serves Gemini for a cheap run), and the registry's
+  // `provider` field only gates the tokenizer/capabilities metadata, not API routing.
+  const model =
+    modelCatalog.find((entry) => entry.id === id && entry.provider === providerType) ??
+    modelCatalog.find((entry) => entry.id === id)
+  if (!model) throw new Error(`Model "${id}" is not defined in this checkout`)
   return model
 }
 
@@ -276,15 +335,17 @@ try {
       error = caught instanceof Error ? caught.message : String(caught)
     }
 
-    const judgment =
-      bool('judge') && !error
-        ? await createReplayJudge(
-            ChatAssistant.createLanguageModel(
-              providerConfig,
-              resolveModel(flag('judge-model') ?? model.id)
-            )
-          )((entry.messages.at(-1) as dto.UserMessage).content, entry.productionReply, response)
-        : undefined
+    let judgment: ReplayJudgment | undefined
+    if (bool('judge') && !error) {
+      const judgeModel = resolveModel(flag('judge-model') ?? model.id)
+      judgment = await createReplayJudge(
+        ChatAssistant.createLanguageModel(providerConfig, judgeModel),
+        {
+          supportsTemperature:
+            !modelSupportsReasoning(judgeModel) && judgeModel.capabilities.temperature !== false,
+        }
+      )((entry.messages.at(-1) as dto.UserMessage).content, entry.productionReply, response)
+    }
 
     results.push({
       caseId: entry.id,

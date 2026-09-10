@@ -261,33 +261,101 @@ npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
   --out expensive.sqlite --min-input-tokens 12000 --limit 25
 ```
 
-Turns are skipped (with a reason, written to `<out>.skipped.json`) when the lineage has saved tool
-activity, the assistant is configured with tools / sub-assistants / knowledge files, or an
-attachment's rows or bytes cannot be resolved — so a replay never silently omits a file or loses a
-tool capability. To cover tool conversations, extend the builder with a tool-specific fixture
-adapter.
+The builder only considers turns it can replay **faithfully**, so the numbers mean something:
+
+- **recent** — sent within the last 90 days (`--since <ISO date>` to change; `--since 1970-01-01`
+  to disable). Old turns ran against assistant configs and model versions that no longer exist.
+- **assistant still current** — the assistant is not deleted, and it still publishes the exact
+  model the turn actually used (`MessageAudit.model == AssistantVersion.model`). A turn whose
+  assistant has since been re-pointed at another model is dropped: replaying it would measure a
+  different assistant than the one that incurred the cost.
+- **no tools / knowledge / sub-assistants** — those can't be reproduced offline (a knowledge box
+  needs its index, a tool needs its backend), and they are usually the most expensive cohort, so
+  excluding them in SQL keeps `--limit` counting turns you can actually use.
+- **clean in production** — the turn did not record an error.
+
+Turns that pass those and are then skipped during the copy (lineage has saved tool activity, an
+attachment's rows or bytes cannot be resolved) get a reason in `<out>.skipped.json` — so a replay
+never silently omits a file or loses a tool capability. To cover tool conversations, extend the
+builder with a tool-specific fixture adapter.
 
 ### Stage 2 — replay the bundle
 
 ```bash
-# Replay with each turn's saved configuration (a sanity check — should roughly match production):
+# Sanity check — the most expensive turn, saved config, nothing changed (should ~match production):
 OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
   --bundle expensive.sqlite --out replay-results.json --report replay-report.md
 
-# Replay with a change applied — here, a compression preset — and read the delta vs production:
+# Mode A — same model, compression on, delta vs production's MessageAudit:
 OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
-  --bundle expensive.sqlite --out compressed-results.json --report compressed-report.md \
-  --override '{"contextCompression":{"preset":"conservative"}}' --judge
+  --bundle expensive.sqlite --out on.json --report on.md --judge \
+  --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}'
+
+# Mode B — cheap model, off then on, measured by the same ruler:
+LOGICLECLOUD_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle expensive.sqlite --out b-off.json --report b-off.md \
+  --model gpt-5.6-luna --override '{"contextCompression":null}'
+LOGICLECLOUD_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle expensive.sqlite --out b-on.json --report b-on.md --judge \
+  --model gpt-5.6-luna \
+  --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}'
 ```
 
 The runner copies the bundle to a scratch directory, points the app at that copy and at
 `FILE_STORAGE_LOCATION=replaydb:` (`DbBlobStorage` serves attachment bytes straight from
-`ReplayFileBlob`), and for each turn rebuilds the saved assistant with `--override` merged over its
-configuration, runs the turn once, and records the response, the real provider token usage, and
-the priced cost. `--override` is a JSON object merged over `model` / `systemPrompt` / `temperature`
-/ `tokenLimit` / `reasoning_effort` / `contextCompression` (use `{"contextCompression":null}` to
-turn it off); its shape follows whatever the running code's schema accepts, so newer options work
-without changing this script.
+`ReplayFileBlob`), and for each selected turn rebuilds the saved assistant with `--override` merged
+over its configuration, runs the turn once, and records the response, the real provider token
+usage, and the priced cost. `--override` is a JSON object merged over `model` / `systemPrompt` /
+`temperature` / `tokenLimit` / `reasoning_effort` / `contextCompression` (use
+`{"contextCompression":null}` to turn it off); its shape follows whatever the running code's schema
+accepts, so newer options work without changing this script.
+
+**It replays one turn per invocation by default** — the most expensive in the bundle — so a run is
+one LLM call and the spend is known before you start. Widen it deliberately: `--case <messageId>`
+(repeat for a handful of specific turns, listed in `replay-report.md` and the bundle's
+`MessageAudit`) or `--limit <n>` for the _n_ most expensive.
+
+### Operating modes — cost/quality testing without a big bill
+
+A replay calls a real provider with a real (often six-figure-token) prompt. Keep it cheap:
+
+- **Build the bundle once, replay many times.** Stage 1 is the only step that touches production
+  and it costs nothing. Iterate on its output.
+- **Default to one turn — the most expensive.** That single case is the interesting one and it is
+  one LLM call. `--case <id>` / `--limit <n>` only when you have a reason.
+- **`--judge` roughly doubles the cost** (a second model call over the same prompt). Get the token
+  numbers for all your turns first; judge only the ones whose numbers look worth a closer look.
+
+**Two ways to get a saving number**, depending on how much you trust the persisted counts:
+
+- **Mode A — same model, trust `MessageAudit`.** Replay on the assistant's real model with only
+  `--override '{"contextCompression":{…}}'` changed. The "before" is production's own
+  `MessageAudit` input tokens (in the bundle, shown in the report) — no off run needed. This is
+  the cheapest honest measurement: one call per turn. Its limit is that `MessageAudit.tokens` was
+  counted by the code as it was then, so treat single-digit-percent deltas as noise.
+- **Mode B — cheap model, run both sides.** When you want an off/on pair measured by the same
+  ruler and the real model is expensive, replay twice — `'{"contextCompression":null}'` and
+  `'{"contextCompression":{…}}'` — on a cheap model via `--model`. Two calls per turn, but on a
+  $0.10–0.30/1M model that is cents. The delta between the two runs is clean; the absolute cost is
+  not the production cost, so report it as a ratio. (`gpt-5.6-luna` and other cheap ids the eval
+  runner knows are in `REPLAY_EXTRA_MODELS` in the runner — they are not exposed to users.)
+
+Never change the model **and** compare against `MessageAudit`: a different tokenizer and context
+window make that delta meaningless. Mode A keeps the model; Mode B keeps the ruler.
+
+**Reading the result:**
+
+- **Saving** — replay input tokens vs the baseline (production for Mode A, the off run for Mode B),
+  as a percentage. Watch for near-zero: if the assistant's `tokenLimit` already truncates history
+  below budget, compression runs after that truncation and saves almost nothing while still
+  swapping verbatim text for lossy summaries — a strict `tokenLimit` and compression work against
+  each other.
+- **Quality** — `--judge` classifies the response against the saved production reply (a
+  **reference, not an answer key** — review every non-equivalent verdict yourself). The failure
+  mode to look for: a summary/excerpt that dropped an exact figure the user asked about.
+- **Doesn't fit** — `conservative` often can't pull a 700k-token turn under a 400k window; it
+  errors rather than truncate silently. Try `aggressive`, or record the turn as "compression
+  insufficient at this preset".
 
 `replay-report.md` shows, per turn, production's audited input tokens next to the replay's input
 tokens, output tokens, priced cost, and the input-token delta. With `--judge`, each response is
