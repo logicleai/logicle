@@ -3,10 +3,19 @@ import type { LanguageModelV3 } from '@ai-sdk/provider'
 import type * as dto from '@/types/dto'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import { ChatAssistant, type AssistantParams } from '@/backend/lib/chat'
+import {
+  applyCompressionPlan,
+  planMessageCompression,
+  resolveCompressionRetrievalMode,
+  resolveCompressionTriggerTokens,
+} from '@/backend/lib/chat/compression-planner'
+import { estimateHistoryMessageCosts } from '@/backend/lib/chat/token-estimator'
+import type { LlmModel } from '@/lib/chat/models'
 import type { ProviderConfig } from '@/types/provider'
 import { computeCostUsd } from './cost'
 import { materializeCorpus } from './corpus'
 import { checkAnswerKey, computeTotals, scoreRun } from './metrics'
+import { materializeReferenceChat } from './referenceChat'
 import { EvalSink } from './sink'
 import { createSimulatedUser } from './simulatedUser'
 import type { Judge } from './judge'
@@ -29,6 +38,7 @@ export interface RunOptions {
   assistant: {
     providerConfig: ProviderConfig
     model: string
+    llmModel: LlmModel
     systemPrompt: string
     tokenLimit: number
   }
@@ -74,17 +84,21 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
   const corpus = await materializeCorpus(scenario.corpus, runId)
   let teardown: (() => Promise<void>) | undefined
   let setupCost: RunResult['setupCost']
+  let compressionDiagnostics: RunResult['compression']
 
   try {
     const setup = await arm.setup({ scenario, files: corpus.files, runId })
     teardown = setup.teardown
     setupCost = setup.setupCost
 
+    const promptSuffix = [scenario.systemPromptSuffix, setup.systemPromptSuffix]
+      .filter(Boolean)
+      .join('\n\n')
     const assistantParams: AssistantParams = {
       assistantId: `eval-assistant-${runId}`,
       model: assistant.model,
-      systemPrompt: setup.systemPromptSuffix
-        ? `${assistant.systemPrompt}\n\n${setup.systemPromptSuffix}`
+      systemPrompt: promptSuffix
+        ? `${assistant.systemPrompt}\n\n${promptSuffix}`
         : assistant.systemPrompt,
       temperature: 0,
       tokenLimit: assistant.tokenLimit,
@@ -93,7 +107,14 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
     }
 
     const conversationId = `eval-conv-${runId}`
-    let messages: dto.Message[] = []
+    let messages: dto.Message[] = scenario.referenceChat
+      ? materializeReferenceChat(scenario.referenceChat, {
+          conversationId,
+          runId,
+          files: corpus.files,
+          corpus: scenario.corpus,
+        })
+      : []
 
     const chatAssistant = await ChatAssistant.build(
       assistant.providerConfig,
@@ -104,10 +125,15 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
       { user: 'eval-user', conversationId }
     )
 
-    const simulatedUser = createSimulatedUser(userModel, scenario)
+    const simulatedUser = scenario.referenceChat
+      ? undefined
+      : createSimulatedUser(userModel, scenario)
 
-    for (let turn = 0; turn < scenario.maxTurns; turn++) {
-      const decision = await simulatedUser.next(transcript)
+    const turnLimit = scenario.referenceChat ? 1 : scenario.maxTurns
+    for (let turn = 0; turn < turnLimit; turn++) {
+      const decision = scenario.referenceChat
+        ? { action: 'message' as const, message: scenario.referenceChat.finalUserMessage }
+        : await simulatedUser!.next(transcript)
       if (decision.action === 'done') {
         outcome = 'goal-reached'
         break
@@ -125,6 +151,56 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
       const parent = messages.at(-1)?.id ?? null
       const message = userMessage(conversationId, parent, content)
       messages = [...messages, message]
+
+      if (scenario.referenceChat) {
+        const costsBefore = await estimateHistoryMessageCosts(assistant.llmModel, messages)
+        const estimatedHistoryTokensBefore = costsBefore.reduce(
+          (total, cost) => total + cost.tokens,
+          0
+        )
+        const compression = assistantParams.contextCompression
+        if (!compression) {
+          compressionDiagnostics = {
+            enabled: false,
+            estimatedHistoryTokensBefore,
+            estimatedHistoryTokensAfter: estimatedHistoryTokensBefore,
+            triggered: false,
+            summarizedMessages: 0,
+          }
+        } else {
+          const triggerAtTokens = resolveCompressionTriggerTokens(compression.triggerAtTokens)
+          const triggered = estimatedHistoryTokensBefore >= triggerAtTokens
+          const decisions = triggered
+            ? planMessageCompression(messages, compression.preset, {
+                keepRecentTurns: compression.keepRecentTurns,
+              })
+            : []
+          const plannedMessages = triggered
+            ? await applyCompressionPlan(messages, decisions, {
+                prefetchQuery:
+                  resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
+                    ? message.content
+                    : undefined,
+              })
+            : messages
+          const costsAfter = await estimateHistoryMessageCosts(assistant.llmModel, plannedMessages)
+          compressionDiagnostics = {
+            enabled: true,
+            estimatedHistoryTokensBefore,
+            estimatedHistoryTokensAfter: costsAfter.reduce((total, cost) => total + cost.tokens, 0),
+            triggerAtTokens,
+            triggered,
+            summarizedMessages: decisions.filter((decision) => decision.policy === 'summary')
+              .length,
+            keepRecentTurns: compression.keepRecentTurns,
+          }
+          if (!triggered) {
+            throw new Error(
+              `Reference chat estimated at ${estimatedHistoryTokensBefore} tokens, below compression trigger ${triggerAtTokens}`
+            )
+          }
+        }
+      }
 
       const sink = new EvalSink()
       const turnStartedAt = Date.now()
@@ -146,6 +222,11 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
           toolCalls.length > 0 ? ` [${toolCalls.join(', ')}]` : ''
         }`
       )
+
+      if (scenario.referenceChat) {
+        outcome = 'goal-reached'
+        break
+      }
     }
   } catch (caught) {
     outcome = 'error'
@@ -181,6 +262,7 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
         ? computeCostUsd(setupCost.modelId, setupCost.inputTokens, setupCost.outputTokens)
         : undefined
       : undefined,
+    compression: compressionDiagnostics,
     score: 0,
   }
   result.score = scoreRun(result)

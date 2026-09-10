@@ -41,25 +41,39 @@ export class EvalSink implements ClientSink {
   }
 
   getUsage(): TurnUsage {
-    return this.events
-      .filter(
-        (
-          event
-        ): event is dto.TextStreamPart & {
-          type: 'usage'
-          inputTokens: number
-          outputTokens: number
-          totalTokens: number
-        } => event.type === 'usage'
-      )
-      .reduce(
-        (total, event) => ({
-          inputTokens: total.inputTokens + event.inputTokens,
-          outputTokens: total.outputTokens + event.outputTokens,
-          totalTokens: total.totalTokens + event.totalTokens,
-        }),
-        { inputTokens: 0, outputTokens: 0, totalTokens: 0 }
-      )
+    const usageEvents = this.events.filter(
+      (
+        event
+      ): event is dto.TextStreamPart & {
+        type: 'usage'
+        inputTokens: number
+        outputTokens: number
+        totalTokens: number
+        inputTokenDetails?: TurnUsage['inputTokenDetails']
+      } => event.type === 'usage'
+    )
+    const totals = usageEvents.reduce(
+      (total, event) => ({
+        inputTokens: total.inputTokens + event.inputTokens,
+        outputTokens: total.outputTokens + event.outputTokens,
+        totalTokens: total.totalTokens + event.totalTokens,
+      }),
+      { inputTokens: 0, outputTokens: 0, totalTokens: 0 }
+    )
+    const detailKeys = ['noCacheTokens', 'cacheReadTokens', 'cacheWriteTokens'] as const
+    const hasDetails = usageEvents.some((event) =>
+      detailKeys.some((key) => event.inputTokenDetails?.[key] !== undefined)
+    )
+    if (!hasDetails) return totals
+    return {
+      ...totals,
+      inputTokenDetails: Object.fromEntries(
+        detailKeys.map((key) => [
+          key,
+          usageEvents.reduce((sum, event) => sum + (event.inputTokenDetails?.[key] ?? 0), 0),
+        ])
+      ),
+    }
   }
 
   getErrors(): string[] {

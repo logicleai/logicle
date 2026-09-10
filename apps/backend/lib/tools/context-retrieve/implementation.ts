@@ -10,15 +10,21 @@ import { LlmModel } from '@/lib/chat/models'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import type { FileDbRow } from '@/backend/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
-import { canSendAsNativeFile, canSendAsNativeImage } from '@/backend/lib/chat/file-attachment-policy'
+import {
+  canSendAsNativeFile,
+  canSendAsNativeImage,
+} from '@/backend/lib/chat/file-attachment-policy'
 import { renderMessagePlainText } from '@/backend/lib/chat/message-projection'
+import {
+  findRelevantExcerpts,
+  findRelevantMessageExcerpts,
+} from '@/backend/lib/chat/context-search'
 import type * as dto from '@/types/dto'
 
 const isTextLikeMimeType = (mimeType: string) =>
   mimeType.startsWith('text/') || mimeType === 'application/json'
 
 const MAX_SEARCH_RESULTS = 20
-const SNIPPET_RADIUS_CHARS = 80
 
 /**
  * Exposes the chat's own uncompressed context back to the model: read a file by id, read a
@@ -33,8 +39,7 @@ export class ContextRetrievePlugin implements ToolImplementation {
   constructor(
     public toolParams: ToolParams,
     public params: Record<string, never>
-  ) {
-  }
+  ) {}
 
   functions = async (_model: LlmModel, _context: ToolFunctionContext) => this.functions_
 
@@ -162,7 +167,7 @@ export class ContextRetrievePlugin implements ToolImplementation {
     },
     search: {
       description:
-        "Search this conversation's original, uncompressed message history for a text query (case-insensitive). Returns matching message ids with a short snippet — use the id with get_message to read the full original content.",
+        "Search original, uncompressed context using focused terms from the user's request. When id is supplied, returns small relevant excerpts from that exact message or file; prefer this targeted form for a compression marker. Without id, searches the conversation and returns matching message ids. Use get_message or get_file only when the excerpts are insufficient.",
       parameters: {
         type: 'object',
         properties: {
@@ -170,27 +175,70 @@ export class ContextRetrievePlugin implements ToolImplementation {
             type: 'string',
             description: 'text to search for',
           },
+          id: {
+            type: 'string',
+            description: 'optional compressed message or file id to search within',
+          },
         },
         additionalProperties: false,
         required: ['query'],
       },
-      invoke: async ({ messages, params }: ToolInvokeParams) => {
+      invoke: async ({ messages, params, userId }: ToolInvokeParams) => {
         const query = `${params.query}`.trim()
         if (!query) {
           return { type: 'error-text', value: 'Empty search query' }
         }
-        const needle = query.toLowerCase()
-        const matches: string[] = []
-        for (const message of messages) {
-          const text = renderMessagePlainText(message)
-          const index = text.toLowerCase().indexOf(needle)
-          if (index === -1) continue
-          const start = Math.max(0, index - SNIPPET_RADIUS_CHARS)
-          const end = Math.min(text.length, index + needle.length + SNIPPET_RADIUS_CHARS)
-          const snippet = `${start > 0 ? '…' : ''}${text.slice(start, end)}${end < text.length ? '…' : ''}`
-          matches.push(`id: ${message.id} (role: ${message.role})\n${snippet}`)
-          if (matches.length >= MAX_SEARCH_RESULTS) break
+        const id = typeof params.id === 'string' ? params.id.trim() : ''
+        if (id) {
+          const message = this.findMessage(messages, id)
+          let targetText: string | undefined
+          let targetKind = 'message'
+          if (message) {
+            targetText = renderMessagePlainText(message)
+          } else {
+            const file = await this.getFileDbRowBy({ id })
+            if (!file || !(await canAccessFile({ userId }, file.id))) {
+              return { type: 'error-text', value: 'Message or file not found' }
+            }
+            targetKind = 'file'
+            const extracted = await cachingExtractor.extractFromFile(file)
+            if (typeof extracted === 'string' && extracted.length > 0) targetText = extracted
+          }
+          if (!targetText) {
+            return { type: 'error-text', value: `No searchable text found for ${targetKind} ${id}` }
+          }
+          const excerpts = findRelevantExcerpts(targetText, query)
+          if (excerpts.length === 0) {
+            return { type: 'text', value: `No relevant excerpts found in ${targetKind} ${id}.` }
+          }
+          return {
+            type: 'text',
+            value: `Relevant excerpts from ${targetKind} ${id}:\n\n${excerpts.join('\n\n---\n\n')}`,
+          }
         }
+        // The invocation receives the live turn too. Search only the context that existed before
+        // the latest user request, otherwise a context-retrieve call can rank its own arguments
+        // and result above the historical message it is trying to recover.
+        let currentTurnStart = -1
+        for (let index = messages.length - 1; index >= 0; index -= 1) {
+          if (messages[index]?.role === 'user') {
+            currentTurnStart = index
+            break
+          }
+        }
+        const historicalMessages =
+          currentTurnStart === -1 ? messages : messages.slice(0, currentTurnStart)
+        const matches = findRelevantMessageExcerpts(
+          historicalMessages.map((message) => ({
+            id: message.id,
+            role: message.role,
+            text: renderMessagePlainText(message),
+          })),
+          query,
+          MAX_SEARCH_RESULTS
+        ).map(({ id: messageId, role, excerpt }) =>
+          `id: ${messageId} (role: ${role})\n${excerpt}`
+        )
         if (matches.length === 0) {
           return { type: 'text', value: `No messages matched "${query}".` }
         }

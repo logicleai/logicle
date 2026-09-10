@@ -1,0 +1,423 @@
+{
+  "version": 1,
+  "createdAt": "2026-09-10T07:34:36.307Z",
+  "metadata": {
+    "gitRevision": "e8c21f8736312cb066790ca6d76020fd96639c58",
+    "gitDirty": true,
+    "provider": "anthropic",
+    "assistantModel": "claude-sonnet-latest",
+    "userModel": "claude-sonnet-latest",
+    "baselineArm": "compression-prefetch-keep-0",
+    "arms": [
+      "compression-prefetch-keep-0"
+    ],
+    "scenarios": [
+      "compression-recent-assistant",
+      "compression-irrelevant-old-bulk"
+    ],
+    "repeat": 3,
+    "suite": "context-compression"
+  },
+  "runs": [
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 2514,
+          "outputTokens": 10,
+          "totalTokens": 2524,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 2512
+          },
+          "toolCalls": [],
+          "latencyMs": 2148
+        }
+      ],
+      "totals": {
+        "inputTokens": 2514,
+        "outputTokens": 10,
+        "totalTokens": 2524,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2210,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 2512
+        },
+        "costUsd": 0.006384
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 1172,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 2514,
+          "outputTokens": 35,
+          "totalTokens": 2549,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1145,
+            "cacheWriteTokens": 1367
+          },
+          "toolCalls": [],
+          "latencyMs": 2253
+        }
+      ],
+      "totals": {
+        "inputTokens": 2514,
+        "outputTokens": 35,
+        "totalTokens": 2549,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2318,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1145,
+          "cacheWriteTokens": 1367
+        },
+        "costUsd": 0.0040005
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 1172,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 5218,
+          "outputTokens": 315,
+          "totalTokens": 5533,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 3657,
+            "cacheWriteTokens": 1557
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 6981
+        }
+      ],
+      "totals": {
+        "inputTokens": 5218,
+        "outputTokens": 315,
+        "totalTokens": 5533,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 7016,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 3657,
+          "cacheWriteTokens": 1557
+        },
+        "costUsd": 0.0077819
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 1172,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13099,
+          "outputTokens": 115,
+          "totalTokens": 13214,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7568,
+            "cacheWriteTokens": 5527
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 4995
+        }
+      ],
+      "totals": {
+        "inputTokens": 13099,
+        "outputTokens": 115,
+        "totalTokens": 13214,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 5104,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7568,
+          "cacheWriteTokens": 5527
+        },
+        "costUsd": 0.0164891
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4812,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13099,
+          "outputTokens": 334,
+          "totalTokens": 13433,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7568,
+            "cacheWriteTokens": 5527
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 8047
+        }
+      ],
+      "totals": {
+        "inputTokens": 13099,
+        "outputTokens": 334,
+        "totalTokens": 13433,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 8113,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7568,
+          "cacheWriteTokens": 5527
+        },
+        "costUsd": 0.018679099999999997
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4812,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13100,
+          "outputTokens": 259,
+          "totalTokens": 13359,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7568,
+            "cacheWriteTokens": 5528
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 10338
+        }
+      ],
+      "totals": {
+        "inputTokens": 13100,
+        "outputTokens": 259,
+        "totalTokens": 13359,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 10360,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7568,
+          "cacheWriteTokens": 5528
+        },
+        "costUsd": 0.0179316
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4812,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    }
+  ]
+}

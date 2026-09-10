@@ -83,6 +83,8 @@ export const AdvancedTabPanel = ({
                       field.onChange({
                         preset: v,
                         triggerAtTokens: field.value?.triggerAtTokens,
+                        keepRecentTurns: field.value?.keepRecentTurns,
+                        retrievalMode: field.value?.retrievalMode,
                       })
                     }
                   }}
@@ -95,7 +97,9 @@ export const AdvancedTabPanel = ({
                     <SelectItem value="conservative">
                       {t('context-compression-conservative')}
                     </SelectItem>
-                    <SelectItem value="aggressive">{t('context-compression-aggressive')}</SelectItem>
+                    <SelectItem value="aggressive">
+                      {t('context-compression-aggressive')}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground">
@@ -110,7 +114,10 @@ export const AdvancedTabPanel = ({
             control={form.control}
             name="contextCompression"
             render={({ field }) => (
-              <FormItem label={t('context-compression-trigger')} title={t('context-compression-trigger-help')}>
+              <FormItem
+                label={t('context-compression-trigger')}
+                title={t('context-compression-trigger-help')}
+              >
                 <NumberInput
                   mode="integer"
                   placeholder={t('context-compression-trigger-placeholder')}
@@ -119,6 +126,8 @@ export const AdvancedTabPanel = ({
                     field.onChange({
                       preset: field.value?.preset ?? 'conservative',
                       triggerAtTokens: v === '' ? undefined : Number(v),
+                      keepRecentTurns: field.value?.keepRecentTurns,
+                      retrievalMode: field.value?.retrievalMode,
                     })
                   }}
                 />

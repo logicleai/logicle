@@ -12,14 +12,20 @@ export interface ModelPrice {
   input: number
   /** USD per million output tokens. */
   output: number
+  /** Provider prompt-cache read price. Omitted when it is the same as ordinary input. */
+  cacheReadInput?: number
+  /** Provider prompt-cache write price. Omitted when it is the same as ordinary input. */
+  cacheWriteInput?: number
 }
 
 export const modelPrices: Record<string, ModelPrice> = {
   // OpenAI
-  'gpt-4o-mini': { input: 0.15, output: 0.6 },
-  'gpt-4o': { input: 2.5, output: 10.0 },
-  'gpt-4.1-mini': { input: 0.4, output: 1.6 },
-  'gpt-4.1': { input: 2.0, output: 8.0 },
+  'gpt-4o-mini': { input: 0.15, output: 0.6, cacheReadInput: 0.075 },
+  'gpt-4o': { input: 2.5, output: 10.0, cacheReadInput: 1.25 },
+  'gpt-4.1-mini': { input: 0.4, output: 1.6, cacheReadInput: 0.1 },
+  'gpt-4.1': { input: 2.0, output: 8.0, cacheReadInput: 0.5 },
+  'gpt-5.6-terra': { input: 2.0, output: 12.0, cacheReadInput: 0.2 },
+  'gpt-5-latest': { input: 2.0, output: 12.0, cacheReadInput: 0.2 },
   'gpt-4-turbo': { input: 10.0, output: 30.0 },
   'gpt-4': { input: 30.0, output: 60.0 },
   'gpt-3.5-turbo': { input: 0.5, output: 1.5 },
@@ -29,15 +35,22 @@ export const modelPrices: Record<string, ModelPrice> = {
   o3: { input: 10.0, output: 40.0 },
 
   // Anthropic
-  'claude-3-haiku': { input: 0.25, output: 1.25 },
-  'claude-3-5-haiku': { input: 0.8, output: 4.0 },
-  'claude-3-5-sonnet': { input: 3.0, output: 15.0 },
-  'claude-3-7-sonnet': { input: 3.0, output: 15.0 },
-  'claude-3-opus': { input: 15.0, output: 75.0 },
-  'claude-haiku-4': { input: 0.8, output: 4.0 },
-  'claude-sonnet-4': { input: 3.0, output: 15.0 },
-  'claude-opus-4': { input: 15.0, output: 75.0 },
-  'claude-opus-4-5': { input: 5.0, output: 25.0 },
+  'claude-3-haiku': { input: 0.25, output: 1.25, cacheReadInput: 0.025, cacheWriteInput: 0.3125 },
+  'claude-3-5-haiku': { input: 0.8, output: 4.0, cacheReadInput: 0.08, cacheWriteInput: 1.0 },
+  'claude-3-5-sonnet': { input: 3.0, output: 15.0, cacheReadInput: 0.3, cacheWriteInput: 3.75 },
+  'claude-3-7-sonnet': { input: 3.0, output: 15.0, cacheReadInput: 0.3, cacheWriteInput: 3.75 },
+  'claude-3-opus': { input: 15.0, output: 75.0, cacheReadInput: 1.5, cacheWriteInput: 18.75 },
+  'claude-haiku-4': { input: 0.8, output: 4.0, cacheReadInput: 0.08, cacheWriteInput: 1.0 },
+  'claude-sonnet-4': { input: 3.0, output: 15.0, cacheReadInput: 0.3, cacheWriteInput: 3.75 },
+  'claude-opus-4': { input: 15.0, output: 75.0, cacheReadInput: 1.5, cacheWriteInput: 18.75 },
+  'claude-opus-4-5': { input: 5.0, output: 25.0, cacheReadInput: 0.5, cacheWriteInput: 6.25 },
+  'claude-sonnet-5': { input: 2.0, output: 10.0, cacheReadInput: 0.2, cacheWriteInput: 2.5 },
+  'claude-sonnet-latest': {
+    input: 2.0,
+    output: 10.0,
+    cacheReadInput: 0.2,
+    cacheWriteInput: 2.5,
+  },
 
   // Google
   'gemini-1.5-flash': { input: 0.075, output: 0.3 },
@@ -73,11 +86,33 @@ export const resolveModelPrice = (modelId: string): ModelPrice | undefined => {
 export const computeCostUsd = (
   modelId: string,
   inputTokens: number,
-  outputTokens: number
+  outputTokens: number,
+  inputTokenDetails?: {
+    noCacheTokens?: number
+    cacheReadTokens?: number
+    cacheWriteTokens?: number
+  }
 ): number | undefined => {
   const price = resolveModelPrice(modelId)
   if (!price) return undefined
-  return (inputTokens * price.input + outputTokens * price.output) / 1_000_000
+  const hasCacheDetails =
+    inputTokenDetails?.cacheReadTokens !== undefined ||
+    inputTokenDetails?.cacheWriteTokens !== undefined
+  if (!hasCacheDetails) {
+    return (inputTokens * price.input + outputTokens * price.output) / 1_000_000
+  }
+  const cacheReadTokens = inputTokenDetails?.cacheReadTokens ?? 0
+  const cacheWriteTokens = inputTokenDetails?.cacheWriteTokens ?? 0
+  const noCacheTokens =
+    inputTokenDetails?.noCacheTokens ??
+    Math.max(inputTokens - cacheReadTokens - cacheWriteTokens, 0)
+  return (
+    (noCacheTokens * price.input +
+      cacheReadTokens * (price.cacheReadInput ?? price.input) +
+      cacheWriteTokens * (price.cacheWriteInput ?? price.input) +
+      outputTokens * price.output) /
+    1_000_000
+  )
 }
 
 /** Formats a cost for the report, keeping small numbers readable rather than rounding them to 0. */

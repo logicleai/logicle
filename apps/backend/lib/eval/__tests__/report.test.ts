@@ -74,6 +74,11 @@ describe('computeBreakEven', () => {
       score: { n: 3, mean: 1, median: 1, min: 1, max: 1, stdev: 0 },
       inputTokens: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
       outputTokens: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
+      cacheReadTokens: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
+      cacheWriteTokens: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
+      estimatedHistoryTokensBefore: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
+      estimatedHistoryTokensAfter: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
+      summarizedMessages: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
       costUsd: { n: 3, mean: costMean, median: costMean, min: costMean, max: costMean, stdev: 0 },
       costKnown: true,
       turns: { n: 3, mean: 1, median: 1, min: 1, max: 1, stdev: 0 },
@@ -149,6 +154,18 @@ describe('compare', () => {
 })
 
 describe('renderMarkdown', () => {
+  it('starts with an overall arm summary across scenarios', () => {
+    const markdown = renderMarkdown(
+      [
+        makeRun({ armName: 'a' }),
+        makeRun({ armName: 'a', scenarioId: 'scenario-2', repetition: 1 }),
+      ],
+      'a'
+    )
+    expect(markdown).toContain('## Overall')
+    expect(markdown).toContain('| a | 2 | 100% |')
+  })
+
   it('warns when there are too few repetitions to separate anything', () => {
     const markdown = renderMarkdown([makeRun({ armName: 'a' })], 'a')
     expect(markdown).toContain('distinguishable from noise')

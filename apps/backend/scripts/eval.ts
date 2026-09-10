@@ -12,7 +12,8 @@
  *     --scenario supplier-penalty --arms all-in-context,knowledge-box --repeat 8 --out report.md
  *
  * Flags:
- *   --scenario <id,...>   scenarios to run (default: all built-in)
+ *   --scenario <id,...>   scenarios to run (default: all in the selected suite)
+ *   --suite <name>        knowledge | context-compression (default: knowledge)
  *   --sweep <n,...>       replace the built-in scenarios with generated ones holding N documents
  *                         each, to trace cost and accuracy against corpus size
  *   --doc-words <n>       words per generated document (default: 700)
@@ -31,8 +32,6 @@
  *   --runs-in <path>      re-render a previous --runs-out artifact (or legacy raw run array); no API key needed
  *   --verbose             stream the conversation as it happens
  */
-
-export {}
 
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -55,12 +54,14 @@ const list = (name: string): string[] | undefined =>
     .filter(Boolean)
 
 const providerType = flag('provider') ?? 'openai'
+const suite = flag('suite') ?? 'knowledge'
 const assistantModel = flag('model') ?? 'gpt-4o-mini'
 const userModelId = flag('user-model') ?? assistantModel
 const judgeModelId = flag('judge-model') ?? assistantModel
 const repeat = Number(flag('repeat') ?? 3)
 const requestedBaselineArm = flag('baseline')
-const baselineArm = requestedBaselineArm ?? 'all-in-context'
+const baselineArm =
+  requestedBaselineArm ?? (suite === 'context-compression' ? 'compression-off' : 'all-in-context')
 const verbose = bool('verbose')
 const useJudge = !bool('no-judge')
 const runsIn = flag('runs-in')
@@ -105,8 +106,12 @@ const { migrateToLatest } = await import('@/db/migrations')
 await migrateToLatest()
 
 const { db } = await import('@/db/database')
-const { createKnowledgeBoxArm, allInContextArm } = await import('@/backend/lib/eval/arms')
+const { createContextCompressionArm, createKnowledgeBoxArm, compressionOffArm, allInContextArm } =
+  await import('@/backend/lib/eval/arms')
 const { builtInScenarios } = await import('@/backend/lib/eval/scenarios/supplierContracts')
+const { contextCompressionScenarios } = await import(
+  '@/backend/lib/eval/scenarios/contextCompression'
+)
 const { generateNeedleScenario } = await import('@/backend/lib/eval/scenarios/generator')
 const { runOne } = await import('@/backend/lib/eval/harness')
 const { createJudge } = await import('@/backend/lib/eval/judge')
@@ -178,9 +183,38 @@ const armRegistry: Record<string, Arm> = {
   'all-in-context': allInContextArm,
   'knowledge-box': createKnowledgeBoxArm({ questions }),
   'knowledge-box-no-projections': createKnowledgeBoxArm({ questions: [] }),
+  'compression-off': compressionOffArm,
+  'compression-keep-0': createContextCompressionArm({ keepRecentTurns: 0 }),
+  'compression-keep-1': createContextCompressionArm({ keepRecentTurns: 1 }),
+  'compression-keep-2': createContextCompressionArm({ keepRecentTurns: 2 }),
+  'compression-keep-4': createContextCompressionArm({ keepRecentTurns: 4 }),
+  'compression-prefetch-keep-0': createContextCompressionArm({
+    name: 'compression-prefetch-keep-0',
+    keepRecentTurns: 0,
+    retrievalMode: 'prefetch',
+  }),
+  'compression-prefetch-keep-1': createContextCompressionArm({
+    name: 'compression-prefetch-keep-1',
+    keepRecentTurns: 1,
+    retrievalMode: 'prefetch',
+  }),
 }
 
-const armNames = list('arms') ?? ['all-in-context', 'knowledge-box', 'knowledge-box-no-projections']
+if (suite !== 'knowledge' && suite !== 'context-compression') {
+  console.error(`Unknown suite "${suite}". Known: knowledge, context-compression`)
+  process.exit(1)
+}
+
+const armNames =
+  list('arms') ??
+  (suite === 'context-compression'
+    ? [
+        'compression-off',
+        'compression-keep-0',
+        'compression-prefetch-keep-0',
+        'compression-prefetch-keep-1',
+      ]
+    : ['all-in-context', 'knowledge-box', 'knowledge-box-no-projections'])
 const arms = armNames.map((name) => {
   const arm = armRegistry[name]
   if (!arm) {
@@ -194,6 +228,8 @@ const sweepSizes = list('sweep')
   ?.map(Number)
   .filter((size) => Number.isFinite(size) && size > 0)
 const scenarioIds = list('scenario')
+const suiteScenarios =
+  suite === 'context-compression' ? contextCompressionScenarios : builtInScenarios
 
 // A sweep replaces the built-in scenarios with generated ones, one per corpus size. Each keeps its
 // size in its id, so the existing per-scenario report sections read as the points of a curve.
@@ -209,16 +245,16 @@ const scenarios = sweepSizes
     )
   : scenarioIds
   ? scenarioIds.map((id) => {
-      const scenario = builtInScenarios.find((entry) => entry.id === id)
+      const scenario = suiteScenarios.find((entry) => entry.id === id)
       if (!scenario) {
         console.error(
-          `Unknown scenario "${id}". Known: ${builtInScenarios.map((entry) => entry.id).join(', ')}`
+          `Unknown scenario "${id}". Known: ${suiteScenarios.map((entry) => entry.id).join(', ')}`
         )
         process.exit(1)
       }
       return scenario
     })
-  : builtInScenarios
+  : suiteScenarios
 
 if (sweepSizes) {
   for (const scenario of scenarios) {
@@ -254,6 +290,7 @@ for (const scenario of scenarios) {
         assistant: {
           providerConfig,
           model: assistantLlmModel.id,
+          llmModel: assistantLlmModel,
           systemPrompt:
             'You are a company assistant answering questions about internal documents. Answer from the documents only. Always name the document a figure came from. If you cannot find something, say so instead of guessing.',
           tokenLimit: assistantLlmModel.context_length,
@@ -291,12 +328,19 @@ if (out) {
 const runsOut = flag('runs-out')
 if (runsOut) {
   let gitRevision: string | undefined
+  let gitDirty: boolean | undefined
   try {
     gitRevision = execFileSync('git', ['rev-parse', 'HEAD'], {
       cwd: process.cwd(),
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim()
+    gitDirty =
+      execFileSync('git', ['status', '--porcelain'], {
+        cwd: process.cwd(),
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim().length > 0
   } catch {
     // The runner also works from a source archive; revision metadata is useful, not required.
   }
@@ -305,6 +349,7 @@ if (runsOut) {
     createdAt: new Date().toISOString(),
     metadata: {
       gitRevision,
+      gitDirty,
       provider: providerType,
       assistantModel: assistantLlmModel.id,
       userModel: userLlmModel.id,
@@ -313,6 +358,7 @@ if (runsOut) {
       arms: arms.map((arm) => arm.name),
       scenarios: scenarios.map((scenario) => scenario.id),
       repeat,
+      suite,
       sweep: sweepSizes
         ? {
             documents: sweepSizes,

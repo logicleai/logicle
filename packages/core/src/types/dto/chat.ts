@@ -374,6 +374,11 @@ interface TextStreamPartUsage extends TextStreamPartGeneric {
   inputTokens: number
   outputTokens: number
   totalTokens: number
+  inputTokenDetails?: {
+    noCacheTokens?: number
+    cacheReadTokens?: number
+    cacheWriteTokens?: number
+  }
 }
 
 export type TextStreamPart =

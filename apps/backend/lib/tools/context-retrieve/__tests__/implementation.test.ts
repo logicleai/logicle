@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { ContextRetrievePlugin } from '@/backend/lib/tools/context-retrieve/implementation'
+import { findRelevantExcerpts } from '@/backend/lib/chat/context-search'
 import type { ToolFunction, ToolInvokeParams, ToolParams } from '@/lib/chat/tools'
 import { ChatState } from '@/backend/lib/chat/ChatState'
 import { dtoMessageToDbMessage } from '@/backend/models/message'
@@ -16,7 +17,10 @@ vi.mock('@/db/database', () => ({
       if (table === 'File') {
         return {
           selectAll: () => ({
-            where: () => ({ where: () => ({ executeTakeFirst: mockFileExecuteTakeFirst }), executeTakeFirst: mockFileExecuteTakeFirst }),
+            where: () => ({
+              where: () => ({ executeTakeFirst: mockFileExecuteTakeFirst }),
+              executeTakeFirst: mockFileExecuteTakeFirst,
+            }),
           }),
         }
       }
@@ -44,7 +48,9 @@ beforeEach(() => {
 
 const toolParams: ToolParams = { id: 't1', name: 'fm', provisioned: false, promptFragment: '' }
 const textOnlyModel = { capabilities: { vision: false, supportedMedia: [] } } as any
-const nativePdfModel = { capabilities: { vision: false, supportedMedia: ['application/pdf'] } } as any
+const nativePdfModel = {
+  capabilities: { vision: false, supportedMedia: ['application/pdf'] },
+} as any
 
 function makeInvokeParams(
   params: Record<string, unknown>,
@@ -297,7 +303,13 @@ describe('ContextRetrievePlugin get_message', () => {
 describe('ContextRetrievePlugin search', () => {
   it('finds a matching historical message and returns its id and a snippet', async () => {
     const messages: dto.Message[] = [
-      { ...base, id: 'u1', role: 'user', content: 'the quarterly revenue figures are attached', attachments: [] },
+      {
+        ...base,
+        id: 'u1',
+        role: 'user',
+        content: 'the quarterly revenue figures are attached',
+        attachments: [],
+      },
       { ...base, id: 'u2', role: 'user', content: 'thanks', attachments: [] },
     ]
     const fns = await getFunctions()
@@ -309,8 +321,52 @@ describe('ContextRetrievePlugin search', () => {
     expect((result as { value: string }).value).toContain('quarterly revenue figures')
   })
 
+  it('ranks lexical matches and excludes the live request and retrieval call', async () => {
+    const messages: dto.Message[] = [
+      {
+        ...base,
+        id: 'historical-answer',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'The current escalation channel is Falcon Desk.' }],
+      },
+      {
+        ...base,
+        id: 'current-request',
+        role: 'user',
+        content: 'What is the current escalation channel?',
+        attachments: [],
+      },
+      {
+        ...base,
+        id: 'current-tool-call',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'tool-call',
+            toolCallId: 'call-1',
+            toolName: 'context-retrieve__search',
+            args: { query: 'escalation channel Falcon Desk' },
+          },
+        ],
+      },
+    ]
+    const fns = await getFunctions()
+
+    const result = await fns.search.invoke(
+      makeInvokeParams({ query: 'escalation channel Falcon Desk' }, messages)
+    )
+
+    expect(result.type).toBe('text')
+    expect((result as { value: string }).value).toContain('id: historical-answer')
+    expect((result as { value: string }).value).toContain('Falcon Desk')
+    expect((result as { value: string }).value).not.toContain('current-request')
+    expect((result as { value: string }).value).not.toContain('current-tool-call')
+  })
+
   it('returns a friendly message when nothing matches', async () => {
-    const messages: dto.Message[] = [{ ...base, id: 'u1', role: 'user', content: 'hello', attachments: [] }]
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: 'hello', attachments: [] },
+    ]
     const fns = await getFunctions()
 
     const result = await fns.search.invoke(makeInvokeParams({ query: 'nonexistent' }, messages))
@@ -324,5 +380,73 @@ describe('ContextRetrievePlugin search', () => {
     const result = await fns.search.invoke(makeInvokeParams({ query: '   ' }, []))
 
     expect(result).toEqual({ type: 'error-text', value: 'Empty search query' })
+  })
+
+  it('searches only the requested message and returns lexical matches rather than the full payload', async () => {
+    const messages: dto.Message[] = [
+      {
+        ...base,
+        id: 't1',
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool-result',
+            toolCallId: 'c1',
+            toolName: 'ledger',
+            result: {
+              type: 'text',
+              value: `${'irrelevant archive material\n\n'.repeat(
+                100
+              )}Authoritative reconciled balance: EUR 418,275.60.`,
+            },
+          },
+        ],
+      },
+    ]
+    const fns = await getFunctions()
+
+    const result = await fns.search.invoke(
+      makeInvokeParams({ id: 't1', query: 'exact ledger reconciled balance' }, messages)
+    )
+
+    expect(result.type).toBe('text')
+    expect((result as { value: string }).value).toContain('EUR 418,275.60')
+    expect((result as { value: string }).value).not.toContain('irrelevant archive material')
+    expect(mockFileExecuteTakeFirst).not.toHaveBeenCalled()
+  })
+
+  it('searches an accessible file by id without returning its irrelevant bulk', async () => {
+    mockFileExecuteTakeFirst.mockResolvedValue({
+      id: 'f1',
+      name: 'transition.txt',
+      type: 'text/plain',
+      fileBlobId: null,
+      path: 'files/transition.txt',
+    })
+    mockExtractFromFile.mockResolvedValue(
+      `${'routine planning notes\n\n'.repeat(
+        100
+      )}Approved production transition date: 17 November 2027.`
+    )
+    const fns = await getFunctions()
+
+    const result = await fns.search.invoke(
+      makeInvokeParams({ id: 'f1', query: 'exact approved transition date' })
+    )
+
+    expect(result.type).toBe('text')
+    expect((result as { value: string }).value).toContain('17 November 2027')
+    expect((result as { value: string }).value).not.toContain('routine planning notes')
+  })
+})
+
+describe('findRelevantExcerpts', () => {
+  it('matches related terms when the complete query is not a literal substring', () => {
+    const excerpts = findRelevantExcerpts(
+      'Ordinary note.\n\nThe authoritative service registry identifier is LUMEN-83.',
+      'exact active registry identifier'
+    )
+
+    expect(excerpts).toEqual(['The authoritative service registry identifier is LUMEN-83.'])
   })
 })

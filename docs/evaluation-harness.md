@@ -17,6 +17,11 @@ An LLM impersonates a user pursuing a goal, and talks to a real Logicle assistan
 the goal is met, gives up, or runs out of turns. The same scenario is replayed against several
 **arms** — alternative assistant configurations — and the arms are compared.
 
+For context-policy comparisons, a scenario can instead provide a saved **reference chat**. The
+harness preloads that fixed history and sends one fixed final user message. Only the final exchange
+is scored. This removes simulated-user trajectory variance and prevents facts already present in
+the saved history from satisfying the answer-key gate.
+
 ```mermaid
 flowchart LR
   S[Scenario: corpus, goal, persona, rubric] --> U[Simulated user LLM]
@@ -78,6 +83,10 @@ with the harness:
 | `all-in-context`               | every document attached as assistant knowledge, sent in the preamble every turn — today's behaviour |
 | `knowledge-box`                | documents reachable only through the `knowledge_box` tool, with ingestion questions                 |
 | `knowledge-box-no-projections` | the same, with no ingestion questions — isolates chunk retrieval from projections                   |
+| `compression-off`              | saved reference history is sent verbatim                                                            |
+| `compression-keep-{0,1,2,4}`   | tool-driven retrieval with an explicit number of recent completed turns kept verbatim               |
+| `compression-prefetch-keep-0`  | query-aware excerpts, with every eligible historical turn compressed                                |
+| `compression-prefetch-keep-1`  | query-aware excerpts, retaining the immediately preceding completed turn verbatim                   |
 
 Anything expressible as "same scenario, different assistant configuration" belongs here. An arm
 can return `assistant.contextCompression` to compare compression on versus off; two chunk sizes
@@ -125,6 +134,24 @@ OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval.ts \
 The runner creates its own SQLite database and storage directory under the system temp dir and
 removes them afterwards. It needs no server and touches no existing database.
 
+Run the fixed-history, single-message context-compression suite with:
+
+```bash
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval.ts \
+  --suite context-compression --repeat 5 \
+  --runs-out context-compression-runs.json --out context-compression-report.md
+```
+
+Its reference conversations live in
+`apps/backend/lib/eval/scenarios/contextCompression.ts`. They retain no production content or
+identifiers: only aggregate turn-count cohorts from expensive conversations informed their shape;
+all prose, filenames, tool names and answer facts are synthetic.
+
+The default comparison is `compression-off`, tool-only `compression-keep-0`, and query-aware
+prefetch with windows 0 and 1. This isolates the two effects observed in the baseline run:
+stochastic model tool use and the cost of retaining a recent turn. Wider
+`compression-keep-{1,2,4}` arms remain selectable explicitly.
+
 Flags are documented in the header of `apps/backend/scripts/eval.ts`. The ones that matter:
 `--repeat`, `--arms`, `--baseline`, `--model`, `--user-model`, `--judge-model`, `--no-judge`,
 `--runs-out`, and `--runs-in`.
@@ -157,6 +184,7 @@ Two things about this are deliberate:
 | ---------------------------- | ---------------------------------------- |
 | `lib/eval/types.ts`          | scenario, arm, run result                |
 | `lib/eval/harness.ts`        | drives one (scenario, arm) run           |
+| `lib/eval/referenceChat.ts`  | saved chat → production message DTOs     |
 | `lib/eval/simulatedUser.ts`  | the LLM playing the user                 |
 | `lib/eval/judge.ts`          | the LLM grading transcripts              |
 | `lib/eval/metrics.ts`        | answer key, totals, scoring — pure       |
@@ -171,7 +199,7 @@ Everything marked pure is unit-tested and needs no API key.
 
 ## Open
 
-- **The corpus is synthetic.** `supplierContracts.ts` is built to have the right shape — one needle,
+- **The knowledge corpus is synthetic.** `supplierContracts.ts` is built to have the right shape — one needle,
   four near-identical distractors, realistic boilerplate — but it is not a real corpus. Mining real
   scenarios is the intended next step, and the answer keys they produce need a human pass.
 - **One provider at a time.** The assistant, the simulated user and the judge all run on the same
@@ -180,3 +208,6 @@ Everything marked pure is unit-tested and needs no API key.
 - **Setup cost is paid per repetition.** Ingestion runs once per run rather than once per arm, so
   wall-clock time scales with `--repeat` more than it needs to. It does not distort the reported
   numbers, since setup cost is reported per-arm rather than summed.
+- **Context-compression references are anonymized shape fixtures.** They reproduce aggregate
+  message-count cohorts and failure modes, not any real conversation's wording. Add reviewed,
+  tenant-approved fixtures separately if production semantics need to be represented.
