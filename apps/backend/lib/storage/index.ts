@@ -4,6 +4,7 @@ import { CachingStorage } from './CachingStorage'
 import { AeadEncryptingStorage } from '../../ee/AeadEncryptingStorage'
 import { DbBlobStorage } from './DbBlobStorage'
 import { FsStorage } from './FsStorage'
+import { HttpReadOnlyStorage } from './HttpReadOnlyStorage'
 import { S3Storage } from './S3Storage'
 import { PgpEncryptingStorage } from '../../ee/PgpEncryptingStorage'
 
@@ -18,6 +19,10 @@ function createBasicStorage(location: string) {
   } else if (location === 'replaydb:') {
     // Offline compression-replay evaluator only: bytes come from the replay database itself.
     return new DbBlobStorage()
+  } else if (location.startsWith('http://') || location.startsWith('https://')) {
+    // Replay bundle builder only: a narrow read-only proxy in front of an otherwise unreachable
+    // object store (see cli/download_replay_bundle in the ops repo).
+    return new HttpReadOnlyStorage(location, process.env.FILE_STORAGE_PROXY_AUTHORIZATION)
   } else {
     return new FsStorage(location)
   }

@@ -33,6 +33,8 @@ export interface ProductionReplayCase {
     reasoningEffort: dto.AssistantVersion['reasoning_effort']
     /** Parsed `AssistantVersion.contextCompression`; shape follows the running code's schema. */
     contextCompression: Record<string, unknown> | null
+    /** `Backend.configuration.endPoint`, when the backend needs one (e.g. `logiclecloud`). */
+    backendEndpoint?: string
   }
   /** The complete saved lineage, ending in the user message that incurred the audited prompt. */
   messages: dto.Message[]

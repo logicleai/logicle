@@ -140,15 +140,10 @@ let candidates = source
   ])
   .where('MessageAudit.type', '=', 'user')
   .where('MessageAudit.tokens', '>=', minimumAuditedInputTokens)
-  // Assistants with tools, sub-assistants, or knowledge files can't be replayed faithfully;
-  // exclude them in SQL so `--limit` counts admissible turns rather than being eaten by the
-  // (often most expensive) tool-using cohort.
-  .where((eb) =>
-    eb.or([
-      eb('AssistantVersion.subAssistants', 'is', null),
-      eb('AssistantVersion.subAssistants', '=', ''),
-    ])
-  )
+  // Assistants with tools or knowledge files can't be replayed faithfully; exclude them in SQL so
+  // `--limit` counts admissible turns rather than being eaten by the (often most expensive)
+  // tool/knowledge cohort. Sub-assistants are checked per row below — `subAssistants` is jsonb on
+  // postgres, so it can't be string-compared here.
   .where((eb) =>
     eb.not(
       eb.exists(
@@ -234,7 +229,7 @@ try {
       continue
     }
 
-    // The candidate query already excluded tool / sub-assistant / knowledge-file assistants.
+    // The candidate query already excluded tool and knowledge-file assistants.
     const assistant = await source
       .selectFrom('Assistant')
       .innerJoin('AssistantVersion', 'AssistantVersion.id', 'Assistant.publishedVersionId')
@@ -246,11 +241,19 @@ try {
         'Assistant.hidden as assistantHidden',
         'AssistantVersion.id as versionId',
         'AssistantVersion.backendId as backendId',
+        'AssistantVersion.subAssistants as subAssistants',
       ])
       .where('Assistant.id', '=', candidate.assistantId)
       .executeTakeFirst()
     if (!assistant) {
       skip(candidate, 'assistant or its published version is unavailable')
+      continue
+    }
+    const subAssistants = assistant.subAssistants
+      ? (JSON.parse(String(assistant.subAssistants)) as unknown[])
+      : []
+    if (Array.isArray(subAssistants) && subAssistants.length > 0) {
+      skip(candidate, 'assistant has sub-assistants')
       continue
     }
 
