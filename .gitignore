@@ -193,6 +193,11 @@ yarn-error.log*
 # Tests
 /report
 
+# Production chat replay artifacts contain verbatim tenant content, decrypted file bytes, and
+# candidate responses. Keep bundles and raw outputs in this ignored staging directory; publish
+# only sanitized aggregate findings.
+/tmp/production-chat-replays/
+
 # eslint
 .eslintcache
 
