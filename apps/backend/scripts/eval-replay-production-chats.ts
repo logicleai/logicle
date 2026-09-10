@@ -121,6 +121,7 @@ const { estimateHistoryMessageCosts } = await import('@/backend/lib/chat/token-e
 const {
   applyCompressionPlan,
   planMessageCompression,
+  resolveCompressionUserQuery,
   resolveCompressionRetrievalMode,
   resolveCompressionTriggerTokens,
 } = await import('@/backend/lib/chat/compression-planner')
@@ -389,12 +390,14 @@ const decisions = triggered
 const finalUserMessage = [...replayMessages]
   .reverse()
   .find((message): message is dto.UserMessage => message.role === 'user')
+const userQuery = compression ? resolveCompressionUserQuery(replayMessages) : undefined
 const plannedMessages = triggered
   ? await applyCompressionPlan(replayMessages, decisions, {
       prefetchQuery:
         resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
-          ? finalUserMessage?.content
+          ? userQuery
           : undefined,
+      attachmentContinuationQuery: userQuery,
     })
   : replayMessages
 const historyCostsAfter = await estimateHistoryMessageCosts(inspectedModel, plannedMessages)
@@ -415,6 +418,14 @@ const inspection = {
   retrievalMode: compression
     ? resolveCompressionRetrievalMode(compression.retrievalMode)
     : undefined,
+  prefetchQuerySource:
+    compression && resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
+      ? finalUserMessage?.content.trim()
+        ? 'current-user'
+        : userQuery
+        ? 'previous-user-fallback'
+        : 'none'
+      : undefined,
   estimatedHistoryTokensBefore,
   estimatedHistoryTokensAfter,
   estimatedHistoryTokenReduction: estimatedHistoryTokensBefore - estimatedHistoryTokensAfter,

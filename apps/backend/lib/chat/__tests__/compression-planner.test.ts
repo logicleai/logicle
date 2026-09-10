@@ -8,6 +8,7 @@ import {
   applyCompressionPlan,
   warmCompressionCache,
   resolveCompressionRetrievalMode,
+  resolveCompressionUserQuery,
   resolveCompressionTriggerTokens,
 } from '@/backend/lib/chat/compression-planner'
 import env from '@/lib/env'
@@ -382,6 +383,56 @@ describe('resolveCompressionRetrievalMode', () => {
   })
 })
 
+describe('resolveCompressionUserQuery', () => {
+  test('uses the current user text when it is non-empty', () => {
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: 'old question', attachments: [] },
+      { ...base, id: 'u2', role: 'user', content: ' current question ', attachments: [] },
+    ]
+
+    expect(resolveCompressionUserQuery(messages)).toBe('current question')
+  })
+
+  test('falls back to the nearest non-empty user request for an attachment-only turn', () => {
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: 'Is the premium indexed?', attachments: [] },
+      {
+        ...base,
+        id: 'a1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Please upload the general conditions.' }],
+      },
+      {
+        ...base,
+        id: 'u2',
+        role: 'user',
+        content: '   ',
+        attachments: [
+          { id: 'file-follow-up', name: 'conditions.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
+      },
+    ]
+
+    expect(resolveCompressionUserQuery(messages)).toBe('Is the premium indexed?')
+  })
+
+  test('returns undefined when the lineage contains no user-authored text', () => {
+    const messages: dto.Message[] = [
+      {
+        ...base,
+        id: 'u1',
+        role: 'user',
+        content: '',
+        attachments: [
+          { id: 'file-follow-up', name: 'conditions.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
+      },
+    ]
+
+    expect(resolveCompressionUserQuery(messages)).toBeUndefined()
+  })
+})
+
 describe('applyCompressionPlan', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -595,6 +646,117 @@ describe('applyCompressionPlan', () => {
     expect(rendered).toContain('[AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST')
     expect(rendered).toContain('Final migration program codename: Kestrel Blue.')
     expect(rendered.match(/Routine background note/g)?.length).toBeLessThan(30)
+  })
+
+  test('attachment-only continuation prefetch recovers the previous task from a compressed answer', async () => {
+    const previousQuestion = 'Is the insurance premium indexed?'
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: previousQuestion, attachments: [] },
+      {
+        ...base,
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'text',
+            text: `${'Unrelated policy background. '.repeat(
+              100
+            )}The insurance premium is indexed under section 17. Please upload the general conditions to verify the formula.`,
+          },
+        ],
+      },
+      {
+        ...base,
+        id: 'u2',
+        role: 'user',
+        content: '',
+        attachments: [
+          { id: 'file-follow-up', name: 'conditions.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
+      },
+    ]
+    const decisions = planMessageCompression(messages, 'conservative')
+    expect(decisions.find((decision) => decision.messageId === 'a1')?.policy).toBe('summary')
+
+    const compressed = await applyCompressionPlan(messages, decisions, {
+      prefetchQuery: resolveCompressionUserQuery(messages),
+      attachmentContinuationQuery: resolveCompressionUserQuery(messages),
+    })
+    const previousAnswer = compressed[1] as dto.AssistantMessage
+    const rendered = previousAnswer.parts
+      .filter((part): part is dto.TextPart => part.type === 'text')
+      .map((part) => part.text)
+      .join('\n')
+
+    expect(rendered).toContain('[AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST')
+    expect(rendered).toContain('The insurance premium is indexed under section 17.')
+    const currentTurn = compressed[2] as dto.UserMessage
+    expect(currentTurn.attachments).toHaveLength(1)
+    expect(currentTurn.content).toContain('[CONVERSATION CONTINUATION]')
+    expect(currentTurn.content).toContain(previousQuestion)
+  })
+
+  test('does not add continuation context to a non-empty current turn', async () => {
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: 'Old request', attachments: [] },
+      {
+        ...base,
+        id: 'u2',
+        role: 'user',
+        content: 'Analyze this attachment',
+        attachments: [
+          { id: 'file-current', name: 'current.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
+      },
+    ]
+
+    const compressed = await applyCompressionPlan(
+      messages,
+      planMessageCompression(messages, 'conservative'),
+      {
+        prefetchQuery: resolveCompressionUserQuery(messages),
+        attachmentContinuationQuery: resolveCompressionUserQuery(messages),
+      }
+    )
+
+    expect((compressed[1] as dto.UserMessage).content).toBe('Analyze this attachment')
+  })
+
+  test('tool-only retrieval still adds attachment-only continuation context without prefetching', async () => {
+    const previousQuestion = 'Is the insurance premium indexed?'
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: previousQuestion, attachments: [] },
+      {
+        ...base,
+        id: 'a1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Background. '.repeat(300) }],
+      },
+      {
+        ...base,
+        id: 'u2',
+        role: 'user',
+        content: '',
+        attachments: [
+          { id: 'file-current', name: 'current.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
+      },
+    ]
+
+    const compressed = await applyCompressionPlan(
+      messages,
+      planMessageCompression(messages, 'conservative'),
+      { attachmentContinuationQuery: resolveCompressionUserQuery(messages) }
+    )
+    const historicalAnswer = (compressed[1] as dto.AssistantMessage).parts
+      .filter((part): part is dto.TextPart => part.type === 'text')
+      .map((part) => part.text)
+      .join('\n')
+    const currentTurn = compressed[2] as dto.UserMessage
+
+    expect(historicalAnswer).not.toContain('[AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST')
+    expect(currentTurn.content).toContain('[CONVERSATION CONTINUATION]')
+    expect(currentTurn.content).toContain(previousQuestion)
   })
 })
 

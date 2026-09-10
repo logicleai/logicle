@@ -63,6 +63,7 @@ import {
   planMessageCompression,
   applyCompressionPlan,
   resolveCompressionRetrievalMode,
+  resolveCompressionUserQuery,
   resolveCompressionTriggerTokens,
 } from './compression-planner'
 
@@ -597,14 +598,13 @@ export class ChatAssistant {
         const decisions = planMessageCompression(messages, compression.preset, {
           keepRecentTurns: compression.keepRecentTurns,
         })
-        const currentUserMessage = [...messages]
-          .reverse()
-          .find((message) => message.role === 'user')
+        const userQuery = resolveCompressionUserQuery(messages)
         promptMessages = await applyCompressionPlan(messages, decisions, {
           prefetchQuery:
             resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
-              ? currentUserMessage?.content
+              ? userQuery
               : undefined,
+          attachmentContinuationQuery: userQuery,
         })
       } else {
         historyCosts = undefined

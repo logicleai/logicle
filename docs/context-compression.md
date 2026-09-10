@@ -240,7 +240,14 @@ Given the decisions above, `applyCompressionPlan` rewrites the message list: `fu
 through unchanged; `summary` messages are replaced by a compact, cached representation. In
 `prefetch` mode, deterministic lexical ranking then appends up to 6,000 characters of matching
 excerpts from compressed messages. Excerpts stay in the original message role; no
-historical tool output is promoted to a system or user instruction.
+historical tool output is promoted to a system or user instruction. The current user's non-empty
+text is the query. For an attachment-only turn with an empty text body, prefetch falls back to the
+nearest preceding non-empty user request so the uploaded file remains connected to the task it
+continues. The prompt builder also adds a bounded continuation note to that otherwise-empty current
+user message, making the relationship explicit instead of expecting the model to infer a task from
+retrieved historical excerpts alone. The continuation note is also present in `tool` mode, while
+the historical excerpts remain exclusive to `prefetch` mode. This changes only query-dependent
+prompt content, never the planner's stable decisions or cached base summaries.
 
 ### Summaries Are Always Plain Text
 
@@ -504,6 +511,8 @@ Covered in `apps/backend/lib/chat/__tests__/compression-planner.test.ts`:
 - Every `summary`-policy message carries a mandatory-retrieval line naming `context-retrieve`'s
   targeted `search` function, with full-message/file retrieval as fallback.
 - Query-aware prefetch inserts a relevant excerpt into the compressed message's original role.
+- Attachment-only continuation prefetch falls back to the nearest non-empty user request and
+  recovers the preceding task from a compressed answer.
 - `warmCompressionCache` builds/caches eligible messages and no-ops on ineligible ones, without
   throwing on failure.
 - A concurrent build for the same message joins the in-flight one instead of duplicating work.

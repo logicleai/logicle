@@ -31,18 +31,60 @@ export function resolveCompressionRetrievalMode(
   return retrievalMode ?? 'prefetch'
 }
 
+/**
+ * Recovers the user-authored query that drives both prefetch and attachment-only continuation
+ * context.
+ *
+ * Attachment-only follow-ups commonly have an empty current text body: the attachment is the
+ * answer to, or continuation of, the preceding user request. Falling back to that nearest
+ * non-empty request preserves the ongoing task without changing any turn-stable compression
+ * decision. `user-response` messages carry structured tool input rather than user-authored text,
+ * so they are intentionally skipped.
+ */
+export function resolveCompressionUserQuery(messages: dto.Message[]): string | undefined {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]!
+    if (message.role !== 'user') continue
+    const query = message.content.trim()
+    if (query) return query
+  }
+  return undefined
+}
+
 type ToolMessagePart = dto.ToolMessage['parts'][number]
 
 const LARGE_TEXT_THRESHOLD_CHARS = 2000
 const AGGRESSIVE_LARGE_TEXT_THRESHOLD_CHARS = 800
 const LARGE_ARGS_VALUE_THRESHOLD_CHARS = 200
 const INLINE_SUMMARY_MAX_CHARS = 500
+const ATTACHMENT_CONTINUATION_QUERY_MAX_CHARS = 1000
 const REDACTED_ARGS_MARKER =
   '[redacted: content available via context-retrieve, see summarized result]'
 const INLINE_SUMMARY_CONCURRENCY = 2
 
 const isImageMimeType = (mimetype: string) => mimetype.startsWith('image/')
 const charsToTokens = (chars: number) => Math.ceil(chars / 4)
+
+function addAttachmentContinuationContext(messages: dto.Message[], query: string): void {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]!
+    if (message.role !== 'user') continue
+    if (message.content.trim() || message.attachments.length === 0) return
+
+    const boundedQuery =
+      query.length > ATTACHMENT_CONTINUATION_QUERY_MAX_CHARS
+        ? `${query.slice(0, ATTACHMENT_CONTINUATION_QUERY_MAX_CHARS)}…`
+        : query
+    messages[index] = {
+      ...message,
+      content:
+        "[CONVERSATION CONTINUATION] This attachment-only turn continues the user's nearest " +
+        'preceding request. Interpret the attached file in that context. If the file does not ' +
+        `answer it, explain that specifically.\n\nPrevious request:\n${boundedQuery}`,
+    }
+    return
+  }
+}
 
 async function mapWithConcurrency<T, R>(
   items: T[],
@@ -260,12 +302,14 @@ export function planMessageCompression(
  * messages are replaced with a compact, cached representation (see `CompressedMessage`). Also
  * redacts duplicated generated-artifact content from assistant `tool-call.args` when the
  * corresponding tool-result was summarized, per docs/context-compression.md's "Generated
- * Artifacts" section.
+ * Artifacts" section. `prefetchQuery` selects historical excerpts;
+ * `attachmentContinuationQuery` annotates an otherwise-empty current attachment turn without
+ * enabling prefetch in tool-only mode.
  */
 export async function applyCompressionPlan(
   messages: dto.Message[],
   decisions: dto.MessageCompressionDecision[],
-  options: { prefetchQuery?: string } = {}
+  options: { prefetchQuery?: string; attachmentContinuationQuery?: string } = {}
 ): Promise<dto.Message[]> {
   const decisionByMessageId = new Map(decisions.map((d) => [d.messageId, d]))
   const output: dto.Message[] = []
@@ -307,7 +351,10 @@ export async function applyCompressionPlan(
   }
 
   if (options.prefetchQuery?.trim()) {
-    await addPrefetchedExcerpts(messages, output, decisions, options.prefetchQuery)
+    await addPrefetchedExcerpts(messages, output, decisions, options.prefetchQuery.trim())
+  }
+  if (options.attachmentContinuationQuery?.trim()) {
+    addAttachmentContinuationContext(output, options.attachmentContinuationQuery.trim())
   }
   return output
 }
