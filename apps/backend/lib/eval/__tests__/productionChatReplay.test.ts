@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   collectAttachmentFileIds,
+  defaultReplayKnowledgeQuestions,
   isReplayableLineage,
+  parseKnowledgeReplayArms,
 } from '@/backend/lib/eval/productionChatReplay'
 import type * as dto from '@/types/dto'
 
@@ -83,5 +85,39 @@ describe('collectAttachmentFileIds', () => {
 
   it('returns nothing for a text-only lineage', () => {
     expect(collectAttachmentFileIds([user()])).toEqual([])
+  })
+})
+
+describe('parseKnowledgeReplayArms', () => {
+  it('defaults to the production assistant-knowledge behavior', () => {
+    expect(parseKnowledgeReplayArms(undefined, true)).toEqual(['assistant-knowledge'])
+    expect(parseKnowledgeReplayArms(undefined, false)).toEqual(['assistant-knowledge'])
+  })
+
+  it('parses, validates, and de-duplicates comparison arms', () => {
+    expect(
+      parseKnowledgeReplayArms(
+        'assistant-knowledge, knowledge-box,knowledge-box-no-projections,knowledge-box',
+        true
+      )
+    ).toEqual(['assistant-knowledge', 'knowledge-box', 'knowledge-box-no-projections'])
+  })
+
+  it('rejects unknown arms and box replay without a corpus', () => {
+    expect(() => parseKnowledgeReplayArms('unknown', true)).toThrow('Unknown knowledge arm')
+    expect(() => parseKnowledgeReplayArms('knowledge-box', false)).toThrow(
+      'requires at least one configured assistant knowledge file'
+    )
+  })
+})
+
+describe('defaultReplayKnowledgeQuestions', () => {
+  it('uses stable unique ids and retrieval-oriented prompts', () => {
+    expect(new Set(defaultReplayKnowledgeQuestions.map((question) => question.id)).size).toBe(
+      defaultReplayKnowledgeQuestions.length
+    )
+    expect(defaultReplayKnowledgeQuestions.every((question) => question.prompt.length > 20)).toBe(
+      true
+    )
   })
 })

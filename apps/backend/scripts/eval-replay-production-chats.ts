@@ -7,11 +7,11 @@
  * parent lineage from the complete saved conversation.
  *
  * For each turn the runner rebuilds the saved assistant, applies `--override` on top of its
- * configuration, runs the turn once, and records the response plus the real provider token usage
- * and priced cost. It does not run an off/on comparison — the "before" number is production's own
- * `MessageAudit` input-token count, already in the bundle. To evaluate a change (a compression
- * preset, a different model, a new build) run it with the corresponding `--override` — or from a
- * checkout / deployment that has the change — and read the delta against production.
+ * configuration, and records the response plus real provider token usage and priced cost. It can
+ * compare knowledge arms directly; for other changes, the "before" number is production's own
+ * `MessageAudit` input-token count, already in the bundle. To evaluate a compression preset,
+ * different model, or new build, run it with the corresponding `--override` — or from a checkout /
+ * deployment that has the change — and read the delta against production.
  *
  * In bundle mode, the runner copies the SQLite bundle to a scratch dir and serves attachment bytes
  * from `ReplayFileBlob`. In live mode it reads the already-configured database and storage. The
@@ -42,6 +42,9 @@
  *   --model <id>           shorthand for --override '{"model":"<id>"}' (Mode B: a cheap model for
  *                          an off/on pair — see docs/evaluation-harness.md; ids in
  *                          REPLAY_EXTRA_MODELS below are dev-only and not user-visible)
+ *   --knowledge-arms <...> comma-separated assistant-knowledge, knowledge-box, and/or
+ *                          knowledge-box-no-projections (default: assistant-knowledge)
+ *   --repeat <n>           replay each knowledge arm n times; box ingestion happens once (default: 1)
  *   --inspect-only         calculate compression decisions/token estimates without an LLM call
  *   --judge                also classify each response against the saved production reply
  *   --judge-model <id>     judge model (default: the replay model)
@@ -55,7 +58,12 @@ import type * as dto from '@/types/dto'
 import type { Message as DbMessage } from '@/db/schema'
 import type { ProviderType } from '@/types/provider'
 import { computeCostUsd, formatCostUsd } from '@/backend/lib/eval/cost'
-import type { ProductionReplayCase, ReplayJudgment } from '@/backend/lib/eval/productionChatReplay'
+import type {
+  KnowledgeReplayArmName,
+  ProductionReplayCase,
+  ReplayJudgment,
+} from '@/backend/lib/eval/productionChatReplay'
+import type { SetupCost } from '@/backend/lib/eval/types'
 
 const args = process.argv.slice(2).filter((arg) => arg !== '--')
 const flag = (name: string): string | undefined => {
@@ -67,6 +75,7 @@ const bundlePath = flag('bundle')
 const liveConversationId = flag('conversation')
 const out = flag('out')
 const reportPath = flag('report')
+const repeat = Number(flag('repeat') ?? 1)
 if (
   (!bundlePath && !liveConversationId) ||
   (bundlePath && liveConversationId) ||
@@ -77,6 +86,10 @@ if (
     'Usage: (--bundle <bundle.sqlite> | --conversation <id>) [--message <id>] ' +
       '--out <results.json> --report <report.md>'
   )
+  process.exit(1)
+}
+if (!Number.isInteger(repeat) || repeat < 1) {
+  console.error('--repeat must be a positive integer')
   process.exit(1)
 }
 
@@ -108,6 +121,7 @@ if (bundlePath && workdir) {
 
 const { db } = await import('@/db/database')
 const { dtoMessageFromDbMessage } = await import('@/models/utils')
+const { assistantVersionFiles } = await import('@/models/assistant')
 const { renderMessagePlainText } = await import('@/backend/lib/chat/message-projection')
 const { ChatAssistant } = await import('@/backend/lib/chat')
 const { EvalSink } = await import('@/backend/lib/eval/sink')
@@ -123,9 +137,13 @@ const {
   resolveCompressionRetrievalMode,
   resolveCompressionTriggerTokens,
 } = await import('@/backend/lib/chat/compression-planner')
-const { createReplayJudge, isReplayableLineage } = await import(
-  '@/backend/lib/eval/productionChatReplay'
-)
+const {
+  createReplayJudge,
+  defaultReplayKnowledgeQuestions,
+  isReplayableLineage,
+  parseKnowledgeReplayArms,
+} = await import('@/backend/lib/eval/productionChatReplay')
+const { allInContextArm, createKnowledgeBoxArm } = await import('@/backend/lib/eval/arms')
 type LlmModel = (typeof llmModels)[number]
 
 setTokenizerCounter({
@@ -257,6 +275,7 @@ const assistant = await db
   .select([
     'Assistant.deleted as deleted',
     'AssistantVersion.id as versionId',
+    'AssistantVersion.backendId as backendId',
     'AssistantVersion.model as model',
     'AssistantVersion.systemPrompt as systemPrompt',
     'AssistantVersion.temperature as temperature',
@@ -298,16 +317,7 @@ if (configuredTool) {
     `Assistant ${selectedAudit.assistantId} has configured tools; replay has no fixture.`
   )
 }
-const configuredKnowledgeFile = await db
-  .selectFrom('AssistantVersionFile')
-  .select('fileId')
-  .where('assistantVersionId', '=', selectedAssistant.versionId)
-  .executeTakeFirst()
-if (configuredKnowledgeFile) {
-  await abortReplay(
-    `Assistant ${selectedAudit.assistantId} has configured knowledge files; replay has no index fixture.`
-  )
-}
+const knowledgeFiles = await assistantVersionFiles(selectedAssistant.versionId)
 
 const productionResponseRow = conversationMessages
   .filter((message) => message.parent === selectedAudit.messageId && message.role === 'assistant')
@@ -341,10 +351,29 @@ const cases: ProductionReplayCase[] = [
         : undefined,
     },
     messages: replayMessages,
+    knowledgeFiles,
     productionReply,
   },
 ]
 const replayUser = bundlePath ? 'production-replay-user' : conversation.ownerId
+
+const knowledgeArmNames: KnowledgeReplayArmName[] = await (async () => {
+  try {
+    return parseKnowledgeReplayArms(flag('knowledge-arms'), cases[0]!.knowledgeFiles.length > 0)
+  } catch (error) {
+    return abortReplay(error instanceof Error ? error.message : String(error))
+  }
+})()
+if (
+  !bundlePath &&
+  knowledgeArmNames.some(
+    (name) => name === 'knowledge-box' || name === 'knowledge-box-no-projections'
+  )
+) {
+  await abortReplay(
+    'Knowledge-box arms require --bundle because indexing writes evaluation rows. Build an offline bundle first.'
+  )
+}
 
 const providerType = flag('provider') ?? cases[0]!.assistant.providerType
 const resolveModel = (id: string) => {
@@ -454,6 +483,7 @@ if (bool('inspect-only')) {
     `Model: \`${inspection.model}\``,
     `Saved token limit: **${tokenLimit}**`,
     `Production input tokens: **${selectedAudit.tokens}**`,
+    `Assistant knowledge files: **${cases[0]!.knowledgeFiles.length}**.`,
     '',
     `Compression: **${inspection.compressionEnabled ? 'enabled' : 'disabled'}**` +
       (compression
@@ -487,13 +517,15 @@ if (bool('inspect-only')) {
     out,
     JSON.stringify(
       {
-        version: 3,
+        version: 4,
         createdAt: new Date().toISOString(),
         source: bundlePath
           ? { mode: 'bundle', bundle: bundlePath }
           : { mode: 'live', conversationId: replayConversationId },
         selectedMessageId: selectedAudit.messageId,
         override,
+        knowledgeArms: knowledgeArmNames,
+        knowledgeFiles: cases[0]!.knowledgeFiles,
         inspection,
       },
       null,
@@ -527,8 +559,27 @@ const providerConfig = {
   ...(backendEndpoint ? { endPoint: backendEndpoint } : {}),
 } as Parameters<typeof ChatAssistant.build>[0]
 
+// Projection ingestion resolves a backend from the database rather than from ChatAssistant's
+// explicit replay config. In bundle mode this row is a scratch copy, so point it at the same
+// provider credentials used for the replay and avoid depending on secrets from production.
+if (knowledgeArmNames.includes('knowledge-box')) {
+  await db
+    .updateTable('Backend')
+    .set({
+      providerType: providerType as never,
+      configuration: JSON.stringify({
+        apiKey,
+        ...(backendEndpoint ? { endPoint: backendEndpoint } : {}),
+      }),
+    })
+    .where('id', '=', selectedAssistant.backendId)
+    .execute()
+}
+
 interface ReplayResult {
   caseId: string
+  knowledgeArm: KnowledgeReplayArmName
+  repetition: number
   source: ProductionReplayCase['source']
   model: string
   assistantConfig: Record<string, unknown>
@@ -543,10 +594,31 @@ interface ReplayResult {
   judgment?: ReplayJudgment
 }
 
+interface KnowledgeArmSetupResult {
+  knowledgeArm: KnowledgeReplayArmName
+  setupCost?: SetupCost
+  setupCostUsd?: number
+  error?: string
+}
+
 const cloneMessages = (messages: dto.Message[]) =>
   JSON.parse(JSON.stringify(messages)) as dto.Message[]
 
 const results: ReplayResult[] = []
+const armSetups: KnowledgeArmSetupResult[] = []
+const replayScenario = {
+  id: `production-replay-${selectedAudit.messageId}`,
+  description: 'A fixed production conversation replay.',
+  corpus: [],
+  goal: 'Answer the final real user message.',
+  maxTurns: 1,
+  rubric: 'Preserve the usefulness and factual content of the production response.',
+}
+const knowledgeArmRegistry = {
+  'assistant-knowledge': allInContextArm,
+  'knowledge-box': createKnowledgeBoxArm({ questions: defaultReplayKnowledgeQuestions }),
+  'knowledge-box-no-projections': createKnowledgeBoxArm({ questions: [] }),
+}
 try {
   for (const entry of cases) {
     if (entry.assistant.providerType !== providerType && !flag('provider')) {
@@ -554,82 +626,131 @@ try {
         `Bundle mixes providers; rerun with --provider and a matching --model for case ${entry.id}`
       )
     }
-    const assistantConfig: Record<string, unknown> = {
-      assistantId: `production-replay-${entry.id}`,
-      model: entry.assistant.model,
-      systemPrompt: entry.assistant.systemPrompt,
-      temperature: entry.assistant.temperature,
-      tokenLimit: entry.assistant.tokenLimit,
-      reasoning_effort: entry.assistant.reasoningEffort,
-      contextCompression: entry.assistant.contextCompression,
-      ...override,
-    }
-    const model = resolveModel(String(assistantConfig.model))
+    for (const knowledgeArmName of knowledgeArmNames) {
+      const arm = knowledgeArmRegistry[knowledgeArmName]
+      let setup: Awaited<ReturnType<typeof arm.setup>> | undefined
+      let setupError: string | undefined
+      try {
+        setup = await arm.setup({
+          scenario: replayScenario,
+          files: entry.knowledgeFiles,
+          runId: `${entry.id}-${knowledgeArmName}`.replace(/[^a-zA-Z0-9-]/g, ''),
+        })
+      } catch (caught) {
+        setupError = caught instanceof Error ? caught.message : String(caught)
+      }
 
-    process.stderr.write(
-      `Replaying ${entry.id} (production input ${entry.source.auditedInputTokens})\n`
-    )
-    const sink = new EvalSink()
-    let response = ''
-    let usage = { inputTokens: 0, outputTokens: 0 }
-    let providerCalls = 0
-    let toolCalls: string[] = []
-    let error: string | undefined
-    try {
-      const assistant = await ChatAssistant.build(
-        providerConfig,
-        assistantConfig as unknown as Parameters<typeof ChatAssistant.build>[1],
-        {},
-        [],
-        [],
-        { user: replayUser, conversationId: replayConversationId }
-      )
-      await assistant.processUserMessageWithSink(cloneMessages(entry.messages), sink)
-      const raw = sink.getUsage()
-      usage = { inputTokens: raw.inputTokens, outputTokens: raw.outputTokens }
-      providerCalls = sink.events.filter((event) => event.type === 'usage').length
-      toolCalls = sink.getToolCallNames()
-      response = sink.getText().trim() || `[no reply] ${sink.getErrors().join('; ')}`.trim()
-    } catch (caught) {
-      error = caught instanceof Error ? caught.message : String(caught)
-    }
+      armSetups.push({
+        knowledgeArm: knowledgeArmName,
+        setupCost: setup?.setupCost,
+        setupCostUsd:
+          setup?.setupCost?.calls === 0
+            ? 0
+            : setup?.setupCost?.modelId
+            ? computeCostUsd(
+                setup.setupCost.modelId,
+                setup.setupCost.inputTokens,
+                setup.setupCost.outputTokens
+              )
+            : undefined,
+        error: setupError,
+      })
 
-    let judgment: ReplayJudgment | undefined
-    if (bool('judge') && !error) {
-      const judgeModel = resolveModel(flag('judge-model') ?? model.id)
-      judgment = await createReplayJudge(
-        ChatAssistant.createLanguageModel(providerConfig, judgeModel),
-        {
-          supportsTemperature:
-            !modelSupportsReasoning(judgeModel) && judgeModel.capabilities.temperature !== false,
+      try {
+        for (let repetition = 0; repetition < repeat; repetition += 1) {
+          const assistantConfig: Record<string, unknown> = {
+            assistantId: `production-replay-${entry.id}-${knowledgeArmName}-${repetition}`,
+            model: entry.assistant.model,
+            systemPrompt: entry.assistant.systemPrompt,
+            temperature: entry.assistant.temperature,
+            tokenLimit: entry.assistant.tokenLimit,
+            reasoning_effort: entry.assistant.reasoningEffort,
+            contextCompression: entry.assistant.contextCompression,
+            ...override,
+          }
+          if (setup?.systemPromptSuffix) {
+            assistantConfig.systemPrompt = `${String(assistantConfig.systemPrompt)}\n\n${
+              setup.systemPromptSuffix
+            }`
+          }
+          const model = resolveModel(String(assistantConfig.model))
+
+          process.stderr.write(
+            `Replaying ${entry.id} · ${knowledgeArmName} · #${repetition + 1} ` +
+              `(production input ${entry.source.auditedInputTokens})\n`
+          )
+          const sink = new EvalSink()
+          let response = ''
+          let usage = { inputTokens: 0, outputTokens: 0 }
+          let providerCalls = 0
+          let toolCalls: string[] = []
+          let error = setupError
+          if (!error && setup) {
+            try {
+              const assistant = await ChatAssistant.build(
+                providerConfig,
+                assistantConfig as unknown as Parameters<typeof ChatAssistant.build>[1],
+                {},
+                setup.tools,
+                setup.knowledge,
+                { user: replayUser, conversationId: replayConversationId }
+              )
+              await assistant.processUserMessageWithSink(cloneMessages(entry.messages), sink)
+              const raw = sink.getUsage()
+              usage = { inputTokens: raw.inputTokens, outputTokens: raw.outputTokens }
+              providerCalls = sink.events.filter((event) => event.type === 'usage').length
+              toolCalls = sink.getToolCallNames()
+              response = sink.getText().trim() || `[no reply] ${sink.getErrors().join('; ')}`.trim()
+            } catch (caught) {
+              error = caught instanceof Error ? caught.message : String(caught)
+            }
+          }
+
+          let judgment: ReplayJudgment | undefined
+          if (bool('judge') && !error) {
+            const judgeModel = resolveModel(flag('judge-model') ?? model.id)
+            judgment = await createReplayJudge(
+              ChatAssistant.createLanguageModel(providerConfig, judgeModel),
+              {
+                supportsTemperature:
+                  !modelSupportsReasoning(judgeModel) &&
+                  judgeModel.capabilities.temperature !== false,
+              }
+            )((entry.messages.at(-1) as dto.UserMessage).content, entry.productionReply, response)
+          }
+
+          results.push({
+            caseId: entry.id,
+            knowledgeArm: knowledgeArmName,
+            repetition,
+            source: entry.source,
+            model: model.id,
+            assistantConfig: { contextCompression: assistantConfig.contextCompression },
+            response,
+            usage,
+            providerCalls,
+            toolCalls,
+            // Deliberately omit provider cache details: comparisons price every input token at
+            // the ordinary rate, so a warm/cold prompt cache cannot manufacture a saving.
+            costUsd: error
+              ? undefined
+              : computeCostUsd(model.id, usage.inputTokens, usage.outputTokens),
+            productionInputCostUsd: computeCostUsd(model.id, entry.source.auditedInputTokens, 0),
+            inputTokensVsProduction: entry.source.auditedInputTokens - usage.inputTokens,
+            error,
+            judgment,
+          })
         }
-      )((entry.messages.at(-1) as dto.UserMessage).content, entry.productionReply, response)
+      } finally {
+        await setup?.teardown?.().catch(() => undefined)
+      }
     }
-
-    results.push({
-      caseId: entry.id,
-      source: entry.source,
-      model: model.id,
-      assistantConfig: { contextCompression: assistantConfig.contextCompression },
-      response,
-      usage,
-      providerCalls,
-      toolCalls,
-      // Deliberately omit provider cache details: replay comparisons price every input token at
-      // the ordinary rate, so a warm/cold prompt cache cannot manufacture a compression saving.
-      costUsd: computeCostUsd(model.id, usage.inputTokens, usage.outputTokens),
-      productionInputCostUsd: computeCostUsd(model.id, entry.source.auditedInputTokens, 0),
-      inputTokensVsProduction: entry.source.auditedInputTokens - usage.inputTokens,
-      error,
-      judgment,
-    })
   }
 } finally {
   await db.destroy()
   if (workdir) rmSync(workdir, { recursive: true, force: true })
 }
 
-const totalInputDelta = results.reduce((total, r) => total + r.inputTokensVsProduction, 0)
 const verdicts = new Map<string, number>()
 for (const result of results) {
   if (result.judgment) {
@@ -637,14 +758,70 @@ for (const result of results) {
   }
 }
 
+const successfulResults = results.filter((result) => !result.error)
+const mean = (values: number[]): number | undefined =>
+  values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : undefined
+const baselineResults = successfulResults.filter(
+  (result) => result.knowledgeArm === 'assistant-knowledge'
+)
+const baselineMeanInput = mean(baselineResults.map((result) => result.usage.inputTokens))
+const baselineMeanCost = mean(
+  baselineResults.flatMap((result) => (result.costUsd === undefined ? [] : [result.costUsd]))
+)
+const armSummaries = knowledgeArmNames.map((knowledgeArm) => {
+  const armResults = successfulResults.filter((result) => result.knowledgeArm === knowledgeArm)
+  const meanInputTokens = mean(armResults.map((result) => result.usage.inputTokens))
+  const meanOutputTokens = mean(armResults.map((result) => result.usage.outputTokens))
+  const meanCostUsd = mean(
+    armResults.flatMap((result) => (result.costUsd === undefined ? [] : [result.costUsd]))
+  )
+  const setup = armSetups.find((entry) => entry.knowledgeArm === knowledgeArm)
+  const perRunSavingUsd =
+    baselineMeanCost !== undefined && meanCostUsd !== undefined
+      ? baselineMeanCost - meanCostUsd
+      : undefined
+  return {
+    knowledgeArm,
+    successfulRuns: armResults.length,
+    failedRuns: results.filter((result) => result.knowledgeArm === knowledgeArm && result.error)
+      .length,
+    meanInputTokens,
+    meanOutputTokens,
+    meanCostUsd,
+    inputTokensSavedVsAssistantKnowledge:
+      baselineMeanInput !== undefined && meanInputTokens !== undefined
+        ? baselineMeanInput - meanInputTokens
+        : undefined,
+    setupCost: setup?.setupCost,
+    setupCostUsd: setup?.setupCostUsd,
+    breakEvenConversations:
+      setup?.setupCostUsd !== undefined && perRunSavingUsd !== undefined && perRunSavingUsd > 0
+        ? setup.setupCostUsd / perRunSavingUsd
+        : undefined,
+  }
+})
+
+const formatMean = (value: number | undefined) =>
+  value === undefined ? 'n/a' : Math.round(value).toLocaleString('en-US')
+const formatSignedMean = (value: number | undefined) =>
+  value === undefined
+    ? 'n/a'
+    : `${value >= 0 ? '+' : ''}${Math.round(value).toLocaleString('en-US')}`
+const formatBreakEven = (value: number | undefined) =>
+  value === undefined ? 'n/a' : Math.ceil(value).toLocaleString('en-US')
+
 const markdown = [
-  '# Production chat replay',
+  '# Production knowledge replay',
   '',
   `Replayed message \`${selectedAudit.messageId}\` from conversation \`${replayConversationId}\` ` +
     (bundlePath
       ? `using offline bundle \`${path.basename(bundlePath)}\`.`
       : 'using the configured live database and storage.') +
     ' Production input tokens are from `MessageAudit` (input only).',
+  '',
+  `Assistant knowledge corpus: **${cases[0]!.knowledgeFiles.length} file(s)**. ` +
+    `Arms: ${knowledgeArmNames.map((name) => `\`${name}\``).join(', ')}. ` +
+    `Repetitions: **${repeat}**.`,
   '',
   override && Object.keys(override).length > 0
     ? `Config override: \`${JSON.stringify(override)}\``
@@ -654,11 +831,28 @@ const markdown = [
     `${inspection.estimatedHistoryTokensAfter}**; summarized messages: ` +
     `**${inspection.summarizedMessages.length}**.`,
   '',
-  '| message | production input | replay input | replay output | provider calls | tool calls | replay cost | input Δ vs prod | verdict |',
-  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
+  '## Arm summary',
+  '',
+  '| arm | successful / failed | mean input | mean output | input saved vs assistant knowledge | mean run cost | setup cost | break-even conversations |',
+  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+  ...armSummaries.map(
+    (summary) =>
+      `| ${summary.knowledgeArm} | ${summary.successfulRuns} / ${summary.failedRuns} | ` +
+      `${formatMean(summary.meanInputTokens)} | ${formatMean(summary.meanOutputTokens)} | ` +
+      `${formatSignedMean(summary.inputTokensSavedVsAssistantKnowledge)} | ` +
+      `${formatCostUsd(summary.meanCostUsd)} | ${formatCostUsd(summary.setupCostUsd)} | ` +
+      `${formatBreakEven(summary.breakEvenConversations)} |`
+  ),
+  '',
+  'Setup cost is paid once per knowledge corpus. Break-even uses total replay cost and is shown only when the `assistant-knowledge` baseline was run and the arm is cheaper.',
+  '',
+  '## Runs',
+  '',
+  '| arm | repetition | production input | replay input | replay output | provider calls | tool calls | replay cost | input Δ vs prod | verdict |',
+  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
   ...results.map(
     (r) =>
-      `| ${r.caseId} | ${r.source.auditedInputTokens} | ${
+      `| ${r.knowledgeArm} | ${r.repetition + 1} | ${r.source.auditedInputTokens} | ${
         r.error ? 'error' : r.usage.inputTokens
       } | ${r.error ? '—' : r.usage.outputTokens} | ${r.error ? '—' : r.providerCalls} | ${
         r.error ? '—' : r.toolCalls.length
@@ -667,8 +861,7 @@ const markdown = [
       } |`
   ),
   '',
-  `Total input-token delta vs production: **${totalInputDelta}** ` +
-    `(positive = replay used fewer input tokens than production recorded).`,
+  '_Judgments compare each replay with the saved production response, which is a reference rather than a factual answer key. Review regressions against the source documents._',
   '',
   ...(results.some((r) => r.judgment && r.judgment.verdict !== 'equivalent')
     ? [
@@ -677,9 +870,9 @@ const markdown = [
         ...results.flatMap((r) =>
           r.judgment && r.judgment.verdict !== 'equivalent'
             ? [
-                `- ${r.caseId} — ${r.judgment.verdict}: ${r.judgment.rationale}${
-                  r.judgment.failures.length ? ` (${r.judgment.failures.join('; ')})` : ''
-                }`,
+                `- ${r.knowledgeArm} #${r.repetition + 1} — ${r.judgment.verdict}: ${
+                  r.judgment.rationale
+                }${r.judgment.failures.length ? ` (${r.judgment.failures.join('; ')})` : ''}`,
               ]
             : []
         ),
@@ -692,14 +885,19 @@ await writeFile(
   out,
   JSON.stringify(
     {
-      version: 3,
+      version: 4,
       createdAt: new Date().toISOString(),
       source: bundlePath
         ? { mode: 'bundle', bundle: bundlePath }
         : { mode: 'live', conversationId: replayConversationId },
       selectedMessageId: selectedAudit.messageId,
       override,
+      repeat,
+      knowledgeArms: knowledgeArmNames,
+      knowledgeFiles: cases[0]!.knowledgeFiles,
       inspection,
+      armSetups,
+      armSummaries,
       results,
     },
     null,

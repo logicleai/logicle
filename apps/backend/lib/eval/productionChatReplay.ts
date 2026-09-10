@@ -3,13 +3,14 @@ import * as z from 'zod'
 import type { LanguageModelV3 } from '@ai-sdk/provider'
 import type * as dto from '@/types/dto'
 import type { ProviderType } from '@/types/provider'
+import type { KnowledgeBoxQuestion } from '@/lib/tools/schemas'
 
 /**
  * One production turn selected for offline replay.
  *
  * The runner reconstructs this shape from a complete conversation, loaded either from the live
- * database or from a bundle produced by `eval-build-replay-bundle.ts`. Bundle attachment bytes
- * live in `ReplayFileBlob`, already decrypted.
+ * database or from a bundle produced by `eval-build-replay-bundle.ts`. Bundled conversation and
+ * assistant-knowledge file bytes live in `ReplayFileBlob`, already decrypted.
  */
 export interface ProductionReplayCase {
   id: string
@@ -37,8 +38,68 @@ export interface ProductionReplayCase {
   }
   /** The complete saved lineage, ending in the user message that incurred the audited prompt. */
   messages: dto.Message[]
+  /** Knowledge files attached to the published assistant version, in configured order. */
+  knowledgeFiles: dto.AssistantFile[]
   /** Production's next assistant text. It is a reference for the judge, not an answer key. */
   productionReply: string
+}
+
+export const knowledgeReplayArmNames = [
+  'assistant-knowledge',
+  'knowledge-box',
+  'knowledge-box-no-projections',
+] as const
+
+export type KnowledgeReplayArmName = (typeof knowledgeReplayArmNames)[number]
+
+/**
+ * General-purpose projections for replaying an existing assistant knowledge corpus as a box.
+ * Real deployments should still tune questions to their corpus; the chunks-only arm shows how
+ * much these generic projections help or hurt.
+ */
+export const defaultReplayKnowledgeQuestions: KnowledgeBoxQuestion[] = [
+  {
+    id: 'summary',
+    title: 'Summary',
+    prompt:
+      'What is this document, who or what does it concern, and what does it govern or explain?',
+  },
+  {
+    id: 'key-facts',
+    title: 'Key facts',
+    prompt:
+      'List the concrete names, identifiers, figures, dates, deadlines, requirements, and decisions stated by this document, each with what it refers to.',
+  },
+]
+
+export const parseKnowledgeReplayArms = (
+  raw: string | undefined,
+  hasKnowledgeFiles: boolean
+): KnowledgeReplayArmName[] => {
+  if (!raw) return ['assistant-knowledge']
+
+  const names = raw
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean)
+  if (names.length === 0) throw new Error('--knowledge-arms must name at least one arm')
+
+  const known = new Set<string>(knowledgeReplayArmNames)
+  const unknown = names.filter((name) => !known.has(name))
+  if (unknown.length > 0) {
+    throw new Error(
+      `Unknown knowledge arm(s): ${unknown.join(', ')}. Known: ${knowledgeReplayArmNames.join(
+        ', '
+      )}`
+    )
+  }
+  if (!hasKnowledgeFiles && names.some((name) => name !== 'assistant-knowledge')) {
+    throw new Error(
+      'Knowledge-box replay requires at least one configured assistant knowledge file'
+    )
+  }
+
+  return [...new Set(names)] as KnowledgeReplayArmName[]
 }
 
 export type ReplayVerdict = 'equivalent' | 'minor-regression' | 'major-regression' | 'inconclusive'
@@ -57,7 +118,7 @@ const replayJudgmentSchema = z.object({
 
 const replayJudgePrompt = [
   'Compare a candidate chat response with the production response to the same final user message.',
-  'Decide whether compression caused a material regression in helpfulness, completeness, instruction-following, or unsupported claims.',
+  'Decide whether the candidate configuration caused a material regression in helpfulness, completeness, instruction-following, or unsupported claims.',
   'The production answer is only a reference, not proof that its facts are correct. Do not invent a factual answer key.',
   'Return equivalent when the candidate is at least as useful in substance; minor-regression for a recoverable omission; major-regression when the user would materially fail; inconclusive when the reference is insufficient to judge.',
   'Do not prefer either answer for length, style, or wording alone.',

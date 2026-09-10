@@ -220,10 +220,10 @@ use the two-stage replay workflow: **build a bundle**, then **replay it** throug
 to test. The stages are fully separated. The bundle is a self-contained SQLite file; once it
 exists, replay never touches the source deployment, S3, or any network beyond the LLM provider.
 
-The replay is not an off/on comparison — it runs each turn once, with whatever configuration you
-give it. The "before" number to compare against is production's own `MessageAudit` input-token
-count, which travels in the bundle. Replay cost intentionally prices all input tokens at the normal
-input rate: prompt-cache read/write discounts are ignored on both sides.
+Knowledge arms can be compared directly in one replay. For other changes, the "before" number is
+production's own `MessageAudit` input-token count, which travels in the bundle. Replay cost
+intentionally prices all input tokens at the normal input rate: prompt-cache read/write discounts
+are ignored on both sides.
 
 ### Stage 1 — build the bundle
 
@@ -232,14 +232,27 @@ message, calculate a parent lineage, mine traffic, rank turns, or apply cohort f
 interesting conversation (for example from audited token trends) belongs to the infra discovery
 tools. The builder copies into the bundle the complete conversation: every `Message` and
 `MessageAudit`, the published assistant configuration (`Assistant` / `AssistantVersion` /
-`Backend`), and every attachment referenced anywhere in the conversation — `File` /
-`FileBlob` rows rewritten as `production-replay-user`-owned with encryption cleared, and the bytes
-themselves **decrypted** into a `ReplayFileBlob(path, size, bytes)` table. No provider
-credentials, no storage credentials, no other tenant data.
+`Backend`), every conversation attachment, and every knowledge file attached to the published
+assistant version. `File` / `FileBlob` rows are rewritten as `production-replay-user`-owned with
+encryption cleared, and the bytes themselves are **decrypted** into a
+`ReplayFileBlob(path, size, bytes)` table. No provider credentials, no storage credentials, no
+other tenant data.
+
+The bundle is still production data: it contains verbatim conversation content and decrypted file
+bytes. Store, transfer, and delete it under the tenant's data-handling rules.
+
+Keep bundles and raw replay outputs in the ignored `/tmp/production-chat-replays/` directory (or
+another approved location outside the repository). Do not commit real chat bundles, raw responses,
+or unreviewed reports; publish only sanitized aggregate findings later, together with any
+knowledge-box tuning they motivate.
+
+```bash
+mkdir -p /tmp/production-chat-replays
+```
 
 The builder is infra-agnostic: it reads the source database from `--source-db` (or `$DATABASE_URL`)
-and attachment bytes through the normal storage stack (`FILE_STORAGE_LOCATION` plus the
-`FILE_STORAGE_ENCRYPTION_*` vars, only needed when the conversation has attachments).
+and file bytes through the normal storage stack (`FILE_STORAGE_LOCATION` plus the
+`FILE_STORAGE_ENCRYPTION_*` vars, needed when the conversation or assistant has files).
 
 **Lowest friction — run it on a running instance.** Exec into a Logicle container: `DATABASE_URL`
 and `FILE_STORAGE_LOCATION` are already set to that instance's database and object store, so no
@@ -248,7 +261,7 @@ flags and no proxy are needed. Copy the bundle back out afterwards (`kubectl cp`
 ```bash
 # inside the container (its own env already points at the right DB + storage)
 npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
-  --out /tmp/conversation.sqlite <conversation-id>
+  --out /tmp/production-chat-replays/conversation.sqlite <conversation-id>
 ```
 
 **From a workstation** — point `--source-db` and `FILE_STORAGE_LOCATION` at the tenant through
@@ -260,52 +273,67 @@ FILE_STORAGE_LOCATION=s3://logicle-tenant-42-files \
 FILE_STORAGE_ENCRYPTION_ENABLE=1 FILE_STORAGE_ENCRYPTION_KEY=... \
 npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
   --source-db postgres://readonly@127.0.0.1:5432/logicle \
-  --out conversation.sqlite <conversation-id>
+  --out /tmp/production-chat-replays/conversation.sqlite <conversation-id>
 ```
 
 The builder rejects conversation-level fidelity failures it cannot represent offline:
 
 - **assistant available** — the assistant and its published version must still exist.
-- **no tools / knowledge / sub-assistants** — those can't be reproduced offline (a knowledge box
-  needs its index, a tool needs its backend).
+- **no configured tools / sub-assistants** — those cannot be reproduced offline without a
+  capability-specific fixture. Assistant knowledge is supported and copied into the bundle.
 
-If an attachment's rows or bytes cannot be resolved, the builder writes the exact reason to
-`<out>.skipped.json` and exits unsuccessfully. It never silently omits a file. Message-level
-fidelity checks belong to the replay runner, because only the runner knows which message is being
-replayed. To cover tool conversations offline, extend the bundle with a tool-specific fixture
-adapter.
+If a conversation attachment or assistant-knowledge file cannot be resolved, the builder writes
+the exact reason to `<out>.skipped.json` and exits unsuccessfully. It never silently omits a file.
+Message-level fidelity checks belong to the replay runner, because only the runner knows which
+message is being replayed. To cover tool conversations offline, extend the bundle with a
+tool-specific fixture adapter.
 
 ### Stage 2 — replay the bundle
 
 ```bash
 # Default: replay the latest audited user message with a saved assistant response.
 OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
-  --bundle conversation.sqlite --out replay-results.json --report replay-report.md
+  --bundle /tmp/production-chat-replays/conversation.sqlite \
+  --out /tmp/production-chat-replays/replay-results.json \
+  --report /tmp/production-chat-replays/replay-report.md
+
+# Compare the exact real turn across knowledge strategies. The knowledge-box index is built once
+# per arm and reused by all repetitions.
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle /tmp/production-chat-replays/conversation.sqlite --knowledge-arms \
+  assistant-knowledge,knowledge-box,knowledge-box-no-projections \
+  --repeat 3 --judge \
+  --out /tmp/production-chat-replays/knowledge-results.json \
+  --report /tmp/production-chat-replays/knowledge-report.md
 
 # Or select one exact message from the bundled conversation.
 OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
-  --bundle conversation.sqlite --message <message-id> --out on.json --report on.md --judge \
+  --bundle /tmp/production-chat-replays/conversation.sqlite --message <message-id> \
+  --out /tmp/production-chat-replays/on.json --report /tmp/production-chat-replays/on.md --judge \
   --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}'
 
 # Free inspection: select the message, reconstruct its parent lineage, and calculate the exact
 # compression decisions plus tokenizer-based before/after history estimates without an LLM call.
 npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
-  --bundle conversation.sqlite --message <message-id> --inspect-only \
-  --out inspection.json --report inspection.md \
+  --bundle /tmp/production-chat-replays/conversation.sqlite --message <message-id> --inspect-only \
+  --out /tmp/production-chat-replays/inspection.json \
+  --report /tmp/production-chat-replays/inspection.md \
   --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}'
 
 # The same selector and parent-lineage code can read the configured live DB/storage instead.
 DATABASE_URL=... FILE_STORAGE_LOCATION=... OPENAI_API_KEY=... \
 npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
   --conversation <conversation-id> --message <message-id> \
-  --out live.json --report live.md
+  --out /tmp/production-chat-replays/live.json --report /tmp/production-chat-replays/live.md
 
 # Mode B — cheap model, off then on, measured by the same ruler:
 LOGICLECLOUD_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
-  --bundle conversation.sqlite --out b-off.json --report b-off.md \
+  --bundle /tmp/production-chat-replays/conversation.sqlite \
+  --out /tmp/production-chat-replays/b-off.json --report /tmp/production-chat-replays/b-off.md \
   --model gpt-5.6-luna --override '{"contextCompression":null}'
 LOGICLECLOUD_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
-  --bundle conversation.sqlite --out b-on.json --report b-on.md --judge \
+  --bundle /tmp/production-chat-replays/conversation.sqlite \
+  --out /tmp/production-chat-replays/b-on.json --report /tmp/production-chat-replays/b-on.md --judge \
   --model gpt-5.6-luna \
   --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}'
 ```
@@ -319,20 +347,29 @@ It can still populate the normal `CompressedMessage` and `FileAnalysis` caches. 
 the source DB must not be mutated; a database read-only role can cause a live compression replay to
 fail on a cold cache rather than silently making it read-only.
 The runner rebuilds the saved assistant with `--override` merged over its configuration, runs the
-turn once, and records the response, provider token usage, and priced cost. `--override` is a JSON
-object merged over `model` / `systemPrompt` /
+turn for every selected arm and repetition, and records the response, provider token usage, and
+priced cost. `--override` is a JSON object merged over `model` / `systemPrompt` /
 `temperature` / `tokenLimit` / `reasoning_effort` / `contextCompression` (use
 `{"contextCompression":null}` to turn it off); its shape follows whatever the running code's schema
 accepts, so newer options work without changing this script.
 
-Each runner invocation selects one message and runs one assistant turn. A turn can make multiple
-provider calls when the assistant loops through context-retrieval tools; token usage is summed over
-all of them and the JSON/report records both the provider-call count and tool-call names. `--judge`
-adds another provider request. Before making the call, the runner rejects a production error, a
-missing response or parent, model drift, an unsupported lineage containing tool/auth/error
-activity, and assistant capabilities for which no fixture exists. `--inspect-only` stops after
-selection, lineage reconstruction, compression planning, application, and token estimation: it
-requires no provider key and makes no LLM call.
+By default, replay preserves the published assistant's knowledge files. `--knowledge-arms` turns
+the same fixed production turn into a paired knowledge evaluation. `assistant-knowledge` embeds the
+files exactly as production does; `knowledge-box` indexes the same files with generic summary and
+key-fact projections; `knowledge-box-no-projections` isolates chunk retrieval. Knowledge-box arms
+require bundle mode because indexing writes evaluation rows. `--repeat` reruns each arm while
+reusing its index, and the report shows mean run cost, one-time setup cost, and break-even
+conversations against the assistant-knowledge baseline. The generic projection questions are a
+baseline, not a substitute for corpus-specific administrator questions.
+
+Each runner invocation selects one message and runs one assistant turn per selected arm and
+repetition. A turn can make multiple provider calls when the assistant loops through
+context-retrieval tools; token usage is summed over all of them and the JSON/report records both the
+provider-call count and tool-call names. `--judge` adds another provider request per run. Before
+making the call, the runner rejects a production error, a missing response or parent, model drift,
+an unsupported lineage containing tool/auth/error activity, and assistant capabilities for which
+no fixture exists. `--inspect-only` stops after selection, lineage reconstruction, compression
+planning, application, and token estimation: it requires no provider key and makes no LLM call.
 
 ### Operating modes — cost/quality testing without a big bill
 

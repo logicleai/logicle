@@ -3,13 +3,14 @@
  *
  * The bundle is a single SQLite file for one conversation: the app schema, plus the selected
  * `Conversation` / `Message` / `MessageAudit` / `Assistant*` / `Backend` / `File` / `FileBlob` /
- * `FileAnalysis` rows, plus a `ReplayFileBlob(path, size, bytes)` table holding every referenced
- * attachment's bytes and its extracted-text sidecar, **decrypted**.
+ * `FileAnalysis` / `AssistantVersionFile` rows, plus a `ReplayFileBlob(path, size, bytes)` table
+ * holding every referenced attachment and assistant-knowledge file (and extracted-text sidecar),
+ * **decrypted**.
  * `eval-replay-production-chats.ts` consumes it with zero network access.
  *
  * This script is infra-agnostic. It reads the source database via `--source-db` (or `DATABASE_URL`)
- * and attachment bytes via the normal storage stack (`FILE_STORAGE_LOCATION` plus the
- * `FILE_STORAGE_ENCRYPTION_*` vars, only needed when the conversation has attachments).
+ * and file bytes via the normal storage stack (`FILE_STORAGE_LOCATION` plus the
+ * `FILE_STORAGE_ENCRYPTION_*` vars, only needed when the conversation or assistant has files).
  * `FILE_STORAGE_LOCATION` may be an `s3://` bucket, a directory, or an `http(s)://` read-only
  * proxy (`HttpReadOnlyStorage`) — wiring any of those to a specific tenant is the job of the ops
  * repo's `download_replay_bundle`, not this script.
@@ -128,7 +129,13 @@ const copyBlobBytes = async (blobPath: string, encryption: 'pgp' | 'aead' | null
 }
 
 let copied:
-  | { messages: number; audits: number; attachments: number; replayableTargets: number }
+  | {
+      messages: number
+      audits: number
+      attachments: number
+      knowledgeFiles: number
+      replayableTargets: number
+    }
   | undefined
 let failure: string | undefined
 try {
@@ -184,16 +191,11 @@ try {
   if (configuredTool) {
     throw new Error('Assistant has configured tools, which the offline replay cannot reconstruct')
   }
-  const configuredKnowledgeFile = await source
+  const knowledgeAssociations = await source
     .selectFrom('AssistantVersionFile')
-    .select('fileId')
+    .selectAll()
     .where('assistantVersionId', '=', assistant.versionId)
-    .executeTakeFirst()
-  if (configuredKnowledgeFile) {
-    throw new Error(
-      'Assistant has configured knowledge files, which the offline replay cannot reconstruct'
-    )
-  }
+    .execute()
 
   let replayMessages: ReturnType<typeof dtoMessageFromDbMessage>[]
   try {
@@ -202,9 +204,13 @@ try {
     throw new Error(`A saved message cannot be converted: ${errText(error)}`)
   }
 
-  // Resolve every attachment in the complete conversation before writing the relational rows.
+  // Resolve every attachment and assistant-knowledge file before writing relational rows. A file
+  // may appear in both sets; bundle it once and preserve the assistant association separately.
   const attachmentFileIds = collectAttachmentFileIds(replayMessages)
-  const attachmentRows: Array<{
+  const knowledgeFileIds = knowledgeAssociations.map((association) => association.fileId)
+  const knowledgeFileIdSet = new Set(knowledgeFileIds)
+  const referencedFileIds = [...new Set([...attachmentFileIds, ...knowledgeFileIds])]
+  const fileRows: Array<{
     file: {
       id: string
       name: string
@@ -233,14 +239,15 @@ try {
       updatedAt: string
     } | null
   }> = []
-  for (const fileId of attachmentFileIds) {
+  for (const fileId of referencedFileIds) {
+    const kind = knowledgeFileIdSet.has(fileId) ? 'Knowledge file' : 'Attachment'
     const fileRow = await source
       .selectFrom('File')
       .select(['id', 'name', 'path', 'type', 'origin', 'createdAt', 'fileBlobId'])
       .where('id', '=', fileId)
       .executeTakeFirst()
     if (!fileRow) {
-      throw new Error(`Attachment ${fileId} has no File row`)
+      throw new Error(`${kind} ${fileId} has no File row`)
     }
     const blobRow = fileRow.fileBlobId
       ? await source
@@ -250,7 +257,7 @@ try {
           .executeTakeFirst()
       : undefined
     if (fileRow.fileBlobId && !blobRow) {
-      throw new Error(`Attachment ${fileId} FileBlob ${fileRow.fileBlobId} is missing`)
+      throw new Error(`${kind} ${fileId} FileBlob ${fileRow.fileBlobId} is missing`)
     }
     // Production's cached file analysis (extracted PDF/office text) — carry it so the replay
     // reuses it instead of re-analyzing (which would fail on the read-only replay storage and,
@@ -275,7 +282,7 @@ try {
         await copyBlobBytes(blobRow.path, blobRow.encryption, blobRow.size)
       } catch (error) {
         throw new Error(
-          `Attachment ${fileId} blob ${blobRow.path} could not be read: ${errText(error)}`
+          `${kind} ${fileId} blob ${blobRow.path} could not be read: ${errText(error)}`
         )
       }
     }
@@ -284,13 +291,13 @@ try {
         await copyBlobBytes(extractedTextPath, blobRow?.encryption ?? null, 0)
       } catch (error) {
         throw new Error(
-          `Attachment ${fileId} extracted-text sidecar ${extractedTextPath} could not be read: ${errText(
+          `${kind} ${fileId} extracted-text sidecar ${extractedTextPath} could not be read: ${errText(
             error
           )}`
         )
       }
     }
-    attachmentRows.push({ file: fileRow, blob: blobRow ?? null, analysis: analysisRow ?? null })
+    fileRows.push({ file: fileRow, blob: blobRow ?? null, analysis: analysisRow ?? null })
   }
 
   const backend = await source
@@ -303,7 +310,21 @@ try {
     .selectAll()
     .where('id', '=', assistant.versionId)
     .executeTakeFirstOrThrow()
-  await bundle.insertInto('Backend').values(backend).execute()
+  let backendEndpoint: string | undefined
+  try {
+    const configuration = JSON.parse(backend.configuration) as { endPoint?: unknown }
+    if (typeof configuration.endPoint === 'string') backendEndpoint = configuration.endPoint
+  } catch {
+    // The replay still gets provider/model identity from the relational columns. An invalid source
+    // configuration should not make the bundle retain opaque values that may contain credentials.
+  }
+  await bundle
+    .insertInto('Backend')
+    .values({
+      ...backend,
+      configuration: JSON.stringify(backendEndpoint ? { endPoint: backendEndpoint } : {}),
+    })
+    .execute()
   await bundle
     .insertInto('AssistantVersion')
     .values({ ...version, imageId: null })
@@ -325,7 +346,7 @@ try {
   for (const row of messages) await bundle.insertInto('Message').values(row).execute()
   for (const audit of audits) await bundle.insertInto('MessageAudit').values(audit).execute()
 
-  for (const { file, blob, analysis } of attachmentRows) {
+  for (const { file, blob, analysis } of fileRows) {
     if (blob && !seenBlobIds.has(blob.id)) {
       await bundle
         .insertInto('FileBlob')
@@ -377,6 +398,9 @@ try {
         .execute()
     }
   }
+  for (const association of knowledgeAssociations) {
+    await bundle.insertInto('AssistantVersionFile').values(association).execute()
+  }
 
   const messageIds = new Set(messages.map((message) => message.id))
   const replayableTargets = audits.filter(
@@ -394,6 +418,7 @@ try {
     messages: messages.length,
     audits: audits.length,
     attachments: attachmentFileIds.length,
+    knowledgeFiles: knowledgeFileIds.length,
     replayableTargets,
   }
 } catch (error) {
@@ -417,6 +442,7 @@ if (failure || !copied) {
   console.error(
     `Wrote conversation ${conversationId} to ${out}: ${copied.messages} messages, ` +
       `${copied.audits} audits, ${copied.attachments} attachments, ` +
+      `${copied.knowledgeFiles} assistant knowledge files, ` +
       `${copied.replayableTargets} candidate replay messages.`
   )
 }
