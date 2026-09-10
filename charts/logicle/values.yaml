@@ -40,10 +40,12 @@ tools:
 opentelemetry:
   endpoint: "http://10.0.0.7:4318"
 
-# Raw YAML blobs, mounted verbatim into /provisioning/*.yaml. Left empty
-# by default (no provisioning configmaps rendered); the actual content is
-# owned by the deployer, not the chart.
+# Raw YAML blobs, mounted verbatim into /provisioning/*.yaml. The structured
+# `files` map is preferred: each key becomes a file, preserving the
+# provisioning directory layout and filename ordering. The fixed fields are
+# retained for compatibility with older deployers.
 provisioning:
+  files: {}
   backends: ""
   users: ""
   standardTools: ""
