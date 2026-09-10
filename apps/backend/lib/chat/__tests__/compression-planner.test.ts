@@ -7,6 +7,8 @@ import {
   planMessageCompression,
   applyCompressionPlan,
   warmCompressionCache,
+  resolveCompressionRetrievalMode,
+  resolveCompressionUserQuery,
   resolveCompressionTriggerTokens,
 } from '@/backend/lib/chat/compression-planner'
 import env from '@/lib/env'
@@ -26,7 +28,9 @@ vi.mock('@/models/file', () => ({
       fileBlobId: `blob-${id}`,
       name: isImage ? 'horse.png' : 'documento_semplice.docx',
       origin: 'generated',
-      type: isImage ? 'image/png' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      type: isImage
+        ? 'image/png'
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       path: isImage ? '/tmp/horse.png' : '/tmp/documento_semplice.docx',
       encryption: null,
       size: isImage ? 1594448 : 3173,
@@ -77,7 +81,13 @@ const modelWithoutDocxNativeSupport: LlmModel = {
 const languageModel = { provider: 'openai.responses' } as LanguageModelV3
 
 const makeGeneratedDocxHistory = (): dto.Message[] => [
-  { ...base, id: 'u-create-docx', role: 'user', content: 'Puoi generare un file word', attachments: [] },
+  {
+    ...base,
+    id: 'u-create-docx',
+    role: 'user',
+    content: 'Puoi generare un file word',
+    attachments: [],
+  },
   {
     ...base,
     id: 'a-tool-call',
@@ -116,18 +126,35 @@ const makeGeneratedDocxHistory = (): dto.Message[] => [
           type: 'content',
           value: [
             { type: 'text', text: 'Published 1 resource(s): documento_semplice.docx' },
-            { type: 'file', id: 'file-docx', mimetype: docxMime, name: 'documento_semplice.docx', size: 3173 },
+            {
+              type: 'file',
+              id: 'file-docx',
+              mimetype: docxMime,
+              name: 'documento_semplice.docx',
+              size: 3173,
+            },
           ],
         },
       },
     ],
   },
-  { ...base, id: 'a-final', role: 'assistant', parts: [{ type: 'text', text: 'Hei, ho generato un documento word' }] },
+  {
+    ...base,
+    id: 'a-final',
+    role: 'assistant',
+    parts: [{ type: 'text', text: 'Hei, ho generato un documento word' }],
+  },
   { ...base, id: 'u-ask-content', role: 'user', content: "E cosa c'e dentro?", attachments: [] },
 ]
 
 const makeGeneratedHorseImageHistory = (): dto.Message[] => [
-  { ...base, id: 'u-create-image', role: 'user', content: 'Genera immagine di un cavallo', attachments: [] },
+  {
+    ...base,
+    id: 'u-create-image',
+    role: 'user',
+    content: 'Genera immagine di un cavallo',
+    attachments: [],
+  },
   {
     ...base,
     id: 'a-image-tool-call',
@@ -153,18 +180,41 @@ const makeGeneratedHorseImageHistory = (): dto.Message[] => [
         result: {
           type: 'content',
           value: [
-            { type: 'text', text: 'The tool displayed 1 images. The images are already plainly visible.' },
-            { type: 'file', id: 'file-horse', mimetype: 'image/png', name: 'horse.png', size: 1594448 },
+            {
+              type: 'text',
+              text: 'The tool displayed 1 images. The images are already plainly visible.',
+            },
+            {
+              type: 'file',
+              id: 'file-horse',
+              mimetype: 'image/png',
+              name: 'horse.png',
+              size: 1594448,
+            },
           ],
         },
       },
     ],
   },
-  { ...base, id: 'a-image-final', role: 'assistant', parts: [{ type: 'text', text: 'Hei, ho generato una immagine di un cavallo' }] },
-  { ...base, id: 'u-ask-hooves', role: 'user', content: 'Di che colore erano gli zoccoli?', attachments: [] },
+  {
+    ...base,
+    id: 'a-image-final',
+    role: 'assistant',
+    parts: [{ type: 'text', text: 'Hei, ho generato una immagine di un cavallo' }],
+  },
+  {
+    ...base,
+    id: 'u-ask-hooves',
+    role: 'user',
+    content: 'Di che colore erano gli zoccoli?',
+    attachments: [],
+  },
 ]
 
-async function compress(messages: dto.Message[], preset: dto.ContextCompressionPreset = 'conservative') {
+async function compress(
+  messages: dto.Message[],
+  preset: dto.ContextCompressionPreset = 'conservative'
+) {
   const decisions = planMessageCompression(messages, preset)
   return { decisions, compressed: await applyCompressionPlan(messages, decisions) }
 }
@@ -209,6 +259,41 @@ describe('planMessageCompression', () => {
     const decisions = planMessageCompression(messages, 'conservative')
     expect(decisions[0]!.policy).toBe('summary')
     expect(decisions[1]!.policy).toBe('full')
+  })
+
+  test('keeps the configured number of completed recent turns verbatim', () => {
+    const messages: dto.Message[] = [
+      {
+        ...base,
+        id: 'u1',
+        role: 'user',
+        content: 'old attachment',
+        attachments: [{ id: 'f1', name: 'old.pdf', mimetype: 'application/pdf', size: 10 }],
+      },
+      { ...base, id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'x'.repeat(3000) }] },
+      {
+        ...base,
+        id: 'u2',
+        role: 'user',
+        content: 'recent attachment',
+        attachments: [{ id: 'f2', name: 'recent.pdf', mimetype: 'application/pdf', size: 10 }],
+      },
+      { ...base, id: 'a2', role: 'assistant', parts: [{ type: 'text', text: 'x'.repeat(3000) }] },
+      { ...base, id: 'u3', role: 'user', content: 'current question', attachments: [] },
+    ]
+
+    const decisions = new Map(
+      planMessageCompression(messages, 'conservative', { keepRecentTurns: 1 }).map((decision) => [
+        decision.messageId,
+        decision,
+      ])
+    )
+
+    expect(decisions.get('u1')?.policy).toBe('summary')
+    expect(decisions.get('a1')?.policy).toBe('summary')
+    expect(decisions.get('u2')).toMatchObject({ policy: 'full', reason: 'recent turn kept full' })
+    expect(decisions.get('a2')).toMatchObject({ policy: 'full', reason: 'recent turn kept full' })
+    expect(decisions.get('u3')?.reason).toBe('current turn is never compressed')
   })
 
   test('a historical decision does not depend on what the current user message says (stable for prompt caching)', () => {
@@ -275,7 +360,9 @@ describe('planMessageCompression', () => {
 
 describe('resolveCompressionTriggerTokens', () => {
   test('a low or unset assistant threshold never drops below the default floor', () => {
-    expect(resolveCompressionTriggerTokens(undefined)).toBe(env.chat.contextCompressionTriggerTokens)
+    expect(resolveCompressionTriggerTokens(undefined)).toBe(
+      env.chat.contextCompressionTriggerTokens
+    )
     expect(resolveCompressionTriggerTokens(100)).toBe(env.chat.contextCompressionTriggerTokens)
   })
 
@@ -286,6 +373,66 @@ describe('resolveCompressionTriggerTokens', () => {
   })
 })
 
+describe('resolveCompressionRetrievalMode', () => {
+  test('defaults existing assistant configurations to measured query-aware prefetch', () => {
+    expect(resolveCompressionRetrievalMode(undefined)).toBe('prefetch')
+  })
+
+  test('keeps explicit tool-only evaluation arms available', () => {
+    expect(resolveCompressionRetrievalMode('tool')).toBe('tool')
+  })
+})
+
+describe('resolveCompressionUserQuery', () => {
+  test('uses the current user text when it is non-empty', () => {
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: 'old question', attachments: [] },
+      { ...base, id: 'u2', role: 'user', content: ' current question ', attachments: [] },
+    ]
+
+    expect(resolveCompressionUserQuery(messages)).toBe('current question')
+  })
+
+  test('falls back to the nearest non-empty user request for an attachment-only turn', () => {
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: 'Is the premium indexed?', attachments: [] },
+      {
+        ...base,
+        id: 'a1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Please upload the general conditions.' }],
+      },
+      {
+        ...base,
+        id: 'u2',
+        role: 'user',
+        content: '   ',
+        attachments: [
+          { id: 'file-follow-up', name: 'conditions.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
+      },
+    ]
+
+    expect(resolveCompressionUserQuery(messages)).toBe('Is the premium indexed?')
+  })
+
+  test('returns undefined when the lineage contains no user-authored text', () => {
+    const messages: dto.Message[] = [
+      {
+        ...base,
+        id: 'u1',
+        role: 'user',
+        content: '',
+        attachments: [
+          { id: 'file-follow-up', name: 'conditions.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
+      },
+    ]
+
+    expect(resolveCompressionUserQuery(messages)).toBeUndefined()
+  })
+})
+
 describe('applyCompressionPlan', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -293,30 +440,47 @@ describe('applyCompressionPlan', () => {
   })
 
   test('compressed previous turn redacts duplicated document text, extracts a plain-text preview, and adds a file + message recovery reference', async () => {
-    mockExtractFromFile.mockResolvedValueOnce('Documento semplice: contains a title and one paragraph.')
+    mockExtractFromFile.mockResolvedValueOnce(
+      'Documento semplice: contains a title and one paragraph.'
+    )
 
     const { compressed } = await compress(makeGeneratedDocxHistory())
 
-    const segments = await buildHistorySegments(compressed, modelWithoutDocxNativeSupport, languageModel, { userId: 'test-user' })
+    const segments = await buildHistorySegments(
+      compressed,
+      modelWithoutDocxNativeSupport,
+      languageModel,
+      { userId: 'test-user' }
+    )
     const promptText = JSON.stringify(segments.map((segment) => segment.message))
 
     expect(promptText).toContain('File available on demand: documento_semplice.docx')
     expect(promptText).toContain('id: file-docx')
     expect(promptText).toContain(docxMime)
-    expect(promptText).toContain('context-retrieve.get_file')
+    expect(promptText).toContain('search function of the context-retrieve tool')
+    expect(promptText).toContain('Use get_file only if the targeted excerpts are insufficient')
     expect(promptText).toContain('summary: Documento semplice: contains a title and one paragraph.')
-    expect(promptText).toContain('[Tool output summarized for context efficiency.]')
-    expect(promptText).toContain('context-retrieve.get_message with id: t-docx')
+    expect(promptText).toContain('[Tool output summarized for context efficiency.')
+    expect(promptText).toContain('Full original message id: t-docx')
     expect(promptText).not.toContain('Published 1 resource(s): documento_semplice.docx')
-    expect(promptText).not.toContain('Questo e un semplice documento Word generato automaticamente.')
-    expect(promptText).toContain('[redacted: content available via context-retrieve, see summarized result]')
+    expect(promptText).not.toContain(
+      'Questo e un semplice documento Word generato automaticamente.'
+    )
+    expect(promptText).toContain(
+      '[redacted: content available via context-retrieve, see summarized result]'
+    )
     expect(mockExtractFromFile).toHaveBeenCalledTimes(1)
   })
 
   test('uncompressed generated DOCX tool result is still converted through text extraction when not natively supported', async () => {
     mockExtractFromFile.mockResolvedValueOnce('EXTRACTED DOCX CONTENT')
 
-    const segments = await buildHistorySegments(makeGeneratedDocxHistory(), modelWithoutDocxNativeSupport, languageModel, { userId: 'test-user' })
+    const segments = await buildHistorySegments(
+      makeGeneratedDocxHistory(),
+      modelWithoutDocxNativeSupport,
+      languageModel,
+      { userId: 'test-user' }
+    )
     const promptText = JSON.stringify(segments.map((segment) => segment.message))
 
     expect(promptText).toContain('Attachment 1: documento_semplice.docx')
@@ -327,14 +491,19 @@ describe('applyCompressionPlan', () => {
   test('compressed generated image tool result never upgrades to image-data / native bytes, and never calls a model to describe it', async () => {
     const { compressed } = await compress(makeGeneratedHorseImageHistory())
 
-    const segments = await buildHistorySegments(compressed, modelWithoutDocxNativeSupport, languageModel, { userId: 'test-user' })
+    const segments = await buildHistorySegments(
+      compressed,
+      modelWithoutDocxNativeSupport,
+      languageModel,
+      { userId: 'test-user' }
+    )
     const promptText = JSON.stringify(segments.map((segment) => segment.message))
 
     expect(promptText).toContain('File available on demand: horse.png')
     expect(promptText).toContain('id: file-horse')
     expect(promptText).toContain('summary: Image file; no text preview available.')
-    expect(promptText).toContain('[Tool output summarized for context efficiency.]')
-    expect(promptText).toContain('context-retrieve.get_message with id: t-image')
+    expect(promptText).toContain('[Tool output summarized for context efficiency.')
+    expect(promptText).toContain('Full original message id: t-image')
     expect(promptText).not.toContain('Attachment 1: horse.png')
     expect(promptText).not.toContain('The tool displayed 1 images')
     expect(promptText).not.toContain('image-data')
@@ -345,7 +514,12 @@ describe('applyCompressionPlan', () => {
   test('uncompressed generated image tool result still sends image bytes (provider adapters do not change full-policy semantics)', async () => {
     mockReadBuffer.mockResolvedValueOnce(Buffer.from('horse-image-bytes'))
 
-    const segments = await buildHistorySegments(makeGeneratedHorseImageHistory(), modelWithoutDocxNativeSupport, languageModel, { userId: 'test-user' })
+    const segments = await buildHistorySegments(
+      makeGeneratedHorseImageHistory(),
+      modelWithoutDocxNativeSupport,
+      languageModel,
+      { userId: 'test-user' }
+    )
     const promptText = JSON.stringify(segments.map((segment) => segment.message))
 
     expect(promptText).toContain('Attachment 1: horse.png')
@@ -369,7 +543,15 @@ describe('applyCompressionPlan', () => {
             toolName: 'gen',
             result: {
               type: 'content',
-              value: [{ type: 'file', id: 'file-docx', mimetype: docxMime, name: 'unknown.docx', size: 10 }],
+              value: [
+                {
+                  type: 'file',
+                  id: 'file-docx',
+                  mimetype: docxMime,
+                  name: 'unknown.docx',
+                  size: 10,
+                },
+              ],
             },
           },
         ],
@@ -381,10 +563,14 @@ describe('applyCompressionPlan', () => {
     const toolMessage = result.find((m) => m.id === 't1') as dto.ToolMessage
     const text = (toolMessage.parts[0] as dto.ToolCallResultPart).result
     expect(text.type).toBe('text')
-    expect((text as { value: string }).value).toContain('No extractable text preview available for this file type.')
+    expect((text as { value: string }).value).toContain(
+      'No extractable text preview available for this file type.'
+    )
     expect((text as { value: string }).value).toContain('File available on demand: unknown.docx')
-    expect((text as { value: string }).value).toContain('[Tool output summarized for context efficiency.]')
-    expect((text as { value: string }).value).toContain('context-retrieve.get_message with id: t1')
+    expect((text as { value: string }).value).toContain(
+      '[Tool output summarized for context efficiency.'
+    )
+    expect((text as { value: string }).value).toContain('Full original message id: t1')
   })
 
   test('user attachments summarized on a historical turn strip raw attachments, extract a plain-text preview, and add file + message recovery references', async () => {
@@ -395,7 +581,9 @@ describe('applyCompressionPlan', () => {
         id: 'u1',
         role: 'user',
         content: 'Please inspect this file.',
-        attachments: [{ id: 'file-123', mimetype: 'application/pdf', name: 'report.pdf', size: 1024 }],
+        attachments: [
+          { id: 'file-123', mimetype: 'application/pdf', name: 'report.pdf', size: 1024 },
+        ],
       },
       { ...base, id: 'u2', role: 'user', content: 'What is in the file?', attachments: [] },
     ]
@@ -406,9 +594,10 @@ describe('applyCompressionPlan', () => {
     expect(first.attachments).toEqual([])
     expect(first.content).toContain('File available on demand: report.pdf')
     expect(first.content).toContain('id: file-123')
-    expect(first.content).toContain('context-retrieve.get_file')
+    expect(first.content).toContain('search function of the context-retrieve tool')
+    expect(first.content).toContain('Use get_file only if the targeted excerpts are insufficient')
     expect(first.content).toContain('summary: The report covers Q1 revenue.')
-    expect(first.content).toContain('context-retrieve.get_message with id: u1')
+    expect(first.content).toContain('Full original message id: u1')
   })
 
   test('a long historical user message with no attachment is still recoverable by id under the aggressive preset', async () => {
@@ -421,7 +610,153 @@ describe('applyCompressionPlan', () => {
 
     const first = compressed[0] as dto.UserMessage
     expect(first.content).toContain('…[truncated;')
-    expect(first.content).toContain('context-retrieve.get_message with id: u1')
+    expect(first.content).toContain('Full original message id: u1')
+  })
+
+  test('query-aware prefetch adds only the relevant excerpt to a compressed message in its original role', async () => {
+    const question = 'What is the exact migration program codename?'
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: 'Record the decision.', attachments: [] },
+      {
+        ...base,
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'text',
+            text: `${'Routine background note.\n\n'.repeat(
+              150
+            )}Final migration program codename: Kestrel Blue.`,
+          },
+        ],
+      },
+      { ...base, id: 'u2', role: 'user', content: question, attachments: [] },
+    ]
+    const decisions = planMessageCompression(messages, 'conservative')
+
+    const compressed = await applyCompressionPlan(messages, decisions, {
+      prefetchQuery: question,
+    })
+    const assistant = compressed[1] as dto.AssistantMessage
+    const rendered = assistant.parts
+      .filter((part): part is dto.TextPart => part.type === 'text')
+      .map((part) => part.text)
+      .join('\n')
+
+    expect(rendered).toContain('[AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST')
+    expect(rendered).toContain('Final migration program codename: Kestrel Blue.')
+    expect(rendered.match(/Routine background note/g)?.length).toBeLessThan(30)
+  })
+
+  test('attachment-only continuation prefetch recovers the previous task from a compressed answer', async () => {
+    const previousQuestion = 'Is the insurance premium indexed?'
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: previousQuestion, attachments: [] },
+      {
+        ...base,
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'text',
+            text: `${'Unrelated policy background. '.repeat(
+              100
+            )}The insurance premium is indexed under section 17. Please upload the general conditions to verify the formula.`,
+          },
+        ],
+      },
+      {
+        ...base,
+        id: 'u2',
+        role: 'user',
+        content: '',
+        attachments: [
+          { id: 'file-follow-up', name: 'conditions.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
+      },
+    ]
+    const decisions = planMessageCompression(messages, 'conservative')
+    expect(decisions.find((decision) => decision.messageId === 'a1')?.policy).toBe('summary')
+
+    const compressed = await applyCompressionPlan(messages, decisions, {
+      prefetchQuery: resolveCompressionUserQuery(messages),
+      attachmentContinuationQuery: resolveCompressionUserQuery(messages),
+    })
+    const previousAnswer = compressed[1] as dto.AssistantMessage
+    const rendered = previousAnswer.parts
+      .filter((part): part is dto.TextPart => part.type === 'text')
+      .map((part) => part.text)
+      .join('\n')
+
+    expect(rendered).toContain('[AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST')
+    expect(rendered).toContain('The insurance premium is indexed under section 17.')
+    const currentTurn = compressed[2] as dto.UserMessage
+    expect(currentTurn.attachments).toHaveLength(1)
+    expect(currentTurn.content).toContain('[CONVERSATION CONTINUATION]')
+    expect(currentTurn.content).toContain(previousQuestion)
+  })
+
+  test('does not add continuation context to a non-empty current turn', async () => {
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: 'Old request', attachments: [] },
+      {
+        ...base,
+        id: 'u2',
+        role: 'user',
+        content: 'Analyze this attachment',
+        attachments: [
+          { id: 'file-current', name: 'current.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
+      },
+    ]
+
+    const compressed = await applyCompressionPlan(
+      messages,
+      planMessageCompression(messages, 'conservative'),
+      {
+        prefetchQuery: resolveCompressionUserQuery(messages),
+        attachmentContinuationQuery: resolveCompressionUserQuery(messages),
+      }
+    )
+
+    expect((compressed[1] as dto.UserMessage).content).toBe('Analyze this attachment')
+  })
+
+  test('tool-only retrieval still adds attachment-only continuation context without prefetching', async () => {
+    const previousQuestion = 'Is the insurance premium indexed?'
+    const messages: dto.Message[] = [
+      { ...base, id: 'u1', role: 'user', content: previousQuestion, attachments: [] },
+      {
+        ...base,
+        id: 'a1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Background. '.repeat(300) }],
+      },
+      {
+        ...base,
+        id: 'u2',
+        role: 'user',
+        content: '',
+        attachments: [
+          { id: 'file-current', name: 'current.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
+      },
+    ]
+
+    const compressed = await applyCompressionPlan(
+      messages,
+      planMessageCompression(messages, 'conservative'),
+      { attachmentContinuationQuery: resolveCompressionUserQuery(messages) }
+    )
+    const historicalAnswer = (compressed[1] as dto.AssistantMessage).parts
+      .filter((part): part is dto.TextPart => part.type === 'text')
+      .map((part) => part.text)
+      .join('\n')
+    const currentTurn = compressed[2] as dto.UserMessage
+
+    expect(historicalAnswer).not.toContain('[AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST')
+    expect(currentTurn.content).toContain('[CONVERSATION CONTINUATION]')
+    expect(currentTurn.content).toContain(previousQuestion)
   })
 })
 
@@ -438,7 +773,9 @@ describe('warmCompressionCache', () => {
       id: 'u1',
       role: 'user',
       content: 'here is the file',
-      attachments: [{ id: 'file-123', mimetype: 'application/pdf', name: 'report.pdf', size: 1024 }],
+      attachments: [
+        { id: 'file-123', mimetype: 'application/pdf', name: 'report.pdf', size: 1024 },
+      ],
     }
 
     await warmCompressionCache(message)
@@ -450,7 +787,13 @@ describe('warmCompressionCache', () => {
   })
 
   test('does nothing for messages with no compressible content', async () => {
-    const message: dto.UserMessage = { ...base, id: 'u1', role: 'user', content: 'hi', attachments: [] }
+    const message: dto.UserMessage = {
+      ...base,
+      id: 'u1',
+      role: 'user',
+      content: 'hi',
+      attachments: [],
+    }
 
     await warmCompressionCache(message)
 
@@ -465,7 +808,9 @@ describe('warmCompressionCache', () => {
       id: 'u1',
       role: 'user',
       content: 'here',
-      attachments: [{ id: 'file-123', mimetype: 'application/pdf', name: 'report.pdf', size: 1024 }],
+      attachments: [
+        { id: 'file-123', mimetype: 'application/pdf', name: 'report.pdf', size: 1024 },
+      ],
     }
 
     await expect(warmCompressionCache(message)).resolves.toBeUndefined()
@@ -479,9 +824,14 @@ describe('warmCompressionCache', () => {
       id: 'u-concurrent',
       role: 'user',
       content: 'here is the file',
-      attachments: [{ id: 'file-123', mimetype: 'application/pdf', name: 'report.pdf', size: 1024 }],
+      attachments: [
+        { id: 'file-123', mimetype: 'application/pdf', name: 'report.pdf', size: 1024 },
+      ],
     }
-    const messages: dto.Message[] = [message, { ...base, id: 'u-next', role: 'user', content: 'next', attachments: [] }]
+    const messages: dto.Message[] = [
+      message,
+      { ...base, id: 'u-next', role: 'user', content: 'next', attachments: [] },
+    ]
 
     // Fired the way models/message.ts fires it: right away, unawaited.
     const warmPromise = warmCompressionCache(message)

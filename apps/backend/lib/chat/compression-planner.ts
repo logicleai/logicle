@@ -2,7 +2,8 @@ import * as dto from '@/types/dto'
 import type { FileDbRow } from '@/backend/models/file'
 import env from '@/lib/env'
 import { logger } from '@/lib/logging'
-import { projectMessageForEstimationCached } from './message-projection'
+import { projectMessageForEstimationCached, renderMessagePlainText } from './message-projection'
+import { findRelevantExcerpts } from './context-search'
 
 // Model/DB-backed helpers are imported dynamically (below, at point of use) rather than statically
 // at module scope. This file is on the hot import path of `apps/backend/lib/chat/index.ts`, and a
@@ -13,7 +14,7 @@ import { projectMessageForEstimationCached } from './message-projection'
  * Bump when the summary-building rules below change so stale `CompressedMessage` rows are
  * regenerated instead of reused.
  */
-export const COMPRESSION_VERSION = 4
+export const COMPRESSION_VERSION = 8
 
 /**
  * The assistant-configured `triggerAtTokens` can only raise the floor below which compression
@@ -23,18 +24,67 @@ export function resolveCompressionTriggerTokens(triggerAtTokens: number | undefi
   return Math.max(triggerAtTokens ?? 0, env.chat.contextCompressionTriggerTokens)
 }
 
+/** Query-aware prefetch is the measured default; `tool` remains available for controlled arms. */
+export function resolveCompressionRetrievalMode(
+  retrievalMode: 'tool' | 'prefetch' | undefined
+): 'tool' | 'prefetch' {
+  return retrievalMode ?? 'prefetch'
+}
+
+/**
+ * Recovers the user-authored query that drives both prefetch and attachment-only continuation
+ * context.
+ *
+ * Attachment-only follow-ups commonly have an empty current text body: the attachment is the
+ * answer to, or continuation of, the preceding user request. Falling back to that nearest
+ * non-empty request preserves the ongoing task without changing any turn-stable compression
+ * decision. `user-response` messages carry structured tool input rather than user-authored text,
+ * so they are intentionally skipped.
+ */
+export function resolveCompressionUserQuery(messages: dto.Message[]): string | undefined {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]!
+    if (message.role !== 'user') continue
+    const query = message.content.trim()
+    if (query) return query
+  }
+  return undefined
+}
+
 type ToolMessagePart = dto.ToolMessage['parts'][number]
 
 const LARGE_TEXT_THRESHOLD_CHARS = 2000
 const AGGRESSIVE_LARGE_TEXT_THRESHOLD_CHARS = 800
 const LARGE_ARGS_VALUE_THRESHOLD_CHARS = 200
 const INLINE_SUMMARY_MAX_CHARS = 500
+const ATTACHMENT_CONTINUATION_QUERY_MAX_CHARS = 1000
 const REDACTED_ARGS_MARKER =
   '[redacted: content available via context-retrieve, see summarized result]'
 const INLINE_SUMMARY_CONCURRENCY = 2
 
 const isImageMimeType = (mimetype: string) => mimetype.startsWith('image/')
 const charsToTokens = (chars: number) => Math.ceil(chars / 4)
+
+function addAttachmentContinuationContext(messages: dto.Message[], query: string): void {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]!
+    if (message.role !== 'user') continue
+    if (message.content.trim() || message.attachments.length === 0) return
+
+    const boundedQuery =
+      query.length > ATTACHMENT_CONTINUATION_QUERY_MAX_CHARS
+        ? `${query.slice(0, ATTACHMENT_CONTINUATION_QUERY_MAX_CHARS)}…`
+        : query
+    messages[index] = {
+      ...message,
+      content:
+        "[CONVERSATION CONTINUATION] This attachment-only turn continues the user's nearest " +
+        'preceding request. Interpret the attached file in that context. If the file does not ' +
+        `answer it, explain that specifically.\n\nPrevious request:\n${boundedQuery}`,
+    }
+    return
+  }
+}
 
 async function mapWithConcurrency<T, R>(
   items: T[],
@@ -79,7 +129,7 @@ export function buildFileRecoveryReference(
     `id: ${fileRef.id}`,
     `type: ${fileRef.mimetype}`,
     `summary: ${summary}`,
-    'Use context-retrieve.get_file with this id if exact contents are needed.',
+    `[EXACT CONTENT OMITTED] If the exact answer is already present in other visible context, or an [AUTOMATICALLY RETRIEVED] excerpt below answers the request, no tool call is needed. Otherwise, if the request could depend on omitted content, you MUST call the search function of the context-retrieve tool with { "id": "${fileRef.id}", "query": "<terms from the request>" } before answering. Use get_file only if the targeted excerpts are insufficient. Never guess or merely report that an omitted value is unavailable.`,
   ].join('\n')
 }
 
@@ -90,7 +140,7 @@ export function buildFileRecoveryReference(
  * Its Own Message Id" in docs/context-compression.md.
  */
 export function buildMessageRecoveryNote(messageId: string): string {
-  return `Full original message available on demand via context-retrieve.get_message with id: ${messageId}.`
+  return `[EXACT CONTENT OMITTED] Full original message id: ${messageId}. If the exact answer is already present in other visible context, or an [AUTOMATICALLY RETRIEVED] excerpt below answers the request, no tool call is needed. Otherwise, if the request could depend on omitted content, you MUST call the search function of the context-retrieve tool with { "id": "${messageId}", "query": "<terms from the request>" } before answering. Use get_message only if the targeted excerpts are insufficient. Never guess or merely report that an omitted value is unavailable.`
 }
 
 /**
@@ -114,7 +164,9 @@ async function buildInlineTextSummary(fileEntry: FileDbRow | undefined): Promise
 
 const truncateInline = (text: string): string =>
   text.length > INLINE_SUMMARY_MAX_CHARS
-    ? `${text.slice(0, INLINE_SUMMARY_MAX_CHARS)}…[truncated; ${text.length} chars omitted]`
+    ? `${text.slice(0, INLINE_SUMMARY_MAX_CHARS)}…[truncated; ${
+        text.length
+      } chars omitted — retrieve the original before using omitted details]`
     : text
 
 /**
@@ -164,9 +216,21 @@ function findCurrentTurnUserMessageId(messages: dto.Message[]): string | undefin
  */
 export function planMessageCompression(
   messages: dto.Message[],
-  preset: dto.ContextCompressionPreset
+  preset: dto.ContextCompressionPreset,
+  options: { keepRecentTurns?: number } = {}
 ): dto.MessageCompressionDecision[] {
   const currentTurnUserMessageId = findCurrentTurnUserMessageId(messages)
+  const keepRecentTurns = Math.max(0, Math.floor(options.keepRecentTurns ?? 0))
+  const historicalTurnIds = messages
+    .filter(
+      (message): message is dto.UserMessage | dto.UserResponseMessage =>
+        message.role === 'user' || message.role === 'user-response'
+    )
+    .map((message) => message.id)
+    .filter((id) => id !== currentTurnUserMessageId)
+  const recentTurnIds = new Set(
+    keepRecentTurns === 0 ? [] : historicalTurnIds.slice(-keepRecentTurns)
+  )
   const largeTextThreshold =
     preset === 'aggressive' ? AGGRESSIVE_LARGE_TEXT_THRESHOLD_CHARS : LARGE_TEXT_THRESHOLD_CHARS
 
@@ -178,6 +242,8 @@ export function planMessageCompression(
       activeTurnUserMessageId = message.id
     }
     const isCurrentTurn = activeTurnUserMessageId === currentTurnUserMessageId
+    const isRecentTurn =
+      activeTurnUserMessageId !== undefined && recentTurnIds.has(activeTurnUserMessageId)
 
     const chars = estimateMessageChars(message)
     const tokensBefore = charsToTokens(chars)
@@ -186,6 +252,8 @@ export function planMessageCompression(
 
     if (isCurrentTurn) {
       reason = 'current turn is never compressed'
+    } else if (isRecentTurn) {
+      reason = 'recent turn kept full'
     } else if (message.role === 'user') {
       const hasAttachments = message.attachments.length > 0
       const hasLargeText = preset === 'aggressive' && message.content.length > largeTextThreshold
@@ -234,11 +302,14 @@ export function planMessageCompression(
  * messages are replaced with a compact, cached representation (see `CompressedMessage`). Also
  * redacts duplicated generated-artifact content from assistant `tool-call.args` when the
  * corresponding tool-result was summarized, per docs/context-compression.md's "Generated
- * Artifacts" section.
+ * Artifacts" section. `prefetchQuery` selects historical excerpts;
+ * `attachmentContinuationQuery` annotates an otherwise-empty current attachment turn without
+ * enabling prefetch in tool-only mode.
  */
 export async function applyCompressionPlan(
   messages: dto.Message[],
-  decisions: dto.MessageCompressionDecision[]
+  decisions: dto.MessageCompressionDecision[],
+  options: { prefetchQuery?: string; attachmentContinuationQuery?: string } = {}
 ): Promise<dto.Message[]> {
   const decisionByMessageId = new Map(decisions.map((d) => [d.messageId, d]))
   const output: dto.Message[] = []
@@ -279,7 +350,85 @@ export async function applyCompressionPlan(
     recordAssistantToolCallIndices(message, outputIndex, assistantToolCallIndices)
   }
 
+  if (options.prefetchQuery?.trim()) {
+    await addPrefetchedExcerpts(messages, output, decisions, options.prefetchQuery.trim())
+  }
+  if (options.attachmentContinuationQuery?.trim()) {
+    addAttachmentContinuationContext(output, options.attachmentContinuationQuery.trim())
+  }
   return output
+}
+
+const PREFETCH_MAX_TOTAL_CHARS = 6000
+
+async function relevantExcerptsForMessage(message: dto.Message, query: string): Promise<string[]> {
+  const excerpts = findRelevantExcerpts(renderMessagePlainText(message), query)
+  if (message.role !== 'user' || message.attachments.length === 0) return excerpts
+
+  const { getFileWithId } = await import('@/models/file')
+  const { cachingExtractor } = await import('@/lib/textextraction/cache')
+  const attachmentExcerpts = await mapWithConcurrency(
+    message.attachments,
+    async (attachment) => {
+      const file = await getFileWithId(attachment.id)
+      const text = file ? await cachingExtractor.extractFromFile(file) : undefined
+      if (!text) return []
+      return findRelevantExcerpts(text, query).map(
+        (excerpt) => `File ${attachment.name} (${attachment.id}):\n${excerpt}`
+      )
+    },
+    INLINE_SUMMARY_CONCURRENCY
+  )
+  return [...excerpts, ...attachmentExcerpts.flat()]
+}
+
+/**
+ * Query-aware default: inserts small lexical excerpts into each compressed message in its original
+ * role. This removes the model's first retrieval round-trip while preserving full on-demand
+ * retrieval as a fallback. It intentionally changes the compressed prefix per request; the eval
+ * accounts for whether the token saving outweighs the resulting cache loss.
+ */
+async function addPrefetchedExcerpts(
+  original: dto.Message[],
+  compacted: dto.Message[],
+  decisions: dto.MessageCompressionDecision[],
+  query: string
+): Promise<void> {
+  const summarized = new Set(
+    decisions
+      .filter((decision) => decision.policy === 'summary')
+      .map((decision) => decision.messageId)
+  )
+  let remainingChars = PREFETCH_MAX_TOTAL_CHARS
+  for (let index = 0; index < original.length && remainingChars > 0; index++) {
+    const source = original[index]!
+    if (!summarized.has(source.id)) continue
+    const excerpts = await relevantExcerptsForMessage(source, query)
+    if (excerpts.length === 0) continue
+    const recovered = excerpts.join('\n\n---\n\n').slice(0, remainingChars)
+    remainingChars -= recovered.length
+    const marker = `\n\n[AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST — this satisfies the retrieval requirement when sufficient; do not call the tool again]\n${recovered}`
+    const target = compacted[index]!
+    if (target.role === 'user') {
+      compacted[index] = { ...target, content: `${target.content}${marker}` }
+    } else if (target.role === 'assistant') {
+      compacted[index] = {
+        ...target,
+        parts: [...target.parts, { type: 'text', text: marker.trim() }],
+      }
+    } else if (target.role === 'tool') {
+      const partIndex = target.parts.findIndex((part) => part.type === 'tool-result')
+      if (partIndex === -1) continue
+      const parts = [...target.parts]
+      const part = parts[partIndex] as dto.ToolCallResultPart
+      const current =
+        part.result.type === 'text' || part.result.type === 'error-text'
+          ? part.result.value
+          : JSON.stringify(part.result.value)
+      parts[partIndex] = { ...part, result: { type: 'text', value: `${current}${marker}` } }
+      compacted[index] = { ...target, parts }
+    }
+  }
 }
 
 /**
@@ -449,7 +598,8 @@ async function compressToolMessage(
   return { compacted: { ...message, parts }, compactedToolCallIds }
 }
 
-const TOOL_RESULT_OVERVIEW = '[Tool output summarized for context efficiency.]'
+const TOOL_RESULT_OVERVIEW =
+  '[Tool output summarized for context efficiency. Use an automatically retrieved excerpt when supplied; otherwise retrieval is mandatory whenever the request could depend on exact omitted values.]'
 
 async function compressToolResultPart(
   part: dto.ToolCallResultPart,
@@ -542,7 +692,7 @@ function redactSiblingToolCallArgs(
     if (!indices) continue
     for (const i of indices) {
       const candidate = output[i]
-      if (!candidate || candidate.role !== 'assistant') continue
+      if (candidate?.role !== 'assistant') continue
       let mutated = false
       const parts = candidate.parts.map((part) => {
         if (part.type !== 'tool-call' || part.toolCallId !== toolCallId) return part

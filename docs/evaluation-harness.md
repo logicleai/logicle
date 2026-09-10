@@ -222,22 +222,24 @@ exists, replay never touches the source deployment, S3, or any network beyond th
 
 The replay is not an off/on comparison — it runs each turn once, with whatever configuration you
 give it. The "before" number to compare against is production's own `MessageAudit` input-token
-count, which travels in the bundle.
+count, which travels in the bundle. Replay cost intentionally prices all input tokens at the normal
+input rate: prompt-cache read/write discounts are ignored on both sides.
 
 ### Stage 1 — build the bundle
 
-`eval-build-replay-bundle.ts` ranks `MessageAudit` records of type `user` by their **audited input
-tokens** (the persisted provider count for the invocation, so it selects genuinely costly prompts,
-not merely long-looking messages). For each admitted turn it copies into the bundle: the full
-parent lineage, the `MessageAudit` row, the published assistant configuration (`Assistant` /
-`AssistantVersion` / `Backend`), the saved production reply, and every attachment — `File` /
+`eval-build-replay-bundle.ts` takes exactly one positional conversation id. It does not choose a
+message, calculate a parent lineage, mine traffic, rank turns, or apply cohort filters. Choosing an
+interesting conversation (for example from audited token trends) belongs to the infra discovery
+tools. The builder copies into the bundle the complete conversation: every `Message` and
+`MessageAudit`, the published assistant configuration (`Assistant` / `AssistantVersion` /
+`Backend`), and every attachment referenced anywhere in the conversation — `File` /
 `FileBlob` rows rewritten as `production-replay-user`-owned with encryption cleared, and the bytes
 themselves **decrypted** into a `ReplayFileBlob(path, size, bytes)` table. No provider
 credentials, no storage credentials, no other tenant data.
 
 The builder is infra-agnostic: it reads the source database from `--source-db` (or `$DATABASE_URL`)
 and attachment bytes through the normal storage stack (`FILE_STORAGE_LOCATION` plus the
-`FILE_STORAGE_ENCRYPTION_*` vars, only needed when a selected turn has attachments).
+`FILE_STORAGE_ENCRYPTION_*` vars, only needed when the conversation has attachments).
 
 **Lowest friction — run it on a running instance.** Exec into a Logicle container: `DATABASE_URL`
 and `FILE_STORAGE_LOCATION` are already set to that instance's database and object store, so no
@@ -246,7 +248,7 @@ flags and no proxy are needed. Copy the bundle back out afterwards (`kubectl cp`
 ```bash
 # inside the container (its own env already points at the right DB + storage)
 npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
-  --out /tmp/expensive.sqlite --min-input-tokens 12000 --limit 25
+  --out /tmp/conversation.sqlite <conversation-id>
 ```
 
 **From a workstation** — point `--source-db` and `FILE_STORAGE_LOCATION` at the tenant through
@@ -258,62 +260,79 @@ FILE_STORAGE_LOCATION=s3://logicle-tenant-42-files \
 FILE_STORAGE_ENCRYPTION_ENABLE=1 FILE_STORAGE_ENCRYPTION_KEY=... \
 npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
   --source-db postgres://readonly@127.0.0.1:5432/logicle \
-  --out expensive.sqlite --min-input-tokens 12000 --limit 25
+  --out conversation.sqlite <conversation-id>
 ```
 
-The builder only considers turns it can replay **faithfully**, so the numbers mean something:
+The builder rejects conversation-level fidelity failures it cannot represent offline:
 
-- **recent** — sent within the last 90 days (`--since <ISO date>` to change; `--since 1970-01-01`
-  to disable). Old turns ran against assistant configs and model versions that no longer exist.
-- **assistant still current** — the assistant is not deleted, and it still publishes the exact
-  model the turn actually used (`MessageAudit.model == AssistantVersion.model`). A turn whose
-  assistant has since been re-pointed at another model is dropped: replaying it would measure a
-  different assistant than the one that incurred the cost.
+- **assistant available** — the assistant and its published version must still exist.
 - **no tools / knowledge / sub-assistants** — those can't be reproduced offline (a knowledge box
-  needs its index, a tool needs its backend), and they are usually the most expensive cohort, so
-  excluding them in SQL keeps `--limit` counting turns you can actually use.
-- **clean in production** — the turn did not record an error.
+  needs its index, a tool needs its backend).
 
-Turns that pass those and are then skipped during the copy (lineage has saved tool activity, an
-attachment's rows or bytes cannot be resolved) get a reason in `<out>.skipped.json` — so a replay
-never silently omits a file or loses a tool capability. To cover tool conversations, extend the
-builder with a tool-specific fixture adapter.
+If an attachment's rows or bytes cannot be resolved, the builder writes the exact reason to
+`<out>.skipped.json` and exits unsuccessfully. It never silently omits a file. Message-level
+fidelity checks belong to the replay runner, because only the runner knows which message is being
+replayed. To cover tool conversations offline, extend the bundle with a tool-specific fixture
+adapter.
 
 ### Stage 2 — replay the bundle
 
 ```bash
-# Sanity check — the most expensive turn, saved config, nothing changed (should ~match production):
+# Default: replay the latest audited user message with a saved assistant response.
 OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
-  --bundle expensive.sqlite --out replay-results.json --report replay-report.md
+  --bundle conversation.sqlite --out replay-results.json --report replay-report.md
 
-# Mode A — same model, compression on, delta vs production's MessageAudit:
+# Or select one exact message from the bundled conversation.
 OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
-  --bundle expensive.sqlite --out on.json --report on.md --judge \
+  --bundle conversation.sqlite --message <message-id> --out on.json --report on.md --judge \
   --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}'
+
+# Free inspection: select the message, reconstruct its parent lineage, and calculate the exact
+# compression decisions plus tokenizer-based before/after history estimates without an LLM call.
+npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle conversation.sqlite --message <message-id> --inspect-only \
+  --out inspection.json --report inspection.md \
+  --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}'
+
+# The same selector and parent-lineage code can read the configured live DB/storage instead.
+DATABASE_URL=... FILE_STORAGE_LOCATION=... OPENAI_API_KEY=... \
+npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --conversation <conversation-id> --message <message-id> \
+  --out live.json --report live.md
 
 # Mode B — cheap model, off then on, measured by the same ruler:
 LOGICLECLOUD_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
-  --bundle expensive.sqlite --out b-off.json --report b-off.md \
+  --bundle conversation.sqlite --out b-off.json --report b-off.md \
   --model gpt-5.6-luna --override '{"contextCompression":null}'
 LOGICLECLOUD_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
-  --bundle expensive.sqlite --out b-on.json --report b-on.md --judge \
+  --bundle conversation.sqlite --out b-on.json --report b-on.md --judge \
   --model gpt-5.6-luna \
   --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}'
 ```
 
-The runner copies the bundle to a scratch directory, points the app at that copy and at
-`FILE_STORAGE_LOCATION=replaydb:` (`DbBlobStorage` serves attachment bytes straight from
-`ReplayFileBlob`), and for each selected turn rebuilds the saved assistant with `--override` merged
-over its configuration, runs the turn once, and records the response, the real provider token
-usage, and the priced cost. `--override` is a JSON object merged over `model` / `systemPrompt` /
+The runner accepts either `--bundle <sqlite>` or `--conversation <id>` for direct live access.
+It selects `--message <id>`, or defaults to the latest audited user message with a saved assistant
+response, and reconstructs that message's parent lineage. Bundle mode points the app at a scratch
+copy and at `FILE_STORAGE_LOCATION=replaydb:`; live mode uses the already configured DB and storage.
+The `ChatAssistant` receives no persistence callbacks, so live mode does not write messages.
+It can still populate the normal `CompressedMessage` and `FileAnalysis` caches. Use a bundle when
+the source DB must not be mutated; a database read-only role can cause a live compression replay to
+fail on a cold cache rather than silently making it read-only.
+The runner rebuilds the saved assistant with `--override` merged over its configuration, runs the
+turn once, and records the response, provider token usage, and priced cost. `--override` is a JSON
+object merged over `model` / `systemPrompt` /
 `temperature` / `tokenLimit` / `reasoning_effort` / `contextCompression` (use
 `{"contextCompression":null}` to turn it off); its shape follows whatever the running code's schema
 accepts, so newer options work without changing this script.
 
-**It replays one turn per invocation by default** — the most expensive in the bundle — so a run is
-one LLM call and the spend is known before you start. Widen it deliberately: `--case <messageId>`
-(repeat for a handful of specific turns, listed in `replay-report.md` and the bundle's
-`MessageAudit`) or `--limit <n>` for the _n_ most expensive.
+Each runner invocation selects one message and runs one assistant turn. A turn can make multiple
+provider calls when the assistant loops through context-retrieval tools; token usage is summed over
+all of them and the JSON/report records both the provider-call count and tool-call names. `--judge`
+adds another provider request. Before making the call, the runner rejects a production error, a
+missing response or parent, model drift, an unsupported lineage containing tool/auth/error
+activity, and assistant capabilities for which no fixture exists. `--inspect-only` stops after
+selection, lineage reconstruction, compression planning, application, and token estimation: it
+requires no provider key and makes no LLM call.
 
 ### Operating modes — cost/quality testing without a big bill
 
@@ -321,8 +340,8 @@ A replay calls a real provider with a real (often six-figure-token) prompt. Keep
 
 - **Build the bundle once, replay many times.** Stage 1 is the only step that touches production
   and it costs nothing. Iterate on its output.
-- **Default to one turn — the most expensive.** That single case is the interesting one and it is
-  one LLM call. `--case <id>` / `--limit <n>` only when you have a reason.
+- **One bundle, one complete conversation; one selected message per run.** Select conversations with
+  the read-only infra discovery tools before downloading them.
 - **`--judge` roughly doubles the cost** (a second model call over the same prompt). Get the token
   numbers for all your turns first; judge only the ones whose numbers look worth a closer look.
 
@@ -346,10 +365,11 @@ window make that delta meaningless. Mode A keeps the model; Mode B keeps the rul
 **Reading the result:**
 
 - **Saving** — replay input tokens vs the baseline (production for Mode A, the off run for Mode B),
-  as a percentage. Watch for near-zero: if the assistant's `tokenLimit` already truncates history
-  below budget, compression runs after that truncation and saves almost nothing while still
-  swapping verbatim text for lossy summaries — a strict `tokenLimit` and compression work against
-  each other.
+  as a percentage. The actual order is compression first, then `truncateChat`. If an uncompressed
+  chat was already at `tokenLimit`, shrinking its messages can simply let truncation retain more
+  old messages, leaving provider input near the same limit. That cohort does not isolate the value
+  of compression; prefer audited conversations whose input-token series is monotonic and remains
+  below the assistant's limit.
 - **Quality** — `--judge` classifies the response against the saved production reply (a
   **reference, not an answer key** — review every non-equivalent verdict yourself). The failure
   mode to look for: a summary/excerpt that dropped an exact figure the user asked about.

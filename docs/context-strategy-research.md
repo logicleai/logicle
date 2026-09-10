@@ -167,6 +167,38 @@ Written down so we do not discover them in the results.
 
 ## Sequence
 
+### Compression TODO from production replay
+
+Real same-model replay found that historical-attachment compression reduced input by 93–97% and
+preserved quality when the current user message contained a useful query. It initially produced a
+material continuity regression when the current message contained only an attachment: the file was
+read correctly, but the immediately preceding assistant answer had been compressed and prefetch
+received an empty query. Falling back to the previous user request recovered relevant excerpts but
+was insufficient by itself: the model still treated the attachment-only turn as having no task. A
+bounded continuation note in the otherwise-empty current user message fixed the real replay while
+retaining a 96.51% input reduction. A long text-only replay remained usable with a minor drafting
+regression.
+
+- [x] Recover the nearest non-empty user request for an empty current user message, use it for
+      prefetch, and add a bounded continuation note to attachment-only current turns. Keep the
+      planner's turn-stable decisions and cached base summaries unchanged; apply the note in both
+      `prefetch` and `tool` retrieval modes.
+- [x] Add a synthetic attachment-only continuation case: the user asks a document question, the
+      assistant answers and requests a specific follow-up document, then the user uploads that
+      document with empty text. Success requires connecting the new document to the prior answer,
+      not asking what to do with it.
+- [x] Verify the two production cases that retained quality as deterministic regression controls;
+      their compression decisions and estimated token counts remain unchanged.
+- [x] Record and review provider-call/tool-call counts. One successful prefetch replay invoked
+      context retrieval three times, so the real turn cost was substantially above the one-pass
+      compressed-history estimate even though it remained far below production. The corrected
+      attachment-only replay used one provider call and no retrieval tools.
+- [ ] Compare against `keepRecentTurns: 1` only if a broader attachment-only sample exposes cases
+      where the continuation query and note are insufficient. Do not buy an uncompressed high-token
+      replay unless cheaper compressed variants are inconclusive.
+- [ ] Do not call context compression robust for attachment-heavy chats until the attachment-only
+      case passes and the result is repeated across more than one conversation.
+
 Done:
 
 - Harness: simulated user, judge, answer keys, bootstrap intervals, break-even

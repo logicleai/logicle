@@ -32,6 +32,49 @@ export interface AnswerKey {
   mustNotMention?: string[]
 }
 
+/** A saved message in a single-turn reference conversation. */
+export type ReferenceChatMessage =
+  | {
+      role: 'user'
+      text: string
+      /** Corpus document names attached to this historical user message. */
+      attachments?: string[]
+    }
+  | {
+      role: 'assistant'
+      text?: string
+      /** Optional historical tool call. Its result is stored in the following tool message. */
+      toolCall?: {
+        id: string
+        name: string
+        args: Record<string, unknown>
+      }
+    }
+  | {
+      role: 'tool'
+      toolCallId: string
+      toolName: string
+      result: string
+    }
+
+/**
+ * A fixed conversation prefix followed by one fixed user question.
+ *
+ * This mode removes the simulated user's stochastic trajectory from policy comparisons. The
+ * saved history is input context only: it is deliberately excluded from the scored transcript,
+ * otherwise an answer planted in history could satisfy the deterministic gate by itself.
+ */
+export interface ReferenceChat {
+  history: ReferenceChatMessage[]
+  finalUserMessage: string
+  /** Provenance of the shape, never production content or identifiers. */
+  sourceShape?: {
+    cohort: string
+    messageCount: number
+    approximateInputTokens?: number
+  }
+}
+
 export interface Scenario {
   id: string
   description: string
@@ -43,6 +86,10 @@ export interface Scenario {
   persona?: string
   /** Hard stop, so a failing arm cannot burn the budget. */
   maxTurns: number
+  /** Fixed-history, single-message mode for context-policy evaluations. */
+  referenceChat?: ReferenceChat
+  /** Added to the assistant prompt for every arm in this scenario. */
+  systemPromptSuffix?: string
   /** What a good outcome looks like, handed to the judge together with the transcript. */
   rubric: string
   answerKey?: AnswerKey
@@ -119,11 +166,27 @@ export interface TurnUsage {
   inputTokens: number
   outputTokens: number
   totalTokens: number
+  /** Provider-reported prompt-cache accounting, when available. */
+  inputTokenDetails?: {
+    noCacheTokens?: number
+    cacheReadTokens?: number
+    cacheWriteTokens?: number
+  }
 }
 
 export interface TurnMetrics extends TurnUsage {
   toolCalls: string[]
   latencyMs: number
+}
+
+export interface CompressionDiagnostics {
+  enabled: boolean
+  estimatedHistoryTokensBefore: number
+  estimatedHistoryTokensAfter: number
+  triggerAtTokens?: number
+  triggered: boolean
+  summarizedMessages: number
+  keepRecentTurns?: number
 }
 
 export type RunOutcome = 'goal-reached' | 'max-turns' | 'gave-up' | 'error'
@@ -170,6 +233,8 @@ export interface RunResult {
   setupCost?: SetupCost
   /** USD equivalent of `setupCost`, when the ingestion model's price is known. */
   setupCostUsd?: number
+  /** Exact tokenizer-based planner precondition and estimated history reduction. */
+  compression?: CompressionDiagnostics
   /**
    * The single number arms are ranked on: deterministic pass and judge score combined. See
    * `scoreRun` in metrics.ts for how the two are reconciled.
@@ -183,6 +248,7 @@ export interface EvaluationArtifact {
   createdAt: string
   metadata: {
     gitRevision?: string
+    gitDirty?: boolean
     provider: string
     assistantModel: string
     userModel: string
@@ -191,6 +257,7 @@ export interface EvaluationArtifact {
     arms: string[]
     scenarios: string[]
     repeat: number
+    suite?: string
     sweep?: {
       documents: number[]
       wordsPerDocument: number

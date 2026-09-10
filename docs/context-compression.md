@@ -16,12 +16,14 @@ Quando il contesto supera la soglia configurata, il planner guarda i messaggi de
   testuale;
 - i risultati dei tool che contengono file vengono sostituiti da riferimenti recuperabili;
 - i risultati testuali dei tool troppo grandi vengono ridotti a un'anteprima;
+- le risposte lunghe dell'assistente nei turni storici vengono ridotte a un'anteprima;
 - con il preset `aggressive`, anche i messaggi testuali lunghi dell'utente vengono abbreviati.
 
-Il turno corrente non viene mai compresso. Ogni messaggio abbreviato contiene comunque il proprio
-id e un'istruzione per usare `context-retrieve.get_message`; per il contenuto di un file è presente
-anche `context-retrieve.get_file`. Se il modello non conosce l'id, può usare `search` nella
-cronologia originale della conversazione.
+Il turno corrente non viene mai compresso. Per impostazione predefinita, una ricerca lessicale usa
+il messaggio corrente per reinserire piccoli estratti rilevanti nei messaggi abbreviati, mantenendo
+il ruolo originale. Ogni messaggio abbreviato conserva comunque il proprio id: il modello può
+usare `search(query, id)` per altri estratti mirati e `get_message`/`get_file` per l'originale
+completo. Se non conosce l'id, `search(query)` cerca nella cronologia della conversazione.
 
 Quindi la compressione non è un riassunto generato da un LLM e non è una cancellazione: è una
 proiezione deterministica, con recupero esplicito del dettaglio quando serve.
@@ -45,6 +47,8 @@ Per-assistant, stored as `Assistant.contextCompression` (`contextCompressionConf
 type ContextCompressionConfig = {
   preset: 'conservative' | 'aggressive'
   triggerAtTokens?: number
+  keepRecentTurns?: number
+  retrievalMode?: 'tool' | 'prefetch'
 } | null
 ```
 
@@ -57,8 +61,17 @@ separate mechanism). This is the default for new assistants
   the size thresholds used by `planMessageCompression` (see the preset table below). There is no
   third "off" value at this level — set the whole config to `null` to disable instead.
 - **`triggerAtTokens`** (optional, positive integer) — assistant-specific override that can only
-  *raise* the server-wide token floor described below, never lower it. Leave unset to just use the
+  _raise_ the server-wide token floor described below, never lower it. Leave unset to just use the
   floor as-is.
+- **`keepRecentTurns`** (optional, non-negative integer) — number of completed turns immediately
+  before the current turn to leave verbatim. The measured default is `0`: in the fixed-reference
+  suite, retaining one turn preserved accuracy but raised mean input from 2,434 to 5,606 tokens.
+  This is an algorithm/evaluation knob; the assistant editor currently preserves it but does not
+  expose a dedicated control.
+- **`retrievalMode`** (optional) — `prefetch` (default) adds small query-relevant excerpts to
+  compressed messages before the model call; `tool` leaves retrieval entirely to the model. Full
+  originals remain available through `context-retrieve` in both modes. This field is preserved by
+  the editor but currently has no dedicated control.
 
 ### Server-Wide Floor: `CHAT_CONTEXT_COMPRESSION_TRIGGER_TOKENS`
 
@@ -70,7 +83,7 @@ assistant, without relying on each assistant's config being set sensibly.
 - **Default:** `6000` if unset or unparsable (`packages/core/src/env.ts`, `env.chat.contextCompressionTriggerTokens`).
 - **Resolution:** `resolveCompressionTriggerTokens(triggerAtTokens)` in `compression-planner.ts`
   returns `Math.max(triggerAtTokens ?? 0, env.chat.contextCompressionTriggerTokens)` — the env var
-  is a hard floor, and an assistant's `triggerAtTokens` is only ever honored when it's *higher* than
+  is a hard floor, and an assistant's `triggerAtTokens` is only ever honored when it's _higher_ than
   that floor:
 
 ```ts
@@ -96,24 +109,28 @@ compression kicks in at all.
 ## Presets: `conservative` vs `aggressive`
 
 There are exactly two presets, both implemented entirely inside `planMessageCompression`
-(`compression-planner.ts`). A preset only changes *size thresholds* for historical messages — it
+(`compression-planner.ts`). A preset only changes _size thresholds_ for historical messages — it
 never changes what counts as "current turn" (see below) and never triggers a model call. There is
 no per-field customization beyond `triggerAtTokens`: everything else about a preset's behavior is
 fixed by these two constants:
 
 ```ts
-const LARGE_TEXT_THRESHOLD_CHARS = 2000            // conservative
-const AGGRESSIVE_LARGE_TEXT_THRESHOLD_CHARS = 800  // aggressive
+const LARGE_TEXT_THRESHOLD_CHARS = 2000 // conservative
+const AGGRESSIVE_LARGE_TEXT_THRESHOLD_CHARS = 800 // aggressive
 ```
 
-| Rule (applied to historical messages only)                       | `conservative`                          | `aggressive`                            |
-| ------------------------------------------------------------------ | ---------------------------------------- | ----------------------------------------- |
-| Current turn (last user/user-response message + everything after) | always `full`, no exceptions             | always `full`, no exceptions — **identical to conservative; this preset never touches the current turn** |
-| Historical `user` message **with attachments**                     | `summary`                                | `summary`                                |
-| Historical `user` message, **long plain text, no attachments**     | `full` (left alone)                      | `summary` if `content.length > 800`      |
-| Historical `tool` result **with a recoverable file**                | `summary`                                | `summary`                                |
-| Historical `tool` result, **large text-only output**                | `summary` if estimated chars `> 2000`    | `summary` if estimated chars `> 800`     |
-| Everything else (short historical text, no attachments/files)      | `full`                                   | `full`                                   |
+| Rule (applied to historical messages only)                        | `conservative`                        | `aggressive`                                                                                             |
+| ----------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Current turn (last user/user-response message + everything after) | always `full`, no exceptions          | always `full`, no exceptions — **identical to conservative; this preset never touches the current turn** |
+| Historical `user` message **with attachments**                    | `summary`                             | `summary`                                                                                                |
+| Historical `user` message, **long plain text, no attachments**    | `full` (left alone)                   | `summary` if `content.length > 800`                                                                      |
+| Historical `tool` result **with a recoverable file**              | `summary`                             | `summary`                                                                                                |
+| Historical `tool` result, **large text-only output**              | `summary` if estimated chars `> 2000` | `summary` if estimated chars `> 800`                                                                     |
+| Historical `assistant` response, **large text**                   | `summary` if estimated chars `> 2000` | `summary` if estimated chars `> 800`                                                                     |
+| Everything else (short historical text, no attachments/files)     | `full`                                | `full`                                                                                                   |
+
+Before these shape rules run, every message belonging to one of the configured
+`keepRecentTurns` completed turns is assigned `full`.
 
 In short: **`aggressive` is a strict superset of `conservative`** — every message `conservative`
 would summarize, `aggressive` also summarizes, plus two extra cases (long historical plain-text
@@ -123,11 +140,11 @@ identically. The one place `aggressive` differs qualitatively rather than just n
 2 (`hasLargeText` in `planMessageCompression`) — that check is gated on
 `preset === 'aggressive'` entirely, so `conservative` never fires it no matter how long the text is.
 
-**A common misconception worth stating explicitly: `aggressive` does *not* summarize attachments or
+**A common misconception worth stating explicitly: `aggressive` does _not_ summarize attachments or
 tool results in the current turn.** The "current turn is never compressed" rule in
 `planMessageCompression` is checked first and unconditionally, before any preset-specific logic —
 there is no code path, under any preset, that assigns `policy: 'summary'` to a current-turn message.
-If you need to keep the model from re-reading a huge attachment *just uploaded in this turn*, that
+If you need to keep the model from re-reading a huge attachment _just uploaded in this turn_, that
 is not something either preset controls; it would require a different mechanism (e.g. the ordinary
 token-budget truncation in `truncateChat`, or advising the user to start a fresh conversation).
 
@@ -138,7 +155,7 @@ token-budget truncation in `truncateChat`, or advising the user to start a fresh
   large tool/file payloads). Preserves more of the model's own past reasoning text untouched.
 - **`aggressive`** — pick this when conversations run very long and include large blocks of pasted
   text from the user (long historical messages, not just files), or when a stricter savings target
-  is worth the model needing `context-retrieve.get_message`/`get_file` more often to recover detail.
+  is worth targeted prefetch or `context-retrieve` recovering detail more often.
 
 ## Current Turn Is Never Compressed
 
@@ -181,42 +198,56 @@ It reads no DB state and makes no I/O calls — it only looks at each message's 
 recency relative to the current turn. Decision rules, in order:
 
 1. **Current turn → always `full`.** (see above)
-2. **Historical `user` message with attachments → `summary`.**
-3. **Historical `user` message with a long text body (aggressive preset only) → `summary`.**
+2. **Configured recent completed turns → `full`.**
+3. **Historical `user` message with attachments → `summary`.**
+4. **Historical `user` message with a long text body (aggressive preset only) → `summary`.**
    Conservative preset leaves long historical text messages alone unless they carry attachments.
-4. **Historical `tool` message whose result carries a recoverable file → `summary`.**
-5. **Historical `tool` message with a large text-only result → `summary`.** The size threshold is
+5. **Historical `tool` message whose result carries a recoverable file → `summary`.**
+6. **Historical `tool` message with a large text-only result → `summary`.** The size threshold is
    2000 characters under `conservative`, 800 under `aggressive` — `aggressive` summarizes smaller
    historical tool output than `conservative` does. Neither preset changes what happens to the
    current turn.
-6. Everything else → `full`.
+7. **Historical `assistant` message with large text → `summary`.** It uses the same preset-specific
+   threshold as tool text.
+8. Everything else → `full`.
 
-### Decisions Are Turn-Stable
+### Policy Decisions Are Turn-Stable
 
 Crucially, the decision for a historical message never looks at what the _current_ message says.
 A message that mentions a historical file by name (`"what's on page 2 of report.pdf?"`) does
-**not** flip that historical message back to `full` — the compaction decision only depends on the
-historical message's own position and shape, so it is computed once (as soon as the message stops
-being "current turn") and never changes again for the rest of the conversation.
+**not** flip that historical message back to `full` — the compaction decision never depends on the
+current message's content. With `keepRecentTurns > 0`, an eligible turn changes once from `full` to
+`summary` when it ages out of the recent window. The cached base summary remains stable after that.
 
 This is deliberate, for two reasons:
 
-- **Prompt caching.** Providers cache the serialized prompt by shared prefix (e.g. Anthropic
-  breakpoints). If message M's representation depended on the current turn's content, the prefix
-  containing M would differ from one turn to the next, invalidating the cache on every single turn.
+- **Prompt caching.** The policy and cached base summary remain stable. In default `prefetch` mode,
+  only the small excerpts appended to that base depend on the current request, so the provider may
+  lose part of the shared prefix. This trade-off is included in reported cache-read tokens and was
+  still cheaper in the measured suite. `retrievalMode: 'tool'` keeps the base prefix stable.
 - **Simplicity.** A per-turn, content-dependent override is one more thing to reason about, test,
   and get wrong (fuzzy name matching, false positives on common words, etc.) for a case the model
   can already handle itself.
 
-If the model actually needs the original content of a summarized historical message, it calls
-`context-retrieve.get_message` (or `get_file`, for a specific recoverable file) with the id from
-the summary's reference block — that is precisely what the tool is for. There is no other path
-back to `full` for a historical message.
+If prefetch is insufficient, the model first calls `search(query, id)` for focused excerpts, then
+`get_message(id)` or `get_file(id)` only when the full original is necessary. With function-name
+prefixing enabled (the default), the provider-facing names are
+`context-retrieve__get_message`, `context-retrieve__get_file` and `context-retrieve__search`.
 
 ## Building the Summary: `applyCompressionPlan`
 
 Given the decisions above, `applyCompressionPlan` rewrites the message list: `full` messages pass
-through unchanged; `summary` messages are replaced by a compact, cached representation.
+through unchanged; `summary` messages are replaced by a compact, cached representation. In
+`prefetch` mode, deterministic lexical ranking then appends up to 6,000 characters of matching
+excerpts from compressed messages. Excerpts stay in the original message role; no
+historical tool output is promoted to a system or user instruction. The current user's non-empty
+text is the query. For an attachment-only turn with an empty text body, prefetch falls back to the
+nearest preceding non-empty user request so the uploaded file remains connected to the task it
+continues. The prompt builder also adds a bounded continuation note to that otherwise-empty current
+user message, making the relationship explicit instead of expecting the model to infer a task from
+retrieved historical excerpts alone. The continuation note is also present in `tool` mode, while
+the historical excerpts remain exclusive to `prefetch` mode. This changes only query-dependent
+prompt content, never the planner's stable decisions or cached base summaries.
 
 ### Summaries Are Always Plain Text
 
@@ -224,7 +255,8 @@ There is no model call anywhere in this path. A summary is one of:
 
 - **Deterministic text extraction** of a file (via the existing `cachingExtractor`, the same
   extractor used for native-attachment fallback elsewhere), truncated to 500 characters.
-- **Truncation** of an overly long text block, with a `…[truncated; N chars omitted]` marker.
+- **Truncation** of an overly long text block, with a marker stating how many characters were
+  omitted and requiring retrieval before omitted details are used.
 - **A fixed fallback string** when neither applies — e.g. `Image file; no text preview available.`
   for images (there is no text to extract from an image), or `No extractable text preview available for this file type.` when extraction fails or returns nothing.
 
@@ -238,15 +270,14 @@ is the model's one recovery surface for anything compression touched:
 
 - **`get_file(id)`** — read a file's content by id (DB-authorized via `canAccessFile`, same as
   before this tool was renamed from `retrieve-file`).
-- **`get_message(id)`** — return a message's *original, uncompressed* content by message id.
+- **`get_message(id)`** — return a message's _original, uncompressed_ content by message id.
   Operates directly on the live `messages` array already passed to every tool call
   (`ChatState.chatHistory`, which compression never touches) — no DB access, no extra
   authorization needed beyond already being inside this conversation.
-- **`search(query)`** — case-insensitive substring search over this conversation's own message
-  history (via the same `messages` array), returning matching message ids with a short snippet.
-  For when the model doesn't already have an id to call `get_message` with. Deliberately scoped to
-  *this conversation's uncompressed context only* — it is not a knowledge-base or cross-conversation
-  search.
+- **`search(query, id?)`** — with an id, lexically ranks chunks from that exact original message or
+  file and returns only the best excerpts; without an id, searches this conversation's messages
+  and returns ids with short snippets. It is deliberately scoped to this conversation, not a
+  knowledge-base or cross-conversation search.
 
 ### File Recovery Reference
 
@@ -258,7 +289,7 @@ File available on demand: documento_semplice.docx
 id: xXj3tBxkt4CTy80XL1rFF
 type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
 summary: Documento semplice: contains a title and one paragraph.
-Use context-retrieve.get_file with this id if exact contents are needed.
+[EXACT CONTENT OMITTED] If the user's request could depend on omitted content, you MUST call the search function of the context-retrieve tool with { "id": "xXj3tBxkt4CTy80XL1rFF", "query": "<terms from the request>" } before answering. Use get_file only if the targeted excerpts are insufficient.
 ```
 
 Built by `buildFileRecoveryReference(fileRef, summary)`. `fileRef` is a `CompressionFileRef`:
@@ -281,7 +312,7 @@ historical user message, a large plain-text tool result). Every `summary`-policy
 also gets its own recovery line, appended by `buildMessageRecoveryNote(messageId)`:
 
 ```
-Full original message available on demand via context-retrieve.get_message with id: u-old-1.
+[EXACT CONTENT OMITTED] Full original message id: u-old-1. If the user's request could depend on omitted content, call search with this id and focused terms before answering. Use get_message only if targeted excerpts are insufficient.
 ```
 
 This is unconditional: it's present whether or not the message also carries file references, so
@@ -331,14 +362,14 @@ After:
       "toolName": "office_script",
       "result": {
         "type": "text",
-        "value": "[Tool output summarized for context efficiency.]\n\nFile available on demand: documento_semplice.docx\nid: file-docx\ntype: application/vnd...wordprocessingml.document\nsummary: Documento semplice: contains a title and one paragraph.\nUse context-retrieve.get_file with this id if exact contents are needed.\n\nFull original message available on demand via context-retrieve.get_message with id: t-docx."
+        "value": "[Tool output summarized for context efficiency. A retrieval call is mandatory whenever the request could depend on exact omitted values.]\n\nFile available on demand: documento_semplice.docx\nid: file-docx\ntype: application/vnd...wordprocessingml.document\nsummary: Documento semplice: contains a title and one paragraph.\n[EXACT CONTENT OMITTED] Search this file id with focused terms before answering; use get_file only if targeted excerpts are insufficient.\n\n[EXACT CONTENT OMITTED] Full original message id: t-docx. Search this message id with focused terms before answering; use get_message only if targeted excerpts are insufficient."
       }
     }
   ]
 }
 ```
 
-The `[Tool output summarized for context efficiency.]` overview line is a fixed constant
+The `[Tool output summarized for context efficiency. ...]` overview line is a fixed constant
 (`TOOL_RESULT_OVERVIEW`) — it does not depend on any separately-generated narrative summary.
 
 ### Generated Artifacts: Redacting Duplicated Content
@@ -370,7 +401,7 @@ marker; short fields (like a `prompt` argument) are left alone.
 
 // after
 { "id": "u-old-1", "role": "user",
-  "content": "File available on demand: report.pdf\nid: file-123\ntype: application/pdf\nsummary: The report covers Q1 revenue.\nUse context-retrieve.get_file with this id if exact contents are needed.\n\nPlease inspect this file.\n\nFull original message available on demand via context-retrieve.get_message with id: u-old-1.",
+  "content": "File available on demand: report.pdf\nid: file-123\ntype: application/pdf\nsummary: The report covers Q1 revenue.\n[EXACT CONTENT OMITTED] Search this file id with focused terms before answering; use get_file only if targeted excerpts are insufficient.\n\nPlease inspect this file.\n\n[EXACT CONTENT OMITTED] Full original message id: u-old-1. Search this message id first; use get_message only if needed.",
   "attachments": [] }
 ```
 
@@ -400,7 +431,7 @@ thrown back at the save path.
 ### Building a Message's Summary Only Happens Once at a Time
 
 Because `warmCompressionCache` is fire-and-forget, it isn't awaited by anything — a prompt build
-for a *different*, concurrent request can decide it needs to compress the same message before the
+for a _different_, concurrent request can decide it needs to compress the same message before the
 warm-up has finished. `getCompressedMessage`/`saveCompressedMessage` alone make that safe (the
 table upserts on `(sourceMessageId, compressionVersion)`), but not free: without anything else,
 both callers would redundantly re-read the file and re-run the text extractor.
@@ -430,7 +461,7 @@ CompressedMessage
 unique(sourceMessageId, compressionVersion)
 ```
 
-`compressionVersion` (currently `COMPRESSION_VERSION = 2` in `compression-planner.ts`) is bumped
+`compressionVersion` (currently `COMPRESSION_VERSION = 8` in `compression-planner.ts`) is bumped
 whenever the summary-building rules change, so old cached rows are naturally ignored rather than
 served stale. Applying a cached row is a plain overlay:
 
@@ -450,9 +481,10 @@ prompt build (ChatAssistant.invokeLlm)
   │    no  → send messages as-is
   │    yes ↓
   ├─ planMessageCompression(messages, preset)       → MessageCompressionDecision[]
-  ├─ applyCompressionPlan(messages, decisions)
+  ├─ applyCompressionPlan(messages, decisions, current-query options)
   │    full    → message unchanged
   │    summary → cached CompressedMessage row, or built + cached now
+  │    prefetch→ matching excerpts appended in the original message role
   ├─ truncateChat(...)                              [separate token-budget window, unchanged]
   └─ buildHistorySegments(...) → dtoMessageToLlmMessage(...) → provider payload
 ```
@@ -467,6 +499,7 @@ they always were.
 Covered in `apps/backend/lib/chat/__tests__/compression-planner.test.ts`:
 
 - Current turn stays `full` under both presets.
+- The configured number of recent completed turns stays `full` as one unit.
 - A historical attachment is summarized once a later turn starts.
 - A historical message's decision does not change when a later user message names that file.
 - Large historical tool text is summarized; `aggressive` lowers the size threshold.
@@ -475,21 +508,25 @@ Covered in `apps/backend/lib/chat/__tests__/compression-planner.test.ts`:
 - A generated image summary never triggers a model call and never becomes `image-data`.
 - `full`-policy messages still convert exactly as before (native bytes/text-extraction fallback).
 - Failed text extraction falls back to deterministic minimal text, never blocks compaction.
-- Every `summary`-policy message carries a `context-retrieve.get_message` recovery line, with or
-  without an accompanying file reference.
+- Every `summary`-policy message carries a mandatory-retrieval line naming `context-retrieve`'s
+  targeted `search` function, with full-message/file retrieval as fallback.
+- Query-aware prefetch inserts a relevant excerpt into the compressed message's original role.
+- Attachment-only continuation prefetch falls back to the nearest non-empty user request and
+  recovers the preceding task from a compressed answer.
 - `warmCompressionCache` builds/caches eligible messages and no-ops on ineligible ones, without
   throwing on failure.
 - A concurrent build for the same message joins the in-flight one instead of duplicating work.
 
 `apps/backend/lib/tools/context-retrieve/__tests__/implementation.test.ts` covers the tool itself:
-`get_file` (unchanged behavior from the old `retrieve-file` tool), `get_message` (found/not-found,
-and that it needs no DB access), and `search` (match with snippet, no-match, empty query).
+`get_file`, `get_message`, and `search`, including targeted lexical search inside one message or
+authorized file without replaying its irrelevant bulk.
 
 ## Behavioral Regression Benchmark
 
 The unit tests above validate the planner and the transformed message shape. They do not prove that
 an LLM can solve a task after the relevant content has been removed from the prompt. That question
-is covered by `__tests__/contextCompressionBenchmark.test.ts`.
+has a release-smoke benchmark in `__tests__/contextCompressionBenchmark.test.ts` and a comparative,
+numeric suite in the goal-driven eval harness.
 
 The benchmark uses real provider calls and is skipped by default. Enable it with:
 
@@ -511,10 +548,25 @@ versions, tool-calling behavior and network conditions can affect it. Keep the d
 preconditions and retrieval assertions strict; use a small provider matrix for release smoke tests
 and run broader model comparisons separately.
 
+For the accuracy/cost decision, use the saved-reference, single-message suite:
+
+```bash
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval.ts \
+  --suite context-compression --repeat 5 \
+  --runs-out context-compression-runs.json --out context-compression-report.md
+```
+
+By default it compares compression off, tool-only retrieval with no recent window, and prefetch
+with recent windows of 0 and 1. Explicit `compression-keep-{1,2,4}` arms remain available for wider
+window sweeps. The report uses provider usage, including prompt-cache read/write token details when
+available, and stores raw runs so the same evidence can be re-reported without another model call.
+
 ## Relevant Files
 
 - `apps/backend/lib/chat/compression-planner.ts` — `planMessageCompression`, `applyCompressionPlan`,
   `warmCompressionCache`, `resolveCompressionTriggerTokens`.
+- `apps/backend/lib/chat/context-search.ts` — deterministic lexical ranking shared by prefetch and
+  targeted retrieval.
 - `apps/backend/lib/chat/index.ts` — wires compression into `ChatAssistant.invokeLlm`.
 - `apps/backend/models/message.ts` — calls `warmCompressionCache` after `saveMessage`.
 - `apps/backend/models/compressed-message.ts` — `CompressedMessage` cache reads/writes.

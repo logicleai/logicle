@@ -3690,6 +3690,15 @@ components:
                   type: integer
                   exclusiveMinimum: 0
                   maximum: 9007199254740991
+                keepRecentTurns:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                retrievalMode:
+                  type: string
+                  enum:
+                    - tool
+                    - prefetch
               required:
                 - preset
               additionalProperties: false
@@ -3833,6 +3842,15 @@ components:
                   type: integer
                   exclusiveMinimum: 0
                   maximum: 9007199254740991
+                keepRecentTurns:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                retrievalMode:
+                  type: string
+                  enum:
+                    - tool
+                    - prefetch
               required:
                 - preset
               additionalProperties: false
@@ -3953,6 +3971,15 @@ components:
                   type: integer
                   exclusiveMinimum: 0
                   maximum: 9007199254740991
+                keepRecentTurns:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                retrievalMode:
+                  type: string
+                  enum:
+                    - tool
+                    - prefetch
               required:
                 - preset
               additionalProperties: false
@@ -4063,6 +4090,15 @@ components:
                   type: integer
                   exclusiveMinimum: 0
                   maximum: 9007199254740991
+                keepRecentTurns:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                retrievalMode:
+                  type: string
+                  enum:
+                    - tool
+                    - prefetch
               required:
                 - preset
               additionalProperties: false
