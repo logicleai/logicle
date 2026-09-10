@@ -62,6 +62,7 @@ import { prefixToolFunctionNames } from './toolFunctionNames'
 import {
   planMessageCompression,
   applyCompressionPlan,
+  resolveCompressionRetrievalMode,
   resolveCompressionTriggerTokens,
 } from './compression-planner'
 
@@ -98,7 +99,11 @@ export interface AssistantParams {
 export type AssistantParamsSource = Pick<
   AssistantParams,
   'model' | 'systemPrompt' | 'temperature' | 'tokenLimit' | 'reasoning_effort'
-> & { assistantId?: string; id?: string; contextCompression?: dto.ContextCompressionConfig | string | null }
+> & {
+  assistantId?: string
+  id?: string
+  contextCompression?: dto.ContextCompressionConfig | string | null
+}
 
 interface Options {
   saveMessage?: (message: dto.Message, usage?: Usage) => Promise<void>
@@ -313,6 +318,9 @@ export class ChatAssistant {
     }
     if (assistantParams.contextCompression) {
       const { ContextRetrievePlugin } = await import('../tools/context-retrieve/implementation')
+      const retrievalMode = resolveCompressionRetrievalMode(
+        assistantParams.contextCompression.retrievalMode
+      )
       tools = [
         ...tools,
         new ContextRetrievePlugin(
@@ -321,7 +329,9 @@ export class ChatAssistant {
             provisioned: false,
             name: 'context-retrieve',
             promptFragment:
-              '\nContext compression may replace older attachments, tool outputs, or long messages with a short summary that includes an id. Use the context-retrieve tool to recover the original: get_file(id) for a file, get_message(id) for a whole message, or search(query) to find a message when you don\'t already have its id.\n',
+              retrievalMode === 'prefetch'
+                ? "\nContext compression may replace older content with summaries. Excerpts marked [AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST] have already been recovered from the original context: use them directly and do not call a retrieval tool again when they answer the request. If the answer is not already present in visible context and those excerpts are absent or insufficient, call this context-retrieve tool's search(query, id) with focused terms, then use get_file(id) or get_message(id) only if necessary. Never guess an omitted value.\n"
+                : "\nContext compression may replace older attachments, tool outputs, or long messages with a short summary that includes an id. If a user's request could depend on exact omitted content that is not already present in visible context, you MUST retrieve it before answering. First call this context-retrieve tool's search(query, id) with focused terms from the request; it returns small relevant excerpts from that message or file. Use get_file(id) or get_message(id) only if those excerpts are insufficient. Never guess, and never merely say that an omitted value is unavailable without making the retrieval call. When no id is known, search(query) searches the conversation.\n",
           },
           {}
         ),
@@ -584,8 +594,18 @@ export class ChatAssistant {
       const estimatedTokens = historyCosts.reduce((sum, cost) => sum + cost.tokens, 0)
       const shouldCompress = estimatedTokens >= triggerAtTokens
       if (shouldCompress) {
-        const decisions = planMessageCompression(messages, compression.preset)
-        promptMessages = await applyCompressionPlan(messages, decisions)
+        const decisions = planMessageCompression(messages, compression.preset, {
+          keepRecentTurns: compression.keepRecentTurns,
+        })
+        const currentUserMessage = [...messages]
+          .reverse()
+          .find((message) => message.role === 'user')
+        promptMessages = await applyCompressionPlan(messages, decisions, {
+          prefetchQuery:
+            resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
+              ? currentUserMessage?.content
+              : undefined,
+        })
       } else {
         historyCosts = undefined
       }
@@ -1107,6 +1127,13 @@ export class ChatAssistant {
             inputTokens: usage.inputTokens,
             outputTokens: usage.outputTokens,
             totalTokens: usage.totalTokens,
+            inputTokenDetails: usage.inputTokenDetails as
+              | {
+                  noCacheTokens?: number
+                  cacheReadTokens?: number
+                  cacheWriteTokens?: number
+                }
+              | undefined,
           })
         }
       }

@@ -30,6 +30,41 @@ export const allInContextArm: Arm = {
   }),
 }
 
+/** Historical messages are sent verbatim and no context-retrieval tool is registered. */
+export const compressionOffArm: Arm = {
+  name: 'compression-off',
+  description: 'Context compression disabled; the saved conversation is sent verbatim.',
+  setup: async (): Promise<ArmSetup> => ({ tools: [], knowledge: [] }),
+}
+
+export interface ContextCompressionArmOptions {
+  keepRecentTurns: number
+  preset?: 'conservative' | 'aggressive'
+  retrievalMode?: 'tool' | 'prefetch'
+  name?: string
+}
+
+/** A context-compression policy arm with an explicit recent-turn window. */
+export const createContextCompressionArm = (options: ContextCompressionArmOptions): Arm => {
+  const preset = options.preset ?? 'conservative'
+  const retrievalMode = options.retrievalMode ?? 'tool'
+  return {
+    name: options.name ?? `compression-keep-${options.keepRecentTurns}`,
+    description: `${preset} context compression with ${retrievalMode} retrieval, keeping ${options.keepRecentTurns} completed recent turn(s) verbatim.`,
+    setup: async (): Promise<ArmSetup> => ({
+      tools: [],
+      knowledge: [],
+      assistant: {
+        contextCompression: {
+          preset,
+          keepRecentTurns: options.keepRecentTurns,
+          retrievalMode,
+        },
+      },
+    }),
+  }
+}
+
 export interface KnowledgeBoxArmOptions {
   /** Questions asked of every document at ingestion. Empty means chunks-only retrieval. */
   questions?: KnowledgeBoxQuestion[]

@@ -63,6 +63,16 @@ export const checkAnswerKey = (
 export const computeTotals = (turns: TurnMetrics[], modelId: string, wallMs: number): RunTotals => {
   const inputTokens = turns.reduce((total, turn) => total + turn.inputTokens, 0)
   const outputTokens = turns.reduce((total, turn) => total + turn.outputTokens, 0)
+  const detailKeys = ['noCacheTokens', 'cacheReadTokens', 'cacheWriteTokens'] as const
+  const hasInputTokenDetails = turns.some((turn) => turn.inputTokenDetails !== undefined)
+  const inputTokenDetails = hasInputTokenDetails
+    ? Object.fromEntries(
+        detailKeys.map((key) => [
+          key,
+          turns.reduce((total, turn) => total + (turn.inputTokenDetails?.[key] ?? 0), 0),
+        ])
+      )
+    : undefined
   return {
     inputTokens,
     outputTokens,
@@ -70,7 +80,8 @@ export const computeTotals = (turns: TurnMetrics[], modelId: string, wallMs: num
     turns: turns.length,
     toolCalls: turns.reduce((total, turn) => total + turn.toolCalls.length, 0),
     wallMs,
-    costUsd: computeCostUsd(modelId, inputTokens, outputTokens),
+    inputTokenDetails,
+    costUsd: computeCostUsd(modelId, inputTokens, outputTokens, inputTokenDetails),
   }
 }
 

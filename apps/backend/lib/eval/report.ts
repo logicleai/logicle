@@ -19,6 +19,11 @@ export interface ArmAggregate {
   score: Summary
   inputTokens: Summary
   outputTokens: Summary
+  cacheReadTokens: Summary
+  cacheWriteTokens: Summary
+  estimatedHistoryTokensBefore: Summary
+  estimatedHistoryTokensAfter: Summary
+  summarizedMessages: Summary
   costUsd: Summary
   /** Undefined when no run had a known price. */
   costKnown: boolean
@@ -54,6 +59,19 @@ export const aggregate = (runs: RunResult[]): ArmAggregate[] => {
       score: summarize(group.map((run) => run.score)),
       inputTokens: summarize(group.map((run) => run.totals.inputTokens)),
       outputTokens: summarize(group.map((run) => run.totals.outputTokens)),
+      cacheReadTokens: summarize(
+        group.map((run) => run.totals.inputTokenDetails?.cacheReadTokens ?? 0)
+      ),
+      cacheWriteTokens: summarize(
+        group.map((run) => run.totals.inputTokenDetails?.cacheWriteTokens ?? 0)
+      ),
+      estimatedHistoryTokensBefore: summarize(
+        group.map((run) => run.compression?.estimatedHistoryTokensBefore ?? 0)
+      ),
+      estimatedHistoryTokensAfter: summarize(
+        group.map((run) => run.compression?.estimatedHistoryTokensAfter ?? 0)
+      ),
+      summarizedMessages: summarize(group.map((run) => run.compression?.summarizedMessages ?? 0)),
       costUsd: summarize(withCost.map((run) => run.totals.costUsd!)),
       costKnown: withCost.length > 0,
       turns: summarize(group.map((run) => run.totals.turns)),
@@ -185,19 +203,59 @@ export const renderMarkdown = (runs: RunResult[], baselineArmName: string): stri
   const aggregates = aggregate(runs)
   const lines: string[] = ['# Evaluation report', '']
 
-  for (const scenarioId of [...new Set(runs.map((run) => run.scenarioId))]) {
-    const scenarioAggregates = aggregates.filter((entry) => entry.scenarioId === scenarioId)
-    lines.push(`## ${scenarioId}`, '')
+  const overall = aggregate(runs.map((run) => ({ ...run, scenarioId: 'overall' })))
+  if (overall.length > 0) {
     lines.push(
-      '| arm | runs | success | score | in tok | out tok | cost | tools | turns | setup |',
-      '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
+      '## Overall',
+      '',
+      '| arm | runs | success | score | in tok | cache read | out tok | cost | tools |',
+      '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
     )
-    for (const entry of scenarioAggregates) {
+    for (const entry of overall) {
       lines.push(
         `| ${entry.armName} | ${entry.runs} | ${percent(entry.successRate)} | ${round(
           entry.score.mean,
           2
-        )} | ${round(entry.inputTokens.mean, 0)} | ${round(entry.outputTokens.mean, 0)} | ${
+        )} | ${round(entry.inputTokens.mean, 0)} | ${round(
+          entry.cacheReadTokens.mean,
+          0
+        )} | ${round(entry.outputTokens.mean, 0)} | ${
+          entry.costKnown ? formatCostUsd(entry.costUsd.mean) : 'n/a'
+        } | ${round(entry.toolCalls.mean)} |`
+      )
+    }
+    lines.push('')
+  }
+
+  for (const scenarioId of [...new Set(runs.map((run) => run.scenarioId))]) {
+    const scenarioAggregates = aggregates.filter((entry) => entry.scenarioId === scenarioId)
+    const showCompression = runs.some(
+      (run) => run.scenarioId === scenarioId && run.compression !== undefined
+    )
+    lines.push(`## ${scenarioId}`, '')
+    lines.push(
+      showCompression
+        ? '| arm | runs | success | score | history est. before→after | summarized | in tok | cache read | out tok | cost | tools | turns | setup |'
+        : '| arm | runs | success | score | in tok | cache read | out tok | cost | tools | turns | setup |',
+      showCompression
+        ? '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
+        : '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
+    )
+    for (const entry of scenarioAggregates) {
+      const compressionColumns = showCompression
+        ? ` ${round(entry.estimatedHistoryTokensBefore.mean, 0)}→${round(
+            entry.estimatedHistoryTokensAfter.mean,
+            0
+          )} | ${round(entry.summarizedMessages.mean)} |`
+        : ''
+      lines.push(
+        `| ${entry.armName} | ${entry.runs} | ${percent(entry.successRate)} | ${round(
+          entry.score.mean,
+          2
+        )} |${compressionColumns} ${round(entry.inputTokens.mean, 0)} | ${round(
+          entry.cacheReadTokens.mean,
+          0
+        )} | ${round(entry.outputTokens.mean, 0)} | ${
           entry.costKnown ? formatCostUsd(entry.costUsd.mean) : 'n/a'
         } | ${round(entry.toolCalls.mean)} | ${round(entry.turns.mean)} | ${
           entry.setupCostUsd !== undefined ? formatCostUsd(entry.setupCostUsd) : '—'

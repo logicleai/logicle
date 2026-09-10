@@ -1,0 +1,4736 @@
+{
+  "version": 1,
+  "createdAt": "2026-09-10T07:29:07.523Z",
+  "metadata": {
+    "gitRevision": "e8c21f8736312cb066790ca6d76020fd96639c58",
+    "gitDirty": true,
+    "provider": "anthropic",
+    "assistantModel": "claude-sonnet-latest",
+    "userModel": "claude-sonnet-latest",
+    "baselineArm": "compression-off",
+    "arms": [
+      "compression-off",
+      "compression-keep-0",
+      "compression-prefetch-keep-0",
+      "compression-prefetch-keep-1"
+    ],
+    "scenarios": [
+      "compression-recent-attachment",
+      "compression-middle-attachment",
+      "compression-recent-assistant",
+      "compression-far-tool-output",
+      "compression-irrelevant-old-bulk",
+      "compression-mixed-depth"
+    ],
+    "repeat": 3,
+    "suite": "context-compression"
+  },
+  "runs": [
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-off",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13639,
+          "outputTokens": 10,
+          "totalTokens": 13649,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 13637
+          },
+          "toolCalls": [],
+          "latencyMs": 1583
+        }
+      ],
+      "totals": {
+        "inputTokens": 13639,
+        "outputTokens": 10,
+        "totalTokens": 13649,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1709,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 13637
+        },
+        "costUsd": 0.0341965
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 13173,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-off",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13635,
+          "outputTokens": 10,
+          "totalTokens": 13645,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 13633
+          },
+          "toolCalls": [],
+          "latencyMs": 1384
+        }
+      ],
+      "totals": {
+        "inputTokens": 13635,
+        "outputTokens": 10,
+        "totalTokens": 13645,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1542,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 13633
+        },
+        "costUsd": 0.0341865
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 13173,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-off",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13639,
+          "outputTokens": 10,
+          "totalTokens": 13649,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 13637
+          },
+          "toolCalls": [],
+          "latencyMs": 1383
+        }
+      ],
+      "totals": {
+        "inputTokens": 13639,
+        "outputTokens": 10,
+        "totalTokens": 13649,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1578,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 13637
+        },
+        "costUsd": 0.0341965
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 13173,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 5454,
+          "outputTokens": 140,
+          "totalTokens": 5594,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 2639,
+            "cacheWriteTokens": 2811
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 3727
+        }
+      ],
+      "totals": {
+        "inputTokens": 5454,
+        "outputTokens": 140,
+        "totalTokens": 5594,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 4046,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 2639,
+          "cacheWriteTokens": 2811
+        },
+        "costUsd": 0.008963299999999999
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 1230,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 5448,
+          "outputTokens": 124,
+          "totalTokens": 5572,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 3806,
+            "cacheWriteTokens": 1638
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 3823
+        }
+      ],
+      "totals": {
+        "inputTokens": 5448,
+        "outputTokens": 124,
+        "totalTokens": 5572,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 4128,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 3806,
+          "cacheWriteTokens": 1638
+        },
+        "costUsd": 0.0061042
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 1230,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "The final release authorization code is **ORCHID-7419**.",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 5448,
+          "outputTokens": 144,
+          "totalTokens": 5592,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 3806,
+            "cacheWriteTokens": 1638
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 4039
+        }
+      ],
+      "totals": {
+        "inputTokens": 5448,
+        "outputTokens": 144,
+        "totalTokens": 5592,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 4285,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 3806,
+          "cacheWriteTokens": 1638
+        },
+        "costUsd": 0.006304199999999999
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 1230,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 2809,
+          "outputTokens": 10,
+          "totalTokens": 2819,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 2807
+          },
+          "toolCalls": [],
+          "latencyMs": 1774
+        }
+      ],
+      "totals": {
+        "inputTokens": 2809,
+        "outputTokens": 10,
+        "totalTokens": 2819,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1932,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 2807
+        },
+        "costUsd": 0.0071215
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 1363,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 2811,
+          "outputTokens": 10,
+          "totalTokens": 2821,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 1680
+          },
+          "toolCalls": [],
+          "latencyMs": 1869
+        }
+      ],
+      "totals": {
+        "inputTokens": 2811,
+        "outputTokens": 10,
+        "totalTokens": 2821,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2061,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 1680
+        },
+        "costUsd": 0.0045298000000000005
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 1363,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 2811,
+          "outputTokens": 10,
+          "totalTokens": 2821,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 1680
+          },
+          "toolCalls": [],
+          "latencyMs": 2258
+        }
+      ],
+      "totals": {
+        "inputTokens": 2811,
+        "outputTokens": 10,
+        "totalTokens": 2821,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 3889,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 1680
+        },
+        "costUsd": 0.0045298000000000005
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 1363,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 14617,
+          "outputTokens": 79,
+          "totalTokens": 14696,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 13486
+          },
+          "toolCalls": [],
+          "latencyMs": 2640
+        }
+      ],
+      "totals": {
+        "inputTokens": 14617,
+        "outputTokens": 79,
+        "totalTokens": 14696,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2833,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 13486
+        },
+        "costUsd": 0.0347348
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 13173,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 0,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 14621,
+          "outputTokens": 10,
+          "totalTokens": 14631,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 13490
+          },
+          "toolCalls": [],
+          "latencyMs": 1817
+        }
+      ],
+      "totals": {
+        "inputTokens": 14621,
+        "outputTokens": 10,
+        "totalTokens": 14631,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2051,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 13490
+        },
+        "costUsd": 0.0340548
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 13173,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 0,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-attachment",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the exact final release authorization code? Reply with the code only."
+        },
+        {
+          "role": "assistant",
+          "text": "ORCHID-7419",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 14615,
+          "outputTokens": 10,
+          "totalTokens": 14625,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 13484
+          },
+          "toolCalls": [],
+          "latencyMs": 1810
+        }
+      ],
+      "totals": {
+        "inputTokens": 14615,
+        "outputTokens": 10,
+        "totalTokens": 14625,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1989,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 13484
+        },
+        "costUsd": 0.0340398
+      },
+      "deterministic": {
+        "mentioned": [
+          "ORCHID-7419"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13173,
+        "estimatedHistoryTokensAfter": 13173,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 0,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-off",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "The approved production transition date, per the authoritative final record in transition-calendar.txt, is **17 November 2027**. Earlier planning dates in that document are explicitly superseded by this date.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 14752,
+          "outputTokens": 62,
+          "totalTokens": 14814,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 14750
+          },
+          "toolCalls": [],
+          "latencyMs": 1963
+        }
+      ],
+      "totals": {
+        "inputTokens": 14752,
+        "outputTokens": 62,
+        "totalTokens": 14814,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2108,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 14750
+        },
+        "costUsd": 0.037499
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 14034,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-off",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "The approved production transition date is **17 November 2027**, as stated in the \"Authoritative final record\" section of transition-calendar.txt. That document also notes that earlier planning dates are superseded by this date.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 14746,
+          "outputTokens": 66,
+          "totalTokens": 14812,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 14744
+          },
+          "toolCalls": [],
+          "latencyMs": 2054
+        }
+      ],
+      "totals": {
+        "inputTokens": 14746,
+        "outputTokens": 66,
+        "totalTokens": 14812,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2201,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 14744
+        },
+        "costUsd": 0.037524
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 14034,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-off",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "According to the authoritative final record in transition-calendar.txt, the approved production transition date is **17 November 2027**. Earlier planning dates in that document are explicitly superseded by this date.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 14752,
+          "outputTokens": 62,
+          "totalTokens": 14814,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 14750
+          },
+          "toolCalls": [],
+          "latencyMs": 1803
+        }
+      ],
+      "totals": {
+        "inputTokens": 14752,
+        "outputTokens": 62,
+        "totalTokens": 14814,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1978,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 14750
+        },
+        "costUsd": 0.037499
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 14034,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "According to the approved transition calendar (transition-calendar.txt), the exact production transition date is **17 November 2027**. Note: the document states this supersedes any earlier planning dates.",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 7695,
+          "outputTokens": 207,
+          "totalTokens": 7902,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 4932,
+            "cacheWriteTokens": 2759
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 5680
+        }
+      ],
+      "totals": {
+        "inputTokens": 7695,
+        "outputTokens": 207,
+        "totalTokens": 7902,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 5878,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 4932,
+          "cacheWriteTokens": 2759
+        },
+        "costUsd": 0.0099619
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 2277,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "According to the approved transition calendar (transition-calendar.txt), the exact production transition date is **17 November 2027**. Note that this supersedes any earlier planning dates.",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 7683,
+          "outputTokens": 178,
+          "totalTokens": 7861,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 4928,
+            "cacheWriteTokens": 2751
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 4676
+        }
+      ],
+      "totals": {
+        "inputTokens": 7683,
+        "outputTokens": 178,
+        "totalTokens": 7861,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 4866,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 4928,
+          "cacheWriteTokens": 2751
+        },
+        "costUsd": 0.009651100000000001
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 2277,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "According to the approved record in **transition-calendar.txt**, the exact production transition date is **17 November 2027**. This supersedes any earlier planning dates.",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 7699,
+          "outputTokens": 176,
+          "totalTokens": 7875,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 4934,
+            "cacheWriteTokens": 2761
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 4724
+        }
+      ],
+      "totals": {
+        "inputTokens": 7699,
+        "outputTokens": 176,
+        "totalTokens": 7875,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 4941,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 4934,
+          "cacheWriteTokens": 2761
+        },
+        "costUsd": 0.009657299999999999
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 2277,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "According to the approved transition calendar (transition-calendar.txt), the exact approved production transition date is **17 November 2027**. Earlier planning dates are superseded by this record.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 3931,
+          "outputTokens": 97,
+          "totalTokens": 4028,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 2800
+          },
+          "toolCalls": [],
+          "latencyMs": 4487
+        }
+      ],
+      "totals": {
+        "inputTokens": 3931,
+        "outputTokens": 97,
+        "totalTokens": 4028,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 4654,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 2800
+        },
+        "costUsd": 0.008199799999999998
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 2405,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "According to the approved transition calendar (transition-calendar.txt), the approved production transition date is **17 November 2027**. Earlier planning dates are superseded.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 3927,
+          "outputTokens": 81,
+          "totalTokens": 4008,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 2796
+          },
+          "toolCalls": [],
+          "latencyMs": 2461
+        }
+      ],
+      "totals": {
+        "inputTokens": 3927,
+        "outputTokens": 81,
+        "totalTokens": 4008,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2688,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 2796
+        },
+        "costUsd": 0.0080298
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 2405,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "According to the approved transition calendar (transition-calendar.txt), the exact production transition date is **17 November 2027**. Note: earlier planning dates are explicitly superseded by this approved date.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 3931,
+          "outputTokens": 81,
+          "totalTokens": 4012,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 2800
+          },
+          "toolCalls": [],
+          "latencyMs": 2490
+        }
+      ],
+      "totals": {
+        "inputTokens": 3931,
+        "outputTokens": 81,
+        "totalTokens": 4012,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2685,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 2800
+        },
+        "costUsd": 0.0080398
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 2405,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "The approved production transition date is **17 November 2027**, as stated in transition-calendar.txt — earlier planning dates are superseded by this figure.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 3939,
+          "outputTokens": 49,
+          "totalTokens": 3988,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 2808
+          },
+          "toolCalls": [],
+          "latencyMs": 2459
+        }
+      ],
+      "totals": {
+        "inputTokens": 3939,
+        "outputTokens": 49,
+        "totalTokens": 3988,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2723,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 2808
+        },
+        "costUsd": 0.0077398
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 2405,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "According to the approved transition calendar (transition-calendar.txt), the approved production transition date is **17 November 2027**. Earlier planning dates are superseded by this record.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 3931,
+          "outputTokens": 95,
+          "totalTokens": 4026,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 2800
+          },
+          "toolCalls": [],
+          "latencyMs": 2456
+        }
+      ],
+      "totals": {
+        "inputTokens": 3931,
+        "outputTokens": 95,
+        "totalTokens": 4026,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2618,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 2800
+        },
+        "costUsd": 0.008179800000000001
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 2405,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-middle-attachment",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "According to the approved record, what is the exact production transition date?"
+        },
+        {
+          "role": "assistant",
+          "text": "According to the approved transition calendar (transition-calendar.txt), the approved production transition date is **17 November 2027**. The document notes that earlier planning dates are superseded by this date.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 3931,
+          "outputTokens": 84,
+          "totalTokens": 4015,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 2800
+          },
+          "toolCalls": [],
+          "latencyMs": 2209
+        }
+      ],
+      "totals": {
+        "inputTokens": 3931,
+        "outputTokens": 84,
+        "totalTokens": 4015,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2340,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 2800
+        },
+        "costUsd": 0.0080698
+      },
+      "deterministic": {
+        "mentioned": [
+          "17 November 2027"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 14034,
+        "estimatedHistoryTokensAfter": 2405,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-off",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13498,
+          "outputTokens": 10,
+          "totalTokens": 13508,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 13496
+          },
+          "toolCalls": [],
+          "latencyMs": 1509
+        }
+      ],
+      "totals": {
+        "inputTokens": 13498,
+        "outputTokens": 10,
+        "totalTokens": 13508,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1511,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 13496
+        },
+        "costUsd": 0.033844
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 13248,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-off",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13498,
+          "outputTokens": 10,
+          "totalTokens": 13508,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 13496,
+            "cacheWriteTokens": 0
+          },
+          "toolCalls": [],
+          "latencyMs": 1437
+        }
+      ],
+      "totals": {
+        "inputTokens": 13498,
+        "outputTokens": 10,
+        "totalTokens": 13508,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1439,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 13496,
+          "cacheWriteTokens": 0
+        },
+        "costUsd": 0.0028032000000000005
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 13248,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-off",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13498,
+          "outputTokens": 10,
+          "totalTokens": 13508,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 13496,
+            "cacheWriteTokens": 0
+          },
+          "toolCalls": [],
+          "latencyMs": 1498
+        }
+      ],
+      "totals": {
+        "inputTokens": 13498,
+        "outputTokens": 10,
+        "totalTokens": 13508,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1499,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 13496,
+          "cacheWriteTokens": 0
+        },
+        "costUsd": 0.0028032000000000005
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 13248,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 5020,
+          "outputTokens": 136,
+          "totalTokens": 5156,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 3587,
+            "cacheWriteTokens": 1429
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 4008
+        }
+      ],
+      "totals": {
+        "inputTokens": 5020,
+        "outputTokens": 136,
+        "totalTokens": 5156,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 4035,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 3587,
+          "cacheWriteTokens": 1429
+        },
+        "costUsd": 0.0056578999999999996
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 1081,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 5020,
+          "outputTokens": 138,
+          "totalTokens": 5158,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 3587,
+            "cacheWriteTokens": 1429
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 3517
+        }
+      ],
+      "totals": {
+        "inputTokens": 5020,
+        "outputTokens": 138,
+        "totalTokens": 5158,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 3587,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 3587,
+          "cacheWriteTokens": 1429
+        },
+        "costUsd": 0.0056779
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 1081,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 5020,
+          "outputTokens": 137,
+          "totalTokens": 5157,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 3587,
+            "cacheWriteTokens": 1429
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 6037
+        }
+      ],
+      "totals": {
+        "inputTokens": 5020,
+        "outputTokens": 137,
+        "totalTokens": 5157,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 6093,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 3587,
+          "cacheWriteTokens": 1429
+        },
+        "costUsd": 0.0056679
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 1081,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 2483,
+          "outputTokens": 114,
+          "totalTokens": 2597,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 1352
+          },
+          "toolCalls": [],
+          "latencyMs": 2880
+        }
+      ],
+      "totals": {
+        "inputTokens": 2483,
+        "outputTokens": 114,
+        "totalTokens": 2597,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2949,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 1352
+        },
+        "costUsd": 0.0047498
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 1154,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 5156,
+          "outputTokens": 262,
+          "totalTokens": 5418,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 3610,
+            "cacheWriteTokens": 1542
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 5300
+        }
+      ],
+      "totals": {
+        "inputTokens": 5156,
+        "outputTokens": 262,
+        "totalTokens": 5418,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 5343,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 3610,
+          "cacheWriteTokens": 1542
+        },
+        "costUsd": 0.007205
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 1154,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 2483,
+          "outputTokens": 37,
+          "totalTokens": 2520,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 1352
+          },
+          "toolCalls": [],
+          "latencyMs": 2161
+        }
+      ],
+      "totals": {
+        "inputTokens": 2483,
+        "outputTokens": 37,
+        "totalTokens": 2520,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2225,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 1352
+        },
+        "costUsd": 0.0039798
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 1154,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 14478,
+          "outputTokens": 194,
+          "totalTokens": 14672,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 13347
+          },
+          "toolCalls": [],
+          "latencyMs": 4435
+        }
+      ],
+      "totals": {
+        "inputTokens": 14478,
+        "outputTokens": 194,
+        "totalTokens": 14672,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 4440,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 13347
+        },
+        "costUsd": 0.0355373
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 13248,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 0,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__get_message"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 43795,
+          "outputTokens": 571,
+          "totalTokens": 44366,
+          "inputTokenDetails": {
+            "noCacheTokens": 6,
+            "cacheReadTokens": 43554,
+            "cacheWriteTokens": 235
+          },
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__get_message"
+          ],
+          "latencyMs": 12784
+        }
+      ],
+      "totals": {
+        "inputTokens": 43795,
+        "outputTokens": 571,
+        "totalTokens": 44366,
+        "turns": 1,
+        "toolCalls": 2,
+        "wallMs": 12788,
+        "inputTokenDetails": {
+          "noCacheTokens": 6,
+          "cacheReadTokens": 43554,
+          "cacheWriteTokens": 235
+        },
+        "costUsd": 0.0150203
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 13248,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 0,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-recent-assistant",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What exact program codename did you record in the final decision? Reply with the codename only."
+        },
+        {
+          "role": "assistant",
+          "text": "Kestrel Blue",
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__get_message",
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 58691,
+          "outputTokens": 832,
+          "totalTokens": 59523,
+          "inputTokenDetails": {
+            "noCacheTokens": 8,
+            "cacheReadTokens": 58299,
+            "cacheWriteTokens": 384
+          },
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__get_message",
+            "context-retrieve__search"
+          ],
+          "latencyMs": 20509
+        }
+      ],
+      "totals": {
+        "inputTokens": 58691,
+        "outputTokens": 832,
+        "totalTokens": 59523,
+        "turns": 1,
+        "toolCalls": 3,
+        "wallMs": 20511,
+        "inputTokenDetails": {
+          "noCacheTokens": 8,
+          "cacheReadTokens": 58299,
+          "cacheWriteTokens": 384
+        },
+        "costUsd": 0.020955800000000004
+      },
+      "deterministic": {
+        "mentioned": [
+          "Kestrel Blue"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 13248,
+        "estimatedHistoryTokensAfter": 13248,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 0,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-off",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 17559,
+          "outputTokens": 11,
+          "totalTokens": 17570,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 17557
+          },
+          "toolCalls": [],
+          "latencyMs": 1519
+        }
+      ],
+      "totals": {
+        "inputTokens": 17559,
+        "outputTokens": 11,
+        "totalTokens": 17570,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1521,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 17557
+        },
+        "costUsd": 0.0440065
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 16593,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-off",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 17559,
+          "outputTokens": 11,
+          "totalTokens": 17570,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 17557,
+            "cacheWriteTokens": 0
+          },
+          "toolCalls": [],
+          "latencyMs": 1536
+        }
+      ],
+      "totals": {
+        "inputTokens": 17559,
+        "outputTokens": 11,
+        "totalTokens": 17570,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1538,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 17557,
+          "cacheWriteTokens": 0
+        },
+        "costUsd": 0.0036254
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 16593,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-off",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 17559,
+          "outputTokens": 11,
+          "totalTokens": 17570,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 17557,
+            "cacheWriteTokens": 0
+          },
+          "toolCalls": [],
+          "latencyMs": 1438
+        }
+      ],
+      "totals": {
+        "inputTokens": 17559,
+        "outputTokens": 11,
+        "totalTokens": 17570,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1441,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 17557,
+          "cacheWriteTokens": 0
+        },
+        "costUsd": 0.0036254
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 16593,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 14422,
+          "outputTokens": 155,
+          "totalTokens": 14577,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 8292,
+            "cacheWriteTokens": 6126
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 5336
+        }
+      ],
+      "totals": {
+        "inputTokens": 14422,
+        "outputTokens": 155,
+        "totalTokens": 14577,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 5417,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 8292,
+          "cacheWriteTokens": 6126
+        },
+        "costUsd": 0.0185314
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 5453,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 14426,
+          "outputTokens": 152,
+          "totalTokens": 14578,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 8292,
+            "cacheWriteTokens": 6130
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 6903
+        }
+      ],
+      "totals": {
+        "inputTokens": 14426,
+        "outputTokens": 152,
+        "totalTokens": 14578,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 6944,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 8292,
+          "cacheWriteTokens": 6130
+        },
+        "costUsd": 0.0185114
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 5453,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 14426,
+          "outputTokens": 163,
+          "totalTokens": 14589,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 8292,
+            "cacheWriteTokens": 6130
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 8524
+        }
+      ],
+      "totals": {
+        "inputTokens": 14426,
+        "outputTokens": 163,
+        "totalTokens": 14589,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 8607,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 8292,
+          "cacheWriteTokens": 6130
+        },
+        "costUsd": 0.0186214
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 5453,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 7180,
+          "outputTokens": 56,
+          "totalTokens": 7236,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 6049
+          },
+          "toolCalls": [],
+          "latencyMs": 3245
+        }
+      ],
+      "totals": {
+        "inputTokens": 7180,
+        "outputTokens": 56,
+        "totalTokens": 7236,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 3316,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 6049
+        },
+        "costUsd": 0.0159123
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 5511,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 7180,
+          "outputTokens": 11,
+          "totalTokens": 7191,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 6049
+          },
+          "toolCalls": [],
+          "latencyMs": 2210
+        }
+      ],
+      "totals": {
+        "inputTokens": 7180,
+        "outputTokens": 11,
+        "totalTokens": 7191,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2298,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 6049
+        },
+        "costUsd": 0.0154623
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 5511,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 7180,
+          "outputTokens": 11,
+          "totalTokens": 7191,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 6049
+          },
+          "toolCalls": [],
+          "latencyMs": 2286
+        }
+      ],
+      "totals": {
+        "inputTokens": 7180,
+        "outputTokens": 11,
+        "totalTokens": 7191,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2370,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 6049
+        },
+        "costUsd": 0.0154623
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 5511,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 7180,
+          "outputTokens": 37,
+          "totalTokens": 7217,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 6049
+          },
+          "toolCalls": [],
+          "latencyMs": 2822
+        }
+      ],
+      "totals": {
+        "inputTokens": 7180,
+        "outputTokens": 37,
+        "totalTokens": 7217,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2942,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 6049
+        },
+        "costUsd": 0.015722299999999998
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 5511,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 7180,
+          "outputTokens": 31,
+          "totalTokens": 7211,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 6049
+          },
+          "toolCalls": [],
+          "latencyMs": 2493
+        }
+      ],
+      "totals": {
+        "inputTokens": 7180,
+        "outputTokens": 31,
+        "totalTokens": 7211,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2550,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 6049
+        },
+        "costUsd": 0.0156623
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 5511,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-far-tool-output",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What was the exact authoritative reconciled balance from the ledger run? Reply with the amount only, including currency and cents."
+        },
+        {
+          "role": "assistant",
+          "text": "EUR 418,275.60",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 7180,
+          "outputTokens": 11,
+          "totalTokens": 7191,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 6049
+          },
+          "toolCalls": [],
+          "latencyMs": 2155
+        }
+      ],
+      "totals": {
+        "inputTokens": 7180,
+        "outputTokens": 11,
+        "totalTokens": 7191,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2244,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 6049
+        },
+        "costUsd": 0.0154623
+      },
+      "deterministic": {
+        "mentioned": [
+          "EUR 418,275.60"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16593,
+        "estimatedHistoryTokensAfter": 5511,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-off",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "I don't have a verified source for that. The earlier \"Falcon Desk\" answer wasn't drawn from any retrieved document, so I can't confirm it as accurate. I'd need to check an actual escalation routing document to give you a reliable name—do you want me to look one up?",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 17188,
+          "outputTokens": 397,
+          "totalTokens": 17585,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 17186
+          },
+          "toolCalls": [],
+          "latencyMs": 5686
+        }
+      ],
+      "totals": {
+        "inputTokens": 17188,
+        "outputTokens": 397,
+        "totalTokens": 17585,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 5688,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 17186
+        },
+        "costUsd": 0.046939
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 16377,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-off",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "I can’t confirm that from any document. The earlier mention of “Falcon Desk” wasn’t attributed to a specific source, and the archived observability export explicitly notes it is unrelated to current escalation routing. If you have a document that defines the current escalation channel, please point me to it and I’ll verify the name from there.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 17188,
+          "outputTokens": 1547,
+          "totalTokens": 18735,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 17186,
+            "cacheWriteTokens": 0
+          },
+          "toolCalls": [],
+          "latencyMs": 19340
+        }
+      ],
+      "totals": {
+        "inputTokens": 17188,
+        "outputTokens": 1547,
+        "totalTokens": 18735,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 19343,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 17186,
+          "cacheWriteTokens": 0
+        },
+        "costUsd": 0.0189112
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 16377,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-off",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "I don't have a verified source for that. The earlier mention of \"Falcon Desk\" wasn't drawn from any document I have access to — the archived telemetry export explicitly states it is \"unrelated to current escalation routing,\" and no other document in this conversation specifies an escalation channel. I don't want to restate an unverified name as fact.\n\nCould you point me to the specific document that defines the current escalation channel, or would you like me to search for one?",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 17188,
+          "outputTokens": 644,
+          "totalTokens": 17832,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 17186,
+            "cacheWriteTokens": 0
+          },
+          "toolCalls": [],
+          "latencyMs": 8676
+        }
+      ],
+      "totals": {
+        "inputTokens": 17188,
+        "outputTokens": 644,
+        "totalTokens": 17832,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 8678,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 17186,
+          "cacheWriteTokens": 0
+        },
+        "costUsd": 0.009881200000000001
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 16377,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 12956,
+          "outputTokens": 200,
+          "totalTokens": 13156,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7506,
+            "cacheWriteTokens": 5446
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 5413
+        }
+      ],
+      "totals": {
+        "inputTokens": 12956,
+        "outputTokens": 200,
+        "totalTokens": 13156,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 5491,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7506,
+          "cacheWriteTokens": 5446
+        },
+        "costUsd": 0.0171242
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4729,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 19561,
+          "outputTokens": 468,
+          "totalTokens": 20029,
+          "inputTokenDetails": {
+            "noCacheTokens": 6,
+            "cacheReadTokens": 13976,
+            "cacheWriteTokens": 5579
+          },
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__search"
+          ],
+          "latencyMs": 11257
+        }
+      ],
+      "totals": {
+        "inputTokens": 19561,
+        "outputTokens": 468,
+        "totalTokens": 20029,
+        "turns": 1,
+        "toolCalls": 2,
+        "wallMs": 11334,
+        "inputTokenDetails": {
+          "noCacheTokens": 6,
+          "cacheReadTokens": 13976,
+          "cacheWriteTokens": 5579
+        },
+        "costUsd": 0.0214347
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4729,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 12957,
+          "outputTokens": 201,
+          "totalTokens": 13158,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7506,
+            "cacheWriteTokens": 5447
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 5661
+        }
+      ],
+      "totals": {
+        "inputTokens": 12957,
+        "outputTokens": 201,
+        "totalTokens": 13158,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 5679,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7506,
+          "cacheWriteTokens": 5447
+        },
+        "costUsd": 0.0171367
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4729,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13078,
+          "outputTokens": 260,
+          "totalTokens": 13338,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7521,
+            "cacheWriteTokens": 5553
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 4081
+        }
+      ],
+      "totals": {
+        "inputTokens": 13078,
+        "outputTokens": 260,
+        "totalTokens": 13338,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 4108,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7521,
+          "cacheWriteTokens": 5553
+        },
+        "costUsd": 0.017994700000000002
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4794,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13078,
+          "outputTokens": 186,
+          "totalTokens": 13264,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7521,
+            "cacheWriteTokens": 5553
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 3430
+        }
+      ],
+      "totals": {
+        "inputTokens": 13078,
+        "outputTokens": 186,
+        "totalTokens": 13264,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 3534,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7521,
+          "cacheWriteTokens": 5553
+        },
+        "costUsd": 0.0172547
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4794,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13079,
+          "outputTokens": 178,
+          "totalTokens": 13257,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7521,
+            "cacheWriteTokens": 5554
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 3209
+        }
+      ],
+      "totals": {
+        "inputTokens": 13079,
+        "outputTokens": 178,
+        "totalTokens": 13257,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 3282,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7521,
+          "cacheWriteTokens": 5554
+        },
+        "costUsd": 0.0171772
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4794,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13078,
+          "outputTokens": 360,
+          "totalTokens": 13438,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7521,
+            "cacheWriteTokens": 5553
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 5613
+        }
+      ],
+      "totals": {
+        "inputTokens": 13078,
+        "outputTokens": 360,
+        "totalTokens": 13438,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 5665,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7521,
+          "cacheWriteTokens": 5553
+        },
+        "costUsd": 0.0189947
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4794,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13074,
+          "outputTokens": 488,
+          "totalTokens": 13562,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7521,
+            "cacheWriteTokens": 5549
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 8297
+        }
+      ],
+      "totals": {
+        "inputTokens": 13074,
+        "outputTokens": 488,
+        "totalTokens": 13562,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 8362,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7521,
+          "cacheWriteTokens": 5549
+        },
+        "costUsd": 0.0202647
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4794,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-irrelevant-old-bulk",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "What is the current escalation channel? Reply with its name only."
+        },
+        {
+          "role": "assistant",
+          "text": "Falcon Desk",
+          "toolCalls": [
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 13079,
+          "outputTokens": 223,
+          "totalTokens": 13302,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 7521,
+            "cacheWriteTokens": 5554
+          },
+          "toolCalls": [
+            "context-retrieve__search"
+          ],
+          "latencyMs": 3539
+        }
+      ],
+      "totals": {
+        "inputTokens": 13079,
+        "outputTokens": 223,
+        "totalTokens": 13302,
+        "turns": 1,
+        "toolCalls": 1,
+        "wallMs": 3615,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 7521,
+          "cacheWriteTokens": 5554
+        },
+        "costUsd": 0.0176272
+      },
+      "deterministic": {
+        "mentioned": [
+          "Falcon Desk"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 16377,
+        "estimatedHistoryTokensAfter": 4794,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-off",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83; 14 business days from verified incident closure.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 22683,
+          "outputTokens": 60,
+          "totalTokens": 22743,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 22681
+          },
+          "toolCalls": [],
+          "latencyMs": 3318
+        }
+      ],
+      "totals": {
+        "inputTokens": 22683,
+        "outputTokens": 60,
+        "totalTokens": 22743,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 3542,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 22681
+        },
+        "costUsd": 0.0573065
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 21958,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-off",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83; 14 business days from verified incident closure.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 22677,
+          "outputTokens": 58,
+          "totalTokens": 22735,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 22675
+          },
+          "toolCalls": [],
+          "latencyMs": 3448
+        }
+      ],
+      "totals": {
+        "inputTokens": 22677,
+        "outputTokens": 58,
+        "totalTokens": 22735,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 3601,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 22675
+        },
+        "costUsd": 0.0572715
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 21958,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-off",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83; 14 business days from verified incident closure.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 22675,
+          "outputTokens": 23,
+          "totalTokens": 22698,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 22673
+          },
+          "toolCalls": [],
+          "latencyMs": 3471
+        }
+      ],
+      "totals": {
+        "inputTokens": 22675,
+        "outputTokens": 23,
+        "totalTokens": 22698,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 3584,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 22673
+        },
+        "costUsd": 0.0569165
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": false,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 21958,
+        "triggered": false,
+        "summarizedMessages": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83\n14 business days from verified incident closure",
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 9026,
+          "outputTokens": 240,
+          "totalTokens": 9266,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 5482,
+            "cacheWriteTokens": 3540
+          },
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__search"
+          ],
+          "latencyMs": 5953
+        }
+      ],
+      "totals": {
+        "inputTokens": 9026,
+        "outputTokens": 240,
+        "totalTokens": 9266,
+        "turns": 1,
+        "toolCalls": 2,
+        "wallMs": 6194,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 5482,
+          "cacheWriteTokens": 3540
+        },
+        "costUsd": 0.0123544
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 2745,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 2,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "- Active service registry identifier: LUMEN-83\n- Accepted restoration window: 14 business days from verified incident closure",
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 9005,
+          "outputTokens": 262,
+          "totalTokens": 9267,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 5475,
+            "cacheWriteTokens": 3526
+          },
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__search"
+          ],
+          "latencyMs": 5856
+        }
+      ],
+      "totals": {
+        "inputTokens": 9005,
+        "outputTokens": 262,
+        "totalTokens": 9267,
+        "turns": 1,
+        "toolCalls": 2,
+        "wallMs": 6070,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 5475,
+          "cacheWriteTokens": 3526
+        },
+        "costUsd": 0.012538
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 2745,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 2,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83\n14 business days from verified incident closure",
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__search"
+          ]
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 9014,
+          "outputTokens": 260,
+          "totalTokens": 9274,
+          "inputTokenDetails": {
+            "noCacheTokens": 4,
+            "cacheReadTokens": 5478,
+            "cacheWriteTokens": 3532
+          },
+          "toolCalls": [
+            "context-retrieve__search",
+            "context-retrieve__search"
+          ],
+          "latencyMs": 7449
+        }
+      ],
+      "totals": {
+        "inputTokens": 9014,
+        "outputTokens": 260,
+        "totalTokens": 9274,
+        "turns": 1,
+        "toolCalls": 2,
+        "wallMs": 7668,
+        "inputTokenDetails": {
+          "noCacheTokens": 4,
+          "cacheReadTokens": 5478,
+          "cacheWriteTokens": 3532
+        },
+        "costUsd": 0.0125336
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 2745,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 2,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83; 14 business days from verified incident closure.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 4571,
+          "outputTokens": 23,
+          "totalTokens": 4594,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 3440
+          },
+          "toolCalls": [],
+          "latencyMs": 1461
+        }
+      ],
+      "totals": {
+        "inputTokens": 4571,
+        "outputTokens": 23,
+        "totalTokens": 4594,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 1660,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 3440
+        },
+        "costUsd": 0.0090598
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 2938,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 2,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83; 14 business days from verified incident closure.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 4579,
+          "outputTokens": 60,
+          "totalTokens": 4639,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 3448
+          },
+          "toolCalls": [],
+          "latencyMs": 1884
+        }
+      ],
+      "totals": {
+        "inputTokens": 4579,
+        "outputTokens": 60,
+        "totalTokens": 4639,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2139,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 3448
+        },
+        "costUsd": 0.0094498
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 2938,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 2,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-prefetch-keep-0",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83; 14 business days from verified incident closure.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 4579,
+          "outputTokens": 57,
+          "totalTokens": 4636,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 3448
+          },
+          "toolCalls": [],
+          "latencyMs": 2021
+        }
+      ],
+      "totals": {
+        "inputTokens": 4579,
+        "outputTokens": 57,
+        "totalTokens": 4636,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2284,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 3448
+        },
+        "costUsd": 0.009419799999999999
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 2938,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 2,
+        "keepRecentTurns": 0
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 0,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83; 14 business days from verified incident closure.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 16380,
+          "outputTokens": 67,
+          "totalTokens": 16447,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 15249
+          },
+          "toolCalls": [],
+          "latencyMs": 2597
+        }
+      ],
+      "totals": {
+        "inputTokens": 16380,
+        "outputTokens": 67,
+        "totalTokens": 16447,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2782,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 15249
+        },
+        "costUsd": 0.0390223
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 14524,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 1,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83; 14 business days from verified incident closure.",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 16390,
+          "outputTokens": 56,
+          "totalTokens": 16446,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 15259
+          },
+          "toolCalls": [],
+          "latencyMs": 2198
+        }
+      ],
+      "totals": {
+        "inputTokens": 16390,
+        "outputTokens": 56,
+        "totalTokens": 16446,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2406,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 15259
+        },
+        "costUsd": 0.0389373
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 14524,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    },
+    {
+      "scenarioId": "compression-mixed-depth",
+      "armName": "compression-prefetch-keep-1",
+      "repetition": 2,
+      "outcome": "goal-reached",
+      "transcript": [
+        {
+          "role": "user",
+          "text": "Give me the exact active service registry identifier and the accepted restoration window. Reply with those two values only."
+        },
+        {
+          "role": "assistant",
+          "text": "LUMEN-83; 14 business days from verified incident closure",
+          "toolCalls": []
+        }
+      ],
+      "turns": [
+        {
+          "inputTokens": 16382,
+          "outputTokens": 77,
+          "totalTokens": 16459,
+          "inputTokenDetails": {
+            "noCacheTokens": 2,
+            "cacheReadTokens": 1129,
+            "cacheWriteTokens": 15251
+          },
+          "toolCalls": [],
+          "latencyMs": 2359
+        }
+      ],
+      "totals": {
+        "inputTokens": 16382,
+        "outputTokens": 77,
+        "totalTokens": 16459,
+        "turns": 1,
+        "toolCalls": 0,
+        "wallMs": 2553,
+        "inputTokenDetails": {
+          "noCacheTokens": 2,
+          "cacheReadTokens": 1129,
+          "cacheWriteTokens": 15251
+        },
+        "costUsd": 0.039127300000000004
+      },
+      "deterministic": {
+        "mentioned": [
+          "LUMEN-83",
+          "14 business days"
+        ],
+        "missing": [],
+        "forbidden": [],
+        "pass": true,
+        "skipped": false
+      },
+      "compression": {
+        "enabled": true,
+        "estimatedHistoryTokensBefore": 21958,
+        "estimatedHistoryTokensAfter": 14524,
+        "triggerAtTokens": 6000,
+        "triggered": true,
+        "summarizedMessages": 1,
+        "keepRecentTurns": 1
+      },
+      "score": 1
+    }
+  ]
+}

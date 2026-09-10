@@ -37,6 +37,10 @@ export const contextCompressionConfigSchema = z
   .object({
     preset: contextCompressionPresetSchema,
     triggerAtTokens: z.number().int().positive().optional(),
+    /** Completed turns immediately before the current one that remain verbatim. */
+    keepRecentTurns: z.number().int().min(0).optional(),
+    /** How omitted content is restored when the current request appears to need it. */
+    retrievalMode: z.enum(['tool', 'prefetch']).optional(),
   })
   .nullable()
 

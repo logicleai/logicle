@@ -8,20 +8,23 @@ const transcript = (...entries: [string, string][]): TranscriptEntry[] =>
 
 describe('resolveModelPrice', () => {
   it('matches a known model exactly', () => {
-    expect(resolveModelPrice('gpt-4o-mini')).toEqual({ input: 0.15, output: 0.6 })
+    expect(resolveModelPrice('gpt-4o-mini')).toMatchObject({ input: 0.15, output: 0.6 })
   })
 
   it('is case-insensitive', () => {
-    expect(resolveModelPrice('GPT-4o-Mini')).toEqual({ input: 0.15, output: 0.6 })
+    expect(resolveModelPrice('GPT-4o-Mini')).toMatchObject({ input: 0.15, output: 0.6 })
   })
 
   it('falls back to the longest matching prefix for a dated snapshot', () => {
     // Must resolve to gpt-4o-mini, not to the shorter gpt-4o.
-    expect(resolveModelPrice('gpt-4o-mini-2024-07-18')).toEqual({ input: 0.15, output: 0.6 })
+    expect(resolveModelPrice('gpt-4o-mini-2024-07-18')).toMatchObject({
+      input: 0.15,
+      output: 0.6,
+    })
   })
 
   it('strips a vendor prefix', () => {
-    expect(resolveModelPrice('openai/gpt-4o')).toEqual({ input: 2.5, output: 10.0 })
+    expect(resolveModelPrice('openai/gpt-4o')).toMatchObject({ input: 2.5, output: 10.0 })
   })
 
   it('returns undefined for an unknown model rather than guessing', () => {
@@ -37,6 +40,21 @@ describe('computeCostUsd', () => {
 
   it('degrades to undefined for an unpriced model instead of reporting zero', () => {
     expect(computeCostUsd('mystery-model', 1000, 1000)).toBeUndefined()
+  })
+
+  it('prices provider-reported cache reads and writes separately', () => {
+    expect(
+      computeCostUsd('gpt-4.1-mini', 1000, 100, {
+        noCacheTokens: 400,
+        cacheReadTokens: 500,
+        cacheWriteTokens: 100,
+      })
+    ).toBeCloseTo((400 * 0.4 + 500 * 0.1 + 100 * 0.4 + 100 * 1.6) / 1_000_000, 10)
+  })
+
+  it('prices the production latest aliases used by the model registry', () => {
+    expect(computeCostUsd('gpt-5-latest', 1000, 100)).toBeCloseTo(0.0032, 10)
+    expect(computeCostUsd('claude-sonnet-latest', 1000, 100)).toBeCloseTo(0.003, 10)
   })
 })
 
@@ -136,6 +154,24 @@ describe('computeTotals', () => {
       (3000 * 0.15 + 300 * 0.6) / 1_000_000,
       10
     )
+  })
+
+  it('aggregates prompt-cache token details and uses them for cost', () => {
+    const cachedTurns: TurnMetrics[] = turns.map((turn, index) => ({
+      ...turn,
+      inputTokenDetails: {
+        noCacheTokens: index === 0 ? 1000 : 500,
+        cacheReadTokens: index === 0 ? 0 : 1500,
+        cacheWriteTokens: 0,
+      },
+    }))
+    const totals = computeTotals(cachedTurns, 'gpt-4.1-mini', 0)
+    expect(totals.inputTokenDetails).toEqual({
+      noCacheTokens: 1500,
+      cacheReadTokens: 1500,
+      cacheWriteTokens: 0,
+    })
+    expect(totals.costUsd).toBeCloseTo((1500 * 0.4 + 1500 * 0.1 + 300 * 1.6) / 1_000_000, 10)
   })
 
   it('leaves cost undefined for an unpriced model', () => {

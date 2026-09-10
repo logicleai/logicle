@@ -18,6 +18,8 @@ export const contextCompressionConfigSchema = z
   .object({
     preset: contextCompressionPresetSchema,
     triggerAtTokens: z.number().int().positive().optional(),
+    keepRecentTurns: z.number().int().min(0).optional(),
+    retrievalMode: z.enum(['tool', 'prefetch']).optional(),
   })
   .nullable()
 
