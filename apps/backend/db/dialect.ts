@@ -17,7 +17,9 @@ async function createDialect() {
     dbUrlString = 'memory:'
   }
   const url = new URL(dbUrlString)
-  logger.info(`Connecting to db @${url}`)
+  const safeUrl = new URL(url)
+  if (safeUrl.password) safeUrl.password = '[REDACTED]'
+  logger.info(`Connecting to db @${safeUrl}`)
   if (url.protocol === 'file:' || url.protocol === 'memory:') {
     const dirName = path.dirname(url.pathname)
     if (!fs.existsSync(dirName)) {

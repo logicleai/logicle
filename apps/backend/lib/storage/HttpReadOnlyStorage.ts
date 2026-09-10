@@ -41,7 +41,7 @@ export class HttpReadOnlyStorage extends BaseStorage {
   }
 
   supportsRangeReads(_encryption: StorageEncryption): boolean {
-    return false
+    return true
   }
 
   async readStream(
@@ -51,6 +51,14 @@ export class HttpReadOnlyStorage extends BaseStorage {
   ): Promise<ReadableStream<Uint8Array>> {
     const headers = new Headers()
     if (this.authorization) headers.set('authorization', this.authorization)
+    let expectedRange: { start: number; end: number } | undefined
+    if (options?.rangeStart !== undefined || options?.rangeEnd !== undefined) {
+      if (options.rangeStart === undefined || options.rangeEnd === undefined) {
+        throw new Error('File storage proxy reads require both rangeStart and rangeEnd')
+      }
+      headers.set('range', `bytes=${options.rangeStart}-${options.rangeEnd}`)
+      expectedRange = { start: options.rangeStart, end: options.rangeEnd }
+    }
     const response = await fetch(this.urlFor(path), {
       headers,
       signal: options?.signal,
@@ -59,6 +67,30 @@ export class HttpReadOnlyStorage extends BaseStorage {
     })
     if (!response.ok || !response.body) {
       throw new Error(`File storage proxy read failed for ${path}: HTTP ${response.status}`)
+    }
+    if (expectedRange && response.status !== 206) {
+      throw new Error(
+        `File storage proxy ignored the byte range for ${path}: expected HTTP 206, got ${response.status}`
+      )
+    }
+    if (expectedRange) {
+      const contentRange = response.headers.get('content-range')
+      const match = contentRange?.match(/^bytes (\d+)-(\d+)\/(\d+|\*)$/)
+      const returnedEnd = Number(match?.[2])
+      const totalSize = match?.[3] === '*' ? undefined : Number(match?.[3])
+      const endedAtEof = totalSize !== undefined && returnedEnd === totalSize - 1
+      if (
+        !match ||
+        Number(match[1]) !== expectedRange.start ||
+        returnedEnd > expectedRange.end ||
+        (returnedEnd !== expectedRange.end && !endedAtEof)
+      ) {
+        throw new Error(
+          `File storage proxy returned an invalid Content-Range for ${path}: ${
+            contentRange ?? 'missing'
+          }`
+        )
+      }
     }
     return response.body
   }

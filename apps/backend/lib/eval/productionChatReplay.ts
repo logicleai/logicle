@@ -7,10 +7,9 @@ import type { ProviderType } from '@/types/provider'
 /**
  * One production turn selected for offline replay.
  *
- * The bundle builder (`eval-build-replay-bundle.ts`) writes the full lineage, the published
- * assistant configuration, and the saved production reply into a self-contained SQLite bundle;
- * attachment bytes travel in the bundle's `ReplayFileBlob` table, already decrypted. The runner
- * reconstructs this shape from the bundle and never touches the source deployment.
+ * The runner reconstructs this shape from a complete conversation, loaded either from the live
+ * database or from a bundle produced by `eval-build-replay-bundle.ts`. Bundle attachment bytes
+ * live in `ReplayFileBlob`, already decrypted.
  */
 export interface ProductionReplayCase {
   id: string
