@@ -134,6 +134,7 @@ for (const audit of audits) {
       'AssistantVersion.reasoning_effort as reasoningEffort',
       'AssistantVersion.contextCompression as contextCompression',
       'Backend.providerType as providerType',
+      'Backend.configuration as backendConfiguration',
     ])
     .where('Assistant.id', '=', audit.assistantId)
     .executeTakeFirstOrThrow()
@@ -166,6 +167,10 @@ for (const audit of audits) {
       contextCompression: assistant.contextCompression
         ? (JSON.parse(assistant.contextCompression) as Record<string, unknown>)
         : null,
+      backendEndpoint: assistant.backendConfiguration
+        ? (JSON.parse(assistant.backendConfiguration) as { endPoint?: string }).endPoint ??
+          undefined
+        : undefined,
     },
     messages,
     productionReply,
@@ -184,6 +189,7 @@ const apiKeyByProvider: Record<string, string | undefined> = {
   openai: process.env.OPENAI_API_KEY,
   anthropic: process.env.ANTHROPIC_API_KEY,
   'google-ai-studio': process.env.GEMINI_API_KEY,
+  logiclecloud: process.env.LOGICLECLOUD_API_KEY,
 }
 // The mock provider (ALLOW_MOCK_PROVIDER) is keyless and only used to smoke-test this pipeline.
 const apiKey = providerType === 'mock' ? 'mock' : apiKeyByProvider[providerType]
@@ -194,11 +200,13 @@ if (!apiKey) {
   process.exit(1)
 }
 
+const backendEndpoint = flag('endpoint') ?? cases[0]!.assistant.backendEndpoint
 const providerConfig = {
   providerType,
   name: 'production-replay',
   apiKey,
   provisioned: false,
+  ...(backendEndpoint ? { endPoint: backendEndpoint } : {}),
 } as Parameters<typeof ChatAssistant.build>[0]
 
 const resolveModel = (id: string) => {

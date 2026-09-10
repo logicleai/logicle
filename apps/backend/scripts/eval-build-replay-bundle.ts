@@ -2,15 +2,17 @@
  * Builds a self-contained offline replay bundle from a source Logicle database.
  *
  * The bundle is a single SQLite file: the app schema, plus only the selected conversations'
- * `Conversation` / `Message` / `MessageAudit` / `Assistant*` / `Backend` / `File` / `FileBlob`
- * rows, plus a `ReplayFileBlob(path, size, bytes)` table holding every referenced attachment's
- * bytes **decrypted**. `eval-replay-production-chats.ts` consumes it with zero network access.
+ * `Conversation` / `Message` / `MessageAudit` / `Assistant*` / `Backend` / `File` / `FileBlob` /
+ * `FileAnalysis` rows, plus a `ReplayFileBlob(path, size, bytes)` table holding every referenced
+ * attachment's bytes and its extracted-text sidecar, **decrypted**.
+ * `eval-replay-production-chats.ts` consumes it with zero network access.
  *
  * This script is infra-agnostic. It reads the source database via `--source-db` (or `DATABASE_URL`)
  * and attachment bytes via the normal storage stack (`FILE_STORAGE_LOCATION` plus the
- * `FILE_STORAGE_ENCRYPTION_*` vars, only needed when a selected turn has attachments). Pointing
- * those at a specific tenant — proxy, SSH tunnel, direct — is the job of the ops-repo extractor,
- * not this script.
+ * `FILE_STORAGE_ENCRYPTION_*` vars, only needed when a selected turn has attachments).
+ * `FILE_STORAGE_LOCATION` may be an `s3://` bucket, a directory, or an `http(s)://` read-only
+ * proxy (`HttpReadOnlyStorage`) — wiring any of those to a specific tenant is the job of the ops
+ * repo's `download_replay_bundle`, not this script.
  *
  * Usage:
  *   FILE_STORAGE_LOCATION=s3://tenant-bucket FILE_STORAGE_ENCRYPTION_ENABLE=1 \
@@ -140,15 +142,10 @@ let candidates = source
   ])
   .where('MessageAudit.type', '=', 'user')
   .where('MessageAudit.tokens', '>=', minimumAuditedInputTokens)
-  // Assistants with tools, sub-assistants, or knowledge files can't be replayed faithfully;
-  // exclude them in SQL so `--limit` counts admissible turns rather than being eaten by the
-  // (often most expensive) tool-using cohort.
-  .where((eb) =>
-    eb.or([
-      eb('AssistantVersion.subAssistants', 'is', null),
-      eb('AssistantVersion.subAssistants', '=', ''),
-    ])
-  )
+  // Assistants with tools or knowledge files can't be replayed faithfully; exclude them in SQL so
+  // `--limit` counts admissible turns rather than being eaten by the (often most expensive)
+  // tool/knowledge cohort. Sub-assistants are checked per row below — `subAssistants` is jsonb on
+  // postgres, so it can't be string-compared here.
   .where((eb) =>
     eb.not(
       eb.exists(
@@ -234,7 +231,7 @@ try {
       continue
     }
 
-    // The candidate query already excluded tool / sub-assistant / knowledge-file assistants.
+    // The candidate query already excluded tool and knowledge-file assistants.
     const assistant = await source
       .selectFrom('Assistant')
       .innerJoin('AssistantVersion', 'AssistantVersion.id', 'Assistant.publishedVersionId')
@@ -246,11 +243,19 @@ try {
         'Assistant.hidden as assistantHidden',
         'AssistantVersion.id as versionId',
         'AssistantVersion.backendId as backendId',
+        'AssistantVersion.subAssistants as subAssistants',
       ])
       .where('Assistant.id', '=', candidate.assistantId)
       .executeTakeFirst()
     if (!assistant) {
       skip(candidate, 'assistant or its published version is unavailable')
+      continue
+    }
+    const subAssistants = assistant.subAssistants
+      ? (JSON.parse(String(assistant.subAssistants)) as unknown[])
+      : []
+    if (Array.isArray(subAssistants) && subAssistants.length > 0) {
+      skip(candidate, 'assistant has sub-assistants')
       continue
     }
 
@@ -297,6 +302,15 @@ try {
         encryption: 'pgp' | 'aead' | null
         createdAt: string
       } | null
+      analysis: {
+        fileId: string
+        kind: string
+        status: string
+        payload: string | null
+        error: string | null
+        createdAt: string
+        updatedAt: string
+      } | null
     }> = []
     let attachmentFailure: string | undefined
     for (const fileId of attachmentFileIds) {
@@ -320,13 +334,33 @@ try {
         attachmentFailure = `attachment ${fileId} FileBlob ${fileRow.fileBlobId} is missing`
         break
       }
+      // Production's cached file analysis (extracted PDF/office text) — carry it so the replay
+      // reuses it instead of re-analyzing (which would fail on the read-only replay storage and,
+      // worse, change the prompt: without extracted text a PDF is sent natively, inflating tokens
+      // past what production actually paid).
+      const analysisRow = await source
+        .selectFrom('FileAnalysis')
+        .select(['fileId', 'kind', 'status', 'payload', 'error', 'createdAt', 'updatedAt'])
+        .where('fileId', '=', fileId)
+        .executeTakeFirst()
+      let extractedTextPath: string | undefined
+      if (analysisRow?.status === 'ready' && analysisRow.payload) {
+        try {
+          const parsed = JSON.parse(analysisRow.payload) as { extractedTextPath?: string | null }
+          extractedTextPath = parsed.extractedTextPath ?? undefined
+        } catch {
+          /* leave analysis without a sidecar; it will just re-analyze */
+        }
+      }
       try {
         if (blobRow) await copyBlobBytes(blobRow.path, blobRow.encryption, blobRow.size)
+        if (extractedTextPath)
+          await copyBlobBytes(extractedTextPath, blobRow?.encryption ?? null, 0)
       } catch (error) {
         attachmentFailure = `attachment ${fileId} bytes could not be read: ${errText(error)}`
         break
       }
-      attachmentRows.push({ file: fileRow, blob: blobRow ?? null })
+      attachmentRows.push({ file: fileRow, blob: blobRow ?? null, analysis: analysisRow ?? null })
     }
     if (attachmentFailure) {
       skip(candidate, attachmentFailure)
@@ -394,7 +428,7 @@ try {
       .executeTakeFirstOrThrow()
     await bundle.insertInto('MessageAudit').values(audit).execute()
 
-    for (const { file, blob } of attachmentRows) {
+    for (const { file, blob, analysis } of attachmentRows) {
       if (blob && !seenBlobIds.has(blob.id)) {
         await bundle
           .insertInto('FileBlob')
@@ -430,6 +464,23 @@ try {
         } as any)
         .execute()
       seenFileIds.add(file.id)
+      if (analysis) {
+        await bundle
+          .insertInto('FileAnalysis')
+          .values({
+            fileId: analysis.fileId,
+            kind: analysis.kind,
+            status: analysis.status,
+            // Bump past any analyzer version the replay checkout might expect, so it is reused
+            // verbatim and never re-run.
+            analyzerVersion: 2_000_000_000,
+            payload: analysis.payload,
+            error: analysis.error,
+            createdAt: analysis.createdAt,
+            updatedAt: analysis.updatedAt,
+          })
+          .execute()
+      }
     }
 
     admitted += 1
