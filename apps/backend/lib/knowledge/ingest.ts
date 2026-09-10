@@ -56,12 +56,13 @@ export const ingestDocument = async (boxId: string, fileId: string): Promise<Ing
   if (!config) throw new Error(`Knowledge box ${boxId} not found`)
 
   const chunks = chunkText(text)
-  const projections = await computeProjections(file.name, text, config.questions)
+  const { projections, usage } = await computeProjections(file.name, text, config.questions)
 
   return {
     contentHash: createHash('sha256').update(text).digest('hex'),
     chunks,
     projections,
+    projectionUsage: usage,
   }
 }
 
@@ -87,6 +88,8 @@ export const runIngestionPass = async (maxDocuments: number): Promise<number> =>
         fileId: document.fileId,
         chunks: result.chunks.length,
         projections: result.projections.length,
+        projectionInputTokens: result.projectionUsage.inputTokens,
+        projectionOutputTokens: result.projectionUsage.outputTokens,
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)

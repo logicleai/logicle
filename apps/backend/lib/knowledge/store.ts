@@ -3,6 +3,7 @@ import { db } from '@/db/database'
 import type { KnowledgeBoxDocument, KnowledgeIngestStatus } from '@/db/schema'
 import type { KnowledgeBoxQuestion } from '@/lib/tools/schemas'
 import type { TextChunk } from './chunking'
+import type { ProjectionUsage } from './projections'
 
 /**
  * Bumped whenever chunking or projection prompting changes in a way that makes already-persisted
@@ -29,6 +30,8 @@ export interface IngestResult {
   contentHash: string
   chunks: TextChunk[]
   projections: { questionId: string; answer: string }[]
+  /** Tokens spent answering this document's questions, so the cost of indexing stays visible. */
+  projectionUsage: ProjectionUsage
 }
 
 /**
