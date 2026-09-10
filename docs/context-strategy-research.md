@@ -153,8 +153,8 @@ Written down so we do not discover them in the results.
 
 - **Simulated users are not users.** [arXiv 2601.17087](https://arxiv.org/pdf/2601.17087) finds
   LLM-simulated users are unreliable proxies for human users in agentic evaluation. Our runs
-  compare arms under an _identical_ simulated user, which is the defensible use; absolute success
-  rates are not transferable to production.
+  compare arms under the same scenario and simulated-user policy, but each arm has an independent
+  stochastic trajectory. Absolute success rates are not transferable to production.
 - **Judge bias.** Assistant, simulated user and judge currently share a provider. A judge from a
   different family would reduce the risk of rewarding its own phrasing.
 - **Synthetic corpora.** The generator is built to have the right shape, not to be real text. The

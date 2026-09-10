@@ -54,10 +54,19 @@ Grading happens afterwards, in two passes:
   user said is excluded, so a leaked answer cannot pass it. It is a hard gate: a run that never
   said the required fact scores zero, no matter how well it reads. `mustNotMention` catches the
   failure mode that matters most here, which is a confident answer taken from the wrong document.
-- **The judge** is an LLM that grades how well the goal was served, and only runs on transcripts
-  that already cleared the gate. It never sees which arm produced the transcript.
+- **The judge** is an LLM that grades how well the goal was served. It runs for every non-error
+  transcript; the deterministic gate still controls the final score. The judge receives no arm
+  metadata or tool-call/result parts.
 
-Both are reported. When they disagree, the scenario is usually underspecified.
+The raw run artifact stores both verdicts; the markdown report shows their combined score. When
+they disagree, the scenario is usually underspecified.
+
+## Tool visibility
+
+The assistant under test receives the real tool-call and tool-result parts in its next-turn
+history, exactly as production does. The simulated user and judge receive a text-only transcript:
+user messages and assistant text. Tool names are retained only as run metrics, not injected into
+either LLM prompt. This keeps tool activity from revealing an arm directly to the judge.
 
 ## Arms
 
