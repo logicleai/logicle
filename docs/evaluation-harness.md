@@ -17,6 +17,11 @@ An LLM impersonates a user pursuing a goal, and talks to a real Logicle assistan
 the goal is met, gives up, or runs out of turns. The same scenario is replayed against several
 **arms** — alternative assistant configurations — and the arms are compared.
 
+For context-policy comparisons, a scenario can instead provide a saved **reference chat**. The
+harness preloads that fixed history and sends one fixed final user message. Only the final exchange
+is scored. This removes simulated-user trajectory variance and prevents facts already present in
+the saved history from satisfying the answer-key gate.
+
 ```mermaid
 flowchart LR
   S[Scenario: corpus, goal, persona, rubric] --> U[Simulated user LLM]
@@ -78,6 +83,10 @@ with the harness:
 | `all-in-context`               | every document attached as assistant knowledge, sent in the preamble every turn — today's behaviour |
 | `knowledge-box`                | documents reachable only through the `knowledge_box` tool, with ingestion questions                 |
 | `knowledge-box-no-projections` | the same, with no ingestion questions — isolates chunk retrieval from projections                   |
+| `compression-off`              | saved reference history is sent verbatim                                                            |
+| `compression-keep-{0,1,2,4}`   | tool-driven retrieval with an explicit number of recent completed turns kept verbatim               |
+| `compression-prefetch-keep-0`  | query-aware excerpts, with every eligible historical turn compressed                                |
+| `compression-prefetch-keep-1`  | query-aware excerpts, retaining the immediately preceding completed turn verbatim                   |
 
 Anything expressible as "same scenario, different assistant configuration" belongs here. An arm
 can return `assistant.contextCompression` to compare compression on versus off; two chunk sizes
@@ -125,6 +134,24 @@ OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval.ts \
 The runner creates its own SQLite database and storage directory under the system temp dir and
 removes them afterwards. It needs no server and touches no existing database.
 
+Run the fixed-history, single-message context-compression suite with:
+
+```bash
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval.ts \
+  --suite context-compression --repeat 5 \
+  --runs-out context-compression-runs.json --out context-compression-report.md
+```
+
+Its reference conversations live in
+`apps/backend/lib/eval/scenarios/contextCompression.ts`. They retain no production content or
+identifiers: only aggregate turn-count cohorts from expensive conversations informed their shape;
+all prose, filenames, tool names and answer facts are synthetic.
+
+The default comparison is `compression-off`, tool-only `compression-keep-0`, and query-aware
+prefetch with windows 0 and 1. This isolates the two effects observed in the baseline run:
+stochastic model tool use and the cost of retaining a recent turn. Wider
+`compression-keep-{1,2,4}` arms remain selectable explicitly.
+
 Flags are documented in the header of `apps/backend/scripts/eval.ts`. The ones that matter:
 `--repeat`, `--arms`, `--baseline`, `--model`, `--user-model`, `--judge-model`, `--no-judge`,
 `--runs-out`, and `--runs-in`.
@@ -157,6 +184,7 @@ Two things about this are deliberate:
 | ---------------------------- | ---------------------------------------- |
 | `lib/eval/types.ts`          | scenario, arm, run result                |
 | `lib/eval/harness.ts`        | drives one (scenario, arm) run           |
+| `lib/eval/referenceChat.ts`  | saved chat → production message DTOs     |
 | `lib/eval/simulatedUser.ts`  | the LLM playing the user                 |
 | `lib/eval/judge.ts`          | the LLM grading transcripts              |
 | `lib/eval/metrics.ts`        | answer key, totals, scoring — pure       |
@@ -171,7 +199,7 @@ Everything marked pure is unit-tested and needs no API key.
 
 ## Open
 
-- **The corpus is synthetic.** `supplierContracts.ts` is built to have the right shape — one needle,
+- **The knowledge corpus is synthetic.** `supplierContracts.ts` is built to have the right shape — one needle,
   four near-identical distractors, realistic boilerplate — but it is not a real corpus. Mining real
   scenarios is the intended next step, and the answer keys they produce need a human pass.
 - **One provider at a time.** The assistant, the simulated user and the judge all run on the same
@@ -180,3 +208,99 @@ Everything marked pure is unit-tested and needs no API key.
 - **Setup cost is paid per repetition.** Ingestion runs once per run rather than once per arm, so
   wall-clock time scales with `--repeat` more than it needs to. It does not distort the reported
   numbers, since setup cost is reported per-arm rather than summed.
+- **Context-compression references are anonymized shape fixtures.** They reproduce aggregate
+  message-count cohorts and failure modes, not any real conversation's wording. Add reviewed,
+  tenant-approved fixtures separately if production semantics need to be represented.
+
+## Replaying expensive production turns
+
+The synthetic context-compression suite proves the policy against known fixtures. To see how a
+change behaves on _real_ expensive traffic — a compression preset, a different model, a new build —
+use the two-stage replay workflow: **build a bundle**, then **replay it** through the code you want
+to test. The stages are fully separated. The bundle is a self-contained SQLite file; once it
+exists, replay never touches the source deployment, S3, or any network beyond the LLM provider.
+
+The replay is not an off/on comparison — it runs each turn once, with whatever configuration you
+give it. The "before" number to compare against is production's own `MessageAudit` input-token
+count, which travels in the bundle.
+
+### Stage 1 — build the bundle
+
+`eval-build-replay-bundle.ts` ranks `MessageAudit` records of type `user` by their **audited input
+tokens** (the persisted provider count for the invocation, so it selects genuinely costly prompts,
+not merely long-looking messages). For each admitted turn it copies into the bundle: the full
+parent lineage, the `MessageAudit` row, the published assistant configuration (`Assistant` /
+`AssistantVersion` / `Backend`), the saved production reply, and every attachment — `File` /
+`FileBlob` rows rewritten as `production-replay-user`-owned with encryption cleared, and the bytes
+themselves **decrypted** into a `ReplayFileBlob(path, size, bytes)` table. No provider
+credentials, no storage credentials, no other tenant data.
+
+The builder is infra-agnostic: it reads the source database from `--source-db` (or `$DATABASE_URL`)
+and attachment bytes through the normal storage stack (`FILE_STORAGE_LOCATION` plus the
+`FILE_STORAGE_ENCRYPTION_*` vars, only needed when a selected turn has attachments).
+
+**Lowest friction — run it on a running instance.** Exec into a Logicle container: `DATABASE_URL`
+and `FILE_STORAGE_LOCATION` are already set to that instance's database and object store, so no
+flags and no proxy are needed. Copy the bundle back out afterwards (`kubectl cp` / `docker cp`).
+
+```bash
+# inside the container (its own env already points at the right DB + storage)
+npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
+  --out /tmp/expensive.sqlite --min-input-tokens 12000 --limit 25
+```
+
+**From a workstation** — point `--source-db` and `FILE_STORAGE_LOCATION` at the tenant through
+whatever proxy / SSH tunnel your ops tooling provides (that wrapper, not this script, owns the
+tenant plumbing):
+
+```bash
+FILE_STORAGE_LOCATION=s3://logicle-tenant-42-files \
+FILE_STORAGE_ENCRYPTION_ENABLE=1 FILE_STORAGE_ENCRYPTION_KEY=... \
+npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
+  --source-db postgres://readonly@127.0.0.1:5432/logicle \
+  --out expensive.sqlite --min-input-tokens 12000 --limit 25
+```
+
+Turns are skipped (with a reason, written to `<out>.skipped.json`) when the lineage has saved tool
+activity, the assistant is configured with tools / sub-assistants / knowledge files, or an
+attachment's rows or bytes cannot be resolved — so a replay never silently omits a file or loses a
+tool capability. To cover tool conversations, extend the builder with a tool-specific fixture
+adapter.
+
+### Stage 2 — replay the bundle
+
+```bash
+# Replay with each turn's saved configuration (a sanity check — should roughly match production):
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle expensive.sqlite --out replay-results.json --report replay-report.md
+
+# Replay with a change applied — here, a compression preset — and read the delta vs production:
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle expensive.sqlite --out compressed-results.json --report compressed-report.md \
+  --override '{"contextCompression":{"preset":"conservative"}}' --judge
+```
+
+The runner copies the bundle to a scratch directory, points the app at that copy and at
+`FILE_STORAGE_LOCATION=replaydb:` (`DbBlobStorage` serves attachment bytes straight from
+`ReplayFileBlob`), and for each turn rebuilds the saved assistant with `--override` merged over its
+configuration, runs the turn once, and records the response, the real provider token usage, and
+the priced cost. `--override` is a JSON object merged over `model` / `systemPrompt` / `temperature`
+/ `tokenLimit` / `reasoning_effort` / `contextCompression` (use `{"contextCompression":null}` to
+turn it off); its shape follows whatever the running code's schema accepts, so newer options work
+without changing this script.
+
+`replay-report.md` shows, per turn, production's audited input tokens next to the replay's input
+tokens, output tokens, priced cost, and the input-token delta. With `--judge`, each response is
+also classified against the saved production reply — a **reference for the judge, not a factual
+answer key**, so review every non-equivalent case.
+
+To test a **new build**, check it out (or deploy it) and run the runner from there — it passes the
+config through and calls whatever `ChatAssistant` is in the tree. Build and replay from the same
+checkout so the bundle schema matches.
+
+### Deploy-then-evaluate
+
+Low-risk rollout for a change like a compression policy: deploy the new build to one tenant with
+the policy **off**, let real traffic accumulate `MessageAudit` rows, build a bundle from that
+instance, then replay it twice — once as-is, once with `--override` enabling the policy — and
+compare cost and judged quality before turning it on for real.
