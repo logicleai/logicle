@@ -2,6 +2,7 @@ import env from '@/lib/env'
 import { Storage } from './api'
 import { CachingStorage } from './CachingStorage'
 import { AeadEncryptingStorage } from '../../ee/AeadEncryptingStorage'
+import { DbBlobStorage } from './DbBlobStorage'
 import { FsStorage } from './FsStorage'
 import { S3Storage } from './S3Storage'
 import { PgpEncryptingStorage } from '../../ee/PgpEncryptingStorage'
@@ -14,6 +15,9 @@ function createBasicStorage(location: string) {
       throw new Error('Invalid S3 URL. Must be in the format s3://bucket')
     }
     return new S3Storage(bucket)
+  } else if (location === 'replaydb:') {
+    // Offline compression-replay evaluator only: bytes come from the replay database itself.
+    return new DbBlobStorage()
   } else {
     return new FsStorage(location)
   }

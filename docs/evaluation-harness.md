@@ -211,3 +211,79 @@ Everything marked pure is unit-tested and needs no API key.
 - **Context-compression references are anonymized shape fixtures.** They reproduce aggregate
   message-count cohorts and failure modes, not any real conversation's wording. Add reviewed,
   tenant-approved fixtures separately if production semantics need to be represented.
+
+## Replaying expensive production turns
+
+The synthetic context-compression suite proves the policy against known fixtures. To answer the
+operational question — _what would this expensive production prompt have cost with compression, and
+did the response regress?_ — use the two-stage replay workflow: **build a bundle**, then **replay
+it offline**. The two stages are fully separated. The bundle is a self-contained SQLite file; once
+it exists, replay never touches the source deployment, S3, or any network beyond the LLM provider.
+
+### Stage 1 — build the bundle
+
+`eval-build-replay-bundle.ts` ranks `MessageAudit` records of type `user` by their **audited input
+tokens** (the persisted provider count for the invocation, so it selects genuinely costly prompts,
+not merely long-looking messages). For each admitted turn it copies into the bundle: the full
+parent lineage, the `MessageAudit` row, the published assistant configuration (`Assistant` /
+`AssistantVersion` / `Backend`), the saved production reply, and every attachment — `File` /
+`FileBlob` rows rewritten as `production-replay-user`-owned with encryption cleared, and the bytes
+themselves **decrypted** into a `ReplayFileBlob(path, size, bytes)` table. No provider
+credentials, no storage credentials, no other tenant data.
+
+The builder is infra-agnostic: it reads the source database from `--source-db` (or `$DATABASE_URL`)
+and attachment bytes through the normal storage stack (`FILE_STORAGE_LOCATION` plus the
+`FILE_STORAGE_ENCRYPTION_*` vars, only needed when a selected turn has attachments).
+
+**Lowest friction — run it on a running instance.** Exec into a Logicle container: `DATABASE_URL`
+and `FILE_STORAGE_LOCATION` are already set to that instance's database and object store, so no
+flags and no proxy are needed. Copy the bundle back out afterwards (`kubectl cp` / `docker cp`).
+
+```bash
+# inside the container (its own env already points at the right DB + storage)
+npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
+  --out /tmp/expensive.sqlite --min-input-tokens 12000 --limit 25
+```
+
+**From a workstation** — point `--source-db` and `FILE_STORAGE_LOCATION` at the tenant through
+whatever proxy / SSH tunnel your ops tooling provides (that wrapper, not this script, owns the
+tenant plumbing):
+
+```bash
+FILE_STORAGE_LOCATION=s3://logicle-tenant-42-files \
+FILE_STORAGE_ENCRYPTION_ENABLE=1 FILE_STORAGE_ENCRYPTION_KEY=... \
+npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
+  --source-db postgres://readonly@127.0.0.1:5432/logicle \
+  --out expensive.sqlite --min-input-tokens 12000 --limit 25
+```
+
+Turns are skipped (with a reason, written to `<out>.skipped.json`) when the lineage has saved tool
+activity, the assistant is configured with tools / sub-assistants / knowledge files, or an
+attachment's rows or bytes cannot be resolved — so a replay never silently omits a file or loses a
+tool capability. To cover tool conversations, extend the builder with a tool-specific fixture
+adapter.
+
+### Stage 2 — replay the bundle
+
+```bash
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle expensive.sqlite \
+  --out replay-results.json --report replay-report.md \
+  --preset conservative --keep-recent-turns 0 --trigger-at-tokens 6000
+```
+
+The runner copies the bundle to a scratch directory, points the app at that copy and at
+`FILE_STORAGE_LOCATION=replaydb:` (`DbBlobStorage` serves attachment bytes straight from
+`ReplayFileBlob`), and for each turn makes a fresh baseline call and a fresh compressed call.
+`replay-results.json` keeps each transcript, token usage, and priced cost; `replay-report.md`
+aggregates the input-token and dollar savings and lists the judge's regressions. The judge
+compares the compressed answer with the historical production answer, which is a **reference, not
+a factual answer key** — review every non-equivalent case, and a sample of equivalent ones, before
+enabling a policy. Build and replay from the same checkout so the bundle schema matches.
+
+### Deploy-then-evaluate
+
+If a compression policy looks worth shipping, the low-risk rollout is: deploy the smarter build to
+one tenant with the policy **off**, let real traffic accumulate `MessageAudit` rows, then build a
+bundle from that instance and replay it to compare its own recent expensive turns with and without
+compression before turning the policy on.
