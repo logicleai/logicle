@@ -47,8 +47,6 @@
  *   --judge-model <id>     judge model (default: the replay model)
  */
 
-export {}
-
 import { copyFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
