@@ -4,11 +4,15 @@ import type * as dto from '@/types/dto'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import { ChatAssistant, type AssistantParams } from '@/backend/lib/chat'
 import {
-  applyCompressionPlan,
   planMessageCompression,
   resolveCompressionRetrievalMode,
   resolveCompressionTriggerTokens,
 } from '@/backend/lib/chat/compression-planner'
+import {
+  buildCostEffectiveCompressionPlan,
+  MIN_COMPRESSION_MESSAGE_SAVINGS_TOKENS,
+  MIN_COMPRESSION_PLAN_SAVINGS_TOKENS,
+} from '@/backend/lib/chat/compression-economics'
 import { estimateHistoryMessageCosts } from '@/backend/lib/chat/token-estimator'
 import type { LlmModel } from '@/lib/chat/models'
 import type { ProviderConfig } from '@/types/provider'
@@ -166,39 +170,84 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
             estimatedHistoryTokensBefore,
             estimatedHistoryTokensAfter: estimatedHistoryTokensBefore,
             triggered: false,
+            applied: false,
             summarizedMessages: 0,
+            rejectedMessages: 0,
           }
         } else {
           const triggerAtTokens = resolveCompressionTriggerTokens(compression.triggerAtTokens)
           const triggered = estimatedHistoryTokensBefore >= triggerAtTokens
-          const decisions = triggered
+          let decisions = triggered
             ? planMessageCompression(messages, compression.preset, {
                 keepRecentTurns: compression.keepRecentTurns,
               })
             : []
-          const plannedMessages = triggered
-            ? await applyCompressionPlan(messages, decisions, {
-                prefetchQuery:
-                  resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
-                    ? message.content
-                    : undefined,
+          const plan = triggered
+            ? await buildCostEffectiveCompressionPlan({
+                messages,
+                decisions,
+                model: assistant.llmModel,
+                historyCostsBefore: costsBefore,
+                application: {
+                  prefetchQuery:
+                    resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
+                      ? message.content
+                      : undefined,
+                },
               })
-            : messages
-          const costsAfter = await estimateHistoryMessageCosts(assistant.llmModel, plannedMessages)
+            : undefined
+          if (plan) decisions = plan.decisions
           compressionDiagnostics = {
             enabled: true,
             estimatedHistoryTokensBefore,
-            estimatedHistoryTokensAfter: costsAfter.reduce((total, cost) => total + cost.tokens, 0),
+            estimatedHistoryTokensAfter: plan
+              ? plan.historyCostsAfter.reduce((total, cost) => total + cost.tokens, 0)
+              : estimatedHistoryTokensBefore,
             triggerAtTokens,
             triggered,
+            applied: plan?.applied ?? false,
             summarizedMessages: decisions.filter((decision) => decision.policy === 'summary')
               .length,
+            rejectedMessages: decisions.filter((decision) =>
+              decision.reason.startsWith('summary rejected:')
+            ).length,
+            minimumMessageSavingsTokens: MIN_COMPRESSION_MESSAGE_SAVINGS_TOKENS,
+            minimumPlanSavingsTokens: MIN_COMPRESSION_PLAN_SAVINGS_TOKENS,
             keepRecentTurns: compression.keepRecentTurns,
           }
-          if (!triggered) {
-            throw new Error(
-              `Reference chat estimated at ${estimatedHistoryTokensBefore} tokens, below compression trigger ${triggerAtTokens}`
-            )
+          const expectation = scenario.referenceChat.compressionExpectation
+          if (expectation) {
+            const reduction =
+              compressionDiagnostics.estimatedHistoryTokensBefore -
+              compressionDiagnostics.estimatedHistoryTokensAfter
+            const failures = [
+              expectation.triggered !== triggered
+                ? `expected triggered=${expectation.triggered}, got ${triggered}`
+                : undefined,
+              expectation.applied !== undefined &&
+              expectation.applied !== compressionDiagnostics.applied
+                ? `expected applied=${expectation.applied}, got ${compressionDiagnostics.applied}`
+                : undefined,
+              expectation.minSummarizedMessages !== undefined &&
+              compressionDiagnostics.summarizedMessages < expectation.minSummarizedMessages
+                ? `expected at least ${expectation.minSummarizedMessages} summarized message(s), got ${compressionDiagnostics.summarizedMessages}`
+                : undefined,
+              expectation.maxSummarizedMessages !== undefined &&
+              compressionDiagnostics.summarizedMessages > expectation.maxSummarizedMessages
+                ? `expected at most ${expectation.maxSummarizedMessages} summarized message(s), got ${compressionDiagnostics.summarizedMessages}`
+                : undefined,
+              expectation.minEstimatedHistoryTokenReduction !== undefined &&
+              reduction < expectation.minEstimatedHistoryTokenReduction
+                ? `expected at least ${expectation.minEstimatedHistoryTokenReduction} estimated history tokens saved, got ${reduction}`
+                : undefined,
+              expectation.maxEstimatedHistoryTokenReduction !== undefined &&
+              reduction > expectation.maxEstimatedHistoryTokenReduction
+                ? `expected at most ${expectation.maxEstimatedHistoryTokenReduction} estimated history tokens saved, got ${reduction}`
+                : undefined,
+            ].filter((failure): failure is string => failure !== undefined)
+            if (failures.length > 0) {
+              throw new Error(`Compression fixture precondition failed: ${failures.join('; ')}`)
+            }
           }
         }
       }

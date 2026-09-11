@@ -54,7 +54,10 @@ const scenario = (
   finalUserMessage: string,
   rubric: string,
   answerKey: NonNullable<Scenario['answerKey']>,
-  sourceShape: NonNullable<NonNullable<Scenario['referenceChat']>['sourceShape']>
+  sourceShape: NonNullable<NonNullable<Scenario['referenceChat']>['sourceShape']>,
+  compressionExpectation: NonNullable<
+    NonNullable<Scenario['referenceChat']>['compressionExpectation']
+  > = { triggered: true }
 ): Scenario => ({
   id,
   description,
@@ -69,7 +72,7 @@ const scenario = (
     'When a historical message says its original content is available through a context retrieval function, call the function before answering if the visible summary does not contain the exact fact.',
     'Do not guess or substitute a similar value from another turn.',
   ].join(' '),
-  referenceChat: { history, finalUserMessage, sourceShape },
+  referenceChat: { history, finalUserMessage, sourceShape, compressionExpectation },
 })
 
 const recentAttachmentName = 'release-approval-record.txt'
@@ -247,6 +250,128 @@ export const mixedDepthScenario = scenario(
   { cohort: 'expensive-conversations-30d-p50', messageCount: 16 }
 )
 
+export const belowTriggerTextScenario = scenario(
+  'compression-below-trigger-text',
+  'A short text-only conversation stays verbatim because it is well below the global trigger.',
+  [],
+  [
+    user('Record the room for the launch review.'),
+    assistant('The launch review is in Cedar Room.'),
+    user('Also record the start time.'),
+    assistant('The launch review starts at 09:40.'),
+  ],
+  'Where and when is the launch review? Reply with the room and time only.',
+  'The assistant answers from the short verbatim history while compression remains a no-op.',
+  { mustMention: ['Cedar Room', '09:40'] },
+  { cohort: 'synthetic-below-trigger-text', messageCount: 4 },
+  {
+    triggered: false,
+    applied: false,
+    maxSummarizedMessages: 0,
+    maxEstimatedHistoryTokenReduction: 0,
+  }
+)
+
+const tinyAttachmentName = 'desk-label.txt'
+const tinyAttachment: CorpusDocument = {
+  name: tinyAttachmentName,
+  mimeType: 'text/plain',
+  text: 'Approved support desk label: Juniper Gate.',
+}
+
+export const belowTriggerAttachmentScenario = scenario(
+  'compression-below-trigger-attachment',
+  'A small historical attachment stays native because the whole conversation is below the trigger.',
+  [tinyAttachment],
+  [
+    user('Keep this short support-desk label for later.', [tinyAttachmentName]),
+    assistant('Stored.'),
+  ],
+  'What is the exact approved support desk label? Reply with the label only.',
+  'The assistant reads the small attachment without activating context compression.',
+  { mustMention: ['Juniper Gate'] },
+  { cohort: 'synthetic-below-trigger-attachment', messageCount: 2 },
+  {
+    triggered: false,
+    applied: false,
+    maxSummarizedMessages: 0,
+    maxEstimatedHistoryTokenReduction: 0,
+  }
+)
+
+export const aboveTriggerIncompressibleTextScenario = scenario(
+  'compression-above-trigger-incompressible-text',
+  'A long history made only of individually short text messages crosses the trigger but has nothing worth summarizing.',
+  [],
+  [
+    ...Array.from({ length: 36 }, (_, index) => routineTurn(index + 1)).flat(),
+    user('Record the final routing label.'),
+    assistant('The final routing label is Quartz Relay.'),
+  ],
+  'What is the final routing label? Reply with the label only.',
+  'The assistant answers from recent verbatim text; the planner must find no eligible message to summarize.',
+  { mustMention: ['Quartz Relay'] },
+  { cohort: 'synthetic-above-trigger-no-eligible-content', messageCount: 74 },
+  {
+    triggered: true,
+    applied: false,
+    maxSummarizedMessages: 0,
+    maxEstimatedHistoryTokenReduction: 0,
+  }
+)
+
+export const belowTriggerIncompressibleTextScenario = scenario(
+  'compression-below-trigger-incompressible-text',
+  'A substantial history of individually short messages remains below the trigger and stays verbatim.',
+  [],
+  [
+    ...Array.from({ length: 24 }, (_, index) => routineTurn(index + 1)).flat(),
+    user('Record the final dispatch label.'),
+    assistant('The final dispatch label is Silver Harbor.'),
+  ],
+  'What is the final dispatch label? Reply with the label only.',
+  'The assistant answers from recent verbatim text without activating compression near the trigger boundary.',
+  { mustMention: ['Silver Harbor'] },
+  { cohort: 'synthetic-below-trigger-no-eligible-content', messageCount: 50 },
+  {
+    triggered: false,
+    applied: false,
+    maxSummarizedMessages: 0,
+    maxEstimatedHistoryTokenReduction: 0,
+  }
+)
+
+export const tinyAttachmentOverheadScenario = scenario(
+  'compression-tiny-attachment-overhead',
+  'A tiny historical attachment appears in an otherwise incompressible history above the trigger.',
+  [tinyAttachment],
+  [
+    user('Keep this short support-desk label for later.', [tinyAttachmentName]),
+    assistant('Stored.'),
+    ...Array.from({ length: 36 }, (_, index) => routineTurn(index + 1)).flat(),
+    user('Record the current incident colour.'),
+    assistant('The current incident colour is Amber Violet.'),
+  ],
+  'What is the current incident colour? Reply with the colour only.',
+  'The assistant answers from recent verbatim text without paying to replace a tiny irrelevant attachment with a larger recovery reference.',
+  { mustMention: ['Amber Violet'] },
+  { cohort: 'synthetic-above-trigger-tiny-attachment', messageCount: 76 },
+  {
+    triggered: true,
+    applied: false,
+    maxSummarizedMessages: 0,
+    maxEstimatedHistoryTokenReduction: 0,
+  }
+)
+
+export const contextCompressionBoundaryScenarios: Scenario[] = [
+  belowTriggerTextScenario,
+  belowTriggerAttachmentScenario,
+  belowTriggerIncompressibleTextScenario,
+  aboveTriggerIncompressibleTextScenario,
+  tinyAttachmentOverheadScenario,
+]
+
 export const contextCompressionScenarios: Scenario[] = [
   recentAttachmentScenario,
   middleAttachmentScenario,
@@ -254,4 +379,5 @@ export const contextCompressionScenarios: Scenario[] = [
   farToolScenario,
   irrelevantOldBulkScenario,
   mixedDepthScenario,
+  ...contextCompressionBoundaryScenarios,
 ]

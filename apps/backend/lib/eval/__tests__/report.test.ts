@@ -78,7 +78,10 @@ describe('computeBreakEven', () => {
       cacheWriteTokens: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
       estimatedHistoryTokensBefore: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
       estimatedHistoryTokensAfter: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
+      compressionTriggered: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
+      compressionApplied: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
       summarizedMessages: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
+      rejectedMessages: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
       costUsd: { n: 3, mean: costMean, median: costMean, min: costMean, max: costMean, stdev: 0 },
       costKnown: true,
       turns: { n: 3, mean: 1, median: 1, min: 1, max: 1, stdev: 0 },
@@ -210,6 +213,28 @@ describe('renderMarkdown', () => {
       'a'
     )
     expect(markdown).toContain('tokenizer exploded')
+  })
+
+  it('shows whether compression actually triggered', () => {
+    const markdown = renderMarkdown(
+      [
+        makeRun({
+          armName: 'compression-on',
+          compression: {
+            enabled: true,
+            triggered: false,
+            applied: false,
+            triggerAtTokens: 6000,
+            estimatedHistoryTokensBefore: 1200,
+            estimatedHistoryTokensAfter: 1200,
+            summarizedMessages: 0,
+            rejectedMessages: 0,
+          },
+        }),
+      ],
+      'compression-on'
+    )
+    expect(markdown).toContain('| compression-on | 1 | 100% | 1.00 | 0%/0% | 1200→1200 | 0.0/0.0 |')
   })
 
   it('omits the flip section when no scenario was a flip test', () => {

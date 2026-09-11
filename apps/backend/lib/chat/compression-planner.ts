@@ -62,6 +62,11 @@ const REDACTED_ARGS_MARKER =
   '[redacted: content available via context-retrieve, see summarized result]'
 const INLINE_SUMMARY_CONCURRENCY = 2
 
+export interface CompressionApplicationOptions {
+  prefetchQuery?: string
+  attachmentContinuationQuery?: string
+}
+
 const isImageMimeType = (mimetype: string) => mimetype.startsWith('image/')
 const charsToTokens = (chars: number) => Math.ceil(chars / 4)
 
@@ -309,7 +314,7 @@ export function planMessageCompression(
 export async function applyCompressionPlan(
   messages: dto.Message[],
   decisions: dto.MessageCompressionDecision[],
-  options: { prefetchQuery?: string; attachmentContinuationQuery?: string } = {}
+  options: CompressionApplicationOptions = {}
 ): Promise<dto.Message[]> {
   const decisionByMessageId = new Map(decisions.map((d) => [d.messageId, d]))
   const output: dto.Message[] = []

@@ -131,12 +131,16 @@ const { llmModels } = await import('@/lib/models')
 const { modelSupportsReasoning } = await import('@/lib/chat/models')
 const { estimateHistoryMessageCosts } = await import('@/backend/lib/chat/token-estimator')
 const {
-  applyCompressionPlan,
   planMessageCompression,
   resolveCompressionUserQuery,
   resolveCompressionRetrievalMode,
   resolveCompressionTriggerTokens,
 } = await import('@/backend/lib/chat/compression-planner')
+const {
+  buildCostEffectiveCompressionPlan,
+  MIN_COMPRESSION_MESSAGE_SAVINGS_TOKENS,
+  MIN_COMPRESSION_PLAN_SAVINGS_TOKENS,
+} = await import('@/backend/lib/chat/compression-economics')
 const {
   createReplayJudge,
   defaultReplayKnowledgeQuestions,
@@ -409,7 +413,7 @@ const triggerAtTokens = compression
   ? resolveCompressionTriggerTokens(compression.triggerAtTokens)
   : undefined
 const triggered = !!compression && estimatedHistoryTokensBefore >= triggerAtTokens!
-const decisions = triggered
+let decisions = triggered
   ? planMessageCompression(replayMessages, compression.preset, {
       keepRecentTurns: compression.keepRecentTurns,
     })
@@ -418,16 +422,23 @@ const finalUserMessage = [...replayMessages]
   .reverse()
   .find((message): message is dto.UserMessage => message.role === 'user')
 const userQuery = compression ? resolveCompressionUserQuery(replayMessages) : undefined
-const plannedMessages = triggered
-  ? await applyCompressionPlan(replayMessages, decisions, {
-      prefetchQuery:
-        resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
-          ? userQuery
-          : undefined,
-      attachmentContinuationQuery: userQuery,
+const compressionPlan = triggered
+  ? await buildCostEffectiveCompressionPlan({
+      messages: replayMessages,
+      decisions,
+      model: inspectedModel,
+      historyCostsBefore,
+      application: {
+        prefetchQuery:
+          resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
+            ? userQuery
+            : undefined,
+        attachmentContinuationQuery: userQuery,
+      },
     })
-  : replayMessages
-const historyCostsAfter = await estimateHistoryMessageCosts(inspectedModel, plannedMessages)
+  : undefined
+if (compressionPlan) decisions = compressionPlan.decisions
+const historyCostsAfter = compressionPlan?.historyCostsAfter ?? historyCostsBefore
 const estimatedHistoryTokensAfter = historyCostsAfter.reduce(
   (total, entry) => total + entry.tokens,
   0
@@ -441,6 +452,7 @@ const inspection = {
   compressionEnabled: !!compression,
   triggerAtTokens,
   triggered,
+  applied: compressionPlan?.applied ?? false,
   preset: compression?.preset,
   retrievalMode: compression
     ? resolveCompressionRetrievalMode(compression.retrievalMode)
@@ -470,6 +482,11 @@ const inspection = {
       estimatedTokensBefore: decision.estimatedTokensBefore,
       estimatedTokensAfter: decision.estimatedTokensAfter,
     })),
+  rejectedMessages: decisions
+    .filter((decision) => decision.reason.startsWith('summary rejected:'))
+    .map((decision) => ({ messageId: decision.messageId, reason: decision.reason })),
+  minimumMessageSavingsTokens: MIN_COMPRESSION_MESSAGE_SAVINGS_TOKENS,
+  minimumPlanSavingsTokens: MIN_COMPRESSION_PLAN_SAVINGS_TOKENS,
   selectedMessageDecision:
     decisions.find((decision) => decision.messageId === selectedAudit.messageId) ?? null,
 }
@@ -488,11 +505,13 @@ if (bool('inspect-only')) {
     `Compression: **${inspection.compressionEnabled ? 'enabled' : 'disabled'}**` +
       (compression
         ? `; preset \`${compression.preset}\`; retrieval \`${inspection.retrievalMode}\`; ` +
-          `trigger ${triggerAtTokens}; triggered: **${triggered}**`
+          `trigger ${triggerAtTokens}; triggered: **${triggered}**; plan applied: **${inspection.applied}**`
         : ''),
     `Estimated history tokens: **${estimatedHistoryTokensBefore} → ${estimatedHistoryTokensAfter}** ` +
       `(${(inspection.estimatedHistoryReductionRatio * 100).toFixed(1)}% reduction).`,
     `Summarized messages: **${inspection.summarizedMessages.length}**.`,
+    `Economically rejected messages: **${inspection.rejectedMessages.length}** ` +
+      `(message guard ${inspection.minimumMessageSavingsTokens}; plan guard ${inspection.minimumPlanSavingsTokens} tokens).`,
     `Selected/current message policy: **${
       inspection.selectedMessageDecision?.policy ?? 'not planned'
     }**` +
@@ -517,7 +536,7 @@ if (bool('inspect-only')) {
     out,
     JSON.stringify(
       {
-        version: 4,
+        version: 5,
         createdAt: new Date().toISOString(),
         source: bundlePath
           ? { mode: 'bundle', bundle: bundlePath }
@@ -885,7 +904,7 @@ await writeFile(
   out,
   JSON.stringify(
     {
-      version: 4,
+      version: 5,
       createdAt: new Date().toISOString(),
       source: bundlePath
         ? { mode: 'bundle', bundle: bundlePath }

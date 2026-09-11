@@ -84,6 +84,22 @@ export type ReferenceChatMessage =
 export interface ReferenceChat {
   history: ReferenceChatMessage[]
   finalUserMessage: string
+  /**
+   * Deterministic precondition for context-compression arms.
+   *
+   * Quality fixtures normally require compression to trigger. Boundary fixtures deliberately
+   * require the opposite, so a global threshold change cannot silently turn a no-op case into a
+   * compression treatment (or make a treatment stop exercising compression).
+   */
+  compressionExpectation?: {
+    triggered: boolean
+    applied?: boolean
+    /** Optional bounds for fixtures that exercise compressible vs incompressible histories. */
+    minSummarizedMessages?: number
+    maxSummarizedMessages?: number
+    minEstimatedHistoryTokenReduction?: number
+    maxEstimatedHistoryTokenReduction?: number
+  }
   /** Provenance of the shape, never production content or identifiers. */
   sourceShape?: {
     cohort: string
@@ -204,7 +220,12 @@ export interface CompressionDiagnostics {
   estimatedHistoryTokensAfter: number
   triggerAtTokens?: number
   triggered: boolean
+  /** True only when at least one cost-effective summary was actually sent to the provider. */
+  applied?: boolean
   summarizedMessages: number
+  rejectedMessages?: number
+  minimumMessageSavingsTokens?: number
+  minimumPlanSavingsTokens?: number
   keepRecentTurns?: number
 }
 

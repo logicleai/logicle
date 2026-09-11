@@ -61,11 +61,14 @@ import type { PromptSegment } from './preamble'
 import { prefixToolFunctionNames } from './toolFunctionNames'
 import {
   planMessageCompression,
-  applyCompressionPlan,
   resolveCompressionRetrievalMode,
   resolveCompressionUserQuery,
   resolveCompressionTriggerTokens,
 } from './compression-planner'
+import {
+  buildCostEffectiveCompressionPlan,
+  selectCompressionPromptCapabilities,
+} from './compression-economics'
 
 // Extract a message from:
 // 1) chunk.error.message
@@ -379,8 +382,9 @@ export class ChatAssistant {
     return false
   }
 
-  async createAiTools(): Promise<Record<string, ai.Tool> | undefined> {
-    const functions = this.functions
+  async createAiTools(
+    functions: ToolFunctions = this.functions
+  ): Promise<Record<string, ai.Tool> | undefined> {
     if (Object.keys(functions).length === 0) return undefined
     return Object.fromEntries(
       (Object.entries(functions) as Array<[string, ToolFunction | ToolNative]>).map(
@@ -406,12 +410,15 @@ export class ChatAssistant {
     )
   }
 
-  private providerOptions(_messages: ai.ModelMessage[]): Record<string, any> | undefined {
+  private providerOptions(
+    _messages: ai.ModelMessage[],
+    tools: ToolImplementation[] = this.tools
+  ): Record<string, any> | undefined {
     const assistantParams = this.assistantParams
     const options = this.options
     const vercelProviderType = this.languageModel.provider
     const providerOptions = Object.fromEntries(
-      this.tools.flatMap((tool) =>
+      tools.flatMap((tool) =>
         tool.providerOptions ? Object.entries(tool.providerOptions(this.llmModel)) : []
       )
     )
@@ -494,7 +501,11 @@ export class ChatAssistant {
     return undefined
   }
 
-  async truncateChat(messages: dto.Message[], historyCosts?: HistoryMessageCost[]) {
+  async truncateChat(
+    messages: dto.Message[],
+    historyCosts?: HistoryMessageCost[],
+    tools: ToolImplementation[] = this.tools
+  ) {
     if (messages.length === 0) return messages
     let assistantTokens: number
     let draftTokens: number
@@ -503,7 +514,7 @@ export class ChatAssistant {
       assistantTokens = await estimatePreambleTokens({
         assistantParams: this.assistantParams,
         model: this.llmModel,
-        tools: this.tools,
+        tools,
         parameters: this.parameters,
         knowledgeFiles: this.knowledge,
       })
@@ -513,7 +524,7 @@ export class ChatAssistant {
       const { plan } = await prepareConversationCostPlan({
         assistantParams: this.assistantParams,
         model: this.llmModel,
-        tools: this.tools,
+        tools,
         parameters: this.parameters,
         knowledgeFiles: this.knowledge,
         history: messages,
@@ -589,6 +600,7 @@ export class ChatAssistant {
     const compression = this.assistantParams.contextCompression
     let promptMessages = messages
     let historyCosts: HistoryMessageCost[] | undefined
+    let compressionApplied = false
     if (compression) {
       const triggerAtTokens = resolveCompressionTriggerTokens(compression.triggerAtTokens)
       historyCosts = await estimateHistoryMessageCosts(this.llmModel, messages)
@@ -599,26 +611,37 @@ export class ChatAssistant {
           keepRecentTurns: compression.keepRecentTurns,
         })
         const userQuery = resolveCompressionUserQuery(messages)
-        promptMessages = await applyCompressionPlan(messages, decisions, {
-          prefetchQuery:
-            resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
-              ? userQuery
-              : undefined,
-          attachmentContinuationQuery: userQuery,
+        const plan = await buildCostEffectiveCompressionPlan({
+          messages,
+          decisions,
+          model: this.llmModel,
+          historyCostsBefore: historyCosts,
+          application: {
+            prefetchQuery:
+              resolveCompressionRetrievalMode(compression.retrievalMode) === 'prefetch'
+                ? userQuery
+                : undefined,
+            attachmentContinuationQuery: userQuery,
+          },
         })
-      } else {
-        historyCosts = undefined
+        promptMessages = plan.messages
+        historyCosts = plan.historyCostsAfter
+        compressionApplied = plan.applied
       }
     }
-    const truncatedChat = await this.truncateChat(
-      promptMessages,
-      promptMessages === messages ? historyCosts : undefined
-    )
+    const { tools: promptTools, functions: promptFunctions } = selectCompressionPromptCapabilities({
+      tools: this.tools,
+      functions: this.functions,
+      functionToolIdMap: this.functionToolIdMap,
+      compressionConfigured: compression !== null,
+      compressionApplied,
+    })
+    const truncatedChat = await this.truncateChat(promptMessages, historyCosts, promptTools)
 
     const preambleSegments = await buildPreambleSegments({
       assistantParams: this.assistantParams,
       llmModel: this.llmModel,
-      tools: this.tools,
+      tools: promptTools,
       parameters: this.parameters,
       knowledge: this.knowledge,
     })
@@ -640,8 +663,8 @@ export class ChatAssistant {
     }
 
     const llmMessages = [...preambleSegments, ...historySegments].map((s) => s.message)
-    const tools = await this.createAiTools()
-    const providerOptions = this.providerOptions(llmMessages)
+    const tools = await this.createAiTools(promptFunctions)
+    const providerOptions = this.providerOptions(llmMessages, promptTools)
     let maxOutputTokens = minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens)
     if (maxOutputTokens && isAnthropic) {
       const anthropicProviderOptions = providerOptions?.anthropic as
@@ -659,7 +682,7 @@ export class ChatAssistant {
       messages: llmMessages,
       tools: this.llmModelCapabilities.function_calling ? { ...tools } : undefined,
       toolChoice:
-        this.llmModelCapabilities.function_calling && Object.keys(this.functions).length !== 0
+        this.llmModelCapabilities.function_calling && Object.keys(promptFunctions).length !== 0
           ? 'auto'
           : undefined,
       temperature:
