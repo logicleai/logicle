@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { generateCorpus, generateNeedleScenario } from '@/backend/lib/eval/scenarios/generator'
+import {
+  generateCorpus,
+  generateFlipScenarioPair,
+  generateNeedleScenario,
+} from '@/backend/lib/eval/scenarios/generator'
 
 const wordsIn = (text: string) => text.split(/\s+/).filter(Boolean).length
 
@@ -127,5 +131,118 @@ describe('generateNeedleScenario', () => {
     expect(generateNeedleScenario({ documents: 25, wordsPerDocument: 700 }).id).toBe(
       'needle-25docs-700w'
     )
+  })
+})
+
+describe('withholding the needle', () => {
+  const spec = { documents: 9, wordsPerDocument: 250, distractors: 3, seed: 7 }
+
+  it('removes the answer from the corpus but keeps the document', () => {
+    const positive = generateCorpus(spec)
+    const negative = generateCorpus({ ...spec, withholdNeedle: 'clause' })
+    expect(negative.documents).toHaveLength(positive.documents.length)
+    expect(negative.needleValue).toBe(positive.needleValue)
+    expect(
+      negative.documents.some((document) => document.text.includes(negative.needleValue))
+    ).toBe(false)
+  })
+
+  it('makes the negative corpus the positive corpus with one contiguous clause deleted', () => {
+    const positive = generateCorpus(spec)
+    const negative = generateCorpus({ ...spec, withholdNeedle: 'clause' })
+    const differing = positive.documents.filter(
+      (document, index) => document.text !== negative.documents[index]!.text
+    )
+    expect(differing).toHaveLength(1)
+
+    const positiveNeedle = differing[0]!
+    const negativeNeedle = negative.documents.find(
+      (document) => document.name === positiveNeedle.name
+    )!
+    const paymentStart = positiveNeedle.text.search(/## Payment terms/)
+    const nextSection = positiveNeedle.text.indexOf('\n\n## ', paymentStart + 1)
+    const clauseEnd = nextSection === -1 ? positiveNeedle.text.length : nextSection
+    const withoutPayment =
+      nextSection === -1
+        ? positiveNeedle.text.slice(0, paymentStart - 2)
+        : positiveNeedle.text.slice(0, paymentStart) + positiveNeedle.text.slice(clauseEnd + 2)
+
+    expect(paymentStart).toBeGreaterThan(0)
+    expect(positiveNeedle.text.slice(paymentStart, clauseEnd)).toContain(positive.needleValue)
+    expect(negativeNeedle.text).toBe(withoutPayment)
+    expect(negativeNeedle.text).not.toMatch(/## \d+\./)
+  })
+
+  it('keeps the distractors in place, so the corpus still looks like it should have the answer', () => {
+    const negative = generateCorpus({ ...spec, withholdNeedle: 'clause' })
+    const withClause = negative.documents.filter((document) =>
+      document.text.includes('accrue interest at')
+    )
+    expect(withClause).toHaveLength(3)
+    for (const value of negative.distractorValues) {
+      expect(negative.documents.some((document) => document.text.includes(value))).toBe(true)
+    }
+  })
+
+  it('drops the whole document in document mode without disturbing the others', () => {
+    const positive = generateCorpus(spec)
+    const negative = generateCorpus({ ...spec, withholdNeedle: 'document' })
+    expect(negative.documents).toHaveLength(positive.documents.length - 1)
+    expect(
+      negative.documents.some((document) => document.name.includes(negative.needleReference))
+    ).toBe(false)
+    // The documents after the removed one must not have been re-rolled.
+    const kept = positive.documents.filter(
+      (document) => !document.name.includes(positive.needleReference)
+    )
+    expect(negative.documents.map((document) => document.text)).toEqual(
+      kept.map((document) => document.text)
+    )
+  })
+})
+
+describe('generateFlipScenarioPair', () => {
+  const spec = { documents: 8, wordsPerDocument: 250, distractors: 3, seed: 3 }
+
+  it('gives the two halves the same goal and persona', () => {
+    const [positive, negative] = generateFlipScenarioPair(spec)
+    expect(negative.goal).toBe(positive.goal)
+    expect(negative.persona).toBe(positive.persona)
+    expect(negative.maxTurns).toBe(positive.maxTurns)
+  })
+
+  it('shares a pair id and labels each half', () => {
+    const [positive, negative] = generateFlipScenarioPair(spec, { id: 'pair-x' })
+    expect(positive.flip).toEqual({
+      pairId: 'pair-x',
+      corpus: 'positive',
+      needleValue: positive.flip!.needleValue,
+      distractorValues: positive.flip!.distractorValues,
+    })
+    expect(negative.flip!.pairId).toBe('pair-x')
+    expect(negative.flip!.corpus).toBe('negative')
+    expect(negative.flip!.needleValue).toBe(positive.flip!.needleValue)
+    expect(positive.id).not.toBe(negative.id)
+  })
+
+  it('requires the answer on the positive half and forbids every value on the negative one', () => {
+    const [positive, negative] = generateFlipScenarioPair(spec)
+    expect(positive.answerKey!.mustMention).toEqual([positive.flip!.needleValue])
+    expect(negative.answerKey!.mustMention).toBeUndefined()
+    expect(negative.answerKey!.mustNotMention).toContain(positive.flip!.needleValue)
+    for (const value of positive.flip!.distractorValues) {
+      expect(negative.answerKey!.mustNotMention).toContain(value)
+    }
+  })
+
+  it('never reveals in the goal that the answer is missing', () => {
+    const [, negative] = generateFlipScenarioPair(spec)
+    expect(negative.goal).not.toMatch(/not in|missing|absent|withheld/i)
+    expect(negative.goal).not.toContain(negative.flip!.needleValue)
+  })
+
+  it('tells the judge, but only the judge, that there is nothing to find', () => {
+    const [, negative] = generateFlipScenarioPair(spec)
+    expect(negative.rubric).toMatch(/do not state|not in the documents/i)
   })
 })

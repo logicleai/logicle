@@ -12,6 +12,7 @@ import {
 import { estimateHistoryMessageCosts } from '@/backend/lib/chat/token-estimator'
 import type { LlmModel } from '@/lib/chat/models'
 import type { ProviderConfig } from '@/types/provider'
+import { classifyRun } from './abstention'
 import { computeCostUsd } from './cost'
 import { materializeCorpus } from './corpus'
 import { checkAnswerKey, computeTotals, scoreRun } from './metrics'
@@ -263,6 +264,7 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
         : undefined
       : undefined,
     compression: compressionDiagnostics,
+    flip: scenario.flip ? classifyRun(transcript, outcome, scenario.flip) : undefined,
     score: 0,
   }
   result.score = scoreRun(result)

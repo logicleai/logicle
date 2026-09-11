@@ -1,3 +1,4 @@
+import { summarizeFlip } from './abstention'
 import { formatCostUsd } from './cost'
 import { estimateDifference, summarize, type DifferenceEstimate, type Summary } from './stats'
 import type { RunResult } from './types'
@@ -193,6 +194,8 @@ const renderDelta = (
       : ` (${estimate.relative > 0 ? '+' : ''}${percent(estimate.relative)})`
   const confidence = estimate.separable
     ? `95% CI [${format(estimate.ciLow)}, ${format(estimate.ciHigh)}]`
+    : estimate.ciLow > 0 || estimate.ciHigh < 0
+    ? 'not separable — fewer than two observations in at least one arm'
     : `not separable at this sample size — 95% CI [${format(estimate.ciLow)}, ${format(
         estimate.ciHigh
       )}] includes 0`
@@ -301,6 +304,36 @@ export const renderMarkdown = (runs: RunResult[], baselineArmName: string): stri
     )
     if (failures.length > 0) {
       lines.push('### Errors', '', ...failures, '')
+    }
+  }
+
+  const flip = summarizeFlip(runs)
+  if (flip.length > 0) {
+    lines.push(
+      '## Flip test — does the arm know what is not there?',
+      '',
+      'Each pair asks one question of two corpora that differ only in whether the answer is present.',
+      '`coverage` is the only passing combination: answered cleanly when the answer existed, then completed without stating a percentage when it did not.',
+      'Classification is a conservative lexical proxy: any percentage in the negative answer counts as a value under absence, even if it was quoted while being denied. Use the judge verdict to assess whether a no-value answer was an explicit, useful abstention.',
+      '',
+      '| pair | arm | pairs | coverage | value under absence | over-closure | over-search | pos. failure | inconclusive |',
+      '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
+    )
+    for (const entry of flip) {
+      lines.push(
+        `| ${entry.pairId} | ${entry.armName} | ${entry.pairs} | ${percent(
+          entry.coverageRate
+        )} | ${percent(entry.hallucinationRate)} | ${entry.counts['over-closure']} | ${
+          entry.counts['over-searching']
+        } | ${entry.counts['positive-failure']} | ${entry.counts.inconclusive} |`
+      )
+    }
+    lines.push('')
+    if (flip.some((entry) => entry.counts['positive-failure'] > 0)) {
+      lines.push(
+        '> Pairs counted as `pos. failure` never established the answer on the positive corpus, so their behaviour under absence carries no information. Read the coverage rate alongside that column, not on its own.',
+        ''
+      )
     }
   }
 
