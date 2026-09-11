@@ -330,11 +330,11 @@ npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
 LOGICLECLOUD_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
   --bundle /tmp/production-chat-replays/conversation.sqlite \
   --out /tmp/production-chat-replays/b-off.json --report /tmp/production-chat-replays/b-off.md \
-  --model gpt-5.6-luna --override '{"contextCompression":null}'
+  --model gpt-4o-mini --override '{"contextCompression":null}'
 LOGICLECLOUD_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
   --bundle /tmp/production-chat-replays/conversation.sqlite \
   --out /tmp/production-chat-replays/b-on.json --report /tmp/production-chat-replays/b-on.md --judge \
-  --model gpt-5.6-luna \
+  --model gpt-4o-mini \
   --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}'
 ```
 
@@ -371,6 +371,134 @@ an unsupported lineage containing tool/auth/error activity, and assistant capabi
 no fixture exists. `--inspect-only` stops after selection, lineage reconstruction, compression
 planning, application, and token estimation: it requires no provider key and makes no LLM call.
 
+### Decide which experiment you are running
+
+Knowledge retrieval, history compression, and their combination are three different experiments.
+Name the experiment before selecting a conversation or interpreting a result. An assistant having
+knowledge files configured does not prove that a tested turn used knowledge, just as enabling
+compression does not prove that compression triggered.
+
+| experiment          | hold constant                      | candidate requirement                                                              | required run evidence                                                                                                   |
+| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| knowledge box       | message, model, compression config | the answer depends on assistant knowledge and is not already in the preceding chat | compare `assistant-knowledge` with `knowledge-box`; record retrieval-call rate and source-grounded quality              |
+| context compression | message, model, knowledge arm      | enough eligible history for compression to trigger                                 | compare compression off vs on; `inspection.triggered` is true and estimated history decreases                           |
+| combined            | message and model                  | a long history plus a new question whose answer still requires assistant knowledge | run the 2×2 matrix below; compression triggers, and retrieval-call rate plus source-grounded quality are reported for D |
+
+`context-retrieve__*` and `knowledge_box__*` are different evidence. The former means the assistant
+looked back into compressed conversation history; it does not mean assistant knowledge was
+retrieved. Conversely, a `knowledge_box__*` call on a turn where compression did not trigger is a
+knowledge-box test, not a combined test. Compression can be valid without a `context-retrieve__*`
+call because the changed history sent to the model is itself the treatment.
+
+#### Knowledge-box-only comparison
+
+Choose a message with a source-grounded question and no answer-bearing prior chat. Keep compression
+identical across arms; normally disable it to isolate knowledge retrieval.
+
+```bash
+npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle /tmp/production-chat-replays/conversation.sqlite --message <message-id> \
+  --knowledge-arms assistant-knowledge,knowledge-box,knowledge-box-no-projections \
+  --override '{"contextCompression":null}' --repeat 3 --judge \
+  --out /tmp/production-chat-replays/knowledge.json \
+  --report /tmp/production-chat-replays/knowledge.md
+```
+
+Establish source dependence before looking at model behavior. If an eligible box run makes no
+`knowledge_box__*` call, keep it and classify it as a retrieval-strategy failure; never search for
+a replacement candidate after seeing the outcome. A no-call run whose answer was already available
+in history is instead a candidate-selection error: it may measure the smaller box preamble, but it
+does not test knowledge retrieval.
+
+#### Context-compression-only comparison
+
+Use the same message, model, and one fixed knowledge arm for an off/on pair. Run `--inspect-only`
+first; reject the candidate if compression does not trigger or does not reduce history.
+
+```bash
+# Off
+npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle /tmp/production-chat-replays/conversation.sqlite --message <message-id> \
+  --knowledge-arms assistant-knowledge \
+  --override '{"contextCompression":null}' --repeat 3 --judge \
+  --out /tmp/production-chat-replays/compression-off.json \
+  --report /tmp/production-chat-replays/compression-off.md
+
+# On
+npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle /tmp/production-chat-replays/conversation.sqlite --message <message-id> \
+  --knowledge-arms assistant-knowledge \
+  --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}' \
+  --repeat 3 --judge --out /tmp/production-chat-replays/compression-on.json \
+  --report /tmp/production-chat-replays/compression-on.md
+```
+
+If the selected assistant has knowledge, this remains a compression-only experiment when the
+knowledge strategy is fixed. Describe it as "compression on a knowledge-enabled assistant," not as
+"knowledge box + compression."
+
+#### Combined knowledge-box and compression comparison
+
+The combined experiment is factorial. Run four cells for the exact same message and model:
+
+| cell | knowledge strategy  | compression |
+| ---- | ------------------- | ----------- |
+| A    | assistant knowledge | off         |
+| B    | assistant knowledge | on          |
+| C    | knowledge box       | off         |
+| D    | knowledge box       | on          |
+
+The runner can produce A/C and B/D in two invocations:
+
+```bash
+# A/C: knowledge strategies with compression off
+npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle /tmp/production-chat-replays/conversation.sqlite --message <message-id> \
+  --knowledge-arms assistant-knowledge,knowledge-box \
+  --override '{"contextCompression":null}' --repeat 3 --judge \
+  --out /tmp/production-chat-replays/combined-off.json \
+  --report /tmp/production-chat-replays/combined-off.md
+
+# B/D: the same knowledge strategies with compression on
+npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle /tmp/production-chat-replays/conversation.sqlite --message <message-id> \
+  --knowledge-arms assistant-knowledge,knowledge-box \
+  --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}' \
+  --repeat 3 --judge --out /tmp/production-chat-replays/combined-on.json \
+  --report /tmp/production-chat-replays/combined-on.md
+```
+
+Before accepting the candidate, verify all of the following:
+
+- Cell D has `inspection.triggered: true`, reduces estimated history, and summarizes at least one
+  message.
+- Record whether cell D emits `knowledge_box__*` calls in every repetition. Report the retrieval-call
+  rate as an outcome; zero calls on a source-dependent candidate is a combined-strategy failure,
+  not grounds to exclude the candidate or rerun until a call appears.
+- The required source facts are absent from the answer-bearing portion of prior chat. A late topic
+  shift to a new document-grounded question is usually a better real-chat candidate than a long
+  conversation that keeps refining the same answer.
+- For a production replay, keep the stored message unchanged. If you rewrite the question or splice
+  it onto different history, label the case derived or synthetic rather than real-chat replay.
+- A, B, C, and D use the same selected message and model. In Mode B, all four cells use the same
+  cheap model rather than comparing any of them with production `MessageAudit` tokens.
+- Quality is checked against reviewed source facts. The saved production response and `--judge`
+  verdict are useful references, but neither establishes factual correctness.
+- Compression does not change knowledge ingestion, so count the knowledge-box setup cost once—not
+  once per off/on invocation—when calculating operational break-even for the shared corpus.
+
+Report the main effects separately: knowledge-box effect without compression (C − A), compression
+effect with assistant knowledge (B − A), and compression effect with knowledge box (D − C). The
+interaction is `(D − C) − (B − A)`. Do not claim a combined win from D alone.
+
+For every production replay, inspect `results[].toolCalls`, `results[].error`, provider-call counts,
+and token usage in the JSON artifact. Planning estimates and successful process exit are not enough:
+a provider failure can yield no useful response, and a tool-enabled configuration can answer
+without invoking its tool. Until tool-result logging is redacted, do not stream replay stdout or
+stderr into shared terminals or transcripts; redirect it to an approved production-data location
+or `/dev/null`, and delete it with the bundle and raw artifacts after extracting sanitized
+aggregates.
+
 ### Operating modes — cost/quality testing without a big bill
 
 A replay calls a real provider with a real (often six-figure-token) prompt. Keep it cheap:
@@ -392,9 +520,10 @@ A replay calls a real provider with a real (often six-figure-token) prompt. Keep
 - **Mode B — cheap model, run both sides.** When you want an off/on pair measured by the same
   ruler and the real model is expensive, replay twice — `'{"contextCompression":null}'` and
   `'{"contextCompression":{…}}'` — on a cheap model via `--model`. Two calls per turn, but on a
-  $0.10–0.30/1M model that is cents. The delta between the two runs is clean; the absolute cost is
-  not the production cost, so report it as a ratio. (`gpt-5.6-luna` and other cheap ids the eval
-  runner knows are in `REPLAY_EXTRA_MODELS` in the runner — they are not exposed to users.)
+  low-cost model that is cents. The delta between the two runs is clean; the absolute cost is not
+  the production cost, so report it as a ratio. The override model must be registered for the
+  selected replay provider; `gpt-4o-mini` is the currently registered low-cost Logicle Cloud
+  option.
 
 Never change the model **and** compare against `MessageAudit`: a different tokenizer and context
 window make that delta meaningless. Mode A keeps the model; Mode B keeps the ruler.
