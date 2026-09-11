@@ -32,9 +32,11 @@ import { SubAssistantTool } from './subassistant/implementation'
 import { db } from 'db/database'
 import { AudioTranscription } from './audio_transcription/implementation'
 import { SatelliteTool } from './satellite/implementation'
+import { TranslateDeepl } from './translate.deepl/implementation'
 
 const builders: Record<string, ToolBuilder> = {
   [AudioTranscription.toolName]: AudioTranscription.builder,
+  [TranslateDeepl.toolName]: TranslateDeepl.builder,
   [ImageGeneratorPlugin.toolName]: ImageGeneratorPlugin.builder,
   [OpenAiImageGeneratorPlugin.toolName]: OpenAiImageGeneratorPlugin.builder,
   [GoogleImageGeneratorPlugin.toolName]: GoogleImageGeneratorPlugin.builder,

@@ -23,6 +23,9 @@ import {
   SatelliteInterface,
   SatelliteSchema,
   TogetherImageGeneratorPluginInterface,
+  TranslateDeeplInterface,
+  TranslateDeeplParams,
+  TranslateDeeplSchema,
 } from '@/lib/tools/schemas'
 import { OpenApiInterface } from '@/lib/tools/schemas'
 import { ToolType } from '@/lib/tools/tools'
@@ -50,6 +53,7 @@ import { ToolKnowledgeSection } from './ToolKnowledgeSection'
 import { DummyToolInterface, KnowledgeBoxInterface, KnowledgeBoxSchema } from '@/lib/tools/schemas'
 import KnowledgeBoxToolFields from './KnowledgeBoxToolFields'
 import AudioTranscriptionToolFields from './AudioTranscriptionToolFields'
+import TranslateDeeplToolFields from './TranslateDeeplToolFields'
 
 interface Props {
   className?: string
@@ -64,6 +68,8 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
     return ImageGeneratorSchema
   } else if (type === AudioTranscriptionInterface.toolName) {
     return AudioTranscriptionSchema
+  } else if (type === TranslateDeeplInterface.toolName) {
+    return TranslateDeeplSchema
   } else if (type === OpenAiImageGeneratorPluginInterface.toolName) {
     return DirectImageGeneratorSchema
   } else if (type === GoogleImageGeneratorPluginInterface.toolName) {
@@ -216,6 +222,12 @@ const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
       {type === AudioTranscriptionInterface.toolName && (
         <AudioTranscriptionToolFields
           form={form as unknown as UseFormReturn<ToolFormWithConfig<AudioTranscriptionParams>>}
+        />
+      )}
+
+      {type === TranslateDeeplInterface.toolName && (
+        <TranslateDeeplToolFields
+          form={form as unknown as UseFormReturn<ToolFormWithConfig<TranslateDeeplParams>>}
         />
       )}
 

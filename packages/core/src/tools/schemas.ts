@@ -272,6 +272,23 @@ export class TimeOfDayInterface {
   static toolName = 'timeofday'
 }
 
+export const TranslateDeeplSchema = z
+  .object({
+    apiKey: z.string().describe('secret'),
+    // DeepL free accounts must use https://api-free.deepl.com
+    apiUrl: z.string().url().optional(),
+    defaultTargetLang: z.string().optional(),
+    formality: z.enum(['default', 'more', 'less', 'prefer_more', 'prefer_less']).optional(),
+    glossaryId: z.string().optional(),
+    pollIntervalMs: z.number().int().positive().optional().default(2000),
+    timeoutMs: z.number().int().positive().optional().default(600000),
+  })
+  .strict()
+export type TranslateDeeplParams = z.infer<typeof TranslateDeeplSchema>
+export class TranslateDeeplInterface {
+  static toolName = 'translate.deepl'
+}
+
 export const WebSearchSchema = z.object({
   apiKey: z.string().describe('secret'),
   apiUrl: z.string().nullable().default(null),

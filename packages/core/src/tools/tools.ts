@@ -11,6 +11,7 @@ import {
   SatelliteInterface,
   TimeOfDayInterface,
   TogetherImageGeneratorPluginInterface,
+  TranslateDeeplInterface,
   WebSearchInterface,
 } from './schemas'
 
@@ -24,6 +25,7 @@ export const imageGenToolNames = new Set([
 
 export const toolNames = [
   AudioTranscriptionInterface.toolName,
+  TranslateDeeplInterface.toolName,
   ImageGeneratorPluginInterface.toolName,
   OpenAiImageGeneratorPluginInterface.toolName,
   GoogleImageGeneratorPluginInterface.toolName,

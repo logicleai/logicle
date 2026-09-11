@@ -38,6 +38,8 @@ import {
   TimeOfDayInterface,
   TimeOfDaySchema,
   TogetherImageGeneratorPluginInterface,
+  TranslateDeeplInterface,
+  TranslateDeeplSchema,
   WebSearchInterface,
   WebSearchSchema,
 } from '@/lib/tools/schemas'
@@ -51,6 +53,10 @@ export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
   [AudioTranscriptionInterface.toolName]: {
     toolName: AudioTranscriptionInterface.toolName,
     schema: AudioTranscriptionSchema,
+  },
+  [TranslateDeeplInterface.toolName]: {
+    toolName: TranslateDeeplInterface.toolName,
+    schema: TranslateDeeplSchema,
   },
   [ImageGeneratorPluginInterface.toolName]: {
     toolName: ImageGeneratorPluginInterface.toolName,

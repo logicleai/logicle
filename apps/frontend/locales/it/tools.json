@@ -15,5 +15,6 @@
   "openapi": "OpenAPI",
   "satellite": "Satellite",
   "timeofday": "Ora corrente",
-  "websearch": "Ricerca web"
+  "websearch": "Ricerca web",
+  "translate.deepl": "Traduzione documenti (DeepL)"
 }

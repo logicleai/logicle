@@ -741,5 +741,12 @@
   "edit-image": "Edit image",
   "edit-image-prompt-placeholder": "Describe what to change…",
   "word-wrap-off": "Wrap off",
-  "word-wrap-on": "Wrap on"
+  "word-wrap-on": "Wrap on",
+  "translate-deepl-api-url-placeholder": "Leave blank for https://api.deepl.com, use https://api-free.deepl.com for free accounts",
+  "translate-deepl-default-target-lang": "Default target language",
+  "translate-deepl-default-target-lang-placeholder": "Optional target language, for example IT, DE, EN-GB",
+  "translate-deepl-formality": "Formality",
+  "translate-deepl-glossary-id": "Glossary ID",
+  "translate-deepl-poll-interval-ms": "Poll interval (ms)",
+  "translate-deepl-timeout-ms": "Timeout (ms)"
 }

@@ -741,5 +741,12 @@
   "edit-image": "Modifica immagine",
   "edit-image-prompt-placeholder": "Descrivi cosa modificare…",
   "word-wrap-off": "A capo disattivato",
-  "word-wrap-on": "A capo attivo"
+  "word-wrap-on": "A capo attivo",
+  "translate-deepl-api-url-placeholder": "Lascia vuoto per https://api.deepl.com, usa https://api-free.deepl.com per gli account free",
+  "translate-deepl-default-target-lang": "Lingua di destinazione predefinita",
+  "translate-deepl-default-target-lang-placeholder": "Lingua di destinazione opzionale, per esempio IT, DE, EN-GB",
+  "translate-deepl-formality": "Formalità",
+  "translate-deepl-glossary-id": "ID glossario",
+  "translate-deepl-poll-interval-ms": "Intervallo di polling (ms)",
+  "translate-deepl-timeout-ms": "Timeout (ms)"
 }
