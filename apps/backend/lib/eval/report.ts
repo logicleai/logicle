@@ -24,7 +24,10 @@ export interface ArmAggregate {
   cacheWriteTokens: Summary
   estimatedHistoryTokensBefore: Summary
   estimatedHistoryTokensAfter: Summary
+  compressionTriggered: Summary
+  compressionApplied: Summary
   summarizedMessages: Summary
+  rejectedMessages: Summary
   costUsd: Summary
   /** Undefined when no run had a known price. */
   costKnown: boolean
@@ -72,7 +75,10 @@ export const aggregate = (runs: RunResult[]): ArmAggregate[] => {
       estimatedHistoryTokensAfter: summarize(
         group.map((run) => run.compression?.estimatedHistoryTokensAfter ?? 0)
       ),
+      compressionTriggered: summarize(group.map((run) => (run.compression?.triggered ? 1 : 0))),
+      compressionApplied: summarize(group.map((run) => (run.compression?.applied ? 1 : 0))),
       summarizedMessages: summarize(group.map((run) => run.compression?.summarizedMessages ?? 0)),
+      rejectedMessages: summarize(group.map((run) => run.compression?.rejectedMessages ?? 0)),
       costUsd: summarize(withCost.map((run) => run.totals.costUsd!)),
       costKnown: withCost.length > 0,
       turns: summarize(group.map((run) => run.totals.turns)),
@@ -238,18 +244,20 @@ export const renderMarkdown = (runs: RunResult[], baselineArmName: string): stri
     lines.push(`## ${scenarioId}`, '')
     lines.push(
       showCompression
-        ? '| arm | runs | success | score | history est. before→after | summarized | in tok | cache read | out tok | cost | tools | turns | setup |'
+        ? '| arm | runs | success | score | triggered/applied | history est. before→after | summarized/rejected | in tok | cache read | out tok | cost | tools | turns | setup |'
         : '| arm | runs | success | score | in tok | cache read | out tok | cost | tools | turns | setup |',
       showCompression
-        ? '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
+        ? '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
         : '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
     )
     for (const entry of scenarioAggregates) {
       const compressionColumns = showCompression
-        ? ` ${round(entry.estimatedHistoryTokensBefore.mean, 0)}→${round(
+        ? ` ${percent(entry.compressionTriggered.mean)}/${percent(
+            entry.compressionApplied.mean
+          )} | ${round(entry.estimatedHistoryTokensBefore.mean, 0)}→${round(
             entry.estimatedHistoryTokensAfter.mean,
             0
-          )} | ${round(entry.summarizedMessages.mean)} |`
+          )} | ${round(entry.summarizedMessages.mean)}/${round(entry.rejectedMessages.mean)} |`
         : ''
       lines.push(
         `| ${entry.armName} | ${entry.runs} | ${percent(entry.successRate)} | ${round(

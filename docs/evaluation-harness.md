@@ -147,6 +147,15 @@ Its reference conversations live in
 identifiers: only aggregate turn-count cohorts from expensive conversations informed their shape;
 all prose, filenames, tool names and answer facts are synthetic.
 
+The suite must include explicit boundary and **incompressible** fixtures, not only long histories:
+short plain-text messages, short attachments, histories well below and above the resolved trigger,
+and histories where the per-message or aggregate economic guard makes
+compression a no-op. These fixtures establish that a small input is not made more expensive by
+planning or by exposing a recovery tool. Expected results are deterministic: record the resolved
+trigger, eligible messages, exact policies, estimated before/after tokens, whether the per-message
+64-token and aggregate 384-token guards pass, and whether `context-retrieve` is visible. A no-plan
+fixture must not be discarded because it produced no retrieval call.
+
 The default comparison is `compression-off`, tool-only `compression-keep-0`, and query-aware
 prefetch with windows 0 and 1. This isolates the two effects observed in the baseline run:
 stochastic model tool use and the cost of retaining a recent turn. Wider
@@ -156,6 +165,58 @@ Flags are documented in the header of `apps/backend/scripts/eval.ts`. The ones t
 `--repeat`, `--arms`, `--baseline`, `--model`, `--user-model`, `--judge-model`, `--no-judge`,
 `--runs-out`, and `--runs-in`. Generated sweeps also accept `--seed`; use more than one seed before
 generalising from a fixed corpus layout.
+
+## Local campaign directories
+
+The evaluation corpus may remain on a developer's machine, but each campaign should be
+self-describing so a later run can resume without reconstructing its provenance.
+`apps/backend/scripts/eval-campaign.ts` provides two mechanical operations:
+
+```bash
+npx tsx apps/backend/scripts/eval-campaign.ts init \
+  --dir /private/path/context-kb-campaign --name context-kb-september
+npx tsx apps/backend/scripts/eval-campaign.ts register-bundle \
+  --dir /private/path/context-kb-campaign --case case-001 \
+  --bundle /private/path/context-kb-campaign/bundles/case-001.sqlite \
+  --cohort attachment-topic-shift
+```
+
+The bundle builder can automatically register successful exports in the same inventory:
+
+```bash
+npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
+  --source-db <source> \
+  --out /private/path/context-kb-campaign/bundles/case-001.sqlite \
+  --campaign-dir /private/path/context-kb-campaign \
+  --case case-001 --cohort attachment-topic-shift <conversation-id>
+```
+
+The directory contains:
+
+```text
+context-kb-campaign/
+  README.md                 # purpose, creation date, owner, scope, retention and workflow
+  manifest.json             # schema/version, code revision, models, tokenizer, thresholds
+  candidate-register.csv     # checksummed inventory plus review/eligibility/outcome columns
+  bundles/                  # private SQLite bundles, never committed
+  runs/                     # private replay runs/reports, never committed
+  sanitized/                # shareable aggregates and reviewed failure ledger only
+```
+
+`README.md` should describe how the directory was created, what content was collected, from which
+approved cohort, what was intentionally excluded, and how to reproduce or retire it. `manifest.json`
+must freeze the campaign inputs: repository revision, model/provider, tokenizer,
+compression configuration, guard values, repeat count, candidate-selection rule, source-review
+status and retention owner. `candidate-register.csv` is an append-only campaign ledger: bundle id, opaque
+case id, cohort, message selector, source-dependence review, compression inspection result, and
+the final sanitized labels. Keep verbatim chat, documents, decrypted files, raw responses and
+identifiers in the private directories only; the repository may contain fixtures that are synthetic
+or explicitly approved and sanitized.
+
+This workflow is intentionally local and temporary. A ticket or issue can track the campaign, but
+the directory is the durable record of how the evidence was assembled. Do not rely on an issue
+description as the only provenance record, and do not put private bundle paths or raw content in
+the repository.
 
 ## The flip test — measuring what an arm does when the answer is not there
 
@@ -693,3 +754,21 @@ Low-risk rollout for a change like a compression policy: deploy the new build to
 the policy **off**, let real traffic accumulate `MessageAudit` rows, build a bundle from that
 instance, then replay it twice — once as-is, once with `--override` enabling the policy — and
 compare cost and judged quality before turning it on for real.
+
+### Phased plan and delegation
+
+The work can be split so inexpensive coding agents handle deterministic, mechanical throughput,
+while a more capable model or a human retains responsibility for source truth and interpretation:
+
+| phase                | work                                                                                                                                   | suitable delegate                                                                        | review kept with capable model/human                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 1. Fixture inventory | Enumerate synthetic boundary/incompressible shapes, generate candidate message histories, and run unit/inspect-only checks.            | Cheap coding agent: scripted fixture generation and command execution.                   | Confirm that each fixture represents the intended semantic boundary and that no answer key leaks.           |
+| 2. Campaign setup    | Initialize the local directory, write manifest/README boilerplate, register opaque bundle metadata, and enforce ignored/private paths. | Cheap coding agent: filesystem and schema bookkeeping.                                   | Approve privacy boundary, retention policy, cohort definition and frozen thresholds.                        |
+| 3. Bundle collection | Run the approved read-only discovery/export commands and register every candidate, including rejected ones.                            | Cheap coding agent: repetitive command execution and checksum/metadata capture.          | Select the cohort; verify source dependence and answer-key facts against source documents.                  |
+| 4. Replay matrix     | Execute inspect-only, then the fixed A/B/C/D runs and repetitions; collect raw JSON and tool-call metrics.                             | Cheap coding agent: batch runner, retries, and result collation without changing inputs. | Keep denominator fixed; review provider errors, missing retrieval calls, and unexpected tool use.           |
+| 5. Analysis          | Compute reductions, guard rates, bootstrap intervals and failure labels from frozen artifacts.                                         | Cheap coding agent: pure aggregation/report rendering.                                   | Decide correctness from reviewed source facts; distinguish reference-judge disagreement from factual error. |
+| 6. Tuning and rerun  | Propose one threshold/prompt/policy change, then rerun the same registered cases.                                                      | Cheap coding agent: mechanical rerun and diff generation.                                | Choose the hypothesis, inspect regressions, and decide whether evidence supports a change.                  |
+
+Delegation does not authorize an agent to change the corpus after seeing outcomes, rewrite answer
+keys, discard failed or no-call runs, or declare a quality result from a production reply alone.
+Those are source-review and experimental-design decisions and remain with the stronger reviewer.

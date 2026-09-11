@@ -24,6 +24,9 @@
  * Flags:
  *   --source-db <path|url>     source SQLite path or DATABASE_URL (default: $DATABASE_URL)
  *   --out <path>               bundle SQLite file to write (required); <out>.skipped.json is also written
+ *   --campaign-dir <path>      optionally register the completed bundle in a local eval campaign
+ *   --case <opaque-id>         required with --campaign-dir; never use tenant identifiers here
+ *   --cohort <name>            required with --campaign-dir; sanitized traffic-shape label
  *   <conversation-id>          conversation to replay (required positional argument)
  *
  * The builder does not choose a replay target. It saves the complete conversation; the replay
@@ -38,21 +41,33 @@ import type { DB } from '@/db/schema'
 const errText = (error: unknown): string => (error instanceof Error ? error.message : String(error))
 
 const usage =
-  'Usage: --source-db <path|url> (or $DATABASE_URL) --out <bundle.sqlite> <conversation-id>'
+  'Usage: --source-db <path|url> (or $DATABASE_URL) --out <bundle.sqlite> [--campaign-dir <path> --case <opaque-id> --cohort <name>] <conversation-id>'
 const args = process.argv.slice(2).filter((arg) => arg !== '--')
 let sourceDb = process.env.DATABASE_URL
 let out: string | undefined
+let campaignDir: string | undefined
+let caseId: string | undefined
+let cohort: string | undefined
 const positionals: string[] = []
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index]
-  if (arg === '--source-db' || arg === '--out') {
+  if (
+    arg === '--source-db' ||
+    arg === '--out' ||
+    arg === '--campaign-dir' ||
+    arg === '--case' ||
+    arg === '--cohort'
+  ) {
     const value = args[index + 1]
     if (!value || value.startsWith('--')) {
       console.error(`${arg} requires a value\n${usage}`)
       process.exit(1)
     }
     if (arg === '--source-db') sourceDb = value
-    else out = value
+    else if (arg === '--out') out = value
+    else if (arg === '--campaign-dir') campaignDir = value
+    else if (arg === '--case') caseId = value
+    else cohort = value
     index += 1
   } else if (arg.startsWith('--')) {
     console.error(`Unknown option: ${arg}\n${usage}`)
@@ -63,7 +78,17 @@ for (let index = 0; index < args.length; index += 1) {
 }
 
 const conversationId = positionals[0]
-if (!sourceDb || !out || !conversationId || positionals.length !== 1) {
+const campaignFlags = [campaignDir, caseId, cohort]
+const incompleteCampaignRegistration =
+  campaignFlags.some((value) => value !== undefined) &&
+  campaignFlags.some((value) => value === undefined)
+if (
+  !sourceDb ||
+  !out ||
+  !conversationId ||
+  positionals.length !== 1 ||
+  incompleteCampaignRegistration
+) {
   console.error(usage)
   process.exit(1)
 }
@@ -439,6 +464,10 @@ if (failure || !copied) {
   )
   process.exitCode = 1
 } else {
+  if (campaignDir && caseId && cohort) {
+    const { registerBundle } = await import('@/backend/lib/eval/campaign')
+    await registerBundle(campaignDir, caseId, out, cohort)
+  }
   console.error(
     `Wrote conversation ${conversationId} to ${out}: ${copied.messages} messages, ` +
       `${copied.audits} audits, ${copied.attachments} attachments, ` +

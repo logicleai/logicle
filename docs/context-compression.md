@@ -37,6 +37,36 @@ proiezione deterministica, con recupero esplicito del dettaglio quando serve.
 - Summaries are cheap to produce: deterministic text extraction and truncation, never a model call.
 - The current turn is always sent in full. Compression only ever touches history.
 - Small conversations are never compressed, regardless of assistant configuration.
+- Compression must not spend retrieval/tool-prompt budget when the planner does not apply a plan.
+
+## Trigger and economic guards
+
+The trigger expectation is deterministic and must be checked before any provider call. Given the
+same model, message lineage, configuration and tokenizer, `inspect-only` must report the same
+`estimatedHistoryTokens`, resolved trigger, eligible messages, planned policies and
+`estimatedTokensAfter`. A case is an eligible compression fixture only when the resolved trigger
+is crossed _and_ applying the plan reduces the estimated history. A configuration that is enabled
+but does not cross the trigger is a valid **no-plan** case, not a failed compression run.
+
+There are two provisional economic guards for the suite:
+
+- do not summarize an individual message when its estimated saving is below **64 tokens**;
+- do not apply a compression plan when the aggregate estimated saving is below **384 tokens**.
+
+These values are deliberately guardrails, not proven optima. They are motivated by the first
+synthetic boundary sweep (where very small summaries can cost as much as they save once the
+retrieval instruction and tool surface are included). That sweep is an initial baseline only: the
+64/384 values must be revalidated on reviewed real-chat cohorts, with provider/model and tokenizer
+held fixed, before being described as production thresholds. Reports must record both the raw
+estimated saving and whether each guard fired; never infer a final threshold from one synthetic
+run or from a hand-picked successful case.
+
+When the plan guard does not pass, the prompt must be built from the original history and must not
+include `context-retrieve` in the model-visible tool set or system/tool instructions for that
+turn. The same omission applies when compression is disabled or when the resolved trigger is not
+crossed. `context-retrieve` is included only when a compression plan was actually applied, because
+only then can the prompt contain recoverable summaries. This is a prompt-shape invariant to test,
+not an optimization that may vary with model behavior.
 
 ## Configuration
 
@@ -265,8 +295,9 @@ model needs to actually see the image, that only happens via `full` policy or `c
 
 ### The `context-retrieve` Tool
 
-Registered whenever `contextCompression` is set (`apps/backend/lib/tools/context-retrieve/`), this
-is the model's one recovery surface for anything compression touched:
+Constructed whenever `contextCompression` is set (`apps/backend/lib/tools/context-retrieve/`), but
+exposed to the model only on turns where an economic compression plan is actually applied, this is
+the recovery surface for anything compression touched:
 
 - **`get_file(id)`** — read a file's content by id (DB-authorized via `canAccessFile`, same as
   before this tool was renamed from `retrieve-file`).
@@ -481,6 +512,9 @@ prompt build (ChatAssistant.invokeLlm)
   │    no  → send messages as-is
   │    yes ↓
   ├─ planMessageCompression(messages, preset)       → MessageCompressionDecision[]
+  ├─ discard per-message savings < 64 tokens; apply only if aggregate saving >= 384
+  │    no  → send original messages; omit context-retrieve from the prompt/tool set
+  │    yes ↓
   ├─ applyCompressionPlan(messages, decisions, current-query options)
   │    full    → message unchanged
   │    summary → cached CompressedMessage row, or built + cached now
@@ -516,6 +550,13 @@ Covered in `apps/backend/lib/chat/__tests__/compression-planner.test.ts`:
 - `warmCompressionCache` builds/caches eligible messages and no-ops on ineligible ones, without
   throwing on failure.
 - A concurrent build for the same message joins the in-flight one instead of duplicating work.
+- Boundary fixtures just below and just above the resolved trigger, including histories with no
+  eligible messages.
+- Incompressible fixtures: short messages, short attachments, and plans whose
+  per-message saving is below 64 tokens or aggregate saving is below 384 tokens. These must remain
+  `full`/no-plan and must not expose `context-retrieve` to the model.
+- Deterministic expectation fixtures assert trigger/application state, estimated before/after
+  totals, and summary counts; economics unit tests cover the per-message and aggregate guards.
 
 `apps/backend/lib/tools/context-retrieve/__tests__/implementation.test.ts` covers the tool itself:
 `get_file`, `get_message`, and `search`, including targeted lexical search inside one message or
