@@ -489,6 +489,25 @@ export const gpt56TerraModel: LlmModel = {
   defaultReasoning: 'low',
 }
 
+export const gpt56LunaModel: LlmModel = {
+  id: 'gpt-5.6-luna',
+  model: 'gpt-5.6-luna',
+  name: 'GPT-5.6 Luna',
+  description: 'GPT-5.6 Luna, optimized for cost-sensitive, high-volume workloads',
+  provider: 'openai',
+  owned_by: 'openai',
+  context_length: 1_050_000,
+  capabilities: {
+    vision: true,
+    function_calling: true,
+    supportedMedia: ['application/pdf', 'image/png', 'image/jpeg'],
+    promptCaching: false, // caching is automatic and non-configurable on this model
+  },
+  supportedReasoningEfforts: ['none', 'low', 'medium', 'high', 'xhigh'],
+  defaultReasoning: 'medium',
+  maxOutputTokens: 128_000,
+}
+
 export const gptChatLatestModel: LlmModel = {
   ...gpt52ChatModel,
   model: 'chat-latest',
@@ -527,6 +546,7 @@ export const openaiModels: LlmModel[] = [
   gpt55Model,
   gpt55ProModel,
   gpt56TerraModel,
+  gpt56LunaModel,
   o1Model,
   o1MiniModel,
   o3Model,

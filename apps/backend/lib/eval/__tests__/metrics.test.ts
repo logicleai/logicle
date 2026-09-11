@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { checkAnswerKey, computeTotals, scoreRun } from '@/backend/lib/eval/metrics'
-import { computeCostUsd, formatCostUsd, resolveModelPrice } from '@/backend/lib/eval/cost'
+import {
+  computeCostUsd,
+  formatCostUsd,
+  LONG_CONTEXT_INPUT_TOKENS,
+  resolveModelPrice,
+} from '@/backend/lib/eval/cost'
 import type { TranscriptEntry, TurnMetrics } from '@/backend/lib/eval/types'
 
 const transcript = (...entries: [string, string][]): TranscriptEntry[] =>
@@ -55,6 +60,30 @@ describe('computeCostUsd', () => {
   it('prices the production latest aliases used by the model registry', () => {
     expect(computeCostUsd('gpt-5-latest', 1000, 100)).toBeCloseTo(0.0032, 10)
     expect(computeCostUsd('claude-sonnet-latest', 1000, 100)).toBeCloseTo(0.003, 10)
+  })
+
+  it('uses short-context gpt-5.6-luna rates at the boundary', () => {
+    expect(computeCostUsd('gpt-5.6-luna', LONG_CONTEXT_INPUT_TOKENS, 100)).toBeCloseTo(
+      (LONG_CONTEXT_INPUT_TOKENS * 0.2 + 100 * 1.2) / 1_000_000,
+      10
+    )
+  })
+
+  it('uses long-context gpt-5.6-luna rates above the boundary', () => {
+    expect(computeCostUsd('gpt-5.6-luna', LONG_CONTEXT_INPUT_TOKENS + 1, 100)).toBeCloseTo(
+      ((LONG_CONTEXT_INPUT_TOKENS + 1) * 0.4 + 100 * 1.8) / 1_000_000,
+      10
+    )
+  })
+
+  it('prices gpt-5.6-luna cache reads and writes in the selected tier', () => {
+    expect(
+      computeCostUsd('gpt-5.6-luna', LONG_CONTEXT_INPUT_TOKENS + 1, 100, {
+        noCacheTokens: 100_000,
+        cacheReadTokens: 100_000,
+        cacheWriteTokens: 72_001,
+      })
+    ).toBeCloseTo((100_000 * 0.4 + 100_000 * 0.04 + 72_001 * 0.5 + 100 * 1.8) / 1_000_000, 10)
   })
 })
 
@@ -172,6 +201,24 @@ describe('computeTotals', () => {
       cacheWriteTokens: 0,
     })
     expect(totals.costUsd).toBeCloseTo((1500 * 0.4 + 1500 * 0.1 + 300 * 1.6) / 1_000_000, 10)
+    expect(totals.undiscountedCostUsd).toBeCloseTo((3000 * 0.4 + 300 * 1.6) / 1_000_000, 10)
+  })
+
+  it('prices each provider request separately for context tiers', () => {
+    const twoShortRequests: TurnMetrics[] = [
+      {
+        ...turns[0]!,
+        inputTokens: 300_000,
+        outputTokens: 100,
+        totalTokens: 300_100,
+        providerUsages: [
+          { inputTokens: 150_000, outputTokens: 50, totalTokens: 150_050 },
+          { inputTokens: 150_000, outputTokens: 50, totalTokens: 150_050 },
+        ],
+      },
+    ]
+    const totals = computeTotals(twoShortRequests, 'gpt-5.6-luna', 0)
+    expect(totals.costUsd).toBeCloseTo((300_000 * 0.2 + 100 * 1.2) / 1_000_000, 10)
   })
 
   it('leaves cost undefined for an unpriced model', () => {

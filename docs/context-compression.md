@@ -599,8 +599,11 @@ OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval.ts \
 
 By default it compares compression off, tool-only retrieval with no recent window, and prefetch
 with recent windows of 0 and 1. Explicit `compression-keep-{1,2,4}` arms remain available for wider
-window sweeps. The report uses provider usage, including prompt-cache read/write token details when
-available, and stores raw runs so the same evidence can be re-reported without another model call.
+window sweeps. The primary cost estimate uses provider usage, including prompt-cache read/write
+token details as cache-aware pricing telemetry when available. Missing cache telemetry degrades
+the affected input to the full configured input price. The report also shows an
+undiscounted/full-price counterfactual; it is not the primary total. Raw runs are stored so the
+same evidence can be re-reported without another model call.
 
 ## Relevant Files
 

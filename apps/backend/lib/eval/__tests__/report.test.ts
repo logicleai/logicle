@@ -84,6 +84,15 @@ describe('computeBreakEven', () => {
       rejectedMessages: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
       costUsd: { n: 3, mean: costMean, median: costMean, min: costMean, max: costMean, stdev: 0 },
       costKnown: true,
+      undiscountedCostUsd: {
+        n: 3,
+        mean: costMean,
+        median: costMean,
+        min: costMean,
+        max: costMean,
+        stdev: 0,
+      },
+      undiscountedCostKnown: true,
       turns: { n: 3, mean: 1, median: 1, min: 1, max: 1, stdev: 0 },
       toolCalls: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
       wallMs: { n: 3, mean: 0, median: 0, min: 0, max: 0, stdev: 0 },
@@ -157,6 +166,30 @@ describe('compare', () => {
 })
 
 describe('renderMarkdown', () => {
+  it('keeps every markdown table header aligned with its separator', () => {
+    const markdown = renderMarkdown(
+      [
+        makeRun({
+          armName: 'compression-on',
+          compression: {
+            enabled: true,
+            triggered: true,
+            applied: true,
+            estimatedHistoryTokensBefore: 7000,
+            estimatedHistoryTokensAfter: 4000,
+            summarizedMessages: 1,
+          },
+        }),
+      ],
+      'compression-on'
+    )
+    const lines = markdown.split('\n')
+    for (let index = 0; index < lines.length - 1; index += 1) {
+      if (!lines[index + 1]!.startsWith('| ---')) continue
+      expect(lines[index]!.split('|')).toHaveLength(lines[index + 1]!.split('|').length)
+    }
+  })
+
   it('starts with an overall arm summary across scenarios', () => {
     const markdown = renderMarkdown(
       [

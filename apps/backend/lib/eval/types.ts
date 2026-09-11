@@ -167,6 +167,12 @@ export interface SetupCost {
   wallMs: number
   /** Model that incurred this cost. Omitted when setup used no model or it is unknown. */
   modelId?: string
+  /** Individual provider requests, used for request-level pricing tiers and cache pricing. */
+  providerUsages?: Array<{
+    inputTokens: number
+    outputTokens: number
+    inputTokenDetails?: TurnUsage['inputTokenDetails']
+  }>
 }
 
 export interface ArmSetup {
@@ -212,6 +218,8 @@ export interface TurnUsage {
 export interface TurnMetrics extends TurnUsage {
   toolCalls: string[]
   latencyMs: number
+  /** Individual provider calls, when available, for request-level pricing tiers. */
+  providerUsages?: TurnUsage[]
 }
 
 export interface CompressionDiagnostics {
@@ -279,6 +287,8 @@ export interface RunTotals extends TurnUsage {
   wallMs: number
   /** USD, when the model's price is known. Undefined means "report tokens only". */
   costUsd?: number
+  /** Full-price counterfactual, ignoring provider prompt-cache discounts. */
+  undiscountedCostUsd?: number
 }
 
 export interface RunResult {

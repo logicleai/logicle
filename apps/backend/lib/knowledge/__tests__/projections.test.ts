@@ -114,7 +114,28 @@ describe('answerQuestion', () => {
     const { model } = mockModel(['Part one.', 'Part two.', 'Merged answer.'])
     await answerQuestion(model, 'big.pdf', 'x'.repeat(90_000), question, usage)
     // The mock reports 1 input and 1 output token per call; three calls were made.
-    expect(usage).toEqual({ inputTokens: 3, outputTokens: 3, calls: 3 })
+    expect(usage).toEqual({
+      inputTokens: 3,
+      outputTokens: 3,
+      calls: 3,
+      providerUsages: [
+        {
+          inputTokens: 1,
+          outputTokens: 1,
+          inputTokenDetails: { noCacheTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0 },
+        },
+        {
+          inputTokens: 1,
+          outputTokens: 1,
+          inputTokenDetails: { noCacheTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0 },
+        },
+        {
+          inputTokens: 1,
+          outputTokens: 1,
+          inputTokenDetails: { noCacheTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0 },
+        },
+      ],
+    })
   })
 
   it('caps the number of windows for an absurdly large document', async () => {
@@ -130,7 +151,7 @@ describe('computeProjections', () => {
     const { findReasonableSummarizationBackend } = await import('@/backend/lib/chat/summarizer')
     const result = await computeProjections('contract.pdf', 'text', [])
     expect(result.projections).toEqual([])
-    expect(result.usage).toEqual({ inputTokens: 0, outputTokens: 0, calls: 0 })
+    expect(result.usage).toEqual({ inputTokens: 0, outputTokens: 0, calls: 0, providerUsages: [] })
     expect(findReasonableSummarizationBackend).not.toHaveBeenCalled()
   })
 
