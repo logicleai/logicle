@@ -36,9 +36,11 @@ import { Badge } from '@/components/ui/badge'
 import { McpInterface } from '@/lib/tools/schemas'
 import { DummyToolInterface } from '@/lib/tools/schemas'
 import { AudioTranscriptionInterface } from '@/lib/tools/schemas'
+import { TranslateDeeplInterface } from '@/lib/tools/schemas'
 
 const creatableTools: ToolType[] = [
   AudioTranscriptionInterface.toolName,
+  TranslateDeeplInterface.toolName,
   OpenApiInterface.toolName,
   ImageGeneratorPluginInterface.toolName,
   OpenAiImageGeneratorPluginInterface.toolName,
