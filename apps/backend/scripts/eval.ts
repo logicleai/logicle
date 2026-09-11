@@ -16,9 +16,14 @@
  *   --suite <name>        knowledge | context-compression (default: knowledge)
  *   --sweep <n,...>       replace the built-in scenarios with generated ones holding N documents
  *                         each, to trace cost and accuracy against corpus size
+ *   --flip                with --sweep, generate each size twice — once with the answer in the
+ *                         corpus and once with it removed — and report whether each arm declines
+ *                         to answer only when the answer is genuinely absent
+ *   --flip-withhold <how> clause (default: keep the document, drop the answer) | document
  *   --doc-words <n>       words per generated document (default: 700)
  *   --distractors <n>     generated documents stating the same clause with a different value (default: 4)
  *   --needle-depth <0..1> where the answer sits inside its document (default: 0.5)
+ *   --seed <n>            generated-corpus seed (default: 1)
  *   --arms <name,...>     arms to compare (default: all-in-context,knowledge-box,knowledge-box-no-projections)
  *   --baseline <name>     arm every other arm is compared against (default: all-in-context)
  *   --repeat <n>          repetitions per (scenario, arm) (default: 3)
@@ -66,6 +71,45 @@ const verbose = bool('verbose')
 const useJudge = !bool('no-judge')
 const runsIn = flag('runs-in')
 const out = flag('out')
+const requestedSweepSizes = list('sweep')
+const sweepSizes = requestedSweepSizes?.map(Number)
+if (
+  requestedSweepSizes &&
+  (sweepSizes!.length === 0 || sweepSizes!.some((size) => !Number.isFinite(size) || size <= 0))
+) {
+  console.error('--sweep expects one or more positive document counts')
+  process.exit(1)
+}
+const requestedSeed = flag('seed')
+const generatedSeed = Number(requestedSeed ?? 1)
+if (!Number.isFinite(generatedSeed)) {
+  console.error('--seed expects a finite number')
+  process.exit(1)
+}
+if (requestedSeed && !sweepSizes) {
+  console.error('--seed only applies with --sweep')
+  process.exit(1)
+}
+const flipTest = bool('flip')
+const requestedFlipWithhold = flag('flip-withhold')
+if (
+  requestedFlipWithhold &&
+  requestedFlipWithhold !== 'clause' &&
+  requestedFlipWithhold !== 'document'
+) {
+  console.error(`Unknown --flip-withhold value "${requestedFlipWithhold}". Known: clause, document`)
+  process.exit(1)
+}
+if (requestedFlipWithhold && !flipTest) {
+  console.error('--flip-withhold only applies when --flip is enabled')
+  process.exit(1)
+}
+const flipWithhold = requestedFlipWithhold === 'document' ? 'document' : 'clause'
+
+if (flipTest && !sweepSizes) {
+  console.error('--flip needs --sweep <n,...>: the paired corpora are generated, not built in')
+  process.exit(1)
+}
 
 if (runsIn) {
   const { readRunsArtifact } = await import('@/backend/lib/eval/artifact')
@@ -112,7 +156,9 @@ const { builtInScenarios } = await import('@/backend/lib/eval/scenarios/supplier
 const { contextCompressionScenarios } = await import(
   '@/backend/lib/eval/scenarios/contextCompression'
 )
-const { generateNeedleScenario } = await import('@/backend/lib/eval/scenarios/generator')
+const { generateNeedleScenario, generateFlipScenarioPair } = await import(
+  '@/backend/lib/eval/scenarios/generator'
+)
 const { runOne } = await import('@/backend/lib/eval/harness')
 const { createJudge } = await import('@/backend/lib/eval/judge')
 const { renderMarkdown } = await import('@/backend/lib/eval/report')
@@ -224,24 +270,25 @@ const arms = armNames.map((name) => {
   return arm
 })
 
-const sweepSizes = list('sweep')
-  ?.map(Number)
-  .filter((size) => Number.isFinite(size) && size > 0)
 const scenarioIds = list('scenario')
 const suiteScenarios =
   suite === 'context-compression' ? contextCompressionScenarios : builtInScenarios
 
 // A sweep replaces the built-in scenarios with generated ones, one per corpus size. Each keeps its
 // size in its id, so the existing per-scenario report sections read as the points of a curve.
+const generatedSpec = (documents: number) => ({
+  documents,
+  wordsPerDocument: Number(flag('doc-words') ?? 700),
+  distractors: Number(flag('distractors') ?? 4),
+  needleDepth: Number(flag('needle-depth') ?? 0.5),
+  seed: generatedSeed,
+})
+
 const scenarios = sweepSizes
-  ? sweepSizes.map((documents) =>
-      generateNeedleScenario({
-        documents,
-        wordsPerDocument: Number(flag('doc-words') ?? 700),
-        distractors: Number(flag('distractors') ?? 4),
-        needleDepth: Number(flag('needle-depth') ?? 0.5),
-        seed: 1,
-      })
+  ? sweepSizes.flatMap((documents) =>
+      flipTest
+        ? generateFlipScenarioPair(generatedSpec(documents), { withhold: flipWithhold })
+        : [generateNeedleScenario(generatedSpec(documents))]
     )
   : scenarioIds
   ? scenarioIds.map((id) => {
@@ -365,7 +412,8 @@ if (runsOut) {
             wordsPerDocument: Number(flag('doc-words') ?? 700),
             distractors: Number(flag('distractors') ?? 4),
             needleDepth: Number(flag('needle-depth') ?? 0.5),
-            seed: 1,
+            seed: generatedSeed,
+            flipWithhold: flipTest ? flipWithhold : undefined,
           }
         : undefined,
     },

@@ -189,11 +189,90 @@ describe('renderMarkdown', () => {
     expect(renderMarkdown(runs, 'baseline')).toContain('not separable at this sample size')
   })
 
+  it('does not claim a degenerate one-run interval includes zero when it does not', () => {
+    const markdown = renderMarkdown(
+      [
+        makeRun({ armName: 'baseline' }),
+        makeRun({
+          armName: 'candidate',
+          totals: { ...makeRun({ armName: 'candidate' }).totals, inputTokens: 500 },
+        }),
+      ],
+      'baseline'
+    )
+    expect(markdown).toContain('fewer than two observations')
+    expect(markdown).not.toContain('[-500, -500] includes 0')
+  })
+
   it('lists errors so a silent failure cannot be mistaken for a bad score', () => {
     const markdown = renderMarkdown(
       [makeRun({ armName: 'a', outcome: 'error', error: 'tokenizer exploded', score: 0 })],
       'a'
     )
     expect(markdown).toContain('tokenizer exploded')
+  })
+
+  it('omits the flip section when no scenario was a flip test', () => {
+    expect(renderMarkdown([makeRun({ armName: 'a' })], 'a')).not.toContain('Flip test')
+  })
+
+  it('reports coverage and hallucination once both halves of a pair have run', () => {
+    const markdown = renderMarkdown(
+      [
+        makeRun({
+          armName: 'a',
+          scenarioId: 'p-positive',
+          flip: { pairId: 'p', corpus: 'positive', assertion: 'asserted-needle' },
+        }),
+        makeRun({
+          armName: 'a',
+          scenarioId: 'p-negative',
+          flip: { pairId: 'p', corpus: 'negative', assertion: 'asserted-other' },
+        }),
+      ],
+      'a'
+    )
+    expect(markdown).toContain('Flip test')
+    // Answered on both corpora: no coverage, and the negative answer was invented.
+    expect(markdown).toContain('| p | a | 1 | 0% | 100% |')
+  })
+
+  it('warns when the positive half failed, so coverage is not read on its own', () => {
+    const markdown = renderMarkdown(
+      [
+        makeRun({
+          armName: 'a',
+          scenarioId: 'p-positive',
+          flip: { pairId: 'p', corpus: 'positive', assertion: 'exhausted' },
+        }),
+        makeRun({
+          armName: 'a',
+          scenarioId: 'p-negative',
+          flip: { pairId: 'p', corpus: 'negative', assertion: 'abstained' },
+        }),
+      ],
+      'a'
+    )
+    expect(markdown).toContain('carries no information')
+  })
+
+  it('shows inconclusive pairs instead of hiding them from the totals', () => {
+    const markdown = renderMarkdown(
+      [
+        makeRun({
+          armName: 'a',
+          scenarioId: 'p-positive',
+          flip: { pairId: 'p', corpus: 'positive', assertion: 'asserted-needle' },
+        }),
+        makeRun({
+          armName: 'a',
+          scenarioId: 'p-negative',
+          flip: { pairId: 'p', corpus: 'negative', assertion: 'error' },
+        }),
+      ],
+      'a'
+    )
+    expect(markdown).toContain('inconclusive')
+    expect(markdown).toContain('| p | a | 1 | 0% | 0% | 0 | 0 | 0 | 1 |')
   })
 })

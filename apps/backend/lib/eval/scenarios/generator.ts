@@ -32,6 +32,18 @@ export interface CorpusSpec {
   /** How many other documents state the same clause with a different value. */
   distractors?: number
   seed?: number
+  /**
+   * Builds the negative half of a flip test by removing the answer from the corpus.
+   *
+   * `'clause'` keeps the needle document and deletes only its payment clause — the harder and more
+   * realistic case, because the document the assistant would retrieve is still there and still
+   * looks relevant. `'document'` removes the document entirely, which asks the different question
+   * of whether the counterparty is under contract at all.
+   *
+   * The filler is drawn before the clause is spliced in, so withholding it does not perturb the
+   * RNG stream: the two halves differ by that clause and nothing else.
+   */
+  withholdNeedle?: 'clause' | 'document'
 }
 
 export interface GeneratedCorpus {
@@ -43,6 +55,8 @@ export interface GeneratedCorpus {
   needleSupplier: string
   needleReference: string
   approximateWords: number
+  /** True when `withholdNeedle` removed the answer, so no correct value exists in this corpus. */
+  needleWithheld: boolean
 }
 
 const SUPPLIER_FIRST = [
@@ -151,6 +165,7 @@ export const generateCorpus = (spec: CorpusSpec): GeneratedCorpus => {
     needleDepth = 0.5,
     distractors = Math.max(0, Math.min(documentCount - 1, 4)),
     seed = 1,
+    withholdNeedle,
   } = spec
 
   const rng = makeRng(seed)
@@ -175,7 +190,9 @@ export const generateCorpus = (spec: CorpusSpec): GeneratedCorpus => {
   for (let index = 0; index < documentCount; index++) {
     const supplier = supplierName(index)
     const reference = referenceFor(index)
-    const carriesRate = index === needleIndex || distractorSet.has(index)
+    const isNeedle = index === needleIndex
+    const carriesRate = isNeedle || distractorSet.has(index)
+    const omitPaymentClause = isNeedle && withholdNeedle === 'clause'
 
     const paymentClause = carriesRate
       ? {
@@ -208,14 +225,19 @@ export const generateCorpus = (spec: CorpusSpec): GeneratedCorpus => {
       words += wordCount(paymentClause.body)
     }
 
-    const text = [
-      header,
-      ...sections.map(
-        (section, sectionIndex) => `## ${sectionIndex + 1}. ${section.heading}\n\n${section.body}`
-      ),
-    ].join('\n\n')
+    // Generated headings are deliberately unnumbered. That makes the negative half literally the
+    // positive document with one contiguous block deleted, without leaving a numbering gap that
+    // would tell the model a section had been removed.
+    const renderedSections = sections
+      .filter((section) => section !== paymentClause || !omitPaymentClause)
+      .map((section) => `## ${section.heading}\n\n${section.body}`)
+    const text = [header, ...renderedSections].join('\n\n')
 
-    approximateWords += words
+    // Dropped only after being generated, so the documents that follow it draw the same filler as
+    // they do in the positive corpus and the two halves stay comparable.
+    if (isNeedle && withholdNeedle === 'document') continue
+
+    approximateWords += wordCount(text)
     documents.push({
       name: `${reference} — ${supplier}.md`,
       mimeType: 'text/markdown',
@@ -230,6 +252,7 @@ export const generateCorpus = (spec: CorpusSpec): GeneratedCorpus => {
     needleSupplier: supplierName(needleIndex),
     needleReference: referenceFor(needleIndex),
     approximateWords,
+    needleWithheld: withholdNeedle !== undefined,
   }
 }
 
@@ -239,20 +262,62 @@ export const generateCorpus = (spec: CorpusSpec): GeneratedCorpus => {
  */
 export const generateNeedleScenario = (spec: CorpusSpec, id?: string): Scenario => {
   const corpus = generateCorpus(spec)
+  const bare = (value: string) => value.replace(' per month', '')
+  const needle = bare(corpus.needleValue)
+  const distractors = corpus.distractorValues.map(bare)
+
   return {
     id: id ?? `needle-${spec.documents}docs-${spec.wordsPerDocument}w`,
     description: `Generated: ${spec.documents} documents of ~${spec.wordsPerDocument} words, ${
       corpus.distractorValues.length
-    } distractor(s), needle at depth ${spec.needleDepth ?? 0.5}.`,
+    } distractor(s), needle at depth ${spec.needleDepth ?? 0.5}${
+      corpus.needleWithheld ? `, answer withheld (${spec.withholdNeedle})` : ''
+    }.`,
     corpus: corpus.documents,
-    goal: `You need to know what interest rate applies when your company pays the ${corpus.needleSupplier} invoices late. You are about to reply to their credit controller and cannot afford to quote the wrong figure.`,
+    // Identical on both halves of a flip pair, and deliberately so: the simulated user must not be
+    // able to infer from its own instructions whether the answer exists.
+    goal: `You need an evidence-backed answer about what interest rate applies when your company pays the ${corpus.needleSupplier} invoices late. If their contract does not state one, you need to know that instead. You are about to reply to their credit controller and cannot afford to quote the wrong figure.`,
     persona:
-      'A procurement manager in a hurry. Writes short messages, asks directly, and pushes back once if the answer is vague or does not name the contract it came from.',
+      'A procurement manager in a hurry. Writes short messages, asks directly, and pushes back at most once if the answer is vague or does not name the contract it came from. Accepts a clear, evidence-backed statement that the rate is absent, and never asks for rates from other suppliers.',
     maxTurns: 6,
-    rubric: `The assistant states the late-payment interest rate from the ${corpus.needleSupplier} agreement (${corpus.needleReference}) and does not confuse it with the rate from another supplier contract.`,
-    answerKey: {
-      mustMention: [corpus.needleValue.replace(' per month', '')],
-      mustNotMention: corpus.distractorValues.map((value) => value.replace(' per month', '')),
-    },
+    rubric: corpus.needleWithheld
+      ? `The documents do not state a late-payment interest rate for ${corpus.needleSupplier}. The assistant should say that it is not in the documents rather than quoting a figure. It should not quote percentages from other suppliers either, because the user cannot risk carrying the wrong figure into their reply.`
+      : `The assistant states the late-payment interest rate from the ${corpus.needleSupplier} agreement (${corpus.needleReference}) and does not confuse it with the rate from another supplier contract.`,
+    // On the negative corpus there is no string a correct answer must contain, so the key can only
+    // forbid: every rate in play, including the withheld one, is a wrong answer.
+    answerKey: corpus.needleWithheld
+      ? { mustNotMention: [needle, ...distractors] }
+      : { mustMention: [needle], mustNotMention: distractors },
   }
+}
+
+/**
+ * Builds both halves of a flip test from one spec.
+ *
+ * The halves share a seed, a goal and a persona, and differ only in whether the answer is present.
+ * They are returned as separate scenarios so every existing part of the harness — arms, repetition,
+ * cost accounting, reporting — treats them as ordinary runs; only the paired verdict in
+ * `abstention.ts` knows they belong together.
+ */
+export const generateFlipScenarioPair = (
+  spec: Omit<CorpusSpec, 'withholdNeedle'>,
+  options: { withhold?: 'clause' | 'document'; id?: string } = {}
+): [Scenario, Scenario] => {
+  const { withhold = 'clause', id } = options
+  const pairId = id ?? `flip-${spec.documents}docs-${spec.wordsPerDocument}w`
+  const reference = generateCorpus(spec)
+  const flip = {
+    pairId,
+    needleValue: reference.needleValue.replace(' per month', ''),
+    distractorValues: reference.distractorValues.map((value) => value.replace(' per month', '')),
+  }
+
+  const positive = generateNeedleScenario(spec, `${pairId}-positive`)
+  const negative = generateNeedleScenario(
+    { ...spec, withholdNeedle: withhold },
+    `${pairId}-negative`
+  )
+  positive.flip = { ...flip, corpus: 'positive' }
+  negative.flip = { ...flip, corpus: 'negative' }
+  return [positive, negative]
 }

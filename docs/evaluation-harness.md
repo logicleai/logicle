@@ -154,7 +154,60 @@ stochastic model tool use and the cost of retaining a recent turn. Wider
 
 Flags are documented in the header of `apps/backend/scripts/eval.ts`. The ones that matter:
 `--repeat`, `--arms`, `--baseline`, `--model`, `--user-model`, `--judge-model`, `--no-judge`,
-`--runs-out`, and `--runs-in`.
+`--runs-out`, and `--runs-in`. Generated sweeps also accept `--seed`; use more than one seed before
+generalising from a fixed corpus layout.
+
+## The flip test — measuring what an arm does when the answer is not there
+
+A success rate on answerable questions cannot tell a system that _covered_ the corpus from one that
+guessed and happened to be right: both produce a transcript with the right number in it. The only
+way to separate them is to ask the same question of a corpus that does not contain the answer.
+
+`--flip` generates each sweep size twice. The two corpora are produced from the same seed and are
+byte-identical except that the negative one has had the answer removed — by default the needle
+document stays and loses only its payment clause, which is the harder case because the document a
+retriever would surface is still there and still looks relevant. `--flip-withhold document` removes
+the document instead, which asks the different question of whether the counterparty is under
+contract at all. Both halves get the same goal, persona and turn budget, so the simulated user
+cannot tell which corpus it is on. The goal is symmetric: either return the sourced rate or
+establish that the relevant contract does not state one. Generated headings are unnumbered, so
+removing the clause does not leave a numbering gap or placeholder that reveals the intervention.
+
+```bash
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval.ts \
+  --sweep 20,60 --flip --repeat 5 \
+  --arms all-in-context,knowledge-box \
+  --runs-out flip-runs.json --out flip-report.md
+```
+
+Each run gets a conservative lexical classification — only the needle percentage, another or
+unexpected percentage, no percentage, or no clean conclusion before the user gives up or the turn
+budget expires — and the halves are paired per arm and repetition. `coverage` is the only passing
+combination:
+
+| positive corpus   | negative corpus   | verdict                       |
+| ----------------- | ----------------- | ----------------------------- |
+| answers correctly | declines          | `coverage`                    |
+| answers correctly | answers anyway    | `hallucination-under-absence` |
+| answers correctly | runs out of turns | `over-searching`              |
+| declines          | declines          | `over-closure`                |
+
+Three things to know before reading a flip report:
+
+- **Check the `pos. failure` column first.** Those pairs never established the answer on the
+  positive corpus, so whatever they did under absence says nothing about abstention. A column that
+  is not near zero means the question was too hard for the arm, and the coverage rate below it is
+  measuring the wrong thing.
+- **The paired verdict is a lexical proxy, not a semantic assertion classifier.** Any percentage
+  in the negative answer counts as a value under absence, including an unexpected value and a
+  value quoted only to deny it. Conversely, `abstained` means the simulated user accepted a
+  conversation containing no percentage; it does not prove the assistant explicitly said the
+  answer was absent. Read the judge verdict for that qualitative distinction.
+- **Giving up is not abstention.** A `gave-up` or `max-turns` negative run is `over-searching`, not
+  coverage. The positive half must reach the goal and pass its full deterministic answer key;
+  otherwise the pair is a `pos. failure` even if the needle happened to appear in the transcript.
+- **Pairing by repetition index is arbitrary.** Each run has its own stochastic trajectory, so a
+  single pair is not a result; the rate over repetitions is. Use `--repeat 5` or more.
 
 ## Scenarios from real conversations
 
@@ -180,20 +233,21 @@ Two things about this are deliberate:
 
 ## Layout
 
-| path                         | what it is                               |
-| ---------------------------- | ---------------------------------------- |
-| `lib/eval/types.ts`          | scenario, arm, run result                |
-| `lib/eval/harness.ts`        | drives one (scenario, arm) run           |
-| `lib/eval/referenceChat.ts`  | saved chat → production message DTOs     |
-| `lib/eval/simulatedUser.ts`  | the LLM playing the user                 |
-| `lib/eval/judge.ts`          | the LLM grading transcripts              |
-| `lib/eval/metrics.ts`        | answer key, totals, scoring — pure       |
-| `lib/eval/stats.ts`          | seeded RNG, bootstrap intervals — pure   |
-| `lib/eval/cost.ts`           | model pricing — pure                     |
-| `lib/eval/report.ts`         | aggregation, break-even, markdown — pure |
-| `lib/eval/arms.ts`           | the shipped arms                         |
-| `lib/eval/scenarios/`        | scenario definitions                     |
-| `lib/eval/scenarioMining.ts` | real conversation → scenario draft       |
+| path                         | what it is                                  |
+| ---------------------------- | ------------------------------------------- |
+| `lib/eval/types.ts`          | scenario, arm, run result                   |
+| `lib/eval/harness.ts`        | drives one (scenario, arm) run              |
+| `lib/eval/referenceChat.ts`  | saved chat → production message DTOs        |
+| `lib/eval/simulatedUser.ts`  | the LLM playing the user                    |
+| `lib/eval/judge.ts`          | the LLM grading transcripts                 |
+| `lib/eval/metrics.ts`        | answer key, totals, scoring — pure          |
+| `lib/eval/abstention.ts`     | flip-test classification and pairing — pure |
+| `lib/eval/stats.ts`          | seeded RNG, bootstrap intervals — pure      |
+| `lib/eval/cost.ts`           | model pricing — pure                        |
+| `lib/eval/report.ts`         | aggregation, break-even, markdown — pure    |
+| `lib/eval/arms.ts`           | the shipped arms                            |
+| `lib/eval/scenarios/`        | scenario definitions                        |
+| `lib/eval/scenarioMining.ts` | real conversation → scenario draft          |
 
 Everything marked pure is unit-tested and needs no API key.
 
@@ -498,6 +552,87 @@ without invoking its tool. Until tool-result logging is redacted, do not stream 
 stderr into shared terminals or transcripts; redirect it to an approved production-data location
 or `/dev/null`, and delete it with the bundle and raw artifacts after extracting sanitized
 aggregates.
+
+### Real-chat failure investigation protocol
+
+Use this procedure when the question is not “how many tokens did it save?” but **where does
+knowledge-box + compression fail to help, or fail to answer correctly?** It is deliberately
+mechanical so that a coding agent can investigate many approved real chats without quietly turning
+selection mistakes, provider errors, or a familiar production answer into evidence of success.
+
+1. **Create a candidate register before replaying.** From approved, expensive conversations, choose
+   10–20 candidate user messages across different shapes: long text-only histories, attachment
+   continuations, topic shifts, and source-document questions. Give every candidate a local opaque
+   id; keep conversation/message ids, bundles, raw reports, and responses only in the approved
+   directory outside the repository.
+2. **Review source dependence before any model call.** For each candidate, record the exact fact or
+   bounded claim the final message needs, and review the attached assistant-knowledge source that
+   supports it. Reject it as `ineligible-history-answer` if that fact is already answerable from
+   prior chat. Reject it as `ineligible-no-source` if the source cannot support a clear correctness
+   judgment. The saved production response is a lead, never the answer key.
+3. **Screen compression for free.** Build the offline bundle, then run `--inspect-only` with the
+   intended compression override. Continue only if `inspection.triggered` is true and
+   `estimatedHistoryTokenReduction` is positive. Otherwise record `ineligible-no-compression`;
+   this is a useful product observation, but not evidence that the combined strategy had no gain.
+4. **Run the complete 2×2.** For every eligible candidate, run A/C and B/D exactly as in the
+   commands above, preserving the message, model, knowledge files, and repeat count. Use three
+   repetitions to triage; rerun material failures five times before treating them as a pattern.
+   Do not change the question, history, or corpus after observing any cell.
+5. **Judge quality from reviewed facts.** `--judge` is a triage signal against the saved production
+   reply. Mark a response correct only when it answers the reviewed source claim without a material
+   contradiction or unsupported invention. Keep provider errors, missing `knowledge_box__*` calls,
+   and wrong answers in the denominator; do not replace them with a more favourable candidate.
+6. **Publish sanitized aggregates and failure cases.** Delete the bundle and raw artifacts under the
+   tenant retention policy. A finding may name the cohort and failure mechanism, but must not expose
+   chat text, document text, identifiers, tool results, or raw model responses.
+
+Use these labels in the candidate register. The three `ineligible-*` labels are mutually exclusive;
+for an eligible case, record every applicable failure label (for example, a wrong D response can
+also have made no box call). `combined-preserved` applies only when no failure label applies.
+
+| label                         | meaning                                                                                                | count as a combined quality/cost result?                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| `ineligible-history-answer`   | The answer was already available in history.                                                           | No — candidate-selection error.                            |
+| `ineligible-no-source`        | No reviewed source fact can establish correctness.                                                     | No — cannot make a factual claim.                          |
+| `ineligible-no-compression`   | Compression did not trigger or did not reduce history.                                                 | No — not a compression treatment.                          |
+| `combined-no-net-gain`        | D triggered, but total replay input/cost was no lower than C after all provider calls.                 | Yes — the strategy gave no operational gain.               |
+| `combined-quality-regression` | D is wrong or materially less complete against reviewed facts while C is correct.                      | Yes — investigate history loss, retrieval, or interaction. |
+| `knowledge-retrieval-failure` | A source-dependent D repetition made no `knowledge_box__*` call.                                       | Yes — strategy failure, even if it guessed correctly.      |
+| `compression-insufficient`    | D triggered but could not fit or errored at the selected preset.                                       | Yes — preset boundary.                                     |
+| `combined-preserved`          | D triggered, retrieved when required, was source-correct, and improved the chosen operational measure. | Yes — a passing case, not a general claim.                 |
+
+For each eligible case, retain this **sanitized** row in the investigation summary; it is the minimum
+evidence needed for another agent to audit the conclusion without seeing private content:
+
+| case      | cohort                               | reviewed source claim | history reduction | D box-call rate | A/B/C/D correctness | D vs C input/cost | outcome                                           | suspected mechanism |
+| --------- | ------------------------------------ | --------------------- | ----------------: | --------------: | ------------------- | ----------------- | ------------------------------------------------- | ------------------- |
+| opaque id | attachment / topic shift / text-only | yes                   |                 % | calls / repeats | reviewed            | labels above      | source miss, lost history, tool-result loss, etc. |
+
+Do not create a numerical “material saving” threshold after looking at results. State it before a
+batch (or use the strict `no lower than C` rule for `combined-no-net-gain`) and keep it fixed across
+the cohort. A batch whose interesting cases are all ineligible is itself a finding about traffic
+composition; it is not permission to relabel them as successes.
+
+### First real-chat investigation: bounded execution plan
+
+This is the default first batch. Execute it in order; do not tune the knowledge box, compression
+preset, prompts, or candidate-selection rules during the batch. The objective is to map failure
+regions, not to produce a headline win.
+
+| phase               | action                                                                                                                                                                                                                                         | exit criterion                                                                        | deliverable                                         |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 0. Scope            | Obtain approval for one tenant/cohort and an approved private artifact location. Fix the model, compression preset, repetitions (3), and material-gain threshold in the register.                                                              | Scope and retention owner recorded.                                                   | Empty sanitized register.                           |
+| 1. Candidate screen | Select 15–20 expensive turns spanning text-only, attachment continuation, and source-question/topic-shift cohorts. Build one offline bundle per conversation; review source dependence and run `--inspect-only`.                               | Every candidate has one eligibility label and no LLM replay has run yet.              | Eligibility counts by cohort.                       |
+| 2. Triage           | Run the complete 2×2 for every eligible candidate with three repetitions and `--judge`. Review raw outputs privately against the documented source claim.                                                                                      | Every eligible case has A/B/C/D, tool-call evidence, and correctness labels.          | Sanitized per-case ledger.                          |
+| 3. Confirm failures | For every quality regression, no-net-gain result, retrieval failure, or compression insufficiency, rerun the unchanged case to five repetitions.                                                                                               | Each material failure is either repeated or explicitly marked transient/undetermined. | Failure clusters with repetition counts.            |
+| 4. Diagnose         | Group failures by mechanism: source miss, answer already in history, lost summary detail, lost tool result, attachment continuation, no box call, tool loop/cost, or context-limit boundary. Read the private artifacts only for these groups. | Each confirmed failure has a proposed mechanism or `unknown`.                         | Ranked failure taxonomy.                            |
+| 5. Decide           | Choose at most one highest-frequency or highest-severity mechanism for a separate fix experiment. If no eligible turns exist, improve candidate discovery rather than changing the strategy.                                                   | One of: no-change, new evaluation cohort, or a narrowly scoped fix hypothesis.        | Sanitized investigation report and next experiment. |
+
+The batch is complete when phase 5 is complete, even if it finds no failure. Do **not** keep sampling
+until a preferred result appears. If fewer than five candidates survive eligibility, report the
+cohort composition and expand the approved source cohort before drawing conclusions. A code change
+belongs on a new branch only after this baseline batch is closed; rerun the same saved bundles after
+the change, with the source claims and candidate register frozen.
 
 ### Operating modes — cost/quality testing without a big bill
 

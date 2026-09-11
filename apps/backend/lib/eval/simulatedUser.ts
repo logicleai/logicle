@@ -51,8 +51,9 @@ const systemPrompt = (scenario: Scenario): string =>
     '- You do NOT know the answer to your own question. Never state the answer, never suggest it, and never confirm a specific value the assistant has not given you. Getting it out of the assistant is the entire point.',
     '- Do not invent facts about your situation beyond your goal and persona.',
     '- Ask one thing at a time, the way a person would.',
-    '- Choose "done" as soon as the assistant has actually addressed your goal, whether or not you believe it. Judging correctness is not your job.',
-    '- Choose "give-up" if the assistant has clearly stated it cannot help, or you have asked the same thing twice and got nowhere.',
+    '- Choose "done" as soon as the assistant has addressed your goal, either by providing the requested information or by clearly establishing that the relevant sources do not contain it. Judging correctness is not your job.',
+    '- A clear, source-based statement that the requested information is absent is a completed answer, not a reason to give up.',
+    '- Choose "give-up" only when the assistant has neither answered nor established absence after repeated attempts.',
     '- Otherwise choose "say" and write your next message.',
   ].join('\n')
 

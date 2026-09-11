@@ -32,6 +32,23 @@ export interface AnswerKey {
   mustNotMention?: string[]
 }
 
+/**
+ * The two halves of a flip test: one corpus that contains the answer and one identical except that
+ * the answer has been removed. Running the same question against both is what separates a system
+ * that *covered* the corpus from one that merely retrieved from it — a system that answers the same
+ * way on both has told us nothing, however confident it sounds.
+ */
+export interface FlipTest {
+  /** Shared by the two halves, and the key the paired verdict is computed on. */
+  pairId: string
+  /** Whether this half's corpus contains the answer. */
+  corpus: 'positive' | 'negative'
+  /** The value a correct answer states on the positive corpus. */
+  needleValue: string
+  /** Values stated by distractor documents; quoting one is wrong on either corpus. */
+  distractorValues: string[]
+}
+
 /** A saved message in a single-turn reference conversation. */
 export type ReferenceChatMessage =
   | {
@@ -93,6 +110,8 @@ export interface Scenario {
   /** What a good outcome looks like, handed to the judge together with the transcript. */
   rubric: string
   answerKey?: AnswerKey
+  /** Set on both halves of a flip-test pair; drives the paired abstention verdict. */
+  flip?: FlipTest
 }
 
 /**
@@ -203,6 +222,30 @@ export interface DeterministicVerdict {
   skipped: boolean
 }
 
+/**
+ * A conservative lexical classification of rate values in the assistant output.
+ *
+ * The distinction that matters for the thesis is between *declining* and *never getting there*:
+ * an assistant that says "this is not in the documents" has made a claim about coverage, and one
+ * that is still searching when the turn budget runs out has not.
+ */
+export type AssertionClass =
+  /** Mentioned only the value that the needle document carries. */
+  | 'asserted-needle'
+  /** Mentioned another or unexpected percentage; unsafe even when the needle was also present. */
+  | 'asserted-other'
+  /** The user accepted the conversation without the assistant mentioning a percentage. */
+  | 'abstained'
+  /** The user gave up or the turn budget ran out before a clean conclusion. */
+  | 'exhausted'
+  | 'error'
+
+export interface FlipRunVerdict {
+  pairId: string
+  corpus: 'positive' | 'negative'
+  assertion: AssertionClass
+}
+
 export interface JudgeVerdict {
   /** 0 = goal not achieved at all, 1 = fully achieved. */
   score: number
@@ -235,6 +278,8 @@ export interface RunResult {
   setupCostUsd?: number
   /** Exact tokenizer-based planner precondition and estimated history reduction. */
   compression?: CompressionDiagnostics
+  /** Present when the scenario declared `flip`; paired with its opposite half at report time. */
+  flip?: FlipRunVerdict
   /**
    * The single number arms are ranked on: deterministic pass and judge score combined. See
    * `scoreRun` in metrics.ts for how the two are reconciled.
@@ -264,6 +309,8 @@ export interface EvaluationArtifact {
       distractors: number
       needleDepth: number
       seed: number
+      /** Set when --flip generated paired corpora; how the answer was removed from the negative half. */
+      flipWithhold?: 'clause' | 'document'
     }
   }
   runs: RunResult[]

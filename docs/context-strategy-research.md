@@ -136,16 +136,24 @@ The harness measures success, tokens, cost and break-even. The thesis needs thre
 
 - **Exclusion recall / false exclusion.** What fraction of the corpus was ruled out, and how often
   was the answer-bearing document among the ruled-out. False exclusion is the silent failure.
-- **Abstention calibration.** The flip test's verdict, as a rate. Related work uses a five-level
-  evidence scale (supportive / partial / irrelevant / absent / conflicting) — worth borrowing.
+- **Abstention calibration.** The flip test's verdict, as a rate. Implemented in
+  [`abstention.ts`](../apps/backend/lib/eval/abstention.ts): each run is classified by whether the
+  assistant mentioned the needle, another percentage, no percentage, or failed to conclude; the
+  two halves are paired per arm and repetition, and the report gives coverage and value-under-
+  absence rates. This is deliberately a conservative lexical proxy, not an assertion classifier:
+  a value quoted in a denial is still counted, while a no-value answer needs the judge to confirm
+  that it was a useful explicit abstention. Related work uses a five-level evidence scale
+  (supportive / partial / irrelevant / absent / conflicting) — worth borrowing.
 - **`pass^k` rather than mean score.** From τ-bench: the probability that _all_ k trials succeed.
   A 70%-mean system that is 70% on every run is a different product from one that is 100% on seven
   runs and 0% on three, and the mean hides it.
 
-Also to fix before any large-scale conclusion: **the cost model is not cache-aware**. Logicle uses
-prompt caching, so a multi-turn baseline pays the corpus at a discount from turn two. The current
-numbers overstate the knowledge box's advantage on multi-turn conversations, and at large corpus
-sizes that is where the whole argument lives.
+The cost model **is** now cache-aware, which matters because Logicle enables prompt caching by
+default and a multi-turn baseline therefore pays for the corpus at a discount from turn two.
+Provider-reported cache reads and writes are carried from the stream through to
+[`computeCostUsd`](../apps/backend/lib/eval/cost.ts) and priced at their own rates, and the report
+shows cache reads as a column. A model whose price table has no cache entry degrades to "report
+tokens only" rather than to a wrong number.
 
 ## Threats to validity
 
@@ -206,15 +214,46 @@ Done:
 - Arms: `all-in-context`, `knowledge-box`, `knowledge-box-no-projections`.
 - Parametric corpus generator with size, distractor, depth and hop dials.
 - Scenario miner for real conversations.
+- Cache-aware cost, end to end from the provider's usage report to the priced total.
+- Flip-test machinery: paired corpora (`--flip`), per-run lexical classification, and the paired
+  coverage / value-under-absence verdict. Built, unit-tested, and calibrated on a live synthetic
+  run.
+
+Initial marker-free result (OpenAI `gpt-4o-mini`, 20 documents × approximately 700 words, seed 1,
+five repetitions per half and arm):
+
+- Both arms answered the positive corpus correctly in 5/5 runs, with no positive failures.
+- `all-in-context` had 0/5 coverage under absence and emitted the same wrong `4.25%` distractor in
+  5/5 negative runs, despite having every document in context.
+- `knowledge-box` had 5/5 coverage and 0/5 values under absence. It made at least one
+  `knowledge_box__*` call in 10/10 positive and negative runs, so the result reflects retrieval
+  rather than an answer recoverable from chat history.
+- Mean assistant query cost was 76–77% lower for `knowledge-box` across the two halves. Its roughly
+  `$0.0074` per-corpus indexing cost broke even after three conversations at this corpus size.
+
+This is evidence for the thesis at one fixed point, not a general result: repetitions reused one
+generated corpus and seed, the assistant ran at temperature zero, and only one model and corpus
+size were tested. The next run must vary corpus size and seed rather than merely increasing the
+repetition count.
 
 Next, in order:
 
-1. **Cache-aware cost.** Everything downstream is wrong without it.
-2. **Size sweep** over the generated corpora, to place the crossover and find where the baseline
-   degrades — hypotheses 1 and 2.
-3. **Flip test**: paired corpora and the abstention metrics — hypothesis 3, the thesis.
-4. **Discriminative projections** as a fourth arm — hypothesis 4.
-5. **Compression as an arm**, then the combined cell — hypothesis 6.
+1. **Run the real-chat failure investigation** using the protocol in
+   [`docs/evaluation-harness.md`](evaluation-harness.md). Start with approved offline bundles and
+   find both `combined-no-net-gain` and `combined-quality-regression` regions; a failure is the
+   desired output of this phase, not a discarded outlier. Use reviewed source claims rather than
+   production replies as answer keys, retain a sanitized per-case ledger, and execute the bounded
+   first-batch plan before changing any retrieval or compression behavior.
+2. **Extend the flip test** to at least two more corpus sizes and a second seed — hypothesis 3, the
+   thesis. The marker-free 20-document point strongly favours the knowledge box, but one fixed
+   corpus can expose a deterministic distractor preference rather than a general coverage property.
+3. **Size sweep** over the generated corpora, to place the crossover and find where the baseline
+   degrades — hypotheses 1 and 2. Now that cost is cache-aware, the multi-turn numbers are
+   trustworthy enough to draw a curve from.
+4. **Discriminative projections** as a fourth arm — hypothesis 4. The flip test is what makes this
+   measurable: exclusion is the thing projections are supposed to buy.
+5. **Compression as a synthetic arm**, then compare its failure mechanisms with the real-chat
+   ledger — hypothesis 6.
 
 ## References
 
