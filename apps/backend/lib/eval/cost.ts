@@ -1,13 +1,12 @@
 /**
  * Model pricing, used to turn token counts into the number the comparison is actually about.
  *
- * Prices are USD per million tokens and are a copy of the table the ops tooling already uses
- * (`libs/admin_lib.py` in logicle-infra-deploy). They drift: an unknown or stale model must
- * degrade to "no cost", never to a wrong cost, so every consumer treats `undefined` as
- * "report tokens only" rather than as zero.
+ * Prices are USD per million tokens. Prices drift: an unknown or stale model must degrade to
+ * "no cost", never to a wrong cost, so every consumer treats `undefined` as "report tokens only"
+ * rather than as zero.
  */
 
-export interface ModelPrice {
+export interface ModelPriceRates {
   /** USD per million input tokens. */
   input: number
   /** USD per million output tokens. */
@@ -18,6 +17,12 @@ export interface ModelPrice {
   cacheWriteInput?: number
 }
 
+export interface ModelPrice extends ModelPriceRates {
+  longContext?: ModelPriceRates
+}
+
+export const LONG_CONTEXT_INPUT_TOKENS = 272_000
+
 export const modelPrices: Record<string, ModelPrice> = {
   // OpenAI
   'gpt-4o-mini': { input: 0.15, output: 0.6, cacheReadInput: 0.075 },
@@ -26,9 +31,18 @@ export const modelPrices: Record<string, ModelPrice> = {
   'gpt-4.1': { input: 2.0, output: 8.0, cacheReadInput: 0.5 },
   'gpt-5.6-terra': { input: 2.0, output: 12.0, cacheReadInput: 0.2 },
   'gpt-5-latest': { input: 2.0, output: 12.0, cacheReadInput: 0.2 },
-  // Replay-eval-only cheap tier (REPLAY_EXTRA_MODELS in eval-replay-production-chats.ts).
-  // TODO(luca): confirm the real gpt-5.6-luna list price — this is an estimate.
-  'gpt-5.6-luna': { input: 0.25, output: 2.0, cacheReadInput: 0.025 },
+  'gpt-5.6-luna': {
+    input: 0.2,
+    output: 1.2,
+    cacheReadInput: 0.02,
+    cacheWriteInput: 0.25,
+    longContext: {
+      input: 0.4,
+      output: 1.8,
+      cacheReadInput: 0.04,
+      cacheWriteInput: 0.5,
+    },
+  },
   'gpt-4-turbo': { input: 10.0, output: 30.0 },
   'gpt-4': { input: 30.0, output: 60.0 },
   'gpt-3.5-turbo': { input: 0.5, output: 1.5 },
@@ -98,11 +112,13 @@ export const computeCostUsd = (
 ): number | undefined => {
   const price = resolveModelPrice(modelId)
   if (!price) return undefined
+  const rates =
+    price.longContext && inputTokens > LONG_CONTEXT_INPUT_TOKENS ? price.longContext : price
   const hasCacheDetails =
     inputTokenDetails?.cacheReadTokens !== undefined ||
     inputTokenDetails?.cacheWriteTokens !== undefined
   if (!hasCacheDetails) {
-    return (inputTokens * price.input + outputTokens * price.output) / 1_000_000
+    return (inputTokens * rates.input + outputTokens * rates.output) / 1_000_000
   }
   const cacheReadTokens = inputTokenDetails?.cacheReadTokens ?? 0
   const cacheWriteTokens = inputTokenDetails?.cacheWriteTokens ?? 0
@@ -110,13 +126,20 @@ export const computeCostUsd = (
     inputTokenDetails?.noCacheTokens ??
     Math.max(inputTokens - cacheReadTokens - cacheWriteTokens, 0)
   return (
-    (noCacheTokens * price.input +
-      cacheReadTokens * (price.cacheReadInput ?? price.input) +
-      cacheWriteTokens * (price.cacheWriteInput ?? price.input) +
-      outputTokens * price.output) /
+    (noCacheTokens * rates.input +
+      cacheReadTokens * (rates.cacheReadInput ?? rates.input) +
+      cacheWriteTokens * (rates.cacheWriteInput ?? rates.input) +
+      outputTokens * rates.output) /
     1_000_000
   )
 }
+
+/** Full-price counterfactual, ignoring provider prompt-cache discounts. */
+export const computeUndiscountedCostUsd = (
+  modelId: string,
+  inputTokens: number,
+  outputTokens: number
+): number | undefined => computeCostUsd(modelId, inputTokens, outputTokens)
 
 /** Formats a cost for the report, keeping small numbers readable rather than rounding them to 0. */
 export const formatCostUsd = (cost: number | undefined): string => {

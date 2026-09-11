@@ -264,7 +264,12 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
       }
 
       const toolCalls = sink.getToolCallNames()
-      turns.push({ ...sink.getUsage(), toolCalls, latencyMs })
+      turns.push({
+        ...sink.getUsage(),
+        toolCalls,
+        latencyMs,
+        providerUsages: sink.getUsageEvents(),
+      })
       const reply = assistantText(sink)
       transcript.push({ role: 'assistant', text: reply, toolCalls })
       onProgress?.(
@@ -309,7 +314,30 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
       ? setupCost.calls === 0
         ? 0
         : setupCost.modelId
-        ? computeCostUsd(setupCost.modelId, setupCost.inputTokens, setupCost.outputTokens)
+        ? setupCost.providerUsages?.length
+          ? setupCost.providerUsages
+              .map((usage) =>
+                computeCostUsd(
+                  setupCost.modelId!,
+                  usage.inputTokens,
+                  usage.outputTokens,
+                  usage.inputTokenDetails
+                )
+              )
+              .some((cost) => cost === undefined)
+            ? undefined
+            : setupCost.providerUsages.reduce(
+                (total, usage) =>
+                  total +
+                  (computeCostUsd(
+                    setupCost.modelId!,
+                    usage.inputTokens,
+                    usage.outputTokens,
+                    usage.inputTokenDetails
+                  ) ?? 0),
+                0
+              )
+          : computeCostUsd(setupCost.modelId, setupCost.inputTokens, setupCost.outputTokens)
         : undefined
       : undefined,
     compression: compressionDiagnostics,

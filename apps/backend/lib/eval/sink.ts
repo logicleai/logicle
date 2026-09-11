@@ -76,6 +76,28 @@ export class EvalSink implements ClientSink {
     }
   }
 
+  /** Individual provider usage parts, retained for request-level pricing tiers. */
+  getUsageEvents(): TurnUsage[] {
+    return this.events
+      .filter(
+        (
+          event
+        ): event is dto.TextStreamPart & {
+          type: 'usage'
+          inputTokens: number
+          outputTokens: number
+          totalTokens: number
+          inputTokenDetails?: TurnUsage['inputTokenDetails']
+        } => event.type === 'usage'
+      )
+      .map(({ inputTokens, outputTokens, totalTokens, inputTokenDetails }) => ({
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        inputTokenDetails,
+      }))
+  }
+
   getErrors(): string[] {
     return this.parts()
       .filter((part): part is dto.ErrorPart => part.type === 'error')

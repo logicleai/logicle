@@ -148,12 +148,12 @@ The harness measures success, tokens, cost and break-even. The thesis needs thre
   A 70%-mean system that is 70% on every run is a different product from one that is 100% on seven
   runs and 0% on three, and the mean hides it.
 
-The cost model **is** now cache-aware, which matters because Logicle enables prompt caching by
-default and a multi-turn baseline therefore pays for the corpus at a discount from turn two.
-Provider-reported cache reads and writes are carried from the stream through to
-[`computeCostUsd`](../apps/backend/lib/eval/cost.ts) and priced at their own rates, and the report
-shows cache reads as a column. A model whose price table has no cache entry degrades to "report
-tokens only" rather than to a wrong number.
+Provider-reported cache reads and writes remain in the eval totals and report as telemetry used by
+[`computeCostUsd`](../apps/backend/lib/eval/cost.ts). The primary cost estimate is cache-aware so
+tool-heavy strategies receive the economics of their actual prefix-cache usage; when cache
+telemetry is missing, the affected input falls back to the full input price. An undiscounted/full-
+price counterfactual is reported separately, while an unknown model still reports token usage and
+leaves USD unavailable rather than silently using the wrong price.
 
 ## Threats to validity
 
@@ -214,7 +214,8 @@ Done:
 - Arms: `all-in-context`, `knowledge-box`, `knowledge-box-no-projections`.
 - Parametric corpus generator with size, distractor, depth and hop dials.
 - Scenario miner for real conversations.
-- Cache-aware cost, end to end from the provider's usage report to the priced total.
+- Cache-aware provider usage and cost telemetry, end to end from the provider's usage report to the
+  priced total, with full-input fallback when cache details are missing.
 - Flip-test machinery: paired corpora (`--flip`), per-run lexical classification, and the paired
   coverage / value-under-absence verdict. Built, unit-tested, and calibrated on a live synthetic
   run.
@@ -248,8 +249,9 @@ Next, in order:
    thesis. The marker-free 20-document point strongly favours the knowledge box, but one fixed
    corpus can expose a deterministic distractor preference rather than a general coverage property.
 3. **Size sweep** over the generated corpora, to place the crossover and find where the baseline
-   degrades — hypotheses 1 and 2. Now that cost is cache-aware, the multi-turn numbers are
-   trustworthy enough to draw a curve from.
+   degrades — hypotheses 1 and 2. Cache-aware provider usage makes the multi-turn numbers reflect
+   real prefix-cache economics; retain the undiscounted counterfactual for a simple upper-bound
+   comparison.
 4. **Discriminative projections** as a fourth arm — hypothesis 4. The flip test is what makes this
    measurable: exclusion is the thing projections are supposed to buy.
 5. **Compression as a synthetic arm**, then compare its failure mechanisms with the real-chat

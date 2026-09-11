@@ -40,8 +40,8 @@
  *                          contextCompression). Use '{"contextCompression":null}' to disable it.
  *   --provider <type>      provider for the replay (default: the bundle's) — needs its API key
  *   --model <id>           shorthand for --override '{"model":"<id>"}' (Mode B: a cheap model for
- *                          an off/on pair — see docs/evaluation-harness.md; ids in
- *                          REPLAY_EXTRA_MODELS below are dev-only and not user-visible)
+ *                          an off/on pair — see docs/evaluation-harness.md; the id must exist in
+ *                          the normal model catalog)
  *   --knowledge-arms <...> comma-separated assistant-knowledge, knowledge-box, and/or
  *                          knowledge-box-no-projections (default: assistant-knowledge)
  *   --repeat <n>           replay each knowledge arm n times; box ingestion happens once (default: 1)
@@ -57,13 +57,13 @@ import path from 'node:path'
 import type * as dto from '@/types/dto'
 import type { Message as DbMessage } from '@/db/schema'
 import type { ProviderType } from '@/types/provider'
-import { computeCostUsd, formatCostUsd } from '@/backend/lib/eval/cost'
+import { computeCostUsd, computeUndiscountedCostUsd, formatCostUsd } from '@/backend/lib/eval/cost'
 import type {
   KnowledgeReplayArmName,
   ProductionReplayCase,
   ReplayJudgment,
 } from '@/backend/lib/eval/productionChatReplay'
-import type { SetupCost } from '@/backend/lib/eval/types'
+import type { SetupCost, TurnUsage } from '@/backend/lib/eval/types'
 
 const args = process.argv.slice(2).filter((arg) => arg !== '--')
 const flag = (name: string): string | undefined => {
@@ -144,34 +144,15 @@ const {
 const {
   createReplayJudge,
   defaultReplayKnowledgeQuestions,
+  isSameProductionModel,
   isReplayableLineage,
+  parseAuditInputTokenDetails,
   parseKnowledgeReplayArms,
 } = await import('@/backend/lib/eval/productionChatReplay')
 const { allInContextArm, createKnowledgeBoxArm } = await import('@/backend/lib/eval/arms')
-type LlmModel = (typeof llmModels)[number]
-
 setTokenizerCounter({
   countText: async (tokenizer, text) => countTextWithTokenizer(tokenizer, text),
 })
-
-// Cheap models for local off/on replay (Mode B in docs/evaluation-harness.md) that are not in the
-// shipped catalog. Dev-only — this list never reaches users. Add a matching price to
-// apps/backend/lib/eval/cost.ts or the cost column stays blank.
-const REPLAY_EXTRA_MODELS: LlmModel[] = [
-  {
-    id: 'gpt-5.6-luna',
-    model: 'gpt-5.6-luna',
-    name: 'GPT-5.6 Luna',
-    description: 'Cheap GPT-5.6 tier — replay eval only, not user-visible.',
-    provider: 'openai',
-    owned_by: 'openai',
-    context_length: 400000,
-    capabilities: { vision: true, function_calling: true, promptCaching: false },
-    supportedReasoningEfforts: ['none', 'low', 'medium', 'high'],
-    defaultReasoning: 'low',
-  },
-]
-const modelCatalog: LlmModel[] = [...llmModels, ...REPLAY_EXTRA_MODELS]
 
 const abortReplay = async (message: string): Promise<never> => {
   console.error(message)
@@ -334,6 +315,7 @@ const cases: ProductionReplayCase[] = [
       conversationId: selectedAudit.conversationId,
       messageId: selectedAudit.messageId,
       auditedInputTokens: selectedAudit.tokens,
+      auditedInputTokenDetails: parseAuditInputTokenDetails(selectedAudit.tokenDetails),
       auditedModel: selectedAudit.model,
       sentAt: selectedAudit.sentAt,
     },
@@ -386,8 +368,8 @@ const resolveModel = (id: string) => {
   // (e.g. a logiclecloud proxy that also serves Gemini for a cheap run), and the registry's
   // `provider` field only gates the tokenizer/capabilities metadata, not API routing.
   const model =
-    modelCatalog.find((entry) => entry.id === id && entry.provider === providerType) ??
-    modelCatalog.find((entry) => entry.id === id)
+    llmModels.find((entry) => entry.id === id && entry.provider === providerType) ??
+    llmModels.find((entry) => entry.id === id)
   if (!model) throw new Error(`Model "${id}" is not defined in this checkout`)
   return model
 }
@@ -536,7 +518,7 @@ if (bool('inspect-only')) {
     out,
     JSON.stringify(
       {
-        version: 5,
+        version: 7,
         createdAt: new Date().toISOString(),
         source: bundlePath
           ? { mode: 'bundle', bundle: bundlePath }
@@ -603,12 +585,15 @@ interface ReplayResult {
   model: string
   assistantConfig: Record<string, unknown>
   response: string
-  usage: { inputTokens: number; outputTokens: number }
+  usage: TurnUsage
+  usageEvents: TurnUsage[]
   providerCalls: number
   toolCalls: string[]
   costUsd?: number
+  /** Full-price counterfactual, intentionally ignoring provider cache discounts. */
+  fullPriceCostUsd?: number
   productionInputCostUsd?: number
-  inputTokensVsProduction: number
+  inputTokensVsProduction?: number
   error?: string
   judgment?: ReplayJudgment
 }
@@ -622,6 +607,23 @@ interface KnowledgeArmSetupResult {
 
 const cloneMessages = (messages: dto.Message[]) =>
   JSON.parse(JSON.stringify(messages)) as dto.Message[]
+
+const sumUsageCosts = (
+  modelId: string,
+  usages: TurnUsage[],
+  undiscounted: boolean
+): number | undefined => {
+  if (usages.length === 0) return undefined
+  let total = 0
+  for (const usage of usages) {
+    const cost = undiscounted
+      ? computeUndiscountedCostUsd(modelId, usage.inputTokens, usage.outputTokens)
+      : computeCostUsd(modelId, usage.inputTokens, usage.outputTokens, usage.inputTokenDetails)
+    if (cost === undefined) return undefined
+    total += cost
+  }
+  return total
+}
 
 const results: ReplayResult[] = []
 const armSetups: KnowledgeArmSetupResult[] = []
@@ -693,6 +695,7 @@ try {
             }`
           }
           const model = resolveModel(String(assistantConfig.model))
+          const sameProductionModel = isSameProductionModel(entry.source, model.id)
 
           process.stderr.write(
             `Replaying ${entry.id} · ${knowledgeArmName} · #${repetition + 1} ` +
@@ -700,7 +703,8 @@ try {
           )
           const sink = new EvalSink()
           let response = ''
-          let usage = { inputTokens: 0, outputTokens: 0 }
+          let usage: TurnUsage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 }
+          let usageEvents: TurnUsage[] = []
           let providerCalls = 0
           let toolCalls: string[] = []
           let error = setupError
@@ -716,7 +720,8 @@ try {
               )
               await assistant.processUserMessageWithSink(cloneMessages(entry.messages), sink)
               const raw = sink.getUsage()
-              usage = { inputTokens: raw.inputTokens, outputTokens: raw.outputTokens }
+              usage = raw
+              usageEvents = sink.getUsageEvents()
               providerCalls = sink.events.filter((event) => event.type === 'usage').length
               toolCalls = sink.getToolCallNames()
               response = sink.getText().trim() || `[no reply] ${sink.getErrors().join('; ')}`.trim()
@@ -724,6 +729,8 @@ try {
               error = caught instanceof Error ? caught.message : String(caught)
             }
           }
+          const pricedUsages =
+            usageEvents.length > 0 ? usageEvents : usage.totalTokens > 0 ? [usage] : []
 
           let judgment: ReplayJudgment | undefined
           if (bool('judge') && !error) {
@@ -747,15 +754,23 @@ try {
             assistantConfig: { contextCompression: assistantConfig.contextCompression },
             response,
             usage,
+            usageEvents,
             providerCalls,
             toolCalls,
-            // Deliberately omit provider cache details: comparisons price every input token at
-            // the ordinary rate, so a warm/cold prompt cache cannot manufacture a saving.
-            costUsd: error
-              ? undefined
-              : computeCostUsd(model.id, usage.inputTokens, usage.outputTokens),
-            productionInputCostUsd: computeCostUsd(model.id, entry.source.auditedInputTokens, 0),
-            inputTokensVsProduction: entry.source.auditedInputTokens - usage.inputTokens,
+            // Primary cost follows each provider request's cache details and pricing tier.
+            costUsd: error ? undefined : sumUsageCosts(model.id, pricedUsages, false),
+            fullPriceCostUsd: error ? undefined : sumUsageCosts(model.id, pricedUsages, true),
+            productionInputCostUsd: sameProductionModel
+              ? computeCostUsd(
+                  model.id,
+                  entry.source.auditedInputTokens,
+                  0,
+                  entry.source.auditedInputTokenDetails
+                )
+              : undefined,
+            inputTokensVsProduction: sameProductionModel
+              ? entry.source.auditedInputTokens - usage.inputTokens
+              : undefined,
             error,
             judgment,
           })
@@ -794,6 +809,11 @@ const armSummaries = knowledgeArmNames.map((knowledgeArm) => {
   const meanCostUsd = mean(
     armResults.flatMap((result) => (result.costUsd === undefined ? [] : [result.costUsd]))
   )
+  const meanFullPriceCostUsd = mean(
+    armResults.flatMap((result) =>
+      result.fullPriceCostUsd === undefined ? [] : [result.fullPriceCostUsd]
+    )
+  )
   const setup = armSetups.find((entry) => entry.knowledgeArm === knowledgeArm)
   const perRunSavingUsd =
     baselineMeanCost !== undefined && meanCostUsd !== undefined
@@ -807,6 +827,7 @@ const armSummaries = knowledgeArmNames.map((knowledgeArm) => {
     meanInputTokens,
     meanOutputTokens,
     meanCostUsd,
+    meanFullPriceCostUsd,
     inputTokensSavedVsAssistantKnowledge:
       baselineMeanInput !== undefined && meanInputTokens !== undefined
         ? baselineMeanInput - meanInputTokens
@@ -852,14 +873,15 @@ const markdown = [
   '',
   '## Arm summary',
   '',
-  '| arm | successful / failed | mean input | mean output | input saved vs assistant knowledge | mean run cost | setup cost | break-even conversations |',
-  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+  '| arm | successful / failed | mean input | mean output | input saved vs assistant knowledge | mean run cost | mean full-price cost | setup cost | break-even conversations |',
+  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
   ...armSummaries.map(
     (summary) =>
       `| ${summary.knowledgeArm} | ${summary.successfulRuns} / ${summary.failedRuns} | ` +
       `${formatMean(summary.meanInputTokens)} | ${formatMean(summary.meanOutputTokens)} | ` +
       `${formatSignedMean(summary.inputTokensSavedVsAssistantKnowledge)} | ` +
-      `${formatCostUsd(summary.meanCostUsd)} | ${formatCostUsd(summary.setupCostUsd)} | ` +
+      `${formatCostUsd(summary.meanCostUsd)} | ${formatCostUsd(summary.meanFullPriceCostUsd)} | ` +
+      `${formatCostUsd(summary.setupCostUsd)} | ` +
       `${formatBreakEven(summary.breakEvenConversations)} |`
   ),
   '',
@@ -867,20 +889,26 @@ const markdown = [
   '',
   '## Runs',
   '',
-  '| arm | repetition | production input | replay input | replay output | provider calls | tool calls | replay cost | input Δ vs prod | verdict |',
-  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
+  '| arm | repetition | production input | replay input | replay output | provider calls | tool calls | replay cost | full-price cost | input Δ vs prod | verdict |',
+  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
   ...results.map(
     (r) =>
       `| ${r.knowledgeArm} | ${r.repetition + 1} | ${r.source.auditedInputTokens} | ${
         r.error ? 'error' : r.usage.inputTokens
       } | ${r.error ? '—' : r.usage.outputTokens} | ${r.error ? '—' : r.providerCalls} | ${
         r.error ? '—' : r.toolCalls.length
-      } | ${formatCostUsd(r.costUsd)} | ${r.error ? '—' : r.inputTokensVsProduction} | ${
-        r.error ? r.error : r.judgment?.verdict ?? 'not judged'
-      } |`
+      } | ${formatCostUsd(r.costUsd)} | ${formatCostUsd(r.fullPriceCostUsd)} | ${
+        r.error ? '—' : r.inputTokensVsProduction ?? 'n/a'
+      } | ${r.error ? r.error : r.judgment?.verdict ?? 'not judged'} |`
   ),
   '',
   '_Judgments compare each replay with the saved production response, which is a reference rather than a factual answer key. Review regressions against the source documents._',
+  '',
+  ...(results.some((r) => !isSameProductionModel(r.source, r.model))
+    ? [
+        '_Production token/cost deltas are n/a for model overrides. Compare off/on replay arms for those runs._',
+      ]
+    : []),
   '',
   ...(results.some((r) => r.judgment && r.judgment.verdict !== 'equivalent')
     ? [
@@ -904,7 +932,7 @@ await writeFile(
   out,
   JSON.stringify(
     {
-      version: 5,
+      version: 7,
       createdAt: new Date().toISOString(),
       source: bundlePath
         ? { mode: 'bundle', bundle: bundlePath }

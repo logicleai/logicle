@@ -71,18 +71,66 @@ export interface ProjectionUsage {
   calls: number
   /** Model that generated the projections, for accurate ingestion-cost reporting. */
   modelId?: string
+  /** Individual provider requests, retained so pricing tiers are applied per request. */
+  providerUsages: ProjectionRequestUsage[]
+}
+
+export interface ProjectionRequestUsage {
+  inputTokens: number
+  outputTokens: number
+  inputTokenDetails?: {
+    noCacheTokens?: number
+    cacheReadTokens?: number
+    cacheWriteTokens?: number
+  }
 }
 
 export const emptyProjectionUsage = (): ProjectionUsage => ({
   inputTokens: 0,
   outputTokens: 0,
   calls: 0,
+  providerUsages: [],
 })
 
 const addUsage = (into: ProjectionUsage, usage: ai.LanguageModelUsage): void => {
-  into.inputTokens += usage.inputTokens ?? 0
-  into.outputTokens += usage.outputTokens ?? 0
+  // The provider type currently exposes totals as numbers, while providers (and the AI SDK
+  // test model) may return the richer token-detail object at runtime.
+  const rawUsage = usage as unknown as {
+    inputTokens:
+      | number
+      | { total?: number; noCache?: number; cacheRead?: number; cacheWrite?: number }
+    outputTokens: number | { total?: number }
+    inputTokenDetails?: {
+      noCacheTokens?: number
+      cacheReadTokens?: number
+      cacheWriteTokens?: number
+    }
+  }
+  const input = rawUsage.inputTokens as
+    | number
+    | { total?: number; noCache?: number; cacheRead?: number; cacheWrite?: number }
+  const inputTokens = typeof input === 'number' ? input : input?.total ?? 0
+  const output = rawUsage.outputTokens
+  const outputTokens = typeof output === 'number' ? output : output?.total ?? 0
+  const inputTokenDetails =
+    rawUsage.inputTokenDetails ??
+    (typeof input === 'number'
+      ? undefined
+      : {
+          noCacheTokens: input?.noCache,
+          cacheReadTokens: input?.cacheRead,
+          cacheWriteTokens: input?.cacheWrite,
+        })
+  const hasInputTokenDetails =
+    inputTokenDetails && Object.values(inputTokenDetails).some((tokens) => tokens !== undefined)
+  into.inputTokens += inputTokens
+  into.outputTokens += outputTokens
   into.calls += 1
+  into.providerUsages.push({
+    inputTokens,
+    outputTokens,
+    ...(hasInputTokenDetails ? { inputTokenDetails } : {}),
+  })
 }
 
 const generate = async (

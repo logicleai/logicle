@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   collectAttachmentFileIds,
   defaultReplayKnowledgeQuestions,
+  isSameProductionModel,
   isReplayableLineage,
+  parseAuditInputTokenDetails,
   parseKnowledgeReplayArms,
 } from '@/backend/lib/eval/productionChatReplay'
 import type * as dto from '@/types/dto'
@@ -61,6 +63,29 @@ describe('isReplayableLineage', () => {
         },
       ])
     ).toContain('tool')
+  })
+})
+
+describe('isSameProductionModel', () => {
+  it('allows the saved production baseline only for the exact model id', () => {
+    expect(isSameProductionModel({ auditedModel: 'gpt-5.6-terra' }, 'gpt-5.6-terra')).toBe(true)
+    expect(isSameProductionModel({ auditedModel: 'gpt-5.6-terra' }, 'gpt-5.6-luna')).toBe(false)
+  })
+})
+
+describe('parseAuditInputTokenDetails', () => {
+  it('keeps valid production cache accounting', () => {
+    expect(
+      parseAuditInputTokenDetails(
+        JSON.stringify({ noCacheTokens: 100, cacheReadTokens: 900, cacheWriteTokens: 0 })
+      )
+    ).toEqual({ noCacheTokens: 100, cacheReadTokens: 900, cacheWriteTokens: 0 })
+  })
+
+  it('ignores missing, malformed, and invalid production cache accounting', () => {
+    expect(parseAuditInputTokenDetails(null)).toBeUndefined()
+    expect(parseAuditInputTokenDetails('{')).toBeUndefined()
+    expect(parseAuditInputTokenDetails(JSON.stringify({ cacheReadTokens: -1 }))).toBeUndefined()
   })
 })
 

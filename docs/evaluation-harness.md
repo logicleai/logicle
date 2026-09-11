@@ -336,9 +336,11 @@ to test. The stages are fully separated. The bundle is a self-contained SQLite f
 exists, replay never touches the source deployment, S3, or any network beyond the LLM provider.
 
 Knowledge arms can be compared directly in one replay. For other changes, the "before" number is
-production's own `MessageAudit` input-token count, which travels in the bundle. Replay cost
-intentionally prices all input tokens at the normal input rate: prompt-cache read/write discounts
-are ignored on both sides.
+production's own `MessageAudit` input-token count, which travels in the bundle. Replay cost is
+primarily cache-aware: use provider-reported input, cached-read, cached-write, and output usage
+when available. If cache telemetry is missing, price the affected input at the full input rate.
+The report also shows an undiscounted/full-price counterfactual, but it does not replace the
+primary cache-aware total.
 
 ### Stage 1 — build the bundle
 
@@ -441,15 +443,15 @@ npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
   --conversation <conversation-id> --message <message-id> \
   --out /tmp/production-chat-replays/live.json --report /tmp/production-chat-replays/live.md
 
-# Mode B — cheap model, off then on, measured by the same ruler:
-LOGICLECLOUD_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+# Mode B — gpt-5.6-luna, off then on, measured by the same ruler:
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
   --bundle /tmp/production-chat-replays/conversation.sqlite \
   --out /tmp/production-chat-replays/b-off.json --report /tmp/production-chat-replays/b-off.md \
-  --model gpt-4o-mini --override '{"contextCompression":null}'
-LOGICLECLOUD_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --model gpt-5.6-luna --override '{"contextCompression":null}'
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
   --bundle /tmp/production-chat-replays/conversation.sqlite \
   --out /tmp/production-chat-replays/b-on.json --report /tmp/production-chat-replays/b-on.md --judge \
-  --model gpt-4o-mini \
+  --model gpt-5.6-luna \
   --override '{"contextCompression":{"preset":"conservative","retrievalMode":"prefetch"}}'
 ```
 
@@ -713,16 +715,20 @@ A replay calls a real provider with a real (often six-figure-token) prompt. Keep
   `MessageAudit` input tokens (in the bundle, shown in the report) — no off run needed. This is
   the cheapest honest measurement: one call per turn. Its limit is that `MessageAudit.tokens` was
   counted by the code as it was then, so treat single-digit-percent deltas as noise.
-- **Mode B — cheap model, run both sides.** When you want an off/on pair measured by the same
+- **Mode B — `gpt-5.6-luna`, run both sides.** When you want an off/on pair measured by the same
   ruler and the real model is expensive, replay twice — `'{"contextCompression":null}'` and
-  `'{"contextCompression":{…}}'` — on a cheap model via `--model`. Two calls per turn, but on a
-  low-cost model that is cents. The delta between the two runs is clean; the absolute cost is not
-  the production cost, so report it as a ratio. The override model must be registered for the
-  selected replay provider; `gpt-4o-mini` is the currently registered low-cost Logicle Cloud
-  option.
+  `'{"contextCompression":{…}}'` — on `gpt-5.6-luna` via `--model`. This is the intended cheap
+  OpenAI replay/eval model for this mode. The authoritative measurements are provider-reported
+  token/usage counts and their off/on delta; USD is a derived estimate, not the ruler. For Luna,
+  use `$0.20/M` input, `$0.02/M` cached input, `$0.25/M` cached write, and `$1.20/M` output;
+  for requests above 272k tokens use `$0.40/M` input, `$0.04/M` cached input, `$0.50/M` cached
+  write, and `$1.80/M` output. If cache telemetry is absent, use the corresponding full input
+  rate. Keep the model/provider fixed across the pair. The override model must be registered for
+  the selected replay provider.
 
-Never change the model **and** compare against `MessageAudit`: a different tokenizer and context
-window make that delta meaningless. Mode A keeps the model; Mode B keeps the ruler.
+Never change the model **and** compare against saved production cost or token counts: a different
+tokenizer and context window make that delta meaningless. If the replay model differs from
+production, compare Luna off/on only. Mode A keeps the model; Mode B keeps the ruler.
 
 **Reading the result:**
 

@@ -4,6 +4,26 @@ import type { LanguageModelV3 } from '@ai-sdk/provider'
 import type * as dto from '@/types/dto'
 import type { ProviderType } from '@/types/provider'
 import type { KnowledgeBoxQuestion } from '@/lib/tools/schemas'
+import type { TurnUsage } from './types'
+
+const inputTokenDetailsSchema = z.object({
+  noCacheTokens: z.number().nonnegative().optional(),
+  cacheReadTokens: z.number().nonnegative().optional(),
+  cacheWriteTokens: z.number().nonnegative().optional(),
+})
+
+/** Safely reads provider cache accounting persisted in `MessageAudit.tokenDetails`. */
+export const parseAuditInputTokenDetails = (
+  raw: string | null
+): TurnUsage['inputTokenDetails'] | undefined => {
+  if (!raw) return undefined
+  try {
+    const parsed = inputTokenDetailsSchema.safeParse(JSON.parse(raw))
+    return parsed.success ? parsed.data : undefined
+  } catch {
+    return undefined
+  }
+}
 
 /**
  * One production turn selected for offline replay.
@@ -19,6 +39,8 @@ export interface ProductionReplayCase {
     messageId: string
     /** Production's own `MessageAudit` input-token count for this turn. */
     auditedInputTokens: number
+    /** Provider cache accounting saved with the production audit, when available and valid. */
+    auditedInputTokenDetails?: TurnUsage['inputTokenDetails']
     auditedModel: string
     sentAt: string
   }
@@ -43,6 +65,16 @@ export interface ProductionReplayCase {
   /** Production's next assistant text. It is a reference for the judge, not an answer key. */
   productionReply: string
 }
+
+/**
+ * The saved MessageAudit baseline is comparable only when replay uses the exact same model id.
+ * Model overrides (for example a cheaper Luna replay of a Terra production turn) must be
+ * compared as replay arms instead of being presented as a production token/cost delta.
+ */
+export const isSameProductionModel = (
+  source: Pick<ProductionReplayCase['source'], 'auditedModel'>,
+  replayModelId: string
+): boolean => replayModelId === source.auditedModel
 
 export const knowledgeReplayArmNames = [
   'assistant-knowledge',

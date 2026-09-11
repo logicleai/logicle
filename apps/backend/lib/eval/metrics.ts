@@ -1,4 +1,4 @@
-import { computeCostUsd } from './cost'
+import { computeCostUsd, computeUndiscountedCostUsd } from './cost'
 import type {
   AnswerKey,
   DeterministicVerdict,
@@ -6,6 +6,7 @@ import type {
   RunTotals,
   TranscriptEntry,
   TurnMetrics,
+  TurnUsage,
 } from './types'
 
 /**
@@ -73,6 +74,22 @@ export const computeTotals = (turns: TurnMetrics[], modelId: string, wallMs: num
         ])
       )
     : undefined
+  const providerUsages = turns.flatMap((turn) => turn.providerUsages ?? [turn])
+  const sumPricedCosts = (counterfactual: boolean): number | undefined => {
+    if (providerUsages.length === 0) {
+      return counterfactual
+        ? computeUndiscountedCostUsd(modelId, inputTokens, outputTokens)
+        : computeCostUsd(modelId, inputTokens, outputTokens, inputTokenDetails)
+    }
+    const costs = providerUsages.map((usage: TurnUsage) =>
+      counterfactual
+        ? computeUndiscountedCostUsd(modelId, usage.inputTokens, usage.outputTokens)
+        : computeCostUsd(modelId, usage.inputTokens, usage.outputTokens, usage.inputTokenDetails)
+    )
+    return costs.some((cost) => cost === undefined)
+      ? undefined
+      : costs.reduce<number>((total, cost) => total + (cost ?? 0), 0)
+  }
   return {
     inputTokens,
     outputTokens,
@@ -81,7 +98,8 @@ export const computeTotals = (turns: TurnMetrics[], modelId: string, wallMs: num
     toolCalls: turns.reduce((total, turn) => total + turn.toolCalls.length, 0),
     wallMs,
     inputTokenDetails,
-    costUsd: computeCostUsd(modelId, inputTokens, outputTokens, inputTokenDetails),
+    costUsd: sumPricedCosts(false),
+    undiscountedCostUsd: sumPricedCosts(true),
   }
 }
 

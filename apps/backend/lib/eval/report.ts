@@ -31,6 +31,9 @@ export interface ArmAggregate {
   costUsd: Summary
   /** Undefined when no run had a known price. */
   costKnown: boolean
+  undiscountedCostUsd: Summary
+  /** Undefined when no run had a known model price. */
+  undiscountedCostKnown: boolean
   turns: Summary
   toolCalls: Summary
   wallMs: Summary
@@ -52,6 +55,7 @@ export const aggregate = (runs: RunResult[]): ArmAggregate[] => {
   return [...groups.values()].map((group) => {
     const first = group[0]!
     const withCost = group.filter((run) => run.totals.costUsd !== undefined)
+    const withUndiscountedCost = group.filter((run) => run.totals.undiscountedCostUsd !== undefined)
     const setupRun = group.find((run) => run.setupCost !== undefined)
     return {
       scenarioId: first.scenarioId,
@@ -81,6 +85,10 @@ export const aggregate = (runs: RunResult[]): ArmAggregate[] => {
       rejectedMessages: summarize(group.map((run) => run.compression?.rejectedMessages ?? 0)),
       costUsd: summarize(withCost.map((run) => run.totals.costUsd!)),
       costKnown: withCost.length > 0,
+      undiscountedCostUsd: summarize(
+        withUndiscountedCost.map((run) => run.totals.undiscountedCostUsd!)
+      ),
+      undiscountedCostKnown: withUndiscountedCost.length > 0,
       turns: summarize(group.map((run) => run.totals.turns)),
       toolCalls: summarize(group.map((run) => run.totals.toolCalls)),
       wallMs: summarize(group.map((run) => run.totals.wallMs)),
@@ -217,8 +225,8 @@ export const renderMarkdown = (runs: RunResult[], baselineArmName: string): stri
     lines.push(
       '## Overall',
       '',
-      '| arm | runs | success | score | in tok | cache read | out tok | cost | tools |',
-      '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
+      '| arm | runs | success | score | in tok | cache read | out tok | cost | full cost | tools |',
+      '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
     )
     for (const entry of overall) {
       lines.push(
@@ -230,6 +238,8 @@ export const renderMarkdown = (runs: RunResult[], baselineArmName: string): stri
           0
         )} | ${round(entry.outputTokens.mean, 0)} | ${
           entry.costKnown ? formatCostUsd(entry.costUsd.mean) : 'n/a'
+        } | ${
+          entry.undiscountedCostKnown ? formatCostUsd(entry.undiscountedCostUsd.mean) : 'n/a'
         } | ${round(entry.toolCalls.mean)} |`
       )
     }
@@ -244,11 +254,11 @@ export const renderMarkdown = (runs: RunResult[], baselineArmName: string): stri
     lines.push(`## ${scenarioId}`, '')
     lines.push(
       showCompression
-        ? '| arm | runs | success | score | triggered/applied | history est. before→after | summarized/rejected | in tok | cache read | out tok | cost | tools | turns | setup |'
-        : '| arm | runs | success | score | in tok | cache read | out tok | cost | tools | turns | setup |',
+        ? '| arm | runs | success | score | triggered/applied | history est. before→after | summarized/rejected | in tok | cache read | out tok | cost | full cost | tools | turns | setup |'
+        : '| arm | runs | success | score | in tok | cache read | out tok | cost | full cost | tools | turns | setup |',
       showCompression
-        ? '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
-        : '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
+        ? '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
+        : '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
     )
     for (const entry of scenarioAggregates) {
       const compressionColumns = showCompression
@@ -268,6 +278,8 @@ export const renderMarkdown = (runs: RunResult[], baselineArmName: string): stri
           0
         )} | ${round(entry.outputTokens.mean, 0)} | ${
           entry.costKnown ? formatCostUsd(entry.costUsd.mean) : 'n/a'
+        } | ${
+          entry.undiscountedCostKnown ? formatCostUsd(entry.undiscountedCostUsd.mean) : 'n/a'
         } | ${round(entry.toolCalls.mean)} | ${round(entry.turns.mean)} | ${
           entry.setupCostUsd !== undefined ? formatCostUsd(entry.setupCostUsd) : '—'
         } |`
