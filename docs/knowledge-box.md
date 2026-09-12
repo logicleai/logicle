@@ -23,6 +23,11 @@ The model can call `list_documents` to get a bounded map of files, metadata, and
 then decide which search queries and languages to try. It can inspect source passages with
 `search`/`read` and request the original file only when needed.
 
+The tool also adds a fixed system-level research instruction: retrieved passages are evidence, not
+answers; previous assistant text and general knowledge cannot fill unsupported details. The model
+remains responsible for deciding whether to search again, read more context, or report that the
+source does not establish a fact.
+
 ## Shape
 
 A knowledge box is a tool of type `knowledge_box`. Its configuration holds the attached files
@@ -59,9 +64,10 @@ flowchart TD
 `read` only accepts a file that is in the box's own configuration, and every query is scoped by box
 id, so there is no id a caller can pass to reach outside it.
 
-Search and read results are explicitly marked as source evidence. The marker reminds the model to
-preserve conditions, exceptions, limits, and distinctions stated in the retrieved text instead of
-turning an unstated inference into a fact.
+Search and read results are explicitly marked as source evidence. The marker tells the model to use
+only what the passages state for source-specific claims, ignore unsupported claims from previous
+assistant messages, general knowledge, or customary legal rules, preserve conditions, exceptions,
+limits, and distinctions, and omit unsupported citations or subclaims instead of filling the gap.
 
 ### Why the listing is ranked and budgeted
 

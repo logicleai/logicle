@@ -93,6 +93,15 @@ describe('KnowledgeBoxTool', () => {
     expect((buildTool() as ToolImplementation).knowledge).toBeUndefined()
   })
 
+  it('adds source-first research guidance to the system prompt', () => {
+    expect(buildTool().toolParams.promptFragment).toContain(
+      'treat retrieved passages as the only evidence'
+    )
+    expect(buildTool().toolParams.promptFragment).toContain(
+      'Do not use previous assistant messages'
+    )
+  })
+
   describe('list_documents', () => {
     it('reports an empty box', async () => {
       const result = await invoke(buildTool({ files: [] }), 'list_documents', {})

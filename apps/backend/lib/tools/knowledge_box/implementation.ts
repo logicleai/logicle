@@ -57,7 +57,10 @@ const LIST_PROJECTION_BUDGET_CHARS = 6000
 
 /** Keeps retrieved passages anchored as evidence instead of inviting unsupported conclusions. */
 const SOURCE_EVIDENCE_INSTRUCTION =
-  'Treat the passages below as source evidence: preserve explicit conditions, exceptions, limits, and distinctions; do not turn an unstated inference into a fact.'
+  'Treat the passages below as source evidence. For every source-specific claim, use only what the passages state; preserve explicit conditions, exceptions, limits, and distinctions. Cite each source-specific sentence or bullet with the exact marker [file · chunk N] shown above it. Previous assistant messages and general knowledge are not evidence, and a prior claim must not be repeated unless these passages support it. Do not fill gaps with general knowledge or customary legal rules. Do not cite or link a document, page, URL, or fact unless it appears in these passages. For multi-part questions, omit unsupported subclaims or say that the source does not specify them.'
+
+const KNOWLEDGE_BOX_SYSTEM_INSTRUCTION =
+  '\nWhen researching with this knowledge box, treat retrieved passages as the only evidence for source-specific claims. Search results may be incomplete: search again or read surrounding chunks when needed. Every source-specific sentence or bullet in the final answer must have an inline citation to the exact [file · chunk N] marker that supports it. Do not use previous assistant messages, general knowledge, or customary rules to fill gaps. Do not invent or cite unsupported facts, pages, or URLs; if the source does not establish a requested detail, say so explicitly.\n'
 
 const formatHeading = (heading: string | null) => (heading ? ` — ${heading}` : '')
 
@@ -69,11 +72,17 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
   // Deliberately not setting `knowledge`: the whole point of a box is to keep its files out of
   // the prompt. They are reached through the functions below instead.
 
+  public toolParams: ToolParams
+
   constructor(
-    public toolParams: ToolParams,
+    toolParams: ToolParams,
     public params: KnowledgeBoxParams
   ) {
     super()
+    this.toolParams = {
+      ...toolParams,
+      promptFragment: `${toolParams.promptFragment}${KNOWLEDGE_BOX_SYSTEM_INSTRUCTION}`,
+    }
   }
 
   private get boxId() {
