@@ -51,6 +51,33 @@ export function resolveCompressionUserQuery(messages: dto.Message[]): string | u
   return undefined
 }
 
+/**
+ * Detects a narrow class of turns that changes the response contract instead of asking for the
+ * result of an earlier task. Prefetching old attachments for these turns can turn a harmless
+ * preference such as "solo tabella differenze" into an answer to stale historical data.
+ */
+export function isLikelyResponsePreferenceQuery(query: string): boolean {
+  const normalized = query.trim().toLocaleLowerCase()
+  if (!normalized) return false
+
+  return [
+    /^(solo|soltanto|only|just)\s+(?:la\s+|il\s+|the\s+)?(?:tabella|table|lista|list|formato|format)\b/,
+    /\b(?:da ora|d['’]ora in poi|in futuro|from now on|going forward|a partir de ahora)\b/,
+    /^(?:senza|without|sin)\s+(?:spiegazioni|explanations|explicaciones|testo aggiuntivo|extra text)\b/,
+  ].some((pattern) => pattern.test(normalized))
+}
+
+/** Automatic prefetch is useful for substantive requests, not response-contract updates. */
+export function shouldPrefetchHistoricalContext(messages: dto.Message[]): boolean {
+  const currentUserMessage = [...messages]
+    .reverse()
+    .find((message): message is dto.UserMessage => message.role === 'user')
+  return (
+    !currentUserMessage?.content.trim() ||
+    !isLikelyResponsePreferenceQuery(currentUserMessage.content)
+  )
+}
+
 type ToolMessagePart = dto.ToolMessage['parts'][number]
 
 const LARGE_TEXT_THRESHOLD_CHARS = 2000
@@ -355,7 +382,7 @@ export async function applyCompressionPlan(
     recordAssistantToolCallIndices(message, outputIndex, assistantToolCallIndices)
   }
 
-  if (options.prefetchQuery?.trim()) {
+  if (options.prefetchQuery?.trim() && shouldPrefetchHistoricalContext(messages)) {
     await addPrefetchedExcerpts(messages, output, decisions, options.prefetchQuery.trim())
   }
   if (options.attachmentContinuationQuery?.trim()) {

@@ -7,6 +7,7 @@ import {
   planMessageCompression,
   resolveCompressionRetrievalMode,
   resolveCompressionTriggerTokens,
+  shouldPrefetchHistoricalContext,
 } from '@/backend/lib/chat/compression-planner'
 import {
   buildCostEffectiveCompressionPlan,
@@ -176,7 +177,9 @@ export const runOne = async (options: RunOptions): Promise<RunResult> => {
           }
         } else {
           const triggerAtTokens = resolveCompressionTriggerTokens(compression.triggerAtTokens)
-          const triggered = estimatedHistoryTokensBefore >= triggerAtTokens
+          const triggered =
+            estimatedHistoryTokensBefore >= triggerAtTokens &&
+            shouldPrefetchHistoricalContext(messages)
           let decisions = triggered
             ? planMessageCompression(messages, compression.preset, {
                 keepRecentTurns: compression.keepRecentTurns,

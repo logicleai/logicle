@@ -64,6 +64,7 @@ import {
   resolveCompressionRetrievalMode,
   resolveCompressionUserQuery,
   resolveCompressionTriggerTokens,
+  shouldPrefetchHistoricalContext,
 } from './compression-planner'
 import {
   buildCostEffectiveCompressionPlan,
@@ -334,8 +335,8 @@ export class ChatAssistant {
             name: 'context-retrieve',
             promptFragment:
               retrievalMode === 'prefetch'
-                ? "\nContext compression may replace older content with summaries. Excerpts marked [AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST] have already been recovered from the original context: use them directly and do not call a retrieval tool again when they answer the request. If the answer is not already present in visible context and those excerpts are absent or insufficient, call this context-retrieve tool's search(query, id) with focused terms, then use get_file(id) or get_message(id) only if necessary. Never guess an omitted value.\n"
-                : "\nContext compression may replace older attachments, tool outputs, or long messages with a short summary that includes an id. If a user's request could depend on exact omitted content that is not already present in visible context, you MUST retrieve it before answering. First call this context-retrieve tool's search(query, id) with focused terms from the request; it returns small relevant excerpts from that message or file. Use get_file(id) or get_message(id) only if those excerpts are insufficient. Never guess, and never merely say that an omitted value is unavailable without making the retrieval call. When no id is known, search(query) searches the conversation.\n",
+                ? "\nContext compression may replace older content with summaries. Excerpts marked [AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST] have already been recovered from the original context: use them directly and do not call a retrieval tool again when they answer the request. If the answer is not already present in visible context and those excerpts are absent or insufficient, call this context-retrieve tool's search(query, id) with focused terms, then use get_file(id) or get_message(id) only if necessary. Never guess an omitted value. If the current user message only sets a response format, language, or style preference (for example, asking for only a table of differences), acknowledge that preference and do not retrieve or answer an earlier request.\n"
+                : "\nContext compression may replace older attachments, tool outputs, or long messages with a short summary that includes an id. If a user's request could depend on exact omitted content that is not already present in visible context, you MUST retrieve it before answering. First call this context-retrieve tool's search(query, id) with focused terms from the request; it returns small relevant excerpts from that message or file. Use get_file(id) or get_message(id) only if those excerpts are insufficient. Never guess, and never merely say that an omitted value is unavailable without making the retrieval call. When no id is known, search(query) searches the conversation. If the current user message only sets a response format, language, or style preference (for example, asking for only a table of differences), acknowledge that preference and do not retrieve or answer an earlier request.\n",
           },
           {}
         ),
@@ -605,7 +606,8 @@ export class ChatAssistant {
       const triggerAtTokens = resolveCompressionTriggerTokens(compression.triggerAtTokens)
       historyCosts = await estimateHistoryMessageCosts(this.llmModel, messages)
       const estimatedTokens = historyCosts.reduce((sum, cost) => sum + cost.tokens, 0)
-      const shouldCompress = estimatedTokens >= triggerAtTokens
+      const shouldCompress =
+        estimatedTokens >= triggerAtTokens && shouldPrefetchHistoricalContext(messages)
       if (shouldCompress) {
         const decisions = planMessageCompression(messages, compression.preset, {
           keepRecentTurns: compression.keepRecentTurns,
