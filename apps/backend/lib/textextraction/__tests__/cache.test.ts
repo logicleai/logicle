@@ -4,6 +4,7 @@ import { cachingExtractor } from '@/lib/textextraction/cache'
 const extractor = vi.fn(async () => {
   throw new Error('Unencoded <\nLine: 85\nColumn: 83\nChar: 0')
 })
+const emptyExtractor = vi.fn(async () => '')
 
 vi.mock('@/lib/textextraction', () => ({
   findExtractor: vi.fn(() => extractor),
@@ -34,5 +35,21 @@ describe('cachingExtractor', () => {
 
     await expect(cachingExtractor.extractFromFile(fileEntry as any)).resolves.toBeUndefined()
     expect(extractor).toHaveBeenCalledTimes(1)
+  })
+
+  test('returns undefined without caching when extraction produces no text', async () => {
+    const { findExtractor } = await import('@/lib/textextraction')
+    vi.mocked(findExtractor).mockReturnValueOnce(emptyExtractor as any)
+    const fileEntry = {
+      id: 'file-empty',
+      path: '/tmp/file-empty.pdf',
+      name: 'scanned.pdf',
+      type: 'application/pdf',
+      encryption: null,
+      fileBlobId: 'blob-empty',
+    }
+
+    await expect(cachingExtractor.extractFromFile(fileEntry as any)).resolves.toBeUndefined()
+    expect(emptyExtractor).toHaveBeenCalledTimes(1)
   })
 })
