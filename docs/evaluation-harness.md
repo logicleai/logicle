@@ -720,6 +720,21 @@ A replay calls a real provider with a real (often six-figure-token) prompt. Keep
 - **`--judge` roughly doubles the cost** (a second model call over the same prompt). Get the token
   numbers for all your turns first; judge only the ones whose numbers look worth a closer look.
 
+For source-dependent production replays, an optional source-grounded judge can be run with a
+private JSON file containing reviewed evidence. The file must have this shape:
+
+```json
+{
+  "claim": "The reviewed sources establish ...",
+  "evidence": ["Bounded source excerpt or reviewed fact ...", "Another source-grounded fact ..."]
+}
+```
+
+Pass it as `--judge-source /private/path/source-evidence.json`. The source-grounded verdict is
+reported separately from the production-response comparison; it does not enter the assistant or
+simulated-user prompt and remains only a second opinion. Manual source review is still required,
+and the evidence file must not be published with raw production bundles or responses.
+
 **Two ways to get a saving number**, depending on how much you trust the persisted counts:
 
 - **Mode A — same model, trust `MessageAudit`.** Replay on the assistant's real model with only

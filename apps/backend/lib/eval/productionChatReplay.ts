@@ -142,8 +142,38 @@ export interface ReplayJudgment {
   failures: string[]
 }
 
+export interface ReplaySourceEvidence {
+  /** A short, human-readable statement of what the reviewed sources establish. */
+  claim: string
+  /** Bounded excerpts or source-grounded facts; never shown to the simulated user. */
+  evidence: string[]
+}
+
+export type ReplaySourceVerdict = 'source-correct' | 'source-incorrect' | 'inconclusive'
+
+export interface ReplaySourceJudgment {
+  verdict: ReplaySourceVerdict
+  rationale: string
+  failures: string[]
+}
+
+const replaySourceEvidenceSchema = z.object({
+  claim: z.string().trim().min(1),
+  evidence: z.array(z.string().trim().min(1)).min(1),
+})
+
+/** Parses private, reviewed source evidence supplied to the optional source-grounded judge. */
+export const parseReplaySourceEvidence = (raw: string): ReplaySourceEvidence =>
+  replaySourceEvidenceSchema.parse(JSON.parse(raw))
+
 const replayJudgmentSchema = z.object({
   verdict: z.enum(['equivalent', 'minor-regression', 'major-regression', 'inconclusive']),
+  rationale: z.string(),
+  failures: z.array(z.string()),
+})
+
+const replaySourceJudgmentSchema = z.object({
+  verdict: z.enum(['source-correct', 'source-incorrect', 'inconclusive']),
   rationale: z.string(),
   failures: z.array(z.string()),
 })
@@ -173,6 +203,46 @@ export const createReplayJudge =
         `Final user message:\n${finalUserMessage}`,
         '',
         `Production response:\n${productionReply || '[no saved assistant response]'}`,
+        '',
+        `Candidate response:\n${candidateReply || '[no candidate response]'}`,
+      ].join('\n'),
+    })
+    return {
+      verdict: result.object.verdict,
+      rationale: result.object.rationale.trim(),
+      failures: result.object.failures.map((failure) => failure.trim()).filter(Boolean),
+    }
+  }
+
+const replaySourceJudgePrompt = [
+  'Assess a candidate chat response against reviewed source evidence for the same final user question.',
+  'The source evidence is the authority for the claims it covers. Do not use the production response as an answer key.',
+  'Mark source-correct only when the candidate does not materially contradict the evidence and answers the covered question adequately.',
+  'Mark source-incorrect when the candidate makes a material contradiction, reverses a source distinction, or presents an unsupported operational conclusion as established fact.',
+  'Mark inconclusive when the evidence does not cover the claim or the candidate is too ambiguous to assess.',
+  'Do not penalize wording, length, or harmless omissions outside the reviewed evidence.',
+].join('\n')
+
+export const createSourceGroundedReplayJudge =
+  (model: LanguageModelV3, options: { supportsTemperature?: boolean } = {}) =>
+  async (
+    finalUserMessage: string,
+    sourceEvidence: ReplaySourceEvidence,
+    candidateReply: string
+  ): Promise<ReplaySourceJudgment> => {
+    const result = await ai.generateObject({
+      model,
+      schema: replaySourceJudgmentSchema,
+      ...(options.supportsTemperature === false ? {} : { temperature: 0 }),
+      system: replaySourceJudgePrompt,
+      prompt: [
+        `Final user message:\n${finalUserMessage}`,
+        '',
+        `Reviewed source claim:\n${sourceEvidence.claim}`,
+        '',
+        `Reviewed source evidence:\n${sourceEvidence.evidence
+          .map((excerpt, index) => `[${index + 1}] ${excerpt}`)
+          .join('\n\n')}`,
         '',
         `Candidate response:\n${candidateReply || '[no candidate response]'}`,
       ].join('\n'),
