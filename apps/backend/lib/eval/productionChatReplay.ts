@@ -217,8 +217,9 @@ export const createReplayJudge =
 const replaySourceJudgePrompt = [
   'Assess a candidate chat response against reviewed source evidence for the same final user question.',
   'The source evidence is the authority for the claims it covers. Do not use the production response as an answer key.',
-  'Mark source-correct only when the candidate does not materially contradict the evidence and answers the covered question adequately.',
-  'Mark source-incorrect when the candidate makes a material contradiction, reverses a source distinction, or presents an unsupported operational conclusion as established fact.',
+  'Evaluate every material factual assertion in the candidate, not just its overall theme. Mark source-correct only when each covered assertion is directly entailed by the reviewed evidence or is explicitly presented as unknown or qualified.',
+  'Mark source-incorrect when the candidate makes a material contradiction, reverses a source distinction, conflates a current value with a statutory range or alternative, or presents an unsupported operational conclusion or detail as established fact.',
+  'Plausibility is not support: a claim that is merely consistent with the evidence, or a citation that names a related passage without entailing the claim, is insufficient.',
   'Mark inconclusive when the evidence does not cover the claim or the candidate is too ambiguous to assess.',
   'Do not penalize wording, length, or harmless omissions outside the reviewed evidence.',
 ].join('\n')
