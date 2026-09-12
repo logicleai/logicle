@@ -51,13 +51,14 @@
  *   --inspect-only         calculate compression decisions/token estimates without an LLM call
  *   --judge                also classify each response against the saved production reply
  *   --judge-model <id>     judge model (default: the replay model)
+ *   --judge-source <path>  private JSON source evidence for a source-grounded judgment
  *
  * An explicit --model or override.model permits a paired replay against a saved assistant whose
  * current model has drifted from production. In that mode production token/cost deltas are not
  * comparable; the report still compares the replay arms with each other.
  */
 
-import { copyFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { copyFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -70,6 +71,8 @@ import type {
   KnowledgeReplayArmName,
   ProductionReplayCase,
   ReplayJudgment,
+  ReplaySourceEvidence,
+  ReplaySourceJudgment,
 } from '@/backend/lib/eval/productionChatReplay'
 import type { SetupCost, TurnUsage } from '@/backend/lib/eval/types'
 
@@ -84,6 +87,7 @@ const bundlePath = flag('bundle')
 const liveConversationId = flag('conversation')
 const out = flag('out')
 const reportPath = flag('report')
+const judgeSourcePath = flag('judge-source')
 const repeat = Number(flag('repeat') ?? 1)
 if (
   (!bundlePath && !liveConversationId) ||
@@ -110,6 +114,21 @@ if (overrideRaw) {
   } catch (error) {
     console.error(
       `--override must be valid JSON: ${error instanceof Error ? error.message : error}`
+    )
+    process.exit(1)
+  }
+}
+
+let sourceEvidence: ReplaySourceEvidence | undefined
+if (judgeSourcePath) {
+  try {
+    const { parseReplaySourceEvidence } = await import('@/backend/lib/eval/productionChatReplay')
+    sourceEvidence = parseReplaySourceEvidence(readFileSync(judgeSourcePath, 'utf8'))
+  } catch (error) {
+    console.error(
+      `--judge-source must be a JSON file with a non-empty claim and evidence array: ${
+        error instanceof Error ? error.message : error
+      }`
     )
     process.exit(1)
   }
@@ -153,6 +172,7 @@ const {
 } = await import('@/backend/lib/chat/compression-economics')
 const {
   createReplayJudge,
+  createSourceGroundedReplayJudge,
   collectTurnDescendantMessageIds,
   defaultReplayKnowledgeQuestions,
   isSameProductionModel,
@@ -680,6 +700,7 @@ interface ReplayResult {
   inputTokensVsProduction?: number
   error?: string
   judgment?: ReplayJudgment
+  sourceJudgment?: ReplaySourceJudgment
 }
 
 interface KnowledgeArmSetupResult {
@@ -828,6 +849,18 @@ try {
               }
             )((entry.messages.at(-1) as dto.UserMessage).content, entry.productionReply, response)
           }
+          let sourceJudgment: ReplaySourceJudgment | undefined
+          if (sourceEvidence && !error) {
+            const judgeModel = resolveModel(flag('judge-model') ?? model.id)
+            sourceJudgment = await createSourceGroundedReplayJudge(
+              ChatAssistant.createLanguageModel(providerConfig, judgeModel),
+              {
+                supportsTemperature:
+                  !modelSupportsReasoning(judgeModel) &&
+                  judgeModel.capabilities.temperature !== false,
+              }
+            )((entry.messages.at(-1) as dto.UserMessage).content, sourceEvidence, response)
+          }
 
           results.push({
             caseId: entry.id,
@@ -857,6 +890,7 @@ try {
               : undefined,
             error,
             judgment,
+            sourceJudgment,
           })
         }
       } finally {
@@ -952,6 +986,9 @@ const markdown = [
     : disableConfiguredTools
     ? 'No config override — replayed with each turn’s saved assistant configuration except configured tools disabled by the optimizer.'
     : 'No config override — replayed with each turn’s saved assistant configuration.',
+  ...(sourceEvidence
+    ? ['Source-grounded judge: **enabled** (private reviewed evidence supplied separately).']
+    : []),
   `Configured assistant tools: **${configuredToolCount}**; disabled for replay: **${disableConfiguredTools}**; ` +
     `tool call in selected production turn: **${targetTurnHasToolCalls}**.`,
   '',
@@ -1014,13 +1051,38 @@ const markdown = [
         '',
       ]
     : []),
+  ...(results.some((r) => r.sourceJudgment)
+    ? [
+        '## Source-grounded review',
+        '',
+        '_This optional judgment uses private reviewed source evidence. It is separate from the production-response comparison and does not replace manual review._',
+        '',
+        '| arm | repetition | source verdict | rationale | failures |',
+        '| --- | ---: | --- | --- | --- |',
+        ...results.flatMap((r) =>
+          r.sourceJudgment
+            ? [
+                `| ${r.knowledgeArm} | ${r.repetition + 1} | ${
+                  r.sourceJudgment.verdict
+                } | ${r.sourceJudgment.rationale
+                  .replaceAll('\n', ' ')
+                  .replaceAll('|', '\\|')} | ${r.sourceJudgment.failures
+                  .join('; ')
+                  .replaceAll('\n', ' ')
+                  .replaceAll('|', '\\|')} |`,
+              ]
+            : []
+        ),
+        '',
+      ]
+    : []),
 ].join('\n')
 
 await writeFile(
   out,
   JSON.stringify(
     {
-      version: 7,
+      version: 8,
       createdAt: new Date().toISOString(),
       source: bundlePath
         ? { mode: 'bundle', bundle: bundlePath }

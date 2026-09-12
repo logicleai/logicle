@@ -7,6 +7,7 @@ import {
   isReplayableLineage,
   parseAuditInputTokenDetails,
   parseKnowledgeReplayArms,
+  parseReplaySourceEvidence,
 } from '@/backend/lib/eval/productionChatReplay'
 import type * as dto from '@/types/dto'
 
@@ -177,5 +178,25 @@ describe('defaultReplayKnowledgeQuestions', () => {
     expect(defaultReplayKnowledgeQuestions.every((question) => question.prompt.length > 20)).toBe(
       true
     )
+  })
+})
+
+describe('parseReplaySourceEvidence', () => {
+  it('accepts bounded reviewed claims and evidence', () => {
+    expect(
+      parseReplaySourceEvidence(
+        JSON.stringify({ claim: 'The source sets a one-year limit.', evidence: ['Article 26(3).'] })
+      )
+    ).toEqual({ claim: 'The source sets a one-year limit.', evidence: ['Article 26(3).'] })
+  })
+
+  it('rejects empty or missing source evidence', () => {
+    expect(() =>
+      parseReplaySourceEvidence(JSON.stringify({ claim: '', evidence: ['fact'] }))
+    ).toThrow()
+    expect(() =>
+      parseReplaySourceEvidence(JSON.stringify({ claim: 'fact', evidence: [] }))
+    ).toThrow()
+    expect(() => parseReplaySourceEvidence('{')).toThrow()
   })
 })
