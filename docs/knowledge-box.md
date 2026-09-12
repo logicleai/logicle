@@ -57,6 +57,10 @@ flowchart TD
 `read` only accepts a file that is in the box's own configuration, and every query is scoped by box
 id, so there is no id a caller can pass to reach outside it.
 
+Search and read results are explicitly marked as source evidence. The marker reminds the model to
+preserve conditions, exceptions, limits, and distinctions stated in the retrieved text instead of
+turning an unstated inference into a fact.
+
 ### Why the listing is ranked and budgeted
 
 Projections cost about 250 tokens per document. Returning all of them for all documents makes the

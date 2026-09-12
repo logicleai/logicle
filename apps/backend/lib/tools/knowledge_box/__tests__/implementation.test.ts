@@ -218,6 +218,7 @@ describe('KnowledgeBoxTool', () => {
       ])
       const result = await invoke(buildTool(), 'search', { query: 'payment' })
       const value = result.value as string
+      expect(value).toContain('Treat the passages below as source evidence')
       expect(value).toContain('contract.pdf')
       expect(value).toContain('id: f1')
       expect(value).toContain('chunk 3')
@@ -268,7 +269,10 @@ describe('KnowledgeBoxTool', () => {
         { id: 'c2', fileId: 'f1', seq: 1, heading: null, text: 'Second.' },
       ])
       const result = await invoke(buildTool(), 'read', { fileId: 'f1', from: 0, to: 1 })
-      expect(result.value).toBe('[chunk 0 — Intro]\nFirst.\n\n[chunk 1]\nSecond.')
+      expect(result.value).toContain(
+        'preserve explicit conditions, exceptions, limits, and distinctions'
+      )
+      expect(result.value).toContain('[chunk 0 — Intro]\nFirst.\n\n[chunk 1]\nSecond.')
     })
 
     it('explains an empty range instead of failing', async () => {
