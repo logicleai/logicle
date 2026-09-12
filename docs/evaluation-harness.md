@@ -161,62 +161,100 @@ prefetch with windows 0 and 1. This isolates the two effects observed in the bas
 stochastic model tool use and the cost of retaining a recent turn. Wider
 `compression-keep-{1,2,4}` arms remain selectable explicitly.
 
+Compression has one intentional no-op guard: when the current user message is only a response
+format/language/style preference (for example, "solo tabella differenze"), the threshold may be
+reached but historical compression and retrieval are skipped for that turn. Prefetching stale
+material in response to a preference can make the assistant answer an earlier task instead of
+acknowledging the new instruction. The replay inspection reports this as
+`compressionThresholdReached: true`, `triggered: false`, and
+`compressionSkippedReason: "response-preference-turn"`.
+
 Flags are documented in the header of `apps/backend/scripts/eval.ts`. The ones that matter:
 `--repeat`, `--arms`, `--baseline`, `--model`, `--user-model`, `--judge-model`, `--no-judge`,
 `--runs-out`, and `--runs-in`. Generated sweeps also accept `--seed`; use more than one seed before
 generalising from a fixed corpus layout.
 
-## Local campaign directories
+## Three-step production dataset workflow
 
-The evaluation corpus may remain on a developer's machine, but each campaign should be
-self-describing so a later run can resume without reconstructing its provenance.
-`apps/backend/scripts/eval-campaign.ts` provides two mechanical operations:
+The production dataset is private and incremental. It contains conversations and reviewed case
+metadata, but no optimizer configuration. The coding agent owns semantic curation; the infra
+commands only discover, transfer, and validate data.
 
-```bash
-npx tsx apps/backend/scripts/eval-campaign.ts init \
-  --dir /private/path/context-kb-campaign --name context-kb-september
-npx tsx apps/backend/scripts/eval-campaign.ts register-bundle \
-  --dir /private/path/context-kb-campaign --case case-001 \
-  --bundle /private/path/context-kb-campaign/bundles/case-001.sqlite \
-  --cohort attachment-topic-shift
-```
+Run the infrastructure commands from the `logicle-infra` checkout; run the replay harness from the
+`logicle` checkout.
 
-The bundle builder can automatically register successful exports in the same inventory:
+### 1. Create the empty dataset
 
 ```bash
-npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
-  --source-db <source> \
-  --out /private/path/context-kb-campaign/bundles/case-001.sqlite \
-  --campaign-dir /private/path/context-kb-campaign \
-  --case case-001 --cohort attachment-topic-shift <conversation-id>
+./cli/eval_dataset create \
+  --requirements examples/eval-dataset-requirements.json \
+  --out /private/eval/context-kb-dataset
 ```
 
-The directory contains:
+This creates `dataset.json`, `incoming/`, `cases/`, `reviews/`, `logs/`, and `rejected.jsonl` with
+private permissions. It does not contact production and does not choose an optimizer target.
+
+### 2. Let the coding agent find, inspect, and add cases
+
+Discovery reads cheap metadata across all configured tenants and skips sources already accepted or
+rejected in the dataset:
+
+```bash
+./cli/eval_dataset find \
+  --dataset /private/eval/context-kb-dataset \
+  --requirements examples/eval-dataset-requirements.json \
+  --last 180d \
+  --out /private/eval/context-kb-candidates.jsonl
+```
+
+The agent selects a candidate, downloads one complete bundle, reads it locally, and writes a small
+review JSON. The transfer command never adds a case by itself:
+
+```bash
+./cli/eval_dataset download \
+  --dataset /private/eval/context-kb-dataset \
+  --tenant <tenant-host> --conversation <conversation-id>
+
+./cli/eval_dataset add \
+  --dataset /private/eval/context-kb-dataset \
+  --bundle /private/eval/context-kb-dataset/incoming/candidate-<fingerprint>.sqlite \
+  --review /private/eval/case-review.json --decision accept \
+  --cohort knowledge-heavy --message <message-id>
+```
+
+For an unsuitable case, use the same `eval_dataset add` command with `--decision reject`; the private
+`rejected.jsonl` ledger prevents it from being offered again. The review can contain the agent's
+source-dependence decision, selected message, bounded source claim, replayability decision, and
+reason. It is evidence for later checking, not an automatically trusted answer key.
+
+Accepted cases have this shape:
 
 ```text
-context-kb-campaign/
-  README.md                 # purpose, creation date, owner, scope, retention and workflow
-  manifest.json             # schema/version, code revision, models, tokenizer, thresholds
-  candidate-register.csv     # checksummed inventory plus review/eligibility/outcome columns
-  bundles/                  # private SQLite bundles, never committed
-  runs/                     # private replay runs/reports, never committed
-  sanitized/                # shareable aggregates and reviewed failure ledger only
+context-kb-dataset/
+  dataset.json                 # membership, source metadata, structural requirements
+  cases/case-001.sqlite        # complete private replay bundle
+  reviews/case-001.json        # coding-agent review
+  rejected.jsonl               # private rejected-candidate ledger
 ```
 
-`README.md` should describe how the directory was created, what content was collected, from which
-approved cohort, what was intentionally excluded, and how to reproduce or retire it. `manifest.json`
-must freeze the campaign inputs: repository revision, model/provider, tokenizer,
-compression configuration, guard values, repeat count, candidate-selection rule, source-review
-status and retention owner. `candidate-register.csv` is an append-only campaign ledger: bundle id, opaque
-case id, cohort, message selector, source-dependence review, compression inspection result, and
-the final sanitized labels. Keep verbatim chat, documents, decrypted files, raw responses and
-identifiers in the private directories only; the repository may contain fixtures that are synthetic
-or explicitly approved and sanitized.
+### 3. Run the optimizer
 
-This workflow is intentionally local and temporary. A ticket or issue can track the campaign, but
-the directory is the durable record of how the evidence was assembled. Do not rely on an issue
-description as the only provenance record, and do not put private bundle paths or raw content in
-the repository.
+The optimizer reads the accepted bundles and chooses compression, retrieval, knowledge-box, model,
+and objective parameters at run time. Those parameters stay outside `dataset.json`, so the same
+dataset can be reused for different optimization experiments. For the current replay harness, a
+single accepted case can be exercised with:
+
+```bash
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle /private/eval/context-kb-dataset/cases/case-001.sqlite \
+  --message <message-id> \
+  --out /private/eval/case-results.json \
+  --report /private/eval/case-report.md \
+  --override '{"contextCompression":{"preset":"conservative"}}'
+```
+
+Keep bundles, reviews, raw responses, decrypted files, and identifiers outside the repository.
+Publish only sanitized aggregates and reviewed failure labels.
 
 ## The flip test — measuring what an arm does when the answer is not there
 
@@ -270,45 +308,22 @@ Three things to know before reading a flip report:
 - **Pairing by repetition index is arbitrary.** Each run has its own stochastic trajectory, so a
   single pair is not a result; the rate over repetitions is. Use `--repeat 5` or more.
 
-## Scenarios from real conversations
-
-Hand-written scenarios drift towards what their author already believes the system is good at.
-`apps/backend/scripts/eval-mine-scenarios.ts` reads a Logicle database snapshot and proposes
-scenario drafts from conversations people actually had — goal, persona, rubric, and candidate
-facts copied verbatim from the assistant's answers.
-
-```bash
-OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-mine-scenarios.ts \
-  --db /path/to/snapshot.sqlite --limit 20 --out drafts.json
-```
-
-Two things about this are deliberate:
-
-- **It produces drafts, not scenarios.** An answer key has to be true of the corpus, and only
-  someone who can read the source documents can confirm that. Every draft carries
-  `needsReview: true` and its `candidateFacts` are proposals.
-- **Point it at a snapshot, not at production.** `logicle-infra-deploy`'s
-  `cli/backup_db_to_sqlite_native` produces a suitable SQLite file. The drafts contain verbatim
-  user and assistant text: the output file is production data and belongs wherever that tenant's
-  data is allowed to live.
-
 ## Layout
 
-| path                         | what it is                                  |
-| ---------------------------- | ------------------------------------------- |
-| `lib/eval/types.ts`          | scenario, arm, run result                   |
-| `lib/eval/harness.ts`        | drives one (scenario, arm) run              |
-| `lib/eval/referenceChat.ts`  | saved chat → production message DTOs        |
-| `lib/eval/simulatedUser.ts`  | the LLM playing the user                    |
-| `lib/eval/judge.ts`          | the LLM grading transcripts                 |
-| `lib/eval/metrics.ts`        | answer key, totals, scoring — pure          |
-| `lib/eval/abstention.ts`     | flip-test classification and pairing — pure |
-| `lib/eval/stats.ts`          | seeded RNG, bootstrap intervals — pure      |
-| `lib/eval/cost.ts`           | model pricing — pure                        |
-| `lib/eval/report.ts`         | aggregation, break-even, markdown — pure    |
-| `lib/eval/arms.ts`           | the shipped arms                            |
-| `lib/eval/scenarios/`        | scenario definitions                        |
-| `lib/eval/scenarioMining.ts` | real conversation → scenario draft          |
+| path                        | what it is                                  |
+| --------------------------- | ------------------------------------------- |
+| `lib/eval/types.ts`         | scenario, arm, run result                   |
+| `lib/eval/harness.ts`       | drives one (scenario, arm) run              |
+| `lib/eval/referenceChat.ts` | saved chat → production message DTOs        |
+| `lib/eval/simulatedUser.ts` | the LLM playing the user                    |
+| `lib/eval/judge.ts`         | the LLM grading transcripts                 |
+| `lib/eval/metrics.ts`       | answer key, totals, scoring — pure          |
+| `lib/eval/abstention.ts`    | flip-test classification and pairing — pure |
+| `lib/eval/stats.ts`         | seeded RNG, bootstrap intervals — pure      |
+| `lib/eval/cost.ts`          | model pricing — pure                        |
+| `lib/eval/report.ts`        | aggregation, break-even, markdown — pure    |
+| `lib/eval/arms.ts`          | the shipped arms                            |
+| `lib/eval/scenarios/`       | scenario definitions                        |
 
 Everything marked pure is unit-tested and needs no API key.
 
@@ -353,7 +368,8 @@ tools. The builder copies into the bundle the complete conversation: every `Mess
 assistant version. `File` / `FileBlob` rows are rewritten as `production-replay-user`-owned with
 encryption cleared, and the bytes themselves are **decrypted** into a
 `ReplayFileBlob(path, size, bytes)` table. No provider credentials, no storage credentials, no
-other tenant data.
+other tenant data. If the published assistant has configured tools, the bundle records their
+presence in `ReplayMetadata`; tool exposure remains an optimizer/replay decision.
 
 The bundle is still production data: it contains verbatim conversation content and decrypted file
 bytes. Store, transfer, and delete it under the tenant's data-handling rules.
@@ -396,14 +412,16 @@ npx tsx apps/backend/scripts/eval-build-replay-bundle.ts \
 The builder rejects conversation-level fidelity failures it cannot represent offline:
 
 - **assistant available** — the assistant and its published version must still exist.
-- **no configured tools / sub-assistants** — those cannot be reproduced offline without a
-  capability-specific fixture. Assistant knowledge is supported and copied into the bundle.
+- **no sub-assistants** — those still cannot be reproduced offline without a capability-specific
+  fixture. Assistant knowledge is supported and copied into the bundle.
 
 If a conversation attachment or assistant-knowledge file cannot be resolved, the builder writes
 the exact reason to `<out>.skipped.json` and exits unsuccessfully. It never silently omits a file.
-Message-level fidelity checks belong to the replay runner, because only the runner knows which
-message is being replayed. To cover tool conversations offline, extend the bundle with a
-tool-specific fixture adapter.
+Configured assistant tools are not automatically exposed by the replay. If the optimizer wants to
+run without them, pass `--disable-configured-tools`. The runner checks the selected production turn
+and rejects this mode when that turn contains a tool call or tool-auth event. Tool calls in earlier
+history remain saved in the lineage, but this result must be labelled as a stripped-tool replay
+rather than production-faithful.
 
 ### Stage 2 — replay the bundle
 
@@ -413,6 +431,13 @@ OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts 
   --bundle /tmp/production-chat-replays/conversation.sqlite \
   --out /tmp/production-chat-replays/replay-results.json \
   --report /tmp/production-chat-replays/replay-report.md
+
+# Optimizer variant: disable configured assistant tools for a target turn that did not use them.
+OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts \
+  --bundle /tmp/production-chat-replays/conversation.sqlite \
+  --disable-configured-tools \
+  --out /tmp/production-chat-replays/replay-no-tools-results.json \
+  --report /tmp/production-chat-replays/replay-no-tools-report.md
 
 # Compare the exact real turn across knowledge strategies. The knowledge-box index is built once
 # per arm and reused by all repetitions.
@@ -527,6 +552,11 @@ a replacement candidate after seeing the outcome. A no-call run whose answer was
 in history is instead a candidate-selection error: it may measure the smaller box preamble, but it
 does not test knowledge retrieval.
 
+The current offline replay has no fixture for production tool execution. A selected production
+turn that actually contains a tool call is therefore rejected during inspection; do not strip that
+call and relabel the resulting conversation as faithful replay. Historical tool activity in the
+lineage is likewise an eligibility failure until a matching fixture exists.
+
 #### Context-compression-only comparison
 
 Use the same message, model, and one fixed knowledge arm for an off/on pair. Run `--inspect-only`
@@ -618,38 +648,21 @@ aggregates.
 
 ### Real-chat failure investigation protocol
 
-Use this procedure when the question is not “how many tokens did it save?” but **where does
-knowledge-box + compression fail to help, or fail to answer correctly?** It is deliberately
-mechanical so that a coding agent can investigate many approved real chats without quietly turning
-selection mistakes, provider errors, or a familiar production answer into evidence of success.
+For the normal optimization loop, use the three phases below. The coding agent can repeat discovery
+and curation until the dataset covers the required traffic shapes; no large speculative download is
+needed.
 
-1. **Create a candidate register before replaying.** From approved, expensive conversations, choose
-   10–20 candidate user messages across different shapes: long text-only histories, attachment
-   continuations, topic shifts, and source-document questions. Give every candidate a local opaque
-   id; keep conversation/message ids, bundles, raw reports, and responses only in the approved
-   directory outside the repository.
-2. **Review source dependence before any model call.** For each candidate, record the exact fact or
-   bounded claim the final message needs, and review the attached assistant-knowledge source that
-   supports it. Reject it as `ineligible-history-answer` if that fact is already answerable from
-   prior chat. Reject it as `ineligible-no-source` if the source cannot support a clear correctness
-   judgment. The saved production response is a lead, never the answer key.
-3. **Screen compression for free.** Build the offline bundle, then run `--inspect-only` with the
-   intended compression override. Continue only if `inspection.triggered` is true and
-   `estimatedHistoryTokenReduction` is positive. Otherwise record `ineligible-no-compression`;
-   this is a useful product observation, but not evidence that the combined strategy had no gain.
-4. **Run the complete 2×2.** For every eligible candidate, run A/C and B/D exactly as in the
-   commands above, preserving the message, model, knowledge files, and repeat count. Use three
-   repetitions to triage; rerun material failures five times before treating them as a pattern.
-   Do not change the question, history, or corpus after observing any cell.
-5. **Judge quality from reviewed facts.** `--judge` is a triage signal against the saved production
-   reply. Mark a response correct only when it answers the reviewed source claim without a material
-   contradiction or unsupported invention. Keep provider errors, missing `knowledge_box__*` calls,
-   and wrong answers in the denominator; do not replace them with a more favourable candidate.
-6. **Publish sanitized aggregates and failure cases.** Delete the bundle and raw artifacts under the
-   tenant retention policy. A finding may name the cohort and failure mechanism, but must not expose
-   chat text, document text, identifiers, tool results, or raw model responses.
+1. **Create and curate.** Initialize the empty dataset, discover metadata across all tenants,
+   download one complete bundle at a time, inspect it locally, and accept or reject it with the
+   mechanical infra command.
+2. **Optimize.** Run the smallest useful comparison on accepted bundles: knowledge off/on for
+   knowledge cases, compression off/on for compression cases, and 2×2 only for genuinely combined
+   cases. Keep optimizer parameters outside the dataset.
+3. **Confirm and publish.** Repeat only material differences or failures with the exact same bundle
+   and message, verify source facts, retain failures in the denominator, and publish sanitized
+   aggregates.
 
-Use these labels in the candidate register. The three `ineligible-*` labels are mutually exclusive;
+Use these labels in the private case reviews. The three `ineligible-*` labels are mutually exclusive;
 for an eligible case, record every applicable failure label (for example, a wrong D response can
 also have made no box call). `combined-preserved` applies only when no failure label applies.
 
@@ -682,27 +695,24 @@ This is the default first batch. Execute it in order; do not tune the knowledge 
 preset, prompts, or candidate-selection rules during the batch. The objective is to map failure
 regions, not to produce a headline win.
 
-| phase               | action                                                                                                                                                                                                                                         | exit criterion                                                                        | deliverable                                         |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| 0. Scope            | Obtain approval for one tenant/cohort and an approved private artifact location. Fix the model, compression preset, repetitions (3), and material-gain threshold in the register.                                                              | Scope and retention owner recorded.                                                   | Empty sanitized register.                           |
-| 1. Candidate screen | Select 15–20 expensive turns spanning text-only, attachment continuation, and source-question/topic-shift cohorts. Build one offline bundle per conversation; review source dependence and run `--inspect-only`.                               | Every candidate has one eligibility label and no LLM replay has run yet.              | Eligibility counts by cohort.                       |
-| 2. Triage           | Run the complete 2×2 for every eligible candidate with three repetitions and `--judge`. Review raw outputs privately against the documented source claim.                                                                                      | Every eligible case has A/B/C/D, tool-call evidence, and correctness labels.          | Sanitized per-case ledger.                          |
-| 3. Confirm failures | For every quality regression, no-net-gain result, retrieval failure, or compression insufficiency, rerun the unchanged case to five repetitions.                                                                                               | Each material failure is either repeated or explicitly marked transient/undetermined. | Failure clusters with repetition counts.            |
-| 4. Diagnose         | Group failures by mechanism: source miss, answer already in history, lost summary detail, lost tool result, attachment continuation, no box call, tool loop/cost, or context-limit boundary. Read the private artifacts only for these groups. | Each confirmed failure has a proposed mechanism or `unknown`.                         | Ranked failure taxonomy.                            |
-| 5. Decide           | Choose at most one highest-frequency or highest-severity mechanism for a separate fix experiment. If no eligible turns exist, improve candidate discovery rather than changing the strategy.                                                   | One of: no-change, new evaluation cohort, or a narrowly scoped fix hypothesis.        | Sanitized investigation report and next experiment. |
+| phase       | action                                                                                           | exit criterion                                     | deliverable                          |
+| ----------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------- | ------------------------------------ |
+| 1. Curate   | Discover, download, inspect, and add/reject cases iteratively across tenants and traffic shapes. | Dataset contains accepted cases and rejection log. | `dataset.json`, bundles, reviews     |
+| 2. Optimize | Run the minimum off/on matrix with optimizer parameters supplied at invocation time.             | Every accepted case has comparable metrics.        | Raw runs and token/tool evidence     |
+| 3. Confirm  | Repeat only material differences, verify source facts, and publish sanitized aggregates.         | Finding is repeated or marked undetermined.        | Sanitized ledger and next experiment |
 
-The batch is complete when phase 5 is complete, even if it finds no failure. Do **not** keep sampling
-until a preferred result appears. If fewer than five candidates survive eligibility, report the
-cohort composition and expand the approved source cohort before drawing conclusions. A code change
+The batch is complete when phase 3 is complete, even if it finds no failure. Do **not** keep sampling
+until a preferred result appears. If too few candidates survive eligibility, improve discovery or
+expand the traffic shapes rather than forcing unsuitable cases into the dataset. A code change
 belongs on a new branch only after this baseline batch is closed; rerun the same saved bundles after
-the change, with the source claims and candidate register frozen.
+the change, with the source claims and private case reviews frozen.
 
 ### Operating modes — cost/quality testing without a big bill
 
 A replay calls a real provider with a real (often six-figure-token) prompt. Keep it cheap:
 
-- **Build the bundle once, replay many times.** Stage 1 is the only step that touches production
-  and it costs nothing. Iterate on its output.
+- **Build the bundle once, replay many times.** Dataset curation is the only phase that touches
+  production and it costs nothing. Iterate on the private local dataset afterwards.
 - **One bundle, one complete conversation; one selected message per run.** Select conversations with
   the read-only infra discovery tools before downloading them.
 - **`--judge` roughly doubles the cost** (a second model call over the same prompt). Get the token
@@ -761,20 +771,15 @@ the policy **off**, let real traffic accumulate `MessageAudit` rows, build a bun
 instance, then replay it twice — once as-is, once with `--override` enabling the policy — and
 compare cost and judged quality before turning it on for real.
 
-### Phased plan and delegation
+### Agent delegation
 
-The work can be split so inexpensive coding agents handle deterministic, mechanical throughput,
-while a more capable model or a human retains responsibility for source truth and interpretation:
+The coding agent can run the complete loop:
 
-| phase                | work                                                                                                                                   | suitable delegate                                                                        | review kept with capable model/human                                                                        |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 1. Fixture inventory | Enumerate synthetic boundary/incompressible shapes, generate candidate message histories, and run unit/inspect-only checks.            | Cheap coding agent: scripted fixture generation and command execution.                   | Confirm that each fixture represents the intended semantic boundary and that no answer key leaks.           |
-| 2. Campaign setup    | Initialize the local directory, write manifest/README boilerplate, register opaque bundle metadata, and enforce ignored/private paths. | Cheap coding agent: filesystem and schema bookkeeping.                                   | Approve privacy boundary, retention policy, cohort definition and frozen thresholds.                        |
-| 3. Bundle collection | Run the approved read-only discovery/export commands and register every candidate, including rejected ones.                            | Cheap coding agent: repetitive command execution and checksum/metadata capture.          | Select the cohort; verify source dependence and answer-key facts against source documents.                  |
-| 4. Replay matrix     | Execute inspect-only, then the fixed A/B/C/D runs and repetitions; collect raw JSON and tool-call metrics.                             | Cheap coding agent: batch runner, retries, and result collation without changing inputs. | Keep denominator fixed; review provider errors, missing retrieval calls, and unexpected tool use.           |
-| 5. Analysis          | Compute reductions, guard rates, bootstrap intervals and failure labels from frozen artifacts.                                         | Cheap coding agent: pure aggregation/report rendering.                                   | Decide correctness from reviewed source facts; distinguish reference-judge disagreement from factual error. |
-| 6. Tuning and rerun  | Propose one threshold/prompt/policy change, then rerun the same registered cases.                                                      | Cheap coding agent: mechanical rerun and diff generation.                                | Choose the hypothesis, inspect regressions, and decide whether evidence supports a change.                  |
+1. Create the empty dataset, discover candidates across tenants, download bundles on demand, inspect
+   them locally, and accept or reject them with the infra commands.
+2. Run the replay matrix with optimizer parameters supplied separately from the dataset.
+3. Aggregate token/tool results, repeat material differences, and write sanitized findings.
 
-Delegation does not authorize an agent to change the corpus after seeing outcomes, rewrite answer
-keys, discard failed or no-call runs, or declare a quality result from a production reply alone.
-Those are source-review and experimental-design decisions and remain with the stronger reviewer.
+The agent must keep the accepted/rejected denominator fixed after optimization starts, preserve
+failed and no-call runs, and never treat a production response or an unverified model proposal as an
+answer key. Source claims remain explicitly reviewable data in the private case review.

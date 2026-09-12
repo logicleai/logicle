@@ -200,6 +200,45 @@ export const collectAttachmentFileIds = (messages: dto.Message[]): string[] => {
   return [...ids]
 }
 
+type ReplayMessageNode = {
+  id: string
+  parent: string | null
+  role: string
+}
+
+/**
+ * Returns the saved descendants of a user turn, stopping at the next user branch.
+ *
+ * MessageAudit timestamps are not a reliable turn boundary: a user audit can be persisted after
+ * the assistant/tool response. The parent graph is the source of truth for deciding whether the
+ * selected production turn used a tool.
+ */
+export const collectTurnDescendantMessageIds = (
+  messages: ReplayMessageNode[],
+  rootMessageId: string
+): Set<string> => {
+  const childrenByParent = new Map<string, ReplayMessageNode[]>()
+  for (const message of messages) {
+    if (!message.parent) continue
+    const children = childrenByParent.get(message.parent) ?? []
+    children.push(message)
+    childrenByParent.set(message.parent, children)
+  }
+
+  const descendants = new Set<string>()
+  const pendingParents = [rootMessageId]
+  while (pendingParents.length > 0) {
+    const parentId = pendingParents.shift()!
+    for (const child of childrenByParent.get(parentId) ?? []) {
+      if (child.role === 'user' || child.role === 'user-response') continue
+      if (descendants.has(child.id)) continue
+      descendants.add(child.id)
+      pendingParents.push(child.id)
+    }
+  }
+  return descendants
+}
+
 export const isReplayableLineage = (messages: dto.Message[]): string | undefined => {
   // Attachments are fine: the bundle carries their bytes. Tool, authorization, and error activity
   // are not — replaying them would silently drop a capability.
