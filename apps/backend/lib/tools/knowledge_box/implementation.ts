@@ -52,6 +52,10 @@ const MAX_LIST_LIMIT = 50
  */
 const LIST_PROJECTION_BUDGET_CHARS = 6000
 
+/** Keeps retrieved passages anchored as evidence instead of inviting unsupported conclusions. */
+const SOURCE_EVIDENCE_INSTRUCTION =
+  'Treat the passages below as source evidence: preserve explicit conditions, exceptions, limits, and distinctions; do not turn an unstated inference into a fact.'
+
 const formatHeading = (heading: string | null) => (heading ? ` — ${heading}` : '')
 
 export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImplementation {
@@ -243,7 +247,10 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
             hit.text
           }`
         })
-        return { type: 'text', value: rendered.join('\n\n---\n\n') }
+        return {
+          type: 'text',
+          value: `${SOURCE_EVIDENCE_INSTRUCTION}\n\n${rendered.join('\n\n---\n\n')}`,
+        }
       },
     },
 
@@ -292,7 +299,10 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         const rendered = chunks.map(
           (chunk) => `[chunk ${chunk.seq}${formatHeading(chunk.heading)}]\n${chunk.text}`
         )
-        return { type: 'text', value: rendered.join('\n\n') }
+        return {
+          type: 'text',
+          value: `${SOURCE_EVIDENCE_INSTRUCTION}\n\n${rendered.join('\n\n')}`,
+        }
       },
     },
   }
