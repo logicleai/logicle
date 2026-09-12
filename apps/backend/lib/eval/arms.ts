@@ -6,11 +6,64 @@ import { ingestDocument } from '@/backend/lib/knowledge/ingest'
 import {
   computeConfigHash,
   deleteBox,
+  markDocumentFailed,
   saveIngestResult,
   syncBoxDocuments,
 } from '@/backend/lib/knowledge/store'
 import { invalidateBoxIndex } from '@/backend/lib/knowledge/retrieval'
 import type { Arm, ArmSetup, ArmSetupContext, SetupCost } from './types'
+
+export interface KnowledgeBoxIngestionDependencies {
+  ingestDocument: typeof ingestDocument
+  saveIngestResult: typeof saveIngestResult
+  markDocumentFailed: typeof markDocumentFailed
+}
+
+/**
+ * Build the knowledge-box index one document at a time. A document that cannot be extracted is
+ * recorded as failed and does not prevent the remaining corpus from becoming searchable.
+ */
+export const ingestKnowledgeBoxFiles = async (
+  boxId: string,
+  files: ArmSetupContext['files'],
+  dependencies: KnowledgeBoxIngestionDependencies = {
+    ingestDocument,
+    saveIngestResult,
+    markDocumentFailed,
+  }
+): Promise<SetupCost> => {
+  const setupCost: SetupCost = { inputTokens: 0, outputTokens: 0, calls: 0, wallMs: 0 }
+  const startedAt = Date.now()
+
+  for (const file of files) {
+    try {
+      const result = await dependencies.ingestDocument(boxId, file.id)
+      await dependencies.saveIngestResult(boxId, file.id, result)
+      setupCost.inputTokens += result.projectionUsage.inputTokens
+      setupCost.outputTokens += result.projectionUsage.outputTokens
+      setupCost.calls += result.projectionUsage.calls
+      setupCost.providerUsages = [
+        ...(setupCost.providerUsages ?? []),
+        ...result.projectionUsage.providerUsages,
+      ]
+      // Model selection is stable for a configured backend. If that invariant ever changes
+      // during setup, leave pricing unknown rather than attach a misleading dollar figure.
+      if (!setupCost.modelId) setupCost.modelId = result.projectionUsage.modelId
+      else if (
+        result.projectionUsage.modelId &&
+        setupCost.modelId !== result.projectionUsage.modelId
+      ) {
+        setupCost.modelId = undefined
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      await dependencies.markDocumentFailed(boxId, file.id, message)
+    }
+  }
+
+  setupCost.wallMs = Date.now() - startedAt
+  return setupCost
+}
 
 /**
  * The arms shipped with the harness: the two ways Logicle can put documents in front of a model,
@@ -131,29 +184,7 @@ export const createKnowledgeBoxArm = (options: KnowledgeBoxArmOptions = {}): Arm
         computeConfigHash(questions)
       )
 
-      const setupCost: SetupCost = { inputTokens: 0, outputTokens: 0, calls: 0, wallMs: 0 }
-      const startedAt = Date.now()
-      for (const file of files) {
-        const result = await ingestDocument(boxId, file.id)
-        await saveIngestResult(boxId, file.id, result)
-        setupCost.inputTokens += result.projectionUsage.inputTokens
-        setupCost.outputTokens += result.projectionUsage.outputTokens
-        setupCost.calls += result.projectionUsage.calls
-        setupCost.providerUsages = [
-          ...(setupCost.providerUsages ?? []),
-          ...result.projectionUsage.providerUsages,
-        ]
-        // Model selection is stable for a configured backend. If that invariant ever changes
-        // during setup, leave pricing unknown rather than attach a misleading dollar figure.
-        if (!setupCost.modelId) setupCost.modelId = result.projectionUsage.modelId
-        else if (
-          result.projectionUsage.modelId &&
-          setupCost.modelId !== result.projectionUsage.modelId
-        ) {
-          setupCost.modelId = undefined
-        }
-      }
-      setupCost.wallMs = Date.now() - startedAt
+      const setupCost = await ingestKnowledgeBoxFiles(boxId, files)
       invalidateBoxIndex(boxId)
 
       const tool = new KnowledgeBoxTool(
