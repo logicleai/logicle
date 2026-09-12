@@ -55,9 +55,11 @@ const MAX_LIST_LIMIT = 50
  */
 const LIST_PROJECTION_BUDGET_CHARS = 6000
 
+/** Hard guardrail for retrieval cost; the model still chooses the queries and their order. */
+const MAX_SEARCH_CALLS_PER_TURN = 4
+
 /** Keeps retrieved passages anchored as evidence instead of inviting unsupported conclusions. */
-const SOURCE_EVIDENCE_INSTRUCTION =
-  'Treat the passages below as source evidence. For every source-specific claim, use only what the passages state; preserve explicit conditions, exceptions, limits, and distinctions. Cite each source-specific sentence or bullet with the exact marker [file · chunk N] shown above it. Previous assistant messages and general knowledge are not evidence, and a prior claim must not be repeated unless these passages support it. Do not fill gaps with general knowledge or customary legal rules. Do not cite or link a document, page, URL, or fact unless it appears in these passages. For multi-part questions, omit unsupported subclaims or say that the source does not specify them. If a subtopic is unsupported, do not mention remembered percentages, amounts, article numbers, or illustrative examples for it, even as a caveat or disclaimer. A citation about one tax or topic does not support a claim about another. Search one focused query per missing subtopic when possible; once a focused search establishes the relevant evidence, do not repeat broad searches just for confirmation. Make at most four search calls in this turn; then answer from the evidence you have or state the source boundary.'
+const SOURCE_EVIDENCE_INSTRUCTION = `Treat the passages below as source evidence. For every source-specific claim, use only what the passages state; preserve explicit conditions, exceptions, limits, and distinctions. Cite each source-specific sentence or bullet with the exact marker [file · chunk N] shown above it. Previous assistant messages and general knowledge are not evidence, and a prior claim must not be repeated unless these passages support it. Do not fill gaps with general knowledge or customary legal rules. Do not cite or link a document, page, URL, or fact unless it appears in these passages. For multi-part questions, omit unsupported subclaims or say that the source does not specify them. If a subtopic is unsupported, do not mention remembered percentages, amounts, article numbers, or illustrative examples for it, even as a caveat or disclaimer. A citation about one tax or topic does not support a claim about another. Search one focused query per missing subtopic when possible; once a focused search establishes the relevant evidence, do not repeat broad searches just for confirmation. Make at most ${MAX_SEARCH_CALLS_PER_TURN} search calls in this turn; then answer from the evidence you have or state the source boundary.`
 
 const KNOWLEDGE_BOX_SYSTEM_INSTRUCTION =
   '\nWhen researching with this knowledge box, treat retrieved passages as the only evidence for source-specific claims. Search results may be incomplete: search again or read surrounding chunks when needed, but prefer one focused query per subtopic and stop once the evidence is sufficient or the source clearly does not establish the detail. Every source-specific sentence or bullet in the final answer must have an inline citation to the exact [file · chunk N] marker that supports it. Do not use previous assistant messages, general knowledge, or customary rules to fill gaps. Do not invent or cite unsupported facts, pages, or URLs; if the source does not establish a requested detail, say so explicitly. For an unsupported subtopic, do not add remembered percentages, amounts, article numbers, or examples even as a disclaimer; state only the source boundary. Evidence for one tax or topic cannot support a claim about another. Make at most four search calls in this turn; after that, answer from the evidence you have or state the source boundary.\n'
@@ -77,6 +79,7 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
   /** Search results already shown during the current user turn. */
   private searchTurnKey: string | null = null
   private seenSearchChunks = new Set<string>()
+  private searchCallCount = 0
 
   constructor(
     toolParams: ToolParams,
@@ -144,6 +147,7 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
     if (turnKey === this.searchTurnKey) return
     this.searchTurnKey = turnKey
     this.seenSearchChunks.clear()
+    this.searchCallCount = 0
   }
 
   /**
@@ -275,8 +279,7 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
     },
 
     search: {
-      description:
-        'Full-text search across the documents of this knowledge box. Returns ranked passages with the document id and the chunk range they came from — use `read` with those to see more context. If you do not need to restrict the search, omit `fileIds` and search the whole box. Never use ids from conversation attachments or another tool as knowledge-box selectors.',
+      description: `Full-text search across the documents of this knowledge box. Returns ranked passages with the document id and the chunk range they came from — use \`read\` with those to see more context. At most ${MAX_SEARCH_CALLS_PER_TURN} searches are allowed per user turn. If you do not need to restrict the search, omit \`fileIds\` and search the whole box. Never use ids from conversation attachments or another tool as knowledge-box selectors.`,
       parameters: {
         type: 'object',
         properties: {
@@ -300,6 +303,15 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         if (!query) {
           return { type: 'error-text', value: 'Empty search query' }
         }
+        if (this.searchCallCount >= MAX_SEARCH_CALLS_PER_TURN) {
+          return {
+            type: 'text',
+            value:
+              `Search budget exhausted after ${MAX_SEARCH_CALLS_PER_TURN} calls in this turn. ` +
+              'Use the passages already retrieved, or state that the source does not specify the missing detail.',
+          }
+        }
+        this.searchCallCount += 1
         const requestedFileIds = Array.isArray(params.fileIds)
           ? params.fileIds.filter((id): id is string => typeof id === 'string')
           : []

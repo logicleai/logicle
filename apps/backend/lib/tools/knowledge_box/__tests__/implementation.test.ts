@@ -338,6 +338,28 @@ describe('KnowledgeBoxTool', () => {
       )
       expect(nextTurn.value).toContain('Net 30 days.')
     })
+
+    it('enforces the per-turn search budget without choosing the search strategy', async () => {
+      const tool = buildTool()
+      const messages = [{ id: 'user-1', role: 'user' }] as unknown as ToolInvokeParams['messages']
+
+      for (let index = 0; index < 4; index += 1) {
+        await invoke(tool, 'search', { query: `query-${index}` }, messages)
+      }
+      const exhausted = await invoke(tool, 'search', { query: 'one-more-query' }, messages)
+
+      expect(exhausted).toEqual({
+        type: 'text',
+        value:
+          'Search budget exhausted after 4 calls in this turn. Use the passages already retrieved, or state that the source does not specify the missing detail.',
+      })
+      expect(mockSearchBox).toHaveBeenCalledTimes(4)
+
+      await invoke(tool, 'search', { query: 'new-turn-query' }, [
+        { id: 'user-2', role: 'user' },
+      ] as unknown as ToolInvokeParams['messages'])
+      expect(mockSearchBox).toHaveBeenCalledTimes(5)
+    })
   })
 
   describe('read', () => {
