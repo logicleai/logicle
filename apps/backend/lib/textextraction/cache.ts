@@ -16,6 +16,12 @@ const cache = new LRUCache<string, string>({
   ttl: 1000 * 60 * 5,
 })
 
+const cacheExtractedText = (path: string, text: string): string | undefined => {
+  if (text.trim().length === 0) return undefined
+  cache.set(path, text)
+  return text
+}
+
 export const cachingExtractor = {
   extractFromFile: async (fileEntry: FileDbRow) => {
     const cached = cache.get(fileEntry.path)
@@ -25,21 +31,23 @@ export const cachingExtractor = {
 
     const analysis = await ensureFileAnalysisForFile(fileEntry)
     const analyzedText = await readExtractedTextFromAnalysis(fileEntry, analysis)
-    if (analyzedText) {
-      cache.set(fileEntry.path, analyzedText)
-      return analyzedText
+    if (analyzedText?.trim()) {
+      return cacheExtractedText(fileEntry.path, analyzedText)
     }
 
-    const isUnknownText = analysis?.status === 'ready' && analysis.payload?.kind === 'unknown' && analysis.payload.isText
-    const extractor = findExtractor(fileEntry.type) ?? (isUnknownText ? genericTextExtractor : undefined)
+    const isUnknownText =
+      analysis?.status === 'ready' &&
+      analysis.payload?.kind === 'unknown' &&
+      analysis.payload.isText
+    const extractor =
+      findExtractor(fileEntry.type) ?? (isUnknownText ? genericTextExtractor : undefined)
     if (!extractor) {
       return undefined
     }
     try {
       const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
       const text = await extractor(fileContent)
-      cache.set(fileEntry.path, text)
-      return text
+      return cacheExtractedText(fileEntry.path, text)
     } catch (error) {
       logger.warn('File text extraction failed; continuing without extracted text', {
         fileId: fileEntry.id,
