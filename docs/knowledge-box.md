@@ -62,7 +62,9 @@ flowchart TD
 | `get_file(fileId)`               | on demand            | the original file for layout/image/OCR verification                |
 
 `read` only accepts a file that is in the box's own configuration, and every query is scoped by box
-id, so there is no id a caller can pass to reach outside it.
+id, so there is no id a caller can pass to reach outside it. The optional `search.fileIds` filter
+accepts either the returned document id or its exact name; an invalid selector is rejected instead
+of silently broadening the search.
 
 Search and read results are explicitly marked as source evidence. The marker tells the model to use
 only what the passages state for source-specific claims, ignore unsupported claims from previous

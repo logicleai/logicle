@@ -95,6 +95,13 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
     return new Map(this.params.files.map((file) => [file.id, file.name]))
   }
 
+  private resolveFileSelector(selector: string): KnowledgeBoxParams['files'][number] | undefined {
+    const normalized = selector.trim().toLocaleLowerCase()
+    return this.params.files.find(
+      (file) => file.id === selector || file.name.trim().toLocaleLowerCase() === normalized
+    )
+  }
+
   /**
    * Orders the box's configured files by relevance to a query, best first.
    *
@@ -237,7 +244,7 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
             type: 'array',
             items: { type: 'string' },
             description:
-              'Optional: restrict the search to these document ids, as returned by list_documents.',
+              'Optional: restrict the search to these document ids or exact document names, as returned by list_documents.',
           },
         },
         additionalProperties: false,
@@ -248,11 +255,24 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         if (!query) {
           return { type: 'error-text', value: 'Empty search query' }
         }
-        const fileIds = Array.isArray(params.fileIds)
+        const requestedFileIds = Array.isArray(params.fileIds)
           ? params.fileIds.filter((id): id is string => typeof id === 'string')
-          : undefined
+          : []
+        const fileIds = requestedFileIds.map((selector) => this.resolveFileSelector(selector)?.id)
+        if (requestedFileIds.length > 0 && fileIds.some((fileId) => !fileId)) {
+          return {
+            type: 'error-text',
+            value:
+              'Every file selector must be a document id or exact document name from list_documents.',
+          }
+        }
 
-        const hits = await searchBox(this.boxId, query, this.params.maxSearchResults, fileIds)
+        const hits = await searchBox(
+          this.boxId,
+          query,
+          this.params.maxSearchResults,
+          fileIds.length > 0 ? fileIds.filter((fileId): fileId is string => !!fileId) : undefined
+        )
         if (hits.length === 0) {
           return { type: 'text', value: `No passage matched "${query}".` }
         }
@@ -277,17 +297,21 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
       parameters: {
         type: 'object',
         properties: {
-          fileId: { type: 'string', description: 'Document id, as returned by list_documents.' },
+          fileId: {
+            type: 'string',
+            description: 'Document id or exact document name, as returned by list_documents.',
+          },
         },
         additionalProperties: false,
         required: ['fileId'],
       },
       invoke: async ({ params, userId }): Promise<dto.ToolCallResultOutput> => {
-        const fileId = `${params.fileId ?? ''}`
-        const file = this.params.files.find((candidate) => candidate.id === fileId)
+        const selector = `${params.fileId ?? ''}`
+        const file = this.resolveFileSelector(selector)
         if (!file) {
-          return { type: 'error-text', value: `Document ${fileId} is not in this knowledge box` }
+          return { type: 'error-text', value: `Document ${selector} is not in this knowledge box` }
         }
+        const fileId = file.id
         if (!(await canAccessFile({ userId }, fileId))) {
           return { type: 'error-text', value: 'File not found' }
         }
@@ -317,7 +341,10 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
       parameters: {
         type: 'object',
         properties: {
-          fileId: { type: 'string', description: 'Document id, as returned by list_documents.' },
+          fileId: {
+            type: 'string',
+            description: 'Document id or exact document name, as returned by list_documents.',
+          },
           from: { type: 'number', description: 'First chunk index (0-based). Defaults to 0.' },
           to: {
             type: 'number',
@@ -328,11 +355,13 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         required: ['fileId'],
       },
       invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
-        const fileId = `${params.fileId ?? ''}`
+        const selector = `${params.fileId ?? ''}`
+        const file = this.resolveFileSelector(selector)
         const names = this.fileNames()
-        if (!names.has(fileId)) {
-          return { type: 'error-text', value: `Document ${fileId} is not in this knowledge box` }
+        if (!file) {
+          return { type: 'error-text', value: `Document ${selector} is not in this knowledge box` }
         }
+        const fileId = file.id
 
         const from = Math.max(0, Number.isFinite(Number(params.from)) ? Number(params.from) : 0)
         const requestedTo = Number.isFinite(Number(params.to))

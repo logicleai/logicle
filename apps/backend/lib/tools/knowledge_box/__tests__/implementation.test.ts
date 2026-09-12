@@ -238,6 +238,24 @@ describe('KnowledgeBoxTool', () => {
       expect(mockSearchBox).toHaveBeenCalledWith('box1', 'payment', 5, ['f2'])
     })
 
+    it('accepts exact document names as file filters', async () => {
+      await invoke(buildTool(), 'search', { query: 'payment', fileIds: ['privacy.docx'] })
+      expect(mockSearchBox).toHaveBeenCalledWith('box1', 'payment', 5, ['f2'])
+    })
+
+    it('rejects unknown file selectors instead of widening the search', async () => {
+      const result = await invoke(buildTool(), 'search', {
+        query: 'payment',
+        fileIds: ['missing.pdf'],
+      })
+      expect(result).toEqual({
+        type: 'error-text',
+        value:
+          'Every file selector must be a document id or exact document name from list_documents.',
+      })
+      expect(mockSearchBox).not.toHaveBeenCalled()
+    })
+
     it('renders hits with the document name, id and chunk index', async () => {
       mockSearchBox.mockResolvedValue([
         { fileId: 'f1', seq: 3, heading: 'Payment terms', text: 'Net 30 days.', score: 2 },
@@ -270,6 +288,11 @@ describe('KnowledgeBoxTool', () => {
 
     it('defaults to the first chunks of the document', async () => {
       await invoke(buildTool(), 'read', { fileId: 'f1' })
+      expect(mockLoadFileChunkRange).toHaveBeenCalledWith('box1', 'f1', 0, 11)
+    })
+
+    it('accepts an exact document name', async () => {
+      await invoke(buildTool(), 'read', { fileId: 'contract.pdf' })
       expect(mockLoadFileChunkRange).toHaveBeenCalledWith('box1', 'f1', 0, 11)
     })
 
@@ -341,6 +364,18 @@ describe('KnowledgeBoxTool', () => {
           },
         ],
       })
+    })
+
+    it('accepts an exact document name', async () => {
+      mockGetFileWithId.mockResolvedValue({
+        id: 'f1',
+        name: 'contract.pdf',
+        size: 10,
+        type: 'application/pdf',
+      })
+      const result = await invoke(buildTool(), 'get_file', { fileId: 'contract.pdf' })
+      expect(mockGetFileWithId).toHaveBeenCalledWith('f1')
+      expect(result.type).toBe('content')
     })
 
     it('does not return a configured file the caller cannot access', async () => {
