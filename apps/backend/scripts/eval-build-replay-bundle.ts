@@ -5,7 +5,8 @@
  * `Conversation` / `Message` / `MessageAudit` / `Assistant*` / `Backend` / `File` / `FileBlob` /
  * `FileAnalysis` / `AssistantVersionFile` rows, plus a `ReplayFileBlob(path, size, bytes)` table
  * holding every referenced attachment and assistant-knowledge file (and extracted-text sidecar),
- * **decrypted**.
+ * **decrypted**. Configured assistant-tool presence is recorded in `ReplayMetadata`; tool
+ * execution is an optimizer/replay decision, not a bundle-building decision.
  * `eval-replay-production-chats.ts` consumes it with zero network access.
  *
  * This script is infra-agnostic. It reads the source database via `--source-db` (or `DATABASE_URL`)
@@ -24,9 +25,6 @@
  * Flags:
  *   --source-db <path|url>     source SQLite path or DATABASE_URL (default: $DATABASE_URL)
  *   --out <path>               bundle SQLite file to write (required); <out>.skipped.json is also written
- *   --campaign-dir <path>      optionally register the completed bundle in a local eval campaign
- *   --case <opaque-id>         required with --campaign-dir; never use tenant identifiers here
- *   --cohort <name>            required with --campaign-dir; sanitized traffic-shape label
  *   <conversation-id>          conversation to replay (required positional argument)
  *
  * The builder does not choose a replay target. It saves the complete conversation; the replay
@@ -41,33 +39,21 @@ import type { DB } from '@/db/schema'
 const errText = (error: unknown): string => (error instanceof Error ? error.message : String(error))
 
 const usage =
-  'Usage: --source-db <path|url> (or $DATABASE_URL) --out <bundle.sqlite> [--campaign-dir <path> --case <opaque-id> --cohort <name>] <conversation-id>'
+  'Usage: --source-db <path|url> (or $DATABASE_URL) --out <bundle.sqlite> <conversation-id>'
 const args = process.argv.slice(2).filter((arg) => arg !== '--')
 let sourceDb = process.env.DATABASE_URL
 let out: string | undefined
-let campaignDir: string | undefined
-let caseId: string | undefined
-let cohort: string | undefined
 const positionals: string[] = []
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index]
-  if (
-    arg === '--source-db' ||
-    arg === '--out' ||
-    arg === '--campaign-dir' ||
-    arg === '--case' ||
-    arg === '--cohort'
-  ) {
+  if (arg === '--source-db' || arg === '--out') {
     const value = args[index + 1]
     if (!value || value.startsWith('--')) {
       console.error(`${arg} requires a value\n${usage}`)
       process.exit(1)
     }
     if (arg === '--source-db') sourceDb = value
-    else if (arg === '--out') out = value
-    else if (arg === '--campaign-dir') campaignDir = value
-    else if (arg === '--case') caseId = value
-    else cohort = value
+    else out = value
     index += 1
   } else if (arg.startsWith('--')) {
     console.error(`Unknown option: ${arg}\n${usage}`)
@@ -78,17 +64,7 @@ for (let index = 0; index < args.length; index += 1) {
 }
 
 const conversationId = positionals[0]
-const campaignFlags = [campaignDir, caseId, cohort]
-const incompleteCampaignRegistration =
-  campaignFlags.some((value) => value !== undefined) &&
-  campaignFlags.some((value) => value === undefined)
-if (
-  !sourceDb ||
-  !out ||
-  !conversationId ||
-  positionals.length !== 1 ||
-  incompleteCampaignRegistration
-) {
+if (!sourceDb || !out || !conversationId || positionals.length !== 1) {
   console.error(usage)
   process.exit(1)
 }
@@ -137,6 +113,12 @@ await sql`
     "bytes" BLOB NOT NULL
   )
 `.execute(bundle)
+await sql`
+  CREATE TABLE IF NOT EXISTS "ReplayMetadata" (
+    "key" TEXT PRIMARY KEY NOT NULL,
+    "value" TEXT NOT NULL
+  )
+`.execute(bundle)
 
 const REPLAY_OWNER = 'production-replay-user'
 const seenBlobPaths = new Set<string>()
@@ -159,6 +141,7 @@ let copied:
       audits: number
       attachments: number
       knowledgeFiles: number
+      configuredTools: number
       replayableTargets: number
     }
   | undefined
@@ -208,14 +191,15 @@ try {
   if (Array.isArray(subAssistants) && subAssistants.length > 0) {
     throw new Error('Assistant has sub-assistants, which the offline replay cannot reconstruct')
   }
-  const configuredTool = await source
+  const configuredTools = await source
     .selectFrom('AssistantVersionToolAssociation')
     .select('toolId')
     .where('assistantVersionId', '=', assistant.versionId)
-    .executeTakeFirst()
-  if (configuredTool) {
-    throw new Error('Assistant has configured tools, which the offline replay cannot reconstruct')
-  }
+    .execute()
+  await sql`
+    INSERT OR REPLACE INTO "ReplayMetadata" ("key", "value")
+    VALUES ('configuredTools', ${JSON.stringify({ count: configuredTools.length })})
+  `.execute(bundle)
   const knowledgeAssociations = await source
     .selectFrom('AssistantVersionFile')
     .selectAll()
@@ -444,6 +428,7 @@ try {
     audits: audits.length,
     attachments: attachmentFileIds.length,
     knowledgeFiles: knowledgeFileIds.length,
+    configuredTools: configuredTools.length,
     replayableTargets,
   }
 } catch (error) {
@@ -464,14 +449,11 @@ if (failure || !copied) {
   )
   process.exitCode = 1
 } else {
-  if (campaignDir && caseId && cohort) {
-    const { registerBundle } = await import('@/backend/lib/eval/campaign')
-    await registerBundle(campaignDir, caseId, out, cohort)
-  }
   console.error(
     `Wrote conversation ${conversationId} to ${out}: ${copied.messages} messages, ` +
       `${copied.audits} audits, ${copied.attachments} attachments, ` +
       `${copied.knowledgeFiles} assistant knowledge files, ` +
+      `${copied.configuredTools} configured assistant tools recorded, ` +
       `${copied.replayableTargets} candidate replay messages.`
   )
 }

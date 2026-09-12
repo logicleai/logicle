@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   collectAttachmentFileIds,
+  collectTurnDescendantMessageIds,
   defaultReplayKnowledgeQuestions,
   isSameProductionModel,
   isReplayableLineage,
@@ -110,6 +111,38 @@ describe('collectAttachmentFileIds', () => {
 
   it('returns nothing for a text-only lineage', () => {
     expect(collectAttachmentFileIds([user()])).toEqual([])
+  })
+})
+
+describe('collectTurnDescendantMessageIds', () => {
+  it('follows the parent chain even when audit timestamps are written later', () => {
+    expect(
+      collectTurnDescendantMessageIds(
+        [
+          { id: 'user-1', parent: null, role: 'user' },
+          { id: 'assistant-1', parent: 'user-1', role: 'assistant' },
+          { id: 'tool-1', parent: 'assistant-1', role: 'tool' },
+          { id: 'assistant-2', parent: 'tool-1', role: 'assistant' },
+          { id: 'user-2', parent: 'assistant-2', role: 'user' },
+          { id: 'assistant-3', parent: 'user-2', role: 'assistant' },
+        ],
+        'user-1'
+      )
+    ).toEqual(new Set(['assistant-1', 'tool-1', 'assistant-2']))
+  })
+
+  it('does not cross into a later user branch', () => {
+    expect(
+      collectTurnDescendantMessageIds(
+        [
+          { id: 'user-1', parent: null, role: 'user' },
+          { id: 'assistant-1', parent: 'user-1', role: 'assistant' },
+          { id: 'user-response-1', parent: 'assistant-1', role: 'user-response' },
+          { id: 'assistant-2', parent: 'user-response-1', role: 'assistant' },
+        ],
+        'user-1'
+      )
+    ).toEqual(new Set(['assistant-1']))
   })
 })
 
