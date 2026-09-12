@@ -43,7 +43,7 @@ flowchart TD
   D --> E[cachingExtractor: text, then local OCR for scans]
   E --> F[chunkText]
   E --> G[computeProjections: one LLM pass per question]
-  E --> V[describeImageForIndex: one vision LLM pass per image]
+  E --> V[describeImageForIndex: OCR + one vision LLM pass per image]
   F --> H[(KnowledgeChunk)]
   V --> H
   G --> I[(KnowledgeProjection)]
@@ -147,10 +147,11 @@ file is an image) and the normal extractor returns no text, the runtime uses the
 fallback: Poppler renders PDF pages at 300 DPI and Tesseract produces searchable text. Tesseract
 is only a text-recognition channel; it does not describe objects, diagrams, products, or other
 non-text visual content. Every direct image file also receives a vision-model description, whether
-or not OCR found text, and that description is added to the BM25 chunks as a navigation hint. OCR
-and visual descriptions are retrieval aids; the original file remains the authoritative source for
-exact values, formulas, finishes, and other details that extraction or visual interpretation may
-misread.
+or not OCR found text. The VLM receives a bounded 512px visual copy plus a bounded OCR excerpt and
+produces a richer navigation index covering visible objects and useful labels or table cues. That
+index is added to the BM25 chunks as a navigation hint. OCR and visual descriptions are retrieval
+aids; the original file remains the authoritative source for exact values, formulas, finishes, and
+other details that extraction or visual interpretation may misread.
 
 The PDF is not sent to the model merely because it exists. Retrieval first uses the OCR text to
 identify relevant chunks and the corresponding file; only when the model calls `get_file` is the
