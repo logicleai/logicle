@@ -9,6 +9,8 @@ import {
   warmCompressionCache,
   resolveCompressionRetrievalMode,
   resolveCompressionUserQuery,
+  isLikelyResponsePreferenceQuery,
+  shouldPrefetchHistoricalContext,
   resolveCompressionTriggerTokens,
 } from '@/backend/lib/chat/compression-planner'
 import env from '@/lib/env'
@@ -433,6 +435,40 @@ describe('resolveCompressionUserQuery', () => {
   })
 })
 
+describe('response-preference prefetch guard', () => {
+  test('recognizes a format-only instruction without treating every short query as a preference', () => {
+    expect(isLikelyResponsePreferenceQuery('solo tabella differenze')).toBe(true)
+    expect(isLikelyResponsePreferenceQuery('From now on, only a table')).toBe(true)
+    expect(isLikelyResponsePreferenceQuery('What are the differences between the policies?')).toBe(
+      false
+    )
+  })
+
+  test('keeps prefetch for substantive requests and attachment-only continuations', () => {
+    expect(
+      shouldPrefetchHistoricalContext([
+        { ...base, id: 'u1', role: 'user', content: 'solo tabella differenze', attachments: [] },
+      ])
+    ).toBe(false)
+    expect(
+      shouldPrefetchHistoricalContext([
+        { ...base, id: 'u1', role: 'user', content: 'What changed?', attachments: [] },
+      ])
+    ).toBe(true)
+    expect(
+      shouldPrefetchHistoricalContext([
+        {
+          ...base,
+          id: 'u1',
+          role: 'user',
+          content: '',
+          attachments: [{ id: 'file-1', name: 'report.pdf', mimetype: 'application/pdf', size: 1 }],
+        },
+      ])
+    ).toBe(true)
+  })
+})
+
 describe('applyCompressionPlan', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -646,6 +682,39 @@ describe('applyCompressionPlan', () => {
     expect(rendered).toContain('[AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST')
     expect(rendered).toContain('Final migration program codename: Kestrel Blue.')
     expect(rendered.match(/Routine background note/g)?.length).toBeLessThan(30)
+  })
+
+  test('does not prefetch stale historical material for a format-only preference turn', async () => {
+    const messages: dto.Message[] = [
+      {
+        ...base,
+        id: 'u1',
+        role: 'user',
+        content: 'Compare the attached policies.',
+        attachments: [],
+      },
+      {
+        ...base,
+        id: 'a1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: `${'Policy background. '.repeat(200)}Premium: 42.` }],
+      },
+      { ...base, id: 'u2', role: 'user', content: 'solo tabella differenze', attachments: [] },
+    ]
+
+    const compressed = await applyCompressionPlan(
+      messages,
+      planMessageCompression(messages, 'conservative'),
+      {
+        prefetchQuery: 'solo tabella differenze',
+      }
+    )
+    const rendered = (compressed[1] as dto.AssistantMessage).parts
+      .filter((part): part is dto.TextPart => part.type === 'text')
+      .map((part) => part.text)
+      .join('\n')
+
+    expect(rendered).not.toContain('[AUTOMATICALLY RETRIEVED FOR THE CURRENT REQUEST')
   })
 
   test('attachment-only continuation prefetch recovers the previous task from a compressed answer', async () => {

@@ -165,9 +165,8 @@ Written down so we do not discover them in the results.
   stochastic trajectory. Absolute success rates are not transferable to production.
 - **Judge bias.** Assistant, simulated user and judge currently share a provider. A judge from a
   different family would reduce the risk of rewarding its own phrasing.
-- **Synthetic corpora.** The generator is built to have the right shape, not to be real text. The
-  miner (`eval-mine-scenarios.ts`) exists to pull scenarios from real conversations; its answer
-  keys need human verification before they mean anything.
+- **Synthetic corpora.** The generator is built to have the right shape, not to be real text. Real
+  traffic is curated separately through the private multi-tenant dataset workflow.
 - **Answer keys as substring matching.** Cheap and unambiguous, and it cannot see a correct answer
   phrased unexpectedly. The judge covers that gap; when the two disagree, suspect the scenario.
 - **Small samples.** Bootstrap intervals are reported and differences that include zero are
@@ -201,6 +200,13 @@ regression.
       context retrieval three times, so the real turn cost was substantially above the one-pass
       compressed-history estimate even though it remained far below production. The corrected
       attachment-only replay used one provider call and no retrieval tools.
+- [x] Guard response-preference turns from historical compression and retrieval. A real replay of
+      a format-only follow-up previously produced unsupported historical document details and was
+      judged a major regression; after the guard, off/on both used one provider call with no
+      context-retrieve call and equivalent responses.
+- [x] Rebuild the private real-chat dataset from the legacy corpus and add reviewed cases from a
+      second tenant. Keep source-dependent knowledge-box and combined cases as explicit gaps until
+      a replayable target is found; do not promote knowledge-enabled compression cases by label.
 - [ ] Compare against `keepRecentTurns: 1` only if a broader attachment-only sample exposes cases
       where the continuation query and note are insufficient. Do not buy an uncompressed high-token
       replay unless cheaper compressed variants are inconclusive.
@@ -213,7 +219,8 @@ Done:
   ([`docs/evaluation-harness.md`](evaluation-harness.md)).
 - Arms: `all-in-context`, `knowledge-box`, `knowledge-box-no-projections`.
 - Parametric corpus generator with size, distractor, depth and hop dials.
-- Scenario miner for real conversations.
+- Metadata-only multi-tenant discovery for real conversations; semantic curation stays with the
+  coding agent.
 - Cache-aware provider usage and cost telemetry, end to end from the provider's usage report to the
   priced total, with full-input fallback when cache details are missing.
 - Flip-test machinery: paired corpora (`--flip`), per-run lexical classification, and the paired

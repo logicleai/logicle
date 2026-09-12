@@ -45,15 +45,23 @@
  *   --knowledge-arms <...> comma-separated assistant-knowledge, knowledge-box, and/or
  *                          knowledge-box-no-projections (default: assistant-knowledge)
  *   --repeat <n>           replay each knowledge arm n times; box ingestion happens once (default: 1)
+ *   --disable-configured-tools
+ *                          optimizer choice: omit assistant-configured tools from this replay;
+ *                          valid only when the selected production turn made no tool call
  *   --inspect-only         calculate compression decisions/token estimates without an LLM call
  *   --judge                also classify each response against the saved production reply
  *   --judge-model <id>     judge model (default: the replay model)
+ *
+ * An explicit --model or override.model permits a paired replay against a saved assistant whose
+ * current model has drifted from production. In that mode production token/cost deltas are not
+ * comparable; the report still compares the replay arms with each other.
  */
 
 import { copyFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { sql } from 'kysely'
 import type * as dto from '@/types/dto'
 import type { Message as DbMessage } from '@/db/schema'
 import type { ProviderType } from '@/types/provider'
@@ -71,6 +79,7 @@ const flag = (name: string): string | undefined => {
   return index === -1 ? undefined : args[index + 1]
 }
 const bool = (name: string) => args.includes(`--${name}`)
+const disableConfiguredTools = bool('disable-configured-tools')
 const bundlePath = flag('bundle')
 const liveConversationId = flag('conversation')
 const out = flag('out')
@@ -135,6 +144,7 @@ const {
   resolveCompressionUserQuery,
   resolveCompressionRetrievalMode,
   resolveCompressionTriggerTokens,
+  shouldPrefetchHistoricalContext,
 } = await import('@/backend/lib/chat/compression-planner')
 const {
   buildCostEffectiveCompressionPlan,
@@ -143,6 +153,7 @@ const {
 } = await import('@/backend/lib/chat/compression-economics')
 const {
   createReplayJudge,
+  collectTurnDescendantMessageIds,
   defaultReplayKnowledgeQuestions,
   isSameProductionModel,
   isReplayableLineage,
@@ -153,6 +164,21 @@ const { allInContextArm, createKnowledgeBoxArm } = await import('@/backend/lib/e
 setTokenizerCounter({
   countText: async (tokenizer, text) => countTextWithTokenizer(tokenizer, text),
 })
+
+let configuredToolCount = 0
+if (bundlePath) {
+  try {
+    const metadata = await sql<{ key: string; value: string }>`
+      SELECT "key", "value" FROM "ReplayMetadata" WHERE "key" = 'configuredTools'
+    `.execute(db)
+    const configuredTools = metadata.rows[0]?.value
+      ? (JSON.parse(metadata.rows[0].value) as { count?: unknown })
+      : undefined
+    if (typeof configuredTools?.count === 'number') configuredToolCount = configuredTools.count
+  } catch {
+    // Bundles created before ReplayMetadata have no configured-tool marker.
+  }
+}
 
 const abortReplay = async (message: string): Promise<never> => {
   console.error(message)
@@ -189,13 +215,14 @@ const conversationMessages = await db
   .where('conversationId', '=', replayConversationId)
   .execute()
 const byId = new Map(conversationMessages.map((message) => [message.id, message]))
-const userAudits = await db
+const conversationAudits = await db
   .selectFrom('MessageAudit')
   .selectAll()
-  .where('type', '=', 'user')
   .where('conversationId', '=', replayConversationId)
-  .orderBy('sentAt', 'desc')
   .execute()
+const userAudits = conversationAudits
+  .filter((entry) => entry.type === 'user')
+  .sort((a, b) => b.sentAt.localeCompare(a.sentAt))
 const requestedMessageId = flag('message')
 const hasSavedAssistantResponse = (messageId: string) =>
   conversationMessages.some(
@@ -224,6 +251,39 @@ if (selectedAudit.errors !== null) {
     `Message ${selectedAudit.messageId} errored in production: ${selectedAudit.errors}`
   )
 }
+
+const toolAuditTypes = new Set(['tool', 'tool-auth-request', 'tool-auth-response'])
+const toolMessageRoles = new Set([
+  'tool',
+  'tool-call',
+  'tool-result',
+  'tool-debug',
+  'tool-output',
+  'tool-auth-request',
+  'tool-auth-response',
+])
+const messageHasToolPart = (message: DbMessage) => {
+  if (toolMessageRoles.has(message.role)) return true
+  try {
+    const converted = dtoMessageFromDbMessage(message)
+    return (
+      'parts' in converted &&
+      converted.parts.some((part) =>
+        ['tool-call', 'tool-result', 'builtin-tool-call', 'builtin-tool-result'].includes(part.type)
+      )
+    )
+  } catch {
+    return false
+  }
+}
+const selectedTurnMessageIds = collectTurnDescendantMessageIds(
+  conversationMessages,
+  selectedAudit.messageId
+)
+const targetTurnHasToolCalls =
+  conversationAudits.some(
+    (entry) => selectedTurnMessageIds.has(entry.messageId) && toolAuditTypes.has(entry.type)
+  ) || [...selectedTurnMessageIds].some((messageId) => messageHasToolPart(byId.get(messageId)!))
 
 // Parent-lineage reconstruction belongs here, not in the bundle builder. The same code therefore
 // runs against a complete offline conversation and a live one.
@@ -278,10 +338,13 @@ if (!assistant)
 const selectedAssistant = assistant!
 if (selectedAssistant.deleted !== 0)
   await abortReplay(`Assistant ${selectedAudit.assistantId} is deleted.`)
-if (selectedAssistant.model !== selectedAudit.model) {
+const explicitModelOverride =
+  modelShorthand ?? (typeof override.model === 'string' ? override.model : undefined)
+if (selectedAssistant.model !== selectedAudit.model && !explicitModelOverride) {
   await abortReplay(
     `Model drift for message ${selectedAudit.messageId}: production used ${selectedAudit.model}, ` +
-      `current saved assistant uses ${selectedAssistant.model}.`
+      `current saved assistant uses ${selectedAssistant.model}; pass --model or override.model ` +
+      `for an explicit replay comparison.`
   )
 }
 const subAssistants = selectedAssistant.subAssistants
@@ -297,9 +360,17 @@ const configuredTool = await db
   .select('toolId')
   .where('assistantVersionId', '=', selectedAssistant.versionId)
   .executeTakeFirst()
-if (configuredTool) {
+const hasConfiguredTools = !!configuredTool || configuredToolCount > 0
+if (targetTurnHasToolCalls) {
   await abortReplay(
-    `Assistant ${selectedAudit.assistantId} has configured tools; replay has no fixture.`
+    `Selected production turn ${selectedAudit.messageId} used a tool; ` +
+      `the offline replay has no tool fixture for the target turn.`
+  )
+}
+if (hasConfiguredTools && !disableConfiguredTools) {
+  await abortReplay(
+    `Assistant ${selectedAudit.assistantId} has configured tools; pass --disable-configured-tools ` +
+      `for a replay that omits them.`
   )
 }
 const knowledgeFiles = await assistantVersionFiles(selectedAssistant.versionId)
@@ -394,15 +465,18 @@ const compression = inspectedAssistantConfig.contextCompression as dto.ContextCo
 const triggerAtTokens = compression
   ? resolveCompressionTriggerTokens(compression.triggerAtTokens)
   : undefined
-const triggered = !!compression && estimatedHistoryTokensBefore >= triggerAtTokens!
+const finalUserMessage = [...replayMessages]
+  .reverse()
+  .find((message): message is dto.UserMessage => message.role === 'user')
+const compressionThresholdReached =
+  !!compression && estimatedHistoryTokensBefore >= triggerAtTokens!
+const compressionAllowedForCurrentTurn = shouldPrefetchHistoricalContext(replayMessages)
+const triggered = compressionThresholdReached && compressionAllowedForCurrentTurn
 let decisions = triggered
   ? planMessageCompression(replayMessages, compression.preset, {
       keepRecentTurns: compression.keepRecentTurns,
     })
   : []
-const finalUserMessage = [...replayMessages]
-  .reverse()
-  .find((message): message is dto.UserMessage => message.role === 'user')
 const userQuery = compression ? resolveCompressionUserQuery(replayMessages) : undefined
 const compressionPlan = triggered
   ? await buildCostEffectiveCompressionPlan({
@@ -429,10 +503,18 @@ const tokenLimit = Number(inspectedAssistantConfig.tokenLimit)
 const inspection = {
   model: inspectedModel.id,
   tokenLimit,
+  configuredToolCount,
+  configuredToolsDisabled: disableConfiguredTools,
+  targetTurnHasToolCalls,
   productionInputTokens: selectedAudit.tokens,
   productionInputExceedsTokenLimit: selectedAudit.tokens > tokenLimit,
   compressionEnabled: !!compression,
   triggerAtTokens,
+  compressionThresholdReached,
+  compressionSkippedReason:
+    compressionThresholdReached && !compressionAllowedForCurrentTurn
+      ? 'response-preference-turn'
+      : undefined,
   triggered,
   applied: compressionPlan?.applied ?? false,
   preset: compression?.preset,
@@ -483,6 +565,8 @@ if (bool('inspect-only')) {
     `Saved token limit: **${tokenLimit}**`,
     `Production input tokens: **${selectedAudit.tokens}**`,
     `Assistant knowledge files: **${cases[0]!.knowledgeFiles.length}**.`,
+    `Configured assistant tools: **${configuredToolCount}**; disabled for replay: **${disableConfiguredTools}**; ` +
+      `tool call in selected production turn: **${targetTurnHasToolCalls}**.`,
     '',
     `Compression: **${inspection.compressionEnabled ? 'enabled' : 'disabled'}**` +
       (compression
@@ -865,7 +949,11 @@ const markdown = [
   '',
   override && Object.keys(override).length > 0
     ? `Config override: \`${JSON.stringify(override)}\``
+    : disableConfiguredTools
+    ? 'No config override — replayed with each turn’s saved assistant configuration except configured tools disabled by the optimizer.'
     : 'No config override — replayed with each turn’s saved assistant configuration.',
+  `Configured assistant tools: **${configuredToolCount}**; disabled for replay: **${disableConfiguredTools}**; ` +
+    `tool call in selected production turn: **${targetTurnHasToolCalls}**.`,
   '',
   `Deterministic history estimate: **${inspection.estimatedHistoryTokensBefore} → ` +
     `${inspection.estimatedHistoryTokensAfter}**; summarized messages: ` +

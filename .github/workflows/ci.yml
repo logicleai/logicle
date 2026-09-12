@@ -197,6 +197,9 @@ jobs:
             mcp-file-analyzer -help >/dev/null
             command -v soffice
             command -v pdftoppm
+            command -v pdfinfo
+            command -v tesseract
+            tesseract --list-langs | grep -qx ita
           '
 
       - name: Run smoke and baseline integration checks
