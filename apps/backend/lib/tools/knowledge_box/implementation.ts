@@ -7,6 +7,8 @@ import {
 } from '@/lib/chat/tools'
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
+import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import {
   KnowledgeBoxInterface,
   KnowledgeBoxSchema,
@@ -23,12 +25,13 @@ import {
  * A knowledge box: a set of files indexed at ingestion time so the model can work with them
  * without paying to read them.
  *
- * Three functions, in increasing cost:
- *  - `list_documents` returns the admin's ingestion questions answered per file. This is the map:
- *    it tells the model which document is worth looking at before a single page is read. It is
- *    ranked and budgeted, because a map that grows with the size of the box stops being cheap.
+ * Four functions:
+ *  - `list_documents` returns the document map, with file metadata and optional ingestion hints.
+ *    It is ranked and budgeted, because a map that grows with the size of the box stops being cheap.
  *  - `search` returns ranked chunks (BM25 over the box's own chunk set).
  *  - `read` returns a contiguous run of chunks, for when a search hit needs its surroundings.
+ *  - `get_file` returns the original file on demand, for source verification when extracted text
+ *    is insufficient or the model needs to inspect a PDF/image directly.
  *
  * Everything is scoped by `boxId` (the tool id), so a box can only ever surface the files attached
  * to that tool — there is no file id a caller can pass to escape it.
@@ -54,7 +57,10 @@ const LIST_PROJECTION_BUDGET_CHARS = 6000
 
 /** Keeps retrieved passages anchored as evidence instead of inviting unsupported conclusions. */
 const SOURCE_EVIDENCE_INSTRUCTION =
-  'Treat the passages below as source evidence: preserve explicit conditions, exceptions, limits, and distinctions; do not turn an unstated inference into a fact.'
+  'Treat the passages below as source evidence. For every source-specific claim, use only what the passages state; preserve explicit conditions, exceptions, limits, and distinctions. Cite each source-specific sentence or bullet with the exact marker [file · chunk N] shown above it. Previous assistant messages and general knowledge are not evidence, and a prior claim must not be repeated unless these passages support it. Do not fill gaps with general knowledge or customary legal rules. Do not cite or link a document, page, URL, or fact unless it appears in these passages. For multi-part questions, omit unsupported subclaims or say that the source does not specify them. If a subtopic is unsupported, do not mention remembered percentages, amounts, article numbers, or illustrative examples for it, even as a caveat or disclaimer. A citation about one tax or topic does not support a claim about another. Search one focused query per missing subtopic when possible; once a focused search establishes the relevant evidence, do not repeat broad searches just for confirmation. Make at most four search calls in this turn; then answer from the evidence you have or state the source boundary.'
+
+const KNOWLEDGE_BOX_SYSTEM_INSTRUCTION =
+  '\nWhen researching with this knowledge box, treat retrieved passages as the only evidence for source-specific claims. Search results may be incomplete: search again or read surrounding chunks when needed, but prefer one focused query per subtopic and stop once the evidence is sufficient or the source clearly does not establish the detail. Every source-specific sentence or bullet in the final answer must have an inline citation to the exact [file · chunk N] marker that supports it. Do not use previous assistant messages, general knowledge, or customary rules to fill gaps. Do not invent or cite unsupported facts, pages, or URLs; if the source does not establish a requested detail, say so explicitly. For an unsupported subtopic, do not add remembered percentages, amounts, article numbers, or examples even as a disclaimer; state only the source boundary. Evidence for one tax or topic cannot support a claim about another. Make at most four search calls in this turn; after that, answer from the evidence you have or state the source boundary.\n'
 
 const formatHeading = (heading: string | null) => (heading ? ` — ${heading}` : '')
 
@@ -66,11 +72,21 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
   // Deliberately not setting `knowledge`: the whole point of a box is to keep its files out of
   // the prompt. They are reached through the functions below instead.
 
+  public toolParams: ToolParams
+
+  /** Search results already shown during the current user turn. */
+  private searchTurnKey: string | null = null
+  private seenSearchChunks = new Set<string>()
+
   constructor(
-    public toolParams: ToolParams,
+    toolParams: ToolParams,
     public params: KnowledgeBoxParams
   ) {
     super()
+    this.toolParams = {
+      ...toolParams,
+      promptFragment: `${toolParams.promptFragment}${KNOWLEDGE_BOX_SYSTEM_INSTRUCTION}`,
+    }
   }
 
   private get boxId() {
@@ -81,6 +97,53 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
 
   private fileNames(): Map<string, string> {
     return new Map(this.params.files.map((file) => [file.id, file.name]))
+  }
+
+  private resolveFileSelector(selector: string): KnowledgeBoxParams['files'][number] | undefined {
+    const normalized = selector.trim().toLocaleLowerCase()
+    return this.params.files.find(
+      (file) => file.id === selector || file.name.trim().toLocaleLowerCase() === normalized
+    )
+  }
+
+  private hasCurrentTurnSourceLookup(messages: dto.Message[]): boolean {
+    let lastUserIndex = -1
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const role = messages[index]?.role
+      if (role === 'user' || role === 'user-response') {
+        lastUserIndex = index
+        break
+      }
+    }
+    const sourceLookupNames = new Set([
+      'search',
+      'read',
+      `${this.toolParams.name}__search`,
+      `${this.toolParams.name}__read`,
+    ])
+    return messages
+      .slice(lastUserIndex + 1)
+      .some(
+        (message) =>
+          message.role === 'tool' &&
+          message.parts.some(
+            (part) =>
+              part.type === 'tool-result' &&
+              (sourceLookupNames.has(part.toolName) ||
+                part.toolName.endsWith('__search') ||
+                part.toolName.endsWith('__read'))
+          )
+      )
+  }
+
+  private prepareSearchTurn(messages: dto.Message[]): void {
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((message) => message.role === 'user' || message.role === 'user-response')
+    const turnKey = lastUserMessage?.id ?? '__unknown-turn__'
+    if (turnKey === this.searchTurnKey) return
+    this.searchTurnKey = turnKey
+    this.seenSearchChunks.clear()
   }
 
   /**
@@ -113,14 +176,14 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
   functions_: ToolFunctions = {
     list_documents: {
       description:
-        'List documents in this knowledge box with pre-computed answers to the questions it was configured with. Call this first: it tells you which documents are worth searching. Pass a query to rank the documents by relevance — on a box with many documents that is the difference between a short answer and a truncated one.',
+        'List documents in this knowledge box. It returns names, file metadata, and optional pre-computed navigation hints; these are not authoritative answers. Pass a query to rank documents by relevance when useful, then use search/read to inspect source text.',
       parameters: {
         type: 'object',
         properties: {
           query: {
             type: 'string',
             description:
-              'Optional: what you are looking for. Ranks documents by their pre-computed answers and returns the most relevant first.',
+              'Optional: what you are looking for. Ranks documents by their name and available navigation hints, returning the most relevant first.',
           },
           limit: {
             type: 'number',
@@ -166,7 +229,12 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         let remainingBudget = LIST_PROJECTION_BUDGET_CHARS
         const sections = ordered.map((file) => {
           const document = statusByFile.get(file.id)
-          const lines = [`## ${file.name}`, `id: ${file.id}`]
+          const lines = [
+            `## ${file.name}`,
+            `id: ${file.id}`,
+            `type: ${file.type}`,
+            `size: ${file.size} bytes`,
+          ]
           if (document?.status !== 'ready') {
             lines.push(`status: ${document?.status ?? 'not indexed'}`)
             if (document?.error) lines.push(`error: ${document.error}`)
@@ -220,28 +288,55 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
             type: 'array',
             items: { type: 'string' },
             description:
-              'Optional: restrict the search to these document ids, as returned by list_documents.',
+              'Optional: restrict the search to these document ids or exact document names, as returned by list_documents.',
           },
         },
         additionalProperties: false,
         required: ['query'],
       },
-      invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
+      invoke: async ({ params, messages }): Promise<dto.ToolCallResultOutput> => {
+        this.prepareSearchTurn(messages)
         const query = `${params.query ?? ''}`.trim()
         if (!query) {
           return { type: 'error-text', value: 'Empty search query' }
         }
-        const fileIds = Array.isArray(params.fileIds)
+        const requestedFileIds = Array.isArray(params.fileIds)
           ? params.fileIds.filter((id): id is string => typeof id === 'string')
-          : undefined
+          : []
+        const fileIds = requestedFileIds.map((selector) => this.resolveFileSelector(selector)?.id)
+        if (requestedFileIds.length > 0 && fileIds.some((fileId) => !fileId)) {
+          return {
+            type: 'error-text',
+            value:
+              'Every file selector must be a document id or exact document name from list_documents.',
+          }
+        }
 
-        const hits = await searchBox(this.boxId, query, this.params.maxSearchResults, fileIds)
+        const hits = await searchBox(
+          this.boxId,
+          query,
+          this.params.maxSearchResults,
+          fileIds.length > 0 ? fileIds.filter((fileId): fileId is string => !!fileId) : undefined
+        )
         if (hits.length === 0) {
           return { type: 'text', value: `No passage matched "${query}".` }
         }
 
         const names = this.fileNames()
-        const rendered = hits.map((hit) => {
+        const newHits = hits.filter((hit) => {
+          const key = `${hit.fileId}:${hit.seq}`
+          if (this.seenSearchChunks.has(key)) return false
+          this.seenSearchChunks.add(key)
+          return true
+        })
+        if (newHits.length === 0) {
+          return {
+            type: 'text',
+            value:
+              'No new passage matched this query. Earlier searches in this turn already returned these passages; use them, or issue a narrower query if a subtopic is still missing.',
+          }
+        }
+        const rendered = newHits.map((hit) => {
           const name = names.get(hit.fileId) ?? hit.fileId
           return `[${name} · id: ${hit.fileId} · chunk ${hit.seq}${formatHeading(hit.heading)}]\n${
             hit.text
@@ -254,13 +349,67 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
       },
     },
 
+    get_file: {
+      description:
+        'Retrieve the original file from this knowledge box on demand. This may add the whole file to the context: do not use it for ordinary text questions. Use it only after search/read when exact layout, tables, images, or OCR-sensitive details need verification.',
+      parameters: {
+        type: 'object',
+        properties: {
+          fileId: {
+            type: 'string',
+            description: 'Document id or exact document name, as returned by list_documents.',
+          },
+        },
+        additionalProperties: false,
+        required: ['fileId'],
+      },
+      invoke: async ({ params, userId, messages }): Promise<dto.ToolCallResultOutput> => {
+        const selector = `${params.fileId ?? ''}`
+        const file = this.resolveFileSelector(selector)
+        if (!file) {
+          return { type: 'error-text', value: `Document ${selector} is not in this knowledge box` }
+        }
+        const fileId = file.id
+        if (!this.hasCurrentTurnSourceLookup(messages)) {
+          return {
+            type: 'error-text',
+            value:
+              'Search or read a passage from this knowledge box before retrieving the original file.',
+          }
+        }
+        if (!(await canAccessFile({ userId }, fileId))) {
+          return { type: 'error-text', value: 'File not found' }
+        }
+        const fileEntry = await getFileWithId(fileId)
+        if (!fileEntry) {
+          return { type: 'error-text', value: 'File not found' }
+        }
+        return {
+          type: 'content',
+          value: [
+            {
+              type: 'file',
+              id: fileEntry.id,
+              name: fileEntry.name,
+              size: fileEntry.size ?? file.size,
+              mimetype: fileEntry.type,
+              uiHidden: true,
+            },
+          ],
+        }
+      },
+    },
+
     read: {
       description:
         'Read a contiguous range of chunks from one document of this knowledge box. Use it to expand around a search hit, or to walk a document that list_documents showed to be relevant.',
       parameters: {
         type: 'object',
         properties: {
-          fileId: { type: 'string', description: 'Document id, as returned by list_documents.' },
+          fileId: {
+            type: 'string',
+            description: 'Document id or exact document name, as returned by list_documents.',
+          },
           from: { type: 'number', description: 'First chunk index (0-based). Defaults to 0.' },
           to: {
             type: 'number',
@@ -271,11 +420,13 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         required: ['fileId'],
       },
       invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
-        const fileId = `${params.fileId ?? ''}`
+        const selector = `${params.fileId ?? ''}`
+        const file = this.resolveFileSelector(selector)
         const names = this.fileNames()
-        if (!names.has(fileId)) {
-          return { type: 'error-text', value: `Document ${fileId} is not in this knowledge box` }
+        if (!file) {
+          return { type: 'error-text', value: `Document ${selector} is not in this knowledge box` }
         }
+        const fileId = file.id
 
         const from = Math.max(0, Number.isFinite(Number(params.from)) ? Number(params.from) : 0)
         const requestedTo = Number.isFinite(Number(params.to))

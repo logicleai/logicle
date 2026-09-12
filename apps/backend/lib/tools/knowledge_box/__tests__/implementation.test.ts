@@ -9,6 +9,8 @@ import type {
 
 const mockSearchBox = vi.fn()
 const mockSearchBoxDocuments = vi.fn()
+const mockGetFileWithId = vi.fn()
+const mockCanAccessFile = vi.fn()
 const mockListBoxDocuments = vi.fn()
 const mockLoadBoxProjections = vi.fn()
 const mockLoadFileChunkRange = vi.fn()
@@ -21,6 +23,12 @@ vi.mock('@/backend/lib/knowledge/store', () => ({
   listBoxDocuments: (...args: unknown[]) => mockListBoxDocuments(...args),
   loadBoxProjections: (...args: unknown[]) => mockLoadBoxProjections(...args),
   loadFileChunkRange: (...args: unknown[]) => mockLoadFileChunkRange(...args),
+}))
+vi.mock('@/models/file', () => ({
+  getFileWithId: (...args: unknown[]) => mockGetFileWithId(...args),
+}))
+vi.mock('@/backend/lib/files/authorization', () => ({
+  canAccessFile: (...args: unknown[]) => mockCanAccessFile(...args),
 }))
 
 const toolParams: ToolParams = { id: 'box1', name: 'kb', provisioned: false, promptFragment: '' }
@@ -46,9 +54,41 @@ const buildTool = (overrides: Record<string, unknown> = {}) =>
     'gpt-4o-mini'
   ) as KnowledgeBoxTool
 
-const invoke = async (tool: KnowledgeBoxTool, name: string, params: Record<string, unknown>) => {
+const invoke = async (
+  tool: KnowledgeBoxTool,
+  name: string,
+  params: Record<string, unknown>,
+  messages: ToolInvokeParams['messages'] = []
+) => {
   const fn = tool.functions_[name] as ToolFunction
-  return fn.invoke({ params } as unknown as ToolInvokeParams)
+  return fn.invoke({ params, userId: 'user-1', messages } as unknown as ToolInvokeParams)
+}
+
+const sourceLookupMessages = [
+  {
+    role: 'tool',
+    parts: [
+      {
+        type: 'tool-result',
+        toolCallId: 'call-1',
+        toolName: 'knowledge_box__search',
+        result: { type: 'text', value: 'source passage' },
+      },
+    ],
+  },
+] as unknown as ToolInvokeParams['messages']
+
+const invokeWithSourceLookup = async (
+  tool: KnowledgeBoxTool,
+  name: string,
+  params: Record<string, unknown>
+) => {
+  const fn = tool.functions_[name] as ToolFunction
+  return fn.invoke({
+    params,
+    userId: 'user-1',
+    messages: sourceLookupMessages,
+  } as unknown as ToolInvokeParams)
 }
 
 const readyDocument = (fileId: string, chunkCount: number) => ({
@@ -66,16 +106,41 @@ beforeEach(() => {
   mockListBoxDocuments.mockReset().mockResolvedValue([])
   mockLoadBoxProjections.mockReset().mockResolvedValue([])
   mockLoadFileChunkRange.mockReset().mockResolvedValue([])
+  mockGetFileWithId.mockReset()
+  mockCanAccessFile.mockReset().mockResolvedValue(true)
 })
 
 describe('KnowledgeBoxTool', () => {
-  it('exposes exactly the three retrieval functions', () => {
-    expect(Object.keys(buildTool().functions_).sort()).toEqual(['list_documents', 'read', 'search'])
+  it('exposes the map, search, source reading, and original-file retrieval functions', () => {
+    expect(Object.keys(buildTool().functions_).sort()).toEqual([
+      'get_file',
+      'list_documents',
+      'read',
+      'search',
+    ])
   })
 
   it('does not push its files into the prompt', () => {
     // `knowledge` is what makes a tool's files part of the preamble; a box must never set it.
     expect((buildTool() as ToolImplementation).knowledge).toBeUndefined()
+  })
+
+  it('adds source-first research guidance to the system prompt', () => {
+    expect(buildTool().toolParams.promptFragment).toContain(
+      'treat retrieved passages as the only evidence'
+    )
+    expect(buildTool().toolParams.promptFragment).toContain(
+      'Do not use previous assistant messages'
+    )
+    expect(buildTool().toolParams.promptFragment).toContain(
+      'do not add remembered percentages, amounts, article numbers'
+    )
+  })
+
+  it('keeps original-file retrieval as an expensive last resort', () => {
+    expect((buildTool().functions_.get_file as ToolFunction).description).toContain(
+      'do not use it for ordinary text questions'
+    )
   })
 
   describe('list_documents', () => {
@@ -97,6 +162,8 @@ describe('KnowledgeBoxTool', () => {
       const value = result.value as string
       expect(value).toContain('## contract.pdf')
       expect(value).toContain('id: f1')
+      expect(value).toContain('type: application/pdf')
+      expect(value).toContain('size: 10 bytes')
       expect(value).toContain('chunks: 0..3')
       expect(value).toContain('Topics: Supply of widgets')
       expect(value).toContain('Parties: Acme and Globex')
@@ -212,6 +279,24 @@ describe('KnowledgeBoxTool', () => {
       expect(mockSearchBox).toHaveBeenCalledWith('box1', 'payment', 5, ['f2'])
     })
 
+    it('accepts exact document names as file filters', async () => {
+      await invoke(buildTool(), 'search', { query: 'payment', fileIds: ['privacy.docx'] })
+      expect(mockSearchBox).toHaveBeenCalledWith('box1', 'payment', 5, ['f2'])
+    })
+
+    it('rejects unknown file selectors instead of widening the search', async () => {
+      const result = await invoke(buildTool(), 'search', {
+        query: 'payment',
+        fileIds: ['missing.pdf'],
+      })
+      expect(result).toEqual({
+        type: 'error-text',
+        value:
+          'Every file selector must be a document id or exact document name from list_documents.',
+      })
+      expect(mockSearchBox).not.toHaveBeenCalled()
+    })
+
     it('renders hits with the document name, id and chunk index', async () => {
       mockSearchBox.mockResolvedValue([
         { fileId: 'f1', seq: 3, heading: 'Payment terms', text: 'Net 30 days.', score: 2 },
@@ -230,6 +315,27 @@ describe('KnowledgeBoxTool', () => {
       const result = await invoke(buildTool(), 'search', { query: 'unicorn' })
       expect(result.value).toBe('No passage matched "unicorn".')
     })
+
+    it('does not repeat passages already returned in the same user turn', async () => {
+      const tool = buildTool()
+      const hit = { fileId: 'f1', seq: 3, heading: 'Payment terms', text: 'Net 30 days.', score: 2 }
+      mockSearchBox
+        .mockResolvedValueOnce([hit])
+        .mockResolvedValueOnce([hit])
+        .mockResolvedValueOnce([hit])
+      const turnOne = [{ id: 'user-1', role: 'user' }] as unknown as ToolInvokeParams['messages']
+      const turnTwo = [{ id: 'user-2', role: 'user' }] as unknown as ToolInvokeParams['messages']
+
+      const first = await invoke(tool, 'search', { query: 'payment' }, turnOne)
+      const duplicate = await invoke(tool, 'search', { query: 'invoice' }, turnOne)
+      const nextTurn = await invoke(tool, 'search', { query: 'payment' }, turnTwo)
+
+      expect(first.value).toContain('Net 30 days.')
+      expect(duplicate.value).toBe(
+        'No new passage matched this query. Earlier searches in this turn already returned these passages; use them, or issue a narrower query if a subtopic is still missing.'
+      )
+      expect(nextTurn.value).toContain('Net 30 days.')
+    })
   })
 
   describe('read', () => {
@@ -244,6 +350,11 @@ describe('KnowledgeBoxTool', () => {
 
     it('defaults to the first chunks of the document', async () => {
       await invoke(buildTool(), 'read', { fileId: 'f1' })
+      expect(mockLoadFileChunkRange).toHaveBeenCalledWith('box1', 'f1', 0, 11)
+    })
+
+    it('accepts an exact document name', async () => {
+      await invoke(buildTool(), 'read', { fileId: 'contract.pdf' })
       expect(mockLoadFileChunkRange).toHaveBeenCalledWith('box1', 'f1', 0, 11)
     })
 
@@ -279,6 +390,74 @@ describe('KnowledgeBoxTool', () => {
       const result = await invoke(buildTool(), 'read', { fileId: 'f1', from: 40, to: 41 })
       expect(result.type).toBe('text')
       expect(result.value as string).toContain('may still be indexing')
+    })
+  })
+
+  describe('get_file', () => {
+    it('refuses a document that is not in the box', async () => {
+      const result = await invoke(buildTool(), 'get_file', { fileId: 'other' })
+      expect(result).toEqual({
+        type: 'error-text',
+        value: 'Document other is not in this knowledge box',
+      })
+      expect(mockCanAccessFile).not.toHaveBeenCalled()
+      expect(mockGetFileWithId).not.toHaveBeenCalled()
+    })
+
+    it('returns the original configured file as a hidden tool attachment', async () => {
+      mockGetFileWithId.mockResolvedValue({
+        id: 'f1',
+        name: 'contract.pdf',
+        type: 'application/pdf',
+        size: 42,
+      })
+      const result = await invokeWithSourceLookup(buildTool(), 'get_file', { fileId: 'f1' })
+      expect(mockCanAccessFile).toHaveBeenCalledWith({ userId: 'user-1' }, 'f1')
+      expect(result).toEqual({
+        type: 'content',
+        value: [
+          {
+            type: 'file',
+            id: 'f1',
+            name: 'contract.pdf',
+            size: 42,
+            mimetype: 'application/pdf',
+            uiHidden: true,
+          },
+        ],
+      })
+    })
+
+    it('accepts an exact document name', async () => {
+      mockGetFileWithId.mockResolvedValue({
+        id: 'f1',
+        name: 'contract.pdf',
+        size: 10,
+        type: 'application/pdf',
+      })
+      const result = await invokeWithSourceLookup(buildTool(), 'get_file', {
+        fileId: 'contract.pdf',
+      })
+      expect(mockGetFileWithId).toHaveBeenCalledWith('f1')
+      expect(result.type).toBe('content')
+    })
+
+    it('does not return a configured file the caller cannot access', async () => {
+      mockCanAccessFile.mockResolvedValue(false)
+      const result = await invokeWithSourceLookup(buildTool(), 'get_file', { fileId: 'f1' })
+      expect(result).toEqual({ type: 'error-text', value: 'File not found' })
+      expect(mockGetFileWithId).not.toHaveBeenCalled()
+    })
+
+    it('does not load the original file before source lookup', async () => {
+      const result = await invoke(buildTool(), 'get_file', { fileId: 'f1' })
+      expect(result).toEqual({
+        type: 'error-text',
+        value:
+          'Search or read a passage from this knowledge box before retrieving the original file.',
+      })
+      expect(mockCanAccessFile).not.toHaveBeenCalled()
+      expect(mockGetFileWithId).not.toHaveBeenCalled()
     })
   })
 })

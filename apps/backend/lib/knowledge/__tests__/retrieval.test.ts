@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockLoadBoxChunks = vi.fn()
+const mockLoadBoxFileNames = vi.fn()
 const mockLoadBoxProjections = vi.fn()
 let signatureRow = { documents: 0, chunks: 0, updatedAt: '' }
 
@@ -19,6 +20,7 @@ vi.mock('@/db/database', () => ({
 }))
 vi.mock('@/backend/lib/knowledge/store', () => ({
   loadBoxChunks: (...args: unknown[]) => mockLoadBoxChunks(...args),
+  loadBoxFileNames: (...args: unknown[]) => mockLoadBoxFileNames(...args),
   loadBoxProjections: (...args: unknown[]) => mockLoadBoxProjections(...args),
 }))
 
@@ -36,6 +38,7 @@ const chunk = (id: string, fileId: string, seq: number, text: string, heading?: 
 
 beforeEach(() => {
   mockLoadBoxChunks.mockReset().mockResolvedValue([])
+  mockLoadBoxFileNames.mockReset().mockResolvedValue([])
   mockLoadBoxProjections.mockReset().mockResolvedValue([])
   signatureRow = { documents: 0, chunks: 0, updatedAt: '' }
   invalidateBoxIndex('box')
@@ -85,6 +88,26 @@ describe('searchBoxDocuments', () => {
       { fileId: 'f2', questionId: 'q1', answer: 'This contract is about data processing.' },
     ])
     expect(await searchBoxDocuments('box', 'data processing', 5)).toEqual(['f2'])
+  })
+
+  it('keeps file names searchable when projections are present', async () => {
+    mockLoadBoxFileNames.mockResolvedValue([
+      { fileId: 'f1', name: 'german-tax-rules.pdf' },
+      { fileId: 'f2', name: 'italian-tax-rules.pdf' },
+    ])
+    mockLoadBoxProjections.mockResolvedValue([
+      { fileId: 'f1', questionId: 'q1', answer: 'A tax reference.' },
+      { fileId: 'f2', questionId: 'q1', answer: 'Another tax reference.' },
+    ])
+    expect(await searchBoxDocuments('box', 'german', 5)).toEqual(['f1'])
+  })
+
+  it('uses file names as the document map when projections are disabled', async () => {
+    mockLoadBoxFileNames.mockResolvedValue([
+      { fileId: 'f1', name: 'german-tax-rules.pdf' },
+      { fileId: 'f2', name: 'italian-tax-rules.pdf' },
+    ])
+    expect(await searchBoxDocuments('box', 'german', 5)).toEqual(['f1'])
   })
 
   it('ignores projections with no answer', async () => {
