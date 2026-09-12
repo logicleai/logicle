@@ -98,10 +98,11 @@ separate mechanism). This is the default for new assistants
   suite, retaining one turn preserved accuracy but raised mean input from 2,434 to 5,606 tokens.
   This is an algorithm/evaluation knob; the assistant editor currently preserves it but does not
   expose a dedicated control.
-- **`retrievalMode`** (optional) — `prefetch` (default) adds small query-relevant excerpts to
-  compressed messages before the model call; `tool` leaves retrieval entirely to the model. Full
-  originals remain available through `context-retrieve` in both modes. This field is preserved by
-  the editor but currently has no dedicated control.
+- **`retrievalMode`** (optional) — `tool` (default) exposes `context-retrieve` and leaves retrieval
+  entirely to the model; `prefetch` is an explicit opt-in that adds small query-relevant excerpts
+  to compressed messages before the model call. Full originals remain available through
+  `context-retrieve` in both modes. This field is preserved by the editor but currently has no
+  dedicated control.
 
 ### Server-Wide Floor: `CHAT_CONTEXT_COMPRESSION_TRIGGER_TOKENS`
 
@@ -254,18 +255,21 @@ ask to reformat a previous response skip compression entirely when the threshold
 the exact material being reformatted remains visible. For ordinary substantive turns, the stable
 policy has two benefits:
 
-- **Prompt caching.** The policy and cached base summary remain stable. In default `prefetch` mode,
-  only the small excerpts appended to that base depend on the current request, so the provider may
-  lose part of the shared prefix. This trade-off is included in reported cache-read tokens and was
-  still cheaper in the measured suite. `retrievalMode: 'tool'` keeps the base prefix stable.
+- **Prompt caching.** The policy and cached base summary remain stable. In default `tool` mode the
+  base prefix stays stable and the provider pays retrieval cost only when the model actually asks
+  for it. `prefetch` remains available for assistants that intentionally prefer query-aware
+  excerpts before the model call; those excerpts depend on the current request and may reduce the
+  shared cached prefix.
 - **Simplicity.** Apart from the narrow response-format/reformat guard, a per-turn,
   content-dependent override is one more thing to reason about, test,
   and get wrong (fuzzy name matching, false positives on common words, etc.) for a case the model
   can already handle itself.
 
-If prefetch is insufficient, the model first calls `search(query, id)` for focused excerpts, then
-`get_message(id)` or `get_file(id)` only when the full original is necessary. With function-name
-prefixing enabled (the default), the provider-facing names are
+In the default `tool` mode, the model calls `search(query, id)` for focused excerpts when it needs
+omitted history, then `get_message(id)` or `get_file(id)` only when the full original is necessary.
+In explicit `prefetch` mode, the excerpts are added before the model call and the same tools remain
+available for follow-up lookup. With function-name prefixing enabled (the default), the
+provider-facing names are
 `context-retrieve__get_message`, `context-retrieve__get_file` and `context-retrieve__search`.
 
 ## Building the Summary: `applyCompressionPlan`
@@ -601,9 +605,9 @@ OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval.ts \
   --runs-out context-compression-runs.json --out context-compression-report.md
 ```
 
-By default it compares compression off, tool-only retrieval with no recent window, and prefetch
-with recent windows of 0 and 1. Explicit `compression-keep-{1,2,4}` arms remain available for wider
-window sweeps. The primary cost estimate uses provider usage, including prompt-cache read/write
+By default it compares compression off, model-directed tool retrieval with no recent window, and
+explicit prefetch with recent windows of 0 and 1. Explicit `compression-keep-{1,2,4}` arms remain
+available for wider window sweeps. The primary cost estimate uses provider usage, including prompt-cache read/write
 token details as cache-aware pricing telemetry when available. Missing cache telemetry degrades
 the affected input to the full configured input price. The report also shows an
 undiscounted/full-price counterfactual; it is not the primary total. Raw runs are stored so the
