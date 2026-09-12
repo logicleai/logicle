@@ -534,6 +534,11 @@ retrieved. Conversely, a `knowledge_box__*` call on a turn where compression did
 knowledge-box test, not a combined test. Compression can be valid without a `context-retrieve__*`
 call because the changed history sent to the model is itself the treatment.
 
+Knowledge-box search has a hard per-turn budget of four calls. This is only a cost and runaway-search
+guardrail: the model still chooses whether to list documents, which languages or terms to query, and
+which passages to read. After the budget is exhausted, the model must answer from retrieved evidence
+or state the source boundary.
+
 #### Knowledge-box-only comparison
 
 Choose a message with a source-grounded question and no answer-bearing prior chat. Keep compression
