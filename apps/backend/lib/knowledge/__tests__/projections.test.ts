@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MockLanguageModelV3 } from 'ai/test'
 import type { LanguageModelV3, LanguageModelV3GenerateResult } from '@ai-sdk/provider'
+import { llmModels } from '@/lib/models'
 
 vi.mock('@/lib/models', () => ({ llmModels: [] }))
 vi.mock('@/models/backend', () => ({ getBackends: vi.fn().mockResolvedValue([]) }))
@@ -18,6 +19,7 @@ const question = { id: 'q1', title: 'Topics', prompt: 'What is this about?' }
 interface RecordedCall {
   system: string
   user: string
+  hasImage: boolean
 }
 
 /**
@@ -36,6 +38,9 @@ const mockModel = (answers: string[]) => {
         user: Array.isArray(user?.content)
           ? user.content.map((part) => ('text' in part ? part.text : '')).join('')
           : '',
+        hasImage: Array.isArray(user?.content)
+          ? user.content.some((part) => 'mediaType' in part && part.mediaType.startsWith('image/'))
+          : false,
       })
       return {
         content: [{ type: 'text' as const, text: answers[index++] ?? '' }],
@@ -169,5 +174,48 @@ describe('computeProjections', () => {
     const result = await computeProjections('contract.pdf', 'text', [question])
 
     expect(result.usage.modelId).toBe(model.modelId)
+  })
+
+  it('sends an image to a vision model and returns a searchable description', async () => {
+    const { createLanguageModel } = await import('@/backend/lib/chat/provider-factory')
+    const { getBackends } = await import('@/models/backend')
+    const { model, calls } = mockModel(['a grey upholstered chair with black angled legs'])
+    vi.mocked(getBackends).mockResolvedValueOnce([
+      { providerType: 'openai', id: 'backend-1' } as any,
+    ])
+    llmModels.push({
+      id: 'vision-mini',
+      model: 'vision-mini',
+      name: 'Vision mini',
+      provider: 'openai',
+      owned_by: 'openai',
+      description: '',
+      context_length: 1000,
+      capabilities: { vision: true, function_calling: false },
+    })
+    vi.mocked(createLanguageModel).mockReturnValueOnce(model)
+
+    const { describeImageForIndex } = await import('@/backend/lib/knowledge/projections')
+    const usage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      calls: 0,
+      providerUsages: [],
+    }
+    await expect(
+      describeImageForIndex(
+        'chair.png',
+        'image/png',
+        Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+          'base64'
+        ),
+        usage
+      )
+    ).resolves.toBe('a grey upholstered chair with black angled legs')
+    expect(calls[0]?.hasImage).toBe(true)
+    expect(calls[0]?.system).toContain('navigation hint, not authoritative source text')
+    expect(usage.calls).toBe(1)
+    llmModels.length = 0
   })
 })

@@ -2,10 +2,16 @@ import { createHash } from 'node:crypto'
 import { db } from '@/db/database'
 import { getFileWithId } from '@/models/file'
 import { cachingExtractor } from '@/lib/textextraction/cache'
+import { storage } from '@/lib/storage'
 import { logger } from '@/lib/logging'
 import { KnowledgeBoxSchema, type KnowledgeBoxQuestion } from '@/lib/tools/schemas'
 import { chunkText } from './chunking'
-import { computeProjections } from './projections'
+import {
+  computeProjections,
+  describeImageForIndex,
+  emptyProjectionUsage,
+  type ProjectionUsage,
+} from './projections'
 import {
   claimPendingDocument,
   markDocumentFailed,
@@ -22,6 +28,17 @@ import {
 
 export interface BoxConfig {
   questions: KnowledgeBoxQuestion[]
+}
+
+const mergeProjectionUsage = (...usages: ProjectionUsage[]): ProjectionUsage => {
+  const modelIds = new Set(usages.map((usage) => usage.modelId).filter(Boolean))
+  return {
+    inputTokens: usages.reduce((total, usage) => total + usage.inputTokens, 0),
+    outputTokens: usages.reduce((total, usage) => total + usage.outputTokens, 0),
+    calls: usages.reduce((total, usage) => total + usage.calls, 0),
+    ...(modelIds.size === 1 ? { modelId: [...modelIds][0] } : {}),
+    providerUsages: usages.flatMap((usage) => usage.providerUsages),
+  }
 }
 
 export const loadBoxConfig = async (boxId: string): Promise<BoxConfig | undefined> => {
@@ -47,8 +64,34 @@ export const ingestDocument = async (boxId: string, fileId: string): Promise<Ing
   const file = await getFileWithId(fileId)
   if (!file) throw new Error(`File ${fileId} not found`)
 
-  const text = await cachingExtractor.extractFromFile(file)
-  if (!text || text.trim().length === 0) {
+  const extractedText = await cachingExtractor.extractFromFile(file)
+  const visualUsage = emptyProjectionUsage()
+  const sourceText = extractedText?.trim() ?? ''
+  let text = sourceText
+
+  if (file.type.startsWith('image/')) {
+    try {
+      const data = await storage.readBuffer(file.path, file.encryption)
+      const description = await describeImageForIndex(file.name, file.type, data, visualUsage)
+      if (description) {
+        text = [
+          text,
+          '# Visual index (AI-generated; verify against the original file)',
+          description,
+        ]
+          .filter((part) => part.length > 0)
+          .join('\n\n')
+      }
+    } catch (error) {
+      logger.warn('[knowledge-box] visual indexing failed', {
+        fileId,
+        fileName: file.name,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+
+  if (!text) {
     throw new Error(`No text could be extracted from "${file.name}"`)
   }
 
@@ -56,13 +99,18 @@ export const ingestDocument = async (boxId: string, fileId: string): Promise<Ing
   if (!config) throw new Error(`Knowledge box ${boxId} not found`)
 
   const chunks = chunkText(text)
-  const { projections, usage } = await computeProjections(file.name, text, config.questions)
+  // A visual index is a navigation hint, not source text. Never use it to answer configured
+  // document questions, otherwise an uncertain caption could become an apparently authoritative
+  // projection shown by list_documents.
+  const { projections, usage } = sourceText
+    ? await computeProjections(file.name, sourceText, config.questions)
+    : { projections: [], usage: emptyProjectionUsage() }
 
   return {
     contentHash: createHash('sha256').update(text).digest('hex'),
     chunks,
     projections,
-    projectionUsage: usage,
+    projectionUsage: mergeProjectionUsage(visualUsage, usage),
   }
 }
 

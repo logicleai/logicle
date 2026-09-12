@@ -43,7 +43,9 @@ flowchart TD
   D --> E[cachingExtractor: text, then local OCR for scans]
   E --> F[chunkText]
   E --> G[computeProjections: one LLM pass per question]
+  E --> V[describeImageForIndex: one vision LLM pass per image]
   F --> H[(KnowledgeChunk)]
+  V --> H
   G --> I[(KnowledgeProjection)]
   H --> J[BM25 index, cached per box]
   I --> K[list_documents]
@@ -70,6 +72,9 @@ Search and read results are explicitly marked as source evidence. The marker tel
 only what the passages state for source-specific claims, ignore unsupported claims from previous
 assistant messages, general knowledge, or customary legal rules, preserve conditions, exceptions,
 limits, and distinctions, and omit unsupported citations or subclaims instead of filling the gap.
+Chunks labelled **AI-generated visual index** are an exception: they are searchable navigation
+hints, not authoritative source text. When one is returned, the model must retrieve the original
+file before answering an image-dependent or exact question.
 
 ### Why the listing is ranked and budgeted
 
@@ -97,14 +102,19 @@ only action an administrator needs: attaching a file queues it, editing a questi
 everything.
 
 The runtime (`lib/knowledge/runtime.ts`) is an in-process loop, not a worker thread. Ingestion is
-I/O bound — a storage read and one LLM round trip per question — and the only CPU-heavy step, format
-parsing, already runs in the file-analyzer worker via `cachingExtractor`. Claiming a document is a
+I/O bound — a storage read, one vision LLM round trip per image, and one LLM round trip per question
+— and the only CPU-heavy step, format parsing, already runs in the file-analyzer worker via
+`cachingExtractor`. Claiming a document is a
 conditional `UPDATE ... WHERE status = 'pending'`, so several replicas can run the loop without
 ingesting anything twice, and documents left `running` by a process that died are re-queued after 15
 minutes.
 
 Projection prompts keep the document text in the user message and the instructions in the `system`
-option, never as a system-role message: the document is untrusted input.
+option, never as a system-role message: the document is untrusted input. Image descriptions use a
+separate vision-capable model and are instructed to report visible search landmarks without
+guessing exact identifiers, prices, finishes, or measurements. If no vision backend is available,
+text/OCR ingestion still works; an image with neither OCR text nor a visual description remains
+failed rather than becoming a misleading filename-only document.
 
 ## Retrieval
 
@@ -134,9 +144,13 @@ still produces chunks and simply skips projections.
 
 Text extraction is always attempted first. When file analysis identifies a scanned PDF (or the
 file is an image) and the normal extractor returns no text, the runtime uses the local OCR
-fallback: Poppler renders PDF pages at 300 DPI and Tesseract produces searchable text. OCR
-is used to build chunks and retrieval indexes; the original file remains the authoritative source
-for exact values, formulas, and other details that OCR may misread.
+fallback: Poppler renders PDF pages at 300 DPI and Tesseract produces searchable text. Tesseract
+is only a text-recognition channel; it does not describe objects, diagrams, products, or other
+non-text visual content. Every direct image file also receives a vision-model description, whether
+or not OCR found text, and that description is added to the BM25 chunks as a navigation hint. OCR
+and visual descriptions are retrieval aids; the original file remains the authoritative source for
+exact values, formulas, finishes, and other details that extraction or visual interpretation may
+misread.
 
 The PDF is not sent to the model merely because it exists. Retrieval first uses the OCR text to
 identify relevant chunks and the corresponding file; only when the model calls `get_file` is the
