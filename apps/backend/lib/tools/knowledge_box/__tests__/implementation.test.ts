@@ -289,11 +289,13 @@ describe('KnowledgeBoxTool', () => {
         query: 'payment',
         fileIds: ['missing.pdf'],
       })
-      expect(result).toEqual({
-        type: 'error-text',
-        value:
-          'Every file selector must be a document id or exact document name from list_documents.',
-      })
+      expect(result.type).toBe('error-text')
+      expect(result.value).toContain(
+        "Use an id or exact name from this box's list_documents, not a conversation attachment id."
+      )
+      expect(result.value).toContain('omit fileIds and search the whole box.')
+      expect(result.value).toContain('contract.pdf (f1)')
+      expect(result.value).toContain('privacy.docx (f2)')
       expect(mockSearchBox).not.toHaveBeenCalled()
     })
 
