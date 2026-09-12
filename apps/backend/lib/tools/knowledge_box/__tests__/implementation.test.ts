@@ -56,7 +56,34 @@ const buildTool = (overrides: Record<string, unknown> = {}) =>
 
 const invoke = async (tool: KnowledgeBoxTool, name: string, params: Record<string, unknown>) => {
   const fn = tool.functions_[name] as ToolFunction
-  return fn.invoke({ params, userId: 'user-1' } as unknown as ToolInvokeParams)
+  return fn.invoke({ params, userId: 'user-1', messages: [] } as unknown as ToolInvokeParams)
+}
+
+const sourceLookupMessages = [
+  {
+    role: 'tool',
+    parts: [
+      {
+        type: 'tool-result',
+        toolCallId: 'call-1',
+        toolName: 'knowledge_box__search',
+        result: { type: 'text', value: 'source passage' },
+      },
+    ],
+  },
+] as unknown as ToolInvokeParams['messages']
+
+const invokeWithSourceLookup = async (
+  tool: KnowledgeBoxTool,
+  name: string,
+  params: Record<string, unknown>
+) => {
+  const fn = tool.functions_[name] as ToolFunction
+  return fn.invoke({
+    params,
+    userId: 'user-1',
+    messages: sourceLookupMessages,
+  } as unknown as ToolInvokeParams)
 }
 
 const readyDocument = (fileId: string, chunkCount: number) => ({
@@ -355,7 +382,7 @@ describe('KnowledgeBoxTool', () => {
         type: 'application/pdf',
         size: 42,
       })
-      const result = await invoke(buildTool(), 'get_file', { fileId: 'f1' })
+      const result = await invokeWithSourceLookup(buildTool(), 'get_file', { fileId: 'f1' })
       expect(mockCanAccessFile).toHaveBeenCalledWith({ userId: 'user-1' }, 'f1')
       expect(result).toEqual({
         type: 'content',
@@ -379,15 +406,28 @@ describe('KnowledgeBoxTool', () => {
         size: 10,
         type: 'application/pdf',
       })
-      const result = await invoke(buildTool(), 'get_file', { fileId: 'contract.pdf' })
+      const result = await invokeWithSourceLookup(buildTool(), 'get_file', {
+        fileId: 'contract.pdf',
+      })
       expect(mockGetFileWithId).toHaveBeenCalledWith('f1')
       expect(result.type).toBe('content')
     })
 
     it('does not return a configured file the caller cannot access', async () => {
       mockCanAccessFile.mockResolvedValue(false)
-      const result = await invoke(buildTool(), 'get_file', { fileId: 'f1' })
+      const result = await invokeWithSourceLookup(buildTool(), 'get_file', { fileId: 'f1' })
       expect(result).toEqual({ type: 'error-text', value: 'File not found' })
+      expect(mockGetFileWithId).not.toHaveBeenCalled()
+    })
+
+    it('does not load the original file before source lookup', async () => {
+      const result = await invoke(buildTool(), 'get_file', { fileId: 'f1' })
+      expect(result).toEqual({
+        type: 'error-text',
+        value:
+          'Search or read a passage from this knowledge box before retrieving the original file.',
+      })
+      expect(mockCanAccessFile).not.toHaveBeenCalled()
       expect(mockGetFileWithId).not.toHaveBeenCalled()
     })
   })

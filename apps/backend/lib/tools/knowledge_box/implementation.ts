@@ -102,6 +102,36 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
     )
   }
 
+  private hasCurrentTurnSourceLookup(messages: dto.Message[]): boolean {
+    let lastUserIndex = -1
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const role = messages[index]?.role
+      if (role === 'user' || role === 'user-response') {
+        lastUserIndex = index
+        break
+      }
+    }
+    const sourceLookupNames = new Set([
+      'search',
+      'read',
+      `${this.toolParams.name}__search`,
+      `${this.toolParams.name}__read`,
+    ])
+    return messages
+      .slice(lastUserIndex + 1)
+      .some(
+        (message) =>
+          message.role === 'tool' &&
+          message.parts.some(
+            (part) =>
+              part.type === 'tool-result' &&
+              (sourceLookupNames.has(part.toolName) ||
+                part.toolName.endsWith('__search') ||
+                part.toolName.endsWith('__read'))
+          )
+      )
+  }
+
   /**
    * Orders the box's configured files by relevance to a query, best first.
    *
@@ -305,13 +335,20 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         additionalProperties: false,
         required: ['fileId'],
       },
-      invoke: async ({ params, userId }): Promise<dto.ToolCallResultOutput> => {
+      invoke: async ({ params, userId, messages }): Promise<dto.ToolCallResultOutput> => {
         const selector = `${params.fileId ?? ''}`
         const file = this.resolveFileSelector(selector)
         if (!file) {
           return { type: 'error-text', value: `Document ${selector} is not in this knowledge box` }
         }
         const fileId = file.id
+        if (!this.hasCurrentTurnSourceLookup(messages)) {
+          return {
+            type: 'error-text',
+            value:
+              'Search or read a passage from this knowledge box before retrieving the original file.',
+          }
+        }
         if (!(await canAccessFile({ userId }, fileId))) {
           return { type: 'error-text', value: 'File not found' }
         }
