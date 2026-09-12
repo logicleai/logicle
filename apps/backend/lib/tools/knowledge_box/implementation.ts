@@ -293,7 +293,7 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
 
     get_file: {
       description:
-        'Retrieve the original file from this knowledge box on demand. Use it after search/read when exact layout, tables, images, or OCR-sensitive details need verification.',
+        'Retrieve the original file from this knowledge box on demand. This may add the whole file to the context: do not use it for ordinary text questions. Use it only after search/read when exact layout, tables, images, or OCR-sensitive details need verification.',
       parameters: {
         type: 'object',
         properties: {

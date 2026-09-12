@@ -102,6 +102,12 @@ describe('KnowledgeBoxTool', () => {
     )
   })
 
+  it('keeps original-file retrieval as an expensive last resort', () => {
+    expect((buildTool().functions_.get_file as ToolFunction).description).toContain(
+      'do not use it for ordinary text questions'
+    )
+  })
+
   describe('list_documents', () => {
     it('reports an empty box', async () => {
       const result = await invoke(buildTool({ files: [] }), 'list_documents', {})
