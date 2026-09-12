@@ -132,6 +132,9 @@ describe('KnowledgeBoxTool', () => {
     expect(buildTool().toolParams.promptFragment).toContain(
       'Do not use previous assistant messages'
     )
+    expect(buildTool().toolParams.promptFragment).toContain(
+      'do not add remembered percentages, amounts, article numbers'
+    )
   })
 
   it('keeps original-file retrieval as an expensive last resort', () => {
