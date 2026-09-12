@@ -4,6 +4,7 @@ import { findExtractor, genericTextExtractor } from '.'
 import { storage } from '../storage'
 import { ensureFileAnalysisForFile, readExtractedTextFromAnalysis } from '@/lib/file-analysis'
 import { logger } from '@/lib/logging'
+import { ocrExtractor } from './ocr'
 
 const cacheSizeInMb = 100
 
@@ -30,24 +31,35 @@ export const cachingExtractor = {
       return analyzedText
     }
 
-    const isUnknownText = analysis?.status === 'ready' && analysis.payload?.kind === 'unknown' && analysis.payload.isText
-    const extractor = findExtractor(fileEntry.type) ?? (isUnknownText ? genericTextExtractor : undefined)
-    if (!extractor) {
-      return undefined
+    const isUnknownText =
+      analysis?.status === 'ready' &&
+      analysis.payload?.kind === 'unknown' &&
+      analysis.payload.isText
+    const extractor =
+      findExtractor(fileEntry.type) ?? (isUnknownText ? genericTextExtractor : undefined)
+    if (extractor) {
+      try {
+        const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+        const text = await extractor(fileContent)
+        if (text.trim().length > 0) {
+          cache.set(fileEntry.path, text)
+          return text
+        }
+      } catch (error) {
+        logger.warn('File text extraction failed; trying OCR fallback', {
+          fileId: fileEntry.id,
+          fileName: fileEntry.name,
+          fileType: fileEntry.type,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
     }
-    try {
-      const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
-      const text = await extractor(fileContent)
-      cache.set(fileEntry.path, text)
-      return text
-    } catch (error) {
-      logger.warn('File text extraction failed; continuing without extracted text', {
-        fileId: fileEntry.id,
-        fileName: fileEntry.name,
-        fileType: fileEntry.type,
-        error: error instanceof Error ? error.message : String(error),
-      })
-      return undefined
+
+    const ocrText = await ocrExtractor.extractFromFile(fileEntry, analysis)
+    if (ocrText) {
+      cache.set(fileEntry.path, ocrText)
+      return ocrText
     }
+    return undefined
   },
 }

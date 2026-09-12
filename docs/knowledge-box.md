@@ -35,7 +35,7 @@ flowchart TD
   A[Files attached to the tool] --> B[syncBoxDocuments]
   B --> C[(KnowledgeBoxDocument: pending)]
   C --> D[Ingestion runtime]
-  D --> E[cachingExtractor: text]
+  D --> E[cachingExtractor: text, then local OCR for scans]
   E --> F[chunkText]
   E --> G[computeProjections: one LLM pass per question]
   F --> H[(KnowledgeChunk)]
@@ -114,6 +114,24 @@ below.
 The ingestion model is not configurable: it reuses the summarizer's "cheap model for internal work"
 choice, falling back to the best-scoring configured backend. With no backend configured, ingestion
 still produces chunks and simply skips projections.
+
+### Scanned documents
+
+Text extraction is always attempted first. When file analysis identifies a scanned PDF (or the
+file is an image) and the normal extractor returns no text, the runtime uses the local OCR
+fallback: Poppler renders PDF pages at 300 DPI and Tesseract produces searchable text. OCR
+is used to build chunks and retrieval indexes; the original file remains the authoritative source
+for exact values, formulas, and other details that OCR may misread.
+
+The PDF is not sent to the model merely because it exists. Retrieval first uses the OCR text to
+identify relevant chunks and the corresponding file; only when the model requests that file is the
+original PDF returned, and then only when the provider supports native PDFs and the page limit
+allows it. Otherwise the existing text fallback is used.
+
+The production image includes Tesseract with Italian and English language data. `TESSERACT_BIN`,
+`PDFTOPPM_BIN`, `PDFINFO_BIN`, and `TESSERACT_LANG` can override the binaries or language set for a
+deployment. OCR is bounded to 100-page PDFs and falls back to the existing unavailable-text
+behavior if a binary is missing or the conversion fails.
 
 ## Open
 

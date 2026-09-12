@@ -168,6 +168,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-dejavu-core \
     fonts-noto-core \
     poppler-utils \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-ita \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf \
         /usr/lib/libreoffice/share/gallery \
