@@ -376,8 +376,8 @@ describe('resolveCompressionTriggerTokens', () => {
 })
 
 describe('resolveCompressionRetrievalMode', () => {
-  test('defaults existing assistant configurations to measured query-aware prefetch', () => {
-    expect(resolveCompressionRetrievalMode(undefined)).toBe('prefetch')
+  test('defaults configurations to model-directed on-demand retrieval', () => {
+    expect(resolveCompressionRetrievalMode(undefined)).toBe('tool')
   })
 
   test('keeps explicit tool-only evaluation arms available', () => {

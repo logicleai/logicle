@@ -24,11 +24,11 @@ export function resolveCompressionTriggerTokens(triggerAtTokens: number | undefi
   return Math.max(triggerAtTokens ?? 0, env.chat.contextCompressionTriggerTokens)
 }
 
-/** Query-aware prefetch is the measured default; `tool` remains available for controlled arms. */
+/** Keep retrieval model-directed by default; query-aware prefetch remains an explicit option. */
 export function resolveCompressionRetrievalMode(
   retrievalMode: 'tool' | 'prefetch' | undefined
 ): 'tool' | 'prefetch' {
-  return retrievalMode ?? 'prefetch'
+  return retrievalMode ?? 'tool'
 }
 
 /**
