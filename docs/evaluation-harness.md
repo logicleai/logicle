@@ -162,10 +162,12 @@ stochastic model tool use and the cost of retaining a recent turn. Wider
 `compression-keep-{1,2,4}` arms remain selectable explicitly.
 
 Compression has one intentional no-op guard: when the current user message is only a response
-format/language/style preference (for example, "solo tabella differenze"), the threshold may be
+format/language/style preference or asks to reformat a previous response (for example, "solo
+tabella differenze" or "non la vedo bene la tabella, la puoi rifare?"), the threshold may be
 reached but historical compression and retrieval are skipped for that turn. Prefetching stale
 material in response to a preference can make the assistant answer an earlier task instead of
-acknowledging the new instruction. The replay inspection reports this as
+acknowledging the new instruction; reformat requests also need the exact previous response intact.
+The replay inspection reports this as
 `compressionThresholdReached: true`, `triggered: false`, and
 `compressionSkippedReason: "response-preference-turn"`.
 

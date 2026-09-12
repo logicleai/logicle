@@ -52,9 +52,9 @@ export function resolveCompressionUserQuery(messages: dto.Message[]): string | u
 }
 
 /**
- * Detects a narrow class of turns that changes the response contract instead of asking for the
- * result of an earlier task. Prefetching old attachments for these turns can turn a harmless
- * preference such as "solo tabella differenze" into an answer to stale historical data.
+ * Detects a narrow class of turns that changes the response contract or asks for a previous
+ * response to be reformatted. Prefetching old material for these turns can either answer stale
+ * historical data or omit the exact response the user is asking to have reformatted.
  */
 export function isLikelyResponsePreferenceQuery(query: string): boolean {
   const normalized = query.trim().toLocaleLowerCase()
@@ -64,6 +64,9 @@ export function isLikelyResponsePreferenceQuery(query: string): boolean {
     /^(solo|soltanto|only|just)\s+(?:la\s+|il\s+|the\s+)?(?:tabella|table|lista|list|formato|format)\b/,
     /\b(?:da ora|d['’]ora in poi|in futuro|from now on|going forward|a partir de ahora)\b/,
     /^(?:senza|without|sin)\s+(?:spiegazioni|explanations|explicaciones|testo aggiuntivo|extra text)\b/,
+    /\b(?:rifai|rifare|rifalla|rifarlo|rifarla|rifammi|riscrivi|riscrivere|riscrivila|riformatta|riformattare|riformattala|redo|rewrite|reformat|rephrase|reword)\b.*\b(?:tabella|table|lista|list|formato|format|risposta|answer|response)\b/,
+    /\b(?:tabella|table|lista|list|formato|format|risposta|answer|response)\b.*\b(?:rifai|rifare|rifalla|rifarlo|rifarla|rifammi|riscrivi|riscrivere|riscrivila|riformatta|riformattare|riformattala|redo|rewrite|reformat|rephrase|reword)\b/,
+    /\b(?:non\s+(?:la\s+)?vedo|non\s+si\s+legge|illeggibile|not\s+readable|hard\s+to\s+read)\b.*\b(?:tabella|table|lista|list)\b/,
   ].some((pattern) => pattern.test(normalized))
 }
 

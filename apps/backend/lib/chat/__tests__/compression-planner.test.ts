@@ -439,7 +439,16 @@ describe('response-preference prefetch guard', () => {
   test('recognizes a format-only instruction without treating every short query as a preference', () => {
     expect(isLikelyResponsePreferenceQuery('solo tabella differenze')).toBe(true)
     expect(isLikelyResponsePreferenceQuery('From now on, only a table')).toBe(true)
+    expect(isLikelyResponsePreferenceQuery('non la vedo bene la tabella la puoi rifare?')).toBe(
+      true
+    )
+    expect(isLikelyResponsePreferenceQuery('Puoi riscrivere la risposta in formato tabella?')).toBe(
+      true
+    )
     expect(isLikelyResponsePreferenceQuery('What are the differences between the policies?')).toBe(
+      false
+    )
+    expect(isLikelyResponsePreferenceQuery('What is the table for risk classification?')).toBe(
       false
     )
   })
@@ -448,6 +457,17 @@ describe('response-preference prefetch guard', () => {
     expect(
       shouldPrefetchHistoricalContext([
         { ...base, id: 'u1', role: 'user', content: 'solo tabella differenze', attachments: [] },
+      ])
+    ).toBe(false)
+    expect(
+      shouldPrefetchHistoricalContext([
+        {
+          ...base,
+          id: 'u1',
+          role: 'user',
+          content: 'non la vedo bene la tabella la puoi rifare?',
+          attachments: [],
+        },
       ])
     ).toBe(false)
     expect(
