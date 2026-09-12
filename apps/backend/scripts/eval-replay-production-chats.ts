@@ -51,6 +51,10 @@
  *   --inspect-only         calculate compression decisions/token estimates without an LLM call
  *   --judge                also classify each response against the saved production reply
  *   --judge-model <id>     judge model (default: the replay model)
+ *
+ * An explicit --model or override.model permits a paired replay against a saved assistant whose
+ * current model has drifted from production. In that mode production token/cost deltas are not
+ * comparable; the report still compares the replay arms with each other.
  */
 
 import { copyFileSync, mkdtempSync, rmSync } from 'node:fs'
@@ -334,10 +338,13 @@ if (!assistant)
 const selectedAssistant = assistant!
 if (selectedAssistant.deleted !== 0)
   await abortReplay(`Assistant ${selectedAudit.assistantId} is deleted.`)
-if (selectedAssistant.model !== selectedAudit.model) {
+const explicitModelOverride =
+  modelShorthand ?? (typeof override.model === 'string' ? override.model : undefined)
+if (selectedAssistant.model !== selectedAudit.model && !explicitModelOverride) {
   await abortReplay(
     `Model drift for message ${selectedAudit.messageId}: production used ${selectedAudit.model}, ` +
-      `current saved assistant uses ${selectedAssistant.model}.`
+      `current saved assistant uses ${selectedAssistant.model}; pass --model or override.model ` +
+      `for an explicit replay comparison.`
   )
 }
 const subAssistants = selectedAssistant.subAssistants
