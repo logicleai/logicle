@@ -210,11 +210,14 @@ describe('computeProjections', () => {
           'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
           'base64'
         ),
-        usage
+        usage,
+        'Printed product label'
       )
     ).resolves.toBe('a grey upholstered chair with black angled legs')
     expect(calls[0]?.hasImage).toBe(true)
-    expect(calls[0]?.system).toContain('navigation hint, not authoritative source text')
+    expect(calls[0]?.system).toContain('not authoritative source text')
+    expect(calls[0]?.system).toContain('up to 320 words')
+    expect(calls[0]?.user).toContain('Printed product label')
     expect(usage.calls).toBe(1)
     llmModels.length = 0
   })

@@ -72,7 +72,13 @@ export const ingestDocument = async (boxId: string, fileId: string): Promise<Ing
   if (file.type.startsWith('image/')) {
     try {
       const data = await storage.readBuffer(file.path, file.encryption)
-      const description = await describeImageForIndex(file.name, file.type, data, visualUsage)
+      const description = await describeImageForIndex(
+        file.name,
+        file.type,
+        data,
+        visualUsage,
+        sourceText
+      )
       if (description) {
         text = [
           text,

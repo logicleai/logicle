@@ -67,7 +67,8 @@ describe('knowledge ingestion for images', () => {
       'chair.png',
       'image/png',
       Buffer.from('image-bytes'),
-      expect.objectContaining({ calls: 1 })
+      expect.objectContaining({ calls: 1 }),
+      'Printed product label'
     )
     const indexedText = result.chunks.map((chunk) => chunk.text).join('\n')
     expect(indexedText).toContain('Printed product label')
