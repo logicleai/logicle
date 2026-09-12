@@ -215,6 +215,7 @@ describe('computeProjections', () => {
     ).resolves.toBe('a grey upholstered chair with black angled legs')
     expect(calls[0]?.hasImage).toBe(true)
     expect(calls[0]?.system).toContain('navigation hint, not authoritative source text')
+    expect(calls[0]?.system).toContain('small or ambiguous')
     expect(usage.calls).toBe(1)
     llmModels.length = 0
   })

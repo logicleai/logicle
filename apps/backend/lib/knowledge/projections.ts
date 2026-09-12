@@ -19,6 +19,12 @@ import type { KnowledgeBoxQuestion } from '@/lib/tools/schemas'
 const WINDOW_CHARS = 60_000
 /** Windows above this count are truncated: a 100-window document is a configuration mistake. */
 const MAX_WINDOWS = 12
+/**
+ * The visual index is a navigation aid, not a transcription pass. OCR and the original file
+ * handle small text and exact values; keeping the VLM copy small makes indexing affordable.
+ */
+const VISUAL_INDEX_MAX_DIMENSION = 512
+const VISUAL_INDEX_JPEG_QUALITY = 80
 /** Sentinel the model is told to emit when the document says nothing about the question. */
 export const NO_ANSWER = 'N/A'
 
@@ -187,12 +193,18 @@ const generateImageDescription = async (
   data: Buffer,
   usage: ProjectionUsage
 ): Promise<string> => {
-  // OCR still sees the original bytes. The VLM only needs a bounded visual copy: this keeps a
+  // OCR still sees the original bytes. The VLM only needs a small visual copy: this keeps a
   // multi-megapixel catalogue scan from turning every ingestion into an unnecessarily expensive
-  // image-token request, while preserving the original for get_file verification.
+  // image-token request, while preserving the original for get_file verification. Exact text and
+  // small numbers belong to OCR/source verification, not this navigation pass.
   const visualData = await sharp(data)
-    .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
-    .jpeg({ quality: 85 })
+    .resize({
+      width: VISUAL_INDEX_MAX_DIMENSION,
+      height: VISUAL_INDEX_MAX_DIMENSION,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .jpeg({ quality: VISUAL_INDEX_JPEG_QUALITY })
     .toBuffer()
   const result = await ai.generateText({
     model,
@@ -201,7 +213,7 @@ const generateImageDescription = async (
       'You are building a search index for an image in a private knowledge base.',
       `The image file is named "${fileName}" (${mimeType}); it is provided as a resized visual copy.`,
       'Describe only visible, search-useful content: readable text, product or document names, objects, distinctive shapes, colours, materials, labels, diagrams, and other visual landmarks.',
-      'Do not guess an exact model, serial number, fabric, finish, measurement, price, or identity from appearance alone.',
+      'Do not invent exact model or serial numbers, measurements, prices, or identities. If any such text is small or ambiguous, omit it rather than guessing; exact values must come from OCR or the original file.',
       'This description is a navigation hint, not authoritative source text. Keep it under 160 words, dense and factual, with uncertainty when appropriate.',
     ].join('\n'),
     messages: [
