@@ -249,13 +249,17 @@ A message that mentions a historical file by name (`"what's on page 2 of report.
 current message's content. With `keepRecentTurns > 0`, an eligible turn changes once from `full` to
 `summary` when it ages out of the recent window. The cached base summary remains stable after that.
 
-This is deliberate, for two reasons:
+This is deliberate, with one explicit exception: turns that only change the response format or
+ask to reformat a previous response skip compression entirely when the threshold is reached, so
+the exact material being reformatted remains visible. For ordinary substantive turns, the stable
+policy has two benefits:
 
 - **Prompt caching.** The policy and cached base summary remain stable. In default `prefetch` mode,
   only the small excerpts appended to that base depend on the current request, so the provider may
   lose part of the shared prefix. This trade-off is included in reported cache-read tokens and was
   still cheaper in the measured suite. `retrievalMode: 'tool'` keeps the base prefix stable.
-- **Simplicity.** A per-turn, content-dependent override is one more thing to reason about, test,
+- **Simplicity.** Apart from the narrow response-format/reformat guard, a per-turn,
+  content-dependent override is one more thing to reason about, test,
   and get wrong (fuzzy name matching, false positives on common words, etc.) for a case the model
   can already handle itself.
 
