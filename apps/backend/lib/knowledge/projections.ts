@@ -1,5 +1,6 @@
 import * as ai from 'ai'
 import type { LanguageModelV3 } from '@ai-sdk/provider'
+import sharp from 'sharp'
 import { llmModels } from '@/lib/models'
 import { getBackends } from '@/models/backend'
 import { createLanguageModel } from '@/backend/lib/chat/provider-factory'
@@ -48,6 +49,34 @@ export const resolveIngestionModel = async (): Promise<LanguageModelV3 | undefin
   const models = llmModels.filter((model) => model.provider === backend.providerType)
   const preferred = models.find((model) => /mini|flash|haiku/i.test(model.id)) ?? models[0]
   return preferred ? createLanguageModel(backend, preferred) : undefined
+}
+
+/**
+ * Picks a model that can inspect an image. This is separate from the text projection model:
+ * summarisation backends are allowed to be text-only, while a visual index must never silently
+ * send an image to one of them and pretend that it was inspected.
+ */
+export const resolveVisionIngestionModel = async (): Promise<LanguageModelV3 | undefined> => {
+  const backends = await getBackends()
+  const candidates = backends.flatMap((backend) =>
+    llmModels
+      .filter((model) => model.provider === backend.providerType && model.capabilities.vision)
+      .map((model) => ({ backend, model }))
+  )
+  candidates.sort((left, right) => {
+    const backendDifference =
+      providerScore(right.backend.providerType) - providerScore(left.backend.providerType)
+    if (backendDifference !== 0) return backendDifference
+    const modelScore = (modelId: string) => {
+      if (/mini|flash|haiku/i.test(modelId)) return 2
+      if (/4o|sonnet|gemini/i.test(modelId)) return 1
+      return 0
+    }
+    return modelScore(right.model.id) - modelScore(left.model.id)
+  })
+
+  const selected = candidates[0]
+  return selected ? createLanguageModel(selected.backend, selected.model) : undefined
 }
 
 const splitIntoWindows = (text: string): string[] => {
@@ -149,6 +178,69 @@ const generate = async (
   })
   addUsage(usage, result.usage)
   return result.text.trim()
+}
+
+const generateImageDescription = async (
+  model: LanguageModelV3,
+  fileName: string,
+  mimeType: string,
+  data: Buffer,
+  usage: ProjectionUsage
+): Promise<string> => {
+  // OCR still sees the original bytes. The VLM only needs a bounded visual copy: this keeps a
+  // multi-megapixel catalogue scan from turning every ingestion into an unnecessarily expensive
+  // image-token request, while preserving the original for get_file verification.
+  const visualData = await sharp(data)
+    .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 85 })
+    .toBuffer()
+  const result = await ai.generateText({
+    model,
+    temperature: 0,
+    system: [
+      'You are building a search index for an image in a private knowledge base.',
+      `The image file is named "${fileName}" (${mimeType}); it is provided as a resized visual copy.`,
+      'Describe only visible, search-useful content: readable text, product or document names, objects, distinctive shapes, colours, materials, labels, diagrams, and other visual landmarks.',
+      'Do not guess an exact model, serial number, fabric, finish, measurement, price, or identity from appearance alone.',
+      'This description is a navigation hint, not authoritative source text. Keep it under 160 words, dense and factual, with uncertainty when appropriate.',
+    ].join('\n'),
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Create the visual search description now.' },
+          {
+            type: 'image',
+            image: `data:image/jpeg;base64,${visualData.toString('base64')}`,
+          },
+        ],
+      },
+    ],
+  })
+  addUsage(usage, result.usage)
+  return result.text.trim()
+}
+
+/**
+ * Creates the searchable, non-authoritative visual index for an image-only document.
+ * The caller is responsible for storing the original image and must use it for exact answers.
+ */
+export const describeImageForIndex = async (
+  fileName: string,
+  mimeType: string,
+  data: Buffer,
+  usage: ProjectionUsage = emptyProjectionUsage()
+): Promise<string | null> => {
+  const model = await resolveVisionIngestionModel()
+  if (!model) {
+    logger.warn('[knowledge-box] no vision LLM backend available, skipping visual index', {
+      fileName,
+    })
+    return null
+  }
+  usage.modelId = model.modelId
+  const description = await generateImageDescription(model, fileName, mimeType, data, usage)
+  return description || null
 }
 
 const answerSystemPrompt = (fileName: string) =>

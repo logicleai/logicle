@@ -10,7 +10,7 @@ import type { ProjectionUsage } from './projections'
  * rows wrong. Documents ingested at an older version are re-queued automatically, exactly like
  * `fileAnalyzerVersion` does for `FileAnalysis`.
  */
-export const knowledgeIngestVersion = 1
+export const knowledgeIngestVersion = 2
 
 export interface StoredChunk {
   id: string

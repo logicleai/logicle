@@ -61,6 +61,21 @@ describe('searchBox', () => {
     expect(await searchBox('box', 'payment', 5)).toHaveLength(1)
   })
 
+  it('finds an image document through its generated visual index', async () => {
+    mockLoadBoxChunks.mockResolvedValue([
+      chunk(
+        'c1',
+        'f1',
+        0,
+        'A grey upholstered chair with black angled legs.',
+        'Visual index (AI-generated; verify against the original file)'
+      ),
+      chunk('c2', 'f2', 0, 'A wooden table with four legs.'),
+    ])
+    const hits = await searchBox('box', 'grey chair black legs', 5)
+    expect(hits[0]).toMatchObject({ fileId: 'f1', seq: 0 })
+  })
+
   it('restricts results to the requested documents', async () => {
     mockLoadBoxChunks.mockResolvedValue([
       chunk('c1', 'f1', 0, 'invoices invoices invoices'),
