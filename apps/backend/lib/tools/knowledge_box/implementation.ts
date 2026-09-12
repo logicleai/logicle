@@ -276,7 +276,7 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
 
     search: {
       description:
-        'Full-text search across the documents of this knowledge box. Returns ranked passages with the document id and the chunk range they came from — use `read` with those to see more context.',
+        'Full-text search across the documents of this knowledge box. Returns ranked passages with the document id and the chunk range they came from — use `read` with those to see more context. If you do not need to restrict the search, omit `fileIds` and search the whole box. Never use ids from conversation attachments or another tool as knowledge-box selectors.',
       parameters: {
         type: 'object',
         properties: {
@@ -288,7 +288,7 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
             type: 'array',
             items: { type: 'string' },
             description:
-              'Optional: restrict the search to these document ids or exact document names, as returned by list_documents.',
+              "Optional: restrict the search to document ids or exact document names returned by this knowledge box's list_documents. These are not ids from conversation attachments. Omit this field to search every document in the box.",
           },
         },
         additionalProperties: false,
@@ -305,10 +305,10 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
           : []
         const fileIds = requestedFileIds.map((selector) => this.resolveFileSelector(selector)?.id)
         if (requestedFileIds.length > 0 && fileIds.some((fileId) => !fileId)) {
+          const available = this.params.files.map((file) => `${file.name} (${file.id})`).join(', ')
           return {
             type: 'error-text',
-            value:
-              'Every file selector must be a document id or exact document name from list_documents.',
+            value: `Unknown knowledge-box document selector. Use an id or exact name from this box's list_documents, not a conversation attachment id. If no restriction is needed, omit fileIds and search the whole box. Available selectors: ${available}`,
           }
         }
 
@@ -357,7 +357,8 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         properties: {
           fileId: {
             type: 'string',
-            description: 'Document id or exact document name, as returned by list_documents.',
+            description:
+              "Document id or exact document name returned by this knowledge box's list_documents, not an id from a conversation attachment.",
           },
         },
         additionalProperties: false,
@@ -408,7 +409,8 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         properties: {
           fileId: {
             type: 'string',
-            description: 'Document id or exact document name, as returned by list_documents.',
+            description:
+              "Document id or exact document name returned by this knowledge box's list_documents, not an id from a conversation attachment.",
           },
           from: { type: 'number', description: 'First chunk index (0-based). Defaults to 0.' },
           to: {
