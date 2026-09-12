@@ -7,6 +7,8 @@ import {
 } from '@/lib/chat/tools'
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
+import { getFileWithId } from '@/models/file'
+import { canAccessFile } from '@/backend/lib/files/authorization'
 import {
   KnowledgeBoxInterface,
   KnowledgeBoxSchema,
@@ -23,12 +25,13 @@ import {
  * A knowledge box: a set of files indexed at ingestion time so the model can work with them
  * without paying to read them.
  *
- * Three functions, in increasing cost:
- *  - `list_documents` returns the admin's ingestion questions answered per file. This is the map:
- *    it tells the model which document is worth looking at before a single page is read. It is
- *    ranked and budgeted, because a map that grows with the size of the box stops being cheap.
+ * Four functions:
+ *  - `list_documents` returns the document map, with file metadata and optional ingestion hints.
+ *    It is ranked and budgeted, because a map that grows with the size of the box stops being cheap.
  *  - `search` returns ranked chunks (BM25 over the box's own chunk set).
  *  - `read` returns a contiguous run of chunks, for when a search hit needs its surroundings.
+ *  - `get_file` returns the original file on demand, for source verification when extracted text
+ *    is insufficient or the model needs to inspect a PDF/image directly.
  *
  * Everything is scoped by `boxId` (the tool id), so a box can only ever surface the files attached
  * to that tool — there is no file id a caller can pass to escape it.
@@ -113,14 +116,14 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
   functions_: ToolFunctions = {
     list_documents: {
       description:
-        'List documents in this knowledge box with pre-computed answers to the questions it was configured with. Call this first: it tells you which documents are worth searching. Pass a query to rank the documents by relevance — on a box with many documents that is the difference between a short answer and a truncated one.',
+        'List documents in this knowledge box. It returns names, file metadata, and optional pre-computed navigation hints; these are not authoritative answers. Pass a query to rank documents by relevance when useful, then use search/read to inspect source text.',
       parameters: {
         type: 'object',
         properties: {
           query: {
             type: 'string',
             description:
-              'Optional: what you are looking for. Ranks documents by their pre-computed answers and returns the most relevant first.',
+              'Optional: what you are looking for. Ranks documents by their name and available navigation hints, returning the most relevant first.',
           },
           limit: {
             type: 'number',
@@ -166,7 +169,12 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         let remainingBudget = LIST_PROJECTION_BUDGET_CHARS
         const sections = ordered.map((file) => {
           const document = statusByFile.get(file.id)
-          const lines = [`## ${file.name}`, `id: ${file.id}`]
+          const lines = [
+            `## ${file.name}`,
+            `id: ${file.id}`,
+            `type: ${file.type}`,
+            `size: ${file.size} bytes`,
+          ]
           if (document?.status !== 'ready') {
             lines.push(`status: ${document?.status ?? 'not indexed'}`)
             if (document?.error) lines.push(`error: ${document.error}`)
@@ -250,6 +258,46 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         return {
           type: 'text',
           value: `${SOURCE_EVIDENCE_INSTRUCTION}\n\n${rendered.join('\n\n---\n\n')}`,
+        }
+      },
+    },
+
+    get_file: {
+      description:
+        'Retrieve the original file from this knowledge box on demand. Use it after search/read when exact layout, tables, images, or OCR-sensitive details need verification.',
+      parameters: {
+        type: 'object',
+        properties: {
+          fileId: { type: 'string', description: 'Document id, as returned by list_documents.' },
+        },
+        additionalProperties: false,
+        required: ['fileId'],
+      },
+      invoke: async ({ params, userId }): Promise<dto.ToolCallResultOutput> => {
+        const fileId = `${params.fileId ?? ''}`
+        const file = this.params.files.find((candidate) => candidate.id === fileId)
+        if (!file) {
+          return { type: 'error-text', value: `Document ${fileId} is not in this knowledge box` }
+        }
+        if (!(await canAccessFile({ userId }, fileId))) {
+          return { type: 'error-text', value: 'File not found' }
+        }
+        const fileEntry = await getFileWithId(fileId)
+        if (!fileEntry) {
+          return { type: 'error-text', value: 'File not found' }
+        }
+        return {
+          type: 'content',
+          value: [
+            {
+              type: 'file',
+              id: fileEntry.id,
+              name: fileEntry.name,
+              size: fileEntry.size ?? file.size,
+              mimetype: fileEntry.type,
+              uiHidden: true,
+            },
+          ],
         }
       },
     },

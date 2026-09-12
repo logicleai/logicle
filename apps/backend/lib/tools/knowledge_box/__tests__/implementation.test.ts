@@ -9,6 +9,8 @@ import type {
 
 const mockSearchBox = vi.fn()
 const mockSearchBoxDocuments = vi.fn()
+const mockGetFileWithId = vi.fn()
+const mockCanAccessFile = vi.fn()
 const mockListBoxDocuments = vi.fn()
 const mockLoadBoxProjections = vi.fn()
 const mockLoadFileChunkRange = vi.fn()
@@ -21,6 +23,12 @@ vi.mock('@/backend/lib/knowledge/store', () => ({
   listBoxDocuments: (...args: unknown[]) => mockListBoxDocuments(...args),
   loadBoxProjections: (...args: unknown[]) => mockLoadBoxProjections(...args),
   loadFileChunkRange: (...args: unknown[]) => mockLoadFileChunkRange(...args),
+}))
+vi.mock('@/models/file', () => ({
+  getFileWithId: (...args: unknown[]) => mockGetFileWithId(...args),
+}))
+vi.mock('@/backend/lib/files/authorization', () => ({
+  canAccessFile: (...args: unknown[]) => mockCanAccessFile(...args),
 }))
 
 const toolParams: ToolParams = { id: 'box1', name: 'kb', provisioned: false, promptFragment: '' }
@@ -48,7 +56,7 @@ const buildTool = (overrides: Record<string, unknown> = {}) =>
 
 const invoke = async (tool: KnowledgeBoxTool, name: string, params: Record<string, unknown>) => {
   const fn = tool.functions_[name] as ToolFunction
-  return fn.invoke({ params } as unknown as ToolInvokeParams)
+  return fn.invoke({ params, userId: 'user-1' } as unknown as ToolInvokeParams)
 }
 
 const readyDocument = (fileId: string, chunkCount: number) => ({
@@ -66,11 +74,18 @@ beforeEach(() => {
   mockListBoxDocuments.mockReset().mockResolvedValue([])
   mockLoadBoxProjections.mockReset().mockResolvedValue([])
   mockLoadFileChunkRange.mockReset().mockResolvedValue([])
+  mockGetFileWithId.mockReset()
+  mockCanAccessFile.mockReset().mockResolvedValue(true)
 })
 
 describe('KnowledgeBoxTool', () => {
-  it('exposes exactly the three retrieval functions', () => {
-    expect(Object.keys(buildTool().functions_).sort()).toEqual(['list_documents', 'read', 'search'])
+  it('exposes the map, search, source reading, and original-file retrieval functions', () => {
+    expect(Object.keys(buildTool().functions_).sort()).toEqual([
+      'get_file',
+      'list_documents',
+      'read',
+      'search',
+    ])
   })
 
   it('does not push its files into the prompt', () => {
@@ -97,6 +112,8 @@ describe('KnowledgeBoxTool', () => {
       const value = result.value as string
       expect(value).toContain('## contract.pdf')
       expect(value).toContain('id: f1')
+      expect(value).toContain('type: application/pdf')
+      expect(value).toContain('size: 10 bytes')
       expect(value).toContain('chunks: 0..3')
       expect(value).toContain('Topics: Supply of widgets')
       expect(value).toContain('Parties: Acme and Globex')
@@ -279,6 +296,49 @@ describe('KnowledgeBoxTool', () => {
       const result = await invoke(buildTool(), 'read', { fileId: 'f1', from: 40, to: 41 })
       expect(result.type).toBe('text')
       expect(result.value as string).toContain('may still be indexing')
+    })
+  })
+
+  describe('get_file', () => {
+    it('refuses a document that is not in the box', async () => {
+      const result = await invoke(buildTool(), 'get_file', { fileId: 'other' })
+      expect(result).toEqual({
+        type: 'error-text',
+        value: 'Document other is not in this knowledge box',
+      })
+      expect(mockCanAccessFile).not.toHaveBeenCalled()
+      expect(mockGetFileWithId).not.toHaveBeenCalled()
+    })
+
+    it('returns the original configured file as a hidden tool attachment', async () => {
+      mockGetFileWithId.mockResolvedValue({
+        id: 'f1',
+        name: 'contract.pdf',
+        type: 'application/pdf',
+        size: 42,
+      })
+      const result = await invoke(buildTool(), 'get_file', { fileId: 'f1' })
+      expect(mockCanAccessFile).toHaveBeenCalledWith({ userId: 'user-1' }, 'f1')
+      expect(result).toEqual({
+        type: 'content',
+        value: [
+          {
+            type: 'file',
+            id: 'f1',
+            name: 'contract.pdf',
+            size: 42,
+            mimetype: 'application/pdf',
+            uiHidden: true,
+          },
+        ],
+      })
+    })
+
+    it('does not return a configured file the caller cannot access', async () => {
+      mockCanAccessFile.mockResolvedValue(false)
+      const result = await invoke(buildTool(), 'get_file', { fileId: 'f1' })
+      expect(result).toEqual({ type: 'error-text', value: 'File not found' })
+      expect(mockGetFileWithId).not.toHaveBeenCalled()
     })
   })
 })

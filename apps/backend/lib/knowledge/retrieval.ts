@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import { db } from '@/db/database'
 import { Bm25Index } from './bm25'
-import { loadBoxChunks, loadBoxProjections, type StoredChunk } from './store'
+import { loadBoxChunks, loadBoxFileNames, loadBoxProjections, type StoredChunk } from './store'
 
 /**
  * Per-box retrieval index, built lazily and cached.
@@ -22,7 +22,7 @@ interface CachedIndex {
   signature: string
   index: Bm25Index
   chunks: Map<string, StoredChunk>
-  /** Ranks whole documents by name + projections. Empty when the box has no documents. */
+  /** Ranks whole documents by file name + projections. Empty when the box has no documents. */
   documentIndex: Bm25Index
 }
 
@@ -59,10 +59,12 @@ const getIndex = async (boxId: string): Promise<CachedIndex> => {
   if (cached && cached.signature === signature) return cached
 
   const chunks = await loadBoxChunks(boxId)
+  const fileNames = await loadBoxFileNames(boxId)
+  const fileNameById = new Map(fileNames.map((file) => [file.fileId, file.name]))
   const projections = await loadBoxProjections(boxId)
 
-  // One document-level entry per file: its projection answers, which is what a reader would skim
-  // to decide whether the document is worth opening.
+  // One document-level entry per file: its name and optional projection answers are navigation
+  // hints. They help the model choose where to look, but the chunk/file content remains the source.
   const projectionsByFile = new Map<string, string[]>()
   for (const projection of projections) {
     if (!projection.answer) continue
@@ -70,6 +72,10 @@ const getIndex = async (boxId: string): Promise<CachedIndex> => {
     if (bucket) bucket.push(projection.answer)
     else projectionsByFile.set(projection.fileId, [projection.answer])
   }
+  const documentIds = new Set([
+    ...fileNames.map((file) => file.fileId),
+    ...projectionsByFile.keys(),
+  ])
 
   const built: CachedIndex = {
     signature,
@@ -83,9 +89,11 @@ const getIndex = async (boxId: string): Promise<CachedIndex> => {
     ),
     chunks: new Map(chunks.map((chunk) => [chunk.id, chunk])),
     documentIndex: new Bm25Index(
-      [...projectionsByFile.entries()].map(([fileId, answers]) => ({
+      [...documentIds].map((fileId) => ({
         ref: fileId,
-        text: answers.join('\n'),
+        text: [fileNameById.get(fileId), ...(projectionsByFile.get(fileId) ?? [])]
+          .filter(Boolean)
+          .join('\n'),
       }))
     ),
   }

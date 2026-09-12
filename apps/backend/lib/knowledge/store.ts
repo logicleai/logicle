@@ -279,6 +279,17 @@ export const loadBoxChunks = async (boxId: string): Promise<StoredChunk[]> =>
     .orderBy('seq', 'asc')
     .execute()
 
+/** File names are part of the document map, even when a box also has projections. */
+export const loadBoxFileNames = async (
+  boxId: string
+): Promise<{ fileId: string; name: string }[]> =>
+  db
+    .selectFrom('KnowledgeBoxDocument')
+    .innerJoin('File', 'File.id', 'KnowledgeBoxDocument.fileId')
+    .select(['KnowledgeBoxDocument.fileId as fileId', 'File.name as name'])
+    .where('KnowledgeBoxDocument.boxId', '=', boxId)
+    .execute()
+
 export const loadFileChunkRange = async (
   boxId: string,
   fileId: string,

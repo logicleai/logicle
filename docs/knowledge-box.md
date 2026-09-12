@@ -14,14 +14,14 @@ Two indexes are built once, at ingestion, and read many times afterwards:
 
 - **Chunks** — the document text, split on paragraph boundaries, ranked with BM25 at query time.
   This is ordinary retrieval.
-- **Projections** — the answers to a set of questions the _administrator_ writes, asked once per
-  document by an LLM at ingestion. The answers are free-form text, stored per (document, question).
+- **Projections** — optional answers to a set of navigation questions the _administrator_ writes,
+  asked once per document by an LLM at ingestion. They are free-form hints, stored per
+  (document, question); they are not authoritative answers and are never a substitute for reading
+  the source.
 
-Projections are the part that makes retrieval cheap. Before searching, the model calls
-`list_documents` and gets, for every document, a few lines answering "what is this about", "who are
-the parties", "what period does it cover" — whatever the admin asked. That is enough to decide
-_which_ document to search, so the search that follows is narrow and the model never loads a file it
-did not need.
+The model can call `list_documents` to get a bounded map of files, metadata, and optional hints,
+then decide which search queries and languages to try. It can inspect source passages with
+`search`/`read` and request the original file only when needed.
 
 ## Shape
 
@@ -44,15 +44,17 @@ flowchart TD
   I --> K[list_documents]
   J --> L[search]
   H --> M[read]
+  A --> N[get_file]
 ```
 
 ## Tool functions
 
-| function                         | cost                 | purpose                                                     |
-| -------------------------------- | -------------------- | ----------------------------------------------------------- |
-| `list_documents(query?, limit?)` | bounded, see below   | the map: file name, id, chunk range, and projection answers |
-| `search(query, fileIds?)`        | one page of passages | BM25 over the box's chunks, returning file id + chunk index |
-| `read(fileId, from, to)`         | on demand            | a contiguous run of chunks, capped at 12 per call           |
+| function                         | cost                 | purpose                                                            |
+| -------------------------------- | -------------------- | ------------------------------------------------------------------ |
+| `list_documents(query?, limit?)` | bounded, see below   | the map: file metadata, chunk range, and optional projection hints |
+| `search(query, fileIds?)`        | one page of passages | BM25 over the box's chunks, returning file id + chunk index        |
+| `read(fileId, from, to)`         | on demand            | a contiguous run of chunks, capped at 12 per call                  |
+| `get_file(fileId)`               | on demand            | the original file for layout/image/OCR verification                |
 
 `read` only accepts a file that is in the box's own configuration, and every query is scoped by box
 id, so there is no id a caller can pass to reach outside it.
@@ -70,7 +72,8 @@ Benchmarking caught this inverting at five documents: a box _with_ ingestion que
 same box without them, because it paid for the whole map before deciding it still had to search.
 
 So `list_documents` takes an optional query, ranks documents against a second BM25 index built over
-their projections (falling back to the chunk index for a box configured without questions), and
+their file names and available projection hints (falling back to the chunk index for a box
+configured without questions), and
 returns at most `limit` of them (default 10, hard maximum 50). The projection text is then rendered
 against a character budget in rank order: the highest-ranked documents arrive with their answers in
 full, and the rest arrive as bare entries the model can still search or read by id. The listing is
@@ -128,7 +131,7 @@ is used to build chunks and retrieval indexes; the original file remains the aut
 for exact values, formulas, and other details that OCR may misread.
 
 The PDF is not sent to the model merely because it exists. Retrieval first uses the OCR text to
-identify relevant chunks and the corresponding file; only when the model requests that file is the
+identify relevant chunks and the corresponding file; only when the model calls `get_file` is the
 original PDF returned, and then only when the provider supports native PDFs and the page limit
 allows it. Otherwise the existing text fallback is used.
 
