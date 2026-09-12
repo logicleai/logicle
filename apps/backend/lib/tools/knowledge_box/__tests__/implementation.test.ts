@@ -54,9 +54,14 @@ const buildTool = (overrides: Record<string, unknown> = {}) =>
     'gpt-4o-mini'
   ) as KnowledgeBoxTool
 
-const invoke = async (tool: KnowledgeBoxTool, name: string, params: Record<string, unknown>) => {
+const invoke = async (
+  tool: KnowledgeBoxTool,
+  name: string,
+  params: Record<string, unknown>,
+  messages: ToolInvokeParams['messages'] = []
+) => {
   const fn = tool.functions_[name] as ToolFunction
-  return fn.invoke({ params, userId: 'user-1', messages: [] } as unknown as ToolInvokeParams)
+  return fn.invoke({ params, userId: 'user-1', messages } as unknown as ToolInvokeParams)
 }
 
 const sourceLookupMessages = [
@@ -306,6 +311,27 @@ describe('KnowledgeBoxTool', () => {
     it('reports an empty result set', async () => {
       const result = await invoke(buildTool(), 'search', { query: 'unicorn' })
       expect(result.value).toBe('No passage matched "unicorn".')
+    })
+
+    it('does not repeat passages already returned in the same user turn', async () => {
+      const tool = buildTool()
+      const hit = { fileId: 'f1', seq: 3, heading: 'Payment terms', text: 'Net 30 days.', score: 2 }
+      mockSearchBox
+        .mockResolvedValueOnce([hit])
+        .mockResolvedValueOnce([hit])
+        .mockResolvedValueOnce([hit])
+      const turnOne = [{ id: 'user-1', role: 'user' }] as unknown as ToolInvokeParams['messages']
+      const turnTwo = [{ id: 'user-2', role: 'user' }] as unknown as ToolInvokeParams['messages']
+
+      const first = await invoke(tool, 'search', { query: 'payment' }, turnOne)
+      const duplicate = await invoke(tool, 'search', { query: 'invoice' }, turnOne)
+      const nextTurn = await invoke(tool, 'search', { query: 'payment' }, turnTwo)
+
+      expect(first.value).toContain('Net 30 days.')
+      expect(duplicate.value).toBe(
+        'No new passage matched this query. Earlier searches in this turn already returned these passages; use them, or issue a narrower query if a subtopic is still missing.'
+      )
+      expect(nextTurn.value).toContain('Net 30 days.')
     })
   })
 

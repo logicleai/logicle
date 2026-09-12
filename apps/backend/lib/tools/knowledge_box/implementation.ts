@@ -74,6 +74,10 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
 
   public toolParams: ToolParams
 
+  /** Search results already shown during the current user turn. */
+  private searchTurnKey: string | null = null
+  private seenSearchChunks = new Set<string>()
+
   constructor(
     toolParams: ToolParams,
     public params: KnowledgeBoxParams
@@ -130,6 +134,16 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
                 part.toolName.endsWith('__read'))
           )
       )
+  }
+
+  private prepareSearchTurn(messages: dto.Message[]): void {
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((message) => message.role === 'user' || message.role === 'user-response')
+    const turnKey = lastUserMessage?.id ?? '__unknown-turn__'
+    if (turnKey === this.searchTurnKey) return
+    this.searchTurnKey = turnKey
+    this.seenSearchChunks.clear()
   }
 
   /**
@@ -280,7 +294,8 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         additionalProperties: false,
         required: ['query'],
       },
-      invoke: async ({ params }): Promise<dto.ToolCallResultOutput> => {
+      invoke: async ({ params, messages }): Promise<dto.ToolCallResultOutput> => {
+        this.prepareSearchTurn(messages)
         const query = `${params.query ?? ''}`.trim()
         if (!query) {
           return { type: 'error-text', value: 'Empty search query' }
@@ -308,7 +323,20 @@ export class KnowledgeBoxTool extends KnowledgeBoxInterface implements ToolImple
         }
 
         const names = this.fileNames()
-        const rendered = hits.map((hit) => {
+        const newHits = hits.filter((hit) => {
+          const key = `${hit.fileId}:${hit.seq}`
+          if (this.seenSearchChunks.has(key)) return false
+          this.seenSearchChunks.add(key)
+          return true
+        })
+        if (newHits.length === 0) {
+          return {
+            type: 'text',
+            value:
+              'No new passage matched this query. Earlier searches in this turn already returned these passages; use them, or issue a narrower query if a subtopic is still missing.',
+          }
+        }
+        const rendered = newHits.map((hit) => {
           const name = names.get(hit.fileId) ?? hit.fileId
           return `[${name} · id: ${hit.fileId} · chunk ${hit.seq}${formatHeading(hit.heading)}]\n${
             hit.text
