@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import WebSocket from 'ws'
+import type { ToolCallMessage } from '@/lib/satellite/types'
 
 const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
 const baseUrl = cliArgs[0] || process.env.SMOKE_BASE_URL || 'http://localhost:3000'
@@ -105,16 +106,26 @@ async function login(email, password) {
 /**
  * Open a WebSocket to /api/rpc, authenticate with a Bearer token, send a
  * register message, then resolve once the server has acknowledged the
- * satellite registration. Returns a closer function.
+ * satellite registration. Returns a connection handle that can also wait for
+ * tool calls and answer them with a deterministic result.
  */
 async function openSatelliteConnection(
   bearerToken: string,
   satelliteId: string,
   satelliteName: string
-): Promise<() => void> {
+): Promise<{ close: () => Promise<void>; waitForToolCall: () => Promise<ToolCallMessage> }> {
   const wsUrl = `${baseUrl.replace(/^http/, 'ws')}/api/rpc`
-  return new Promise<() => void>((resolve, reject) => {
-    const ws = new WebSocket(wsUrl, { headers: { authorization: `Bearer ${bearerToken}` } })
+  return new Promise<{
+    close: () => Promise<void>
+    waitForToolCall: () => Promise<ToolCallMessage>
+  }>((resolve, reject) => {
+    const ws = new WebSocket(wsUrl, 'logicle-satellite-v1', {
+      headers: { authorization: `Bearer ${bearerToken}` },
+    })
+    let toolCallResolver: ((message: ToolCallMessage) => void) | undefined
+    let toolCallRejecter: ((reason?: unknown) => void) | undefined
+    let toolCallTimeout: ReturnType<typeof setTimeout> | undefined
+    let receivedToolCall: ToolCallMessage | undefined
     const timeout = setTimeout(() => {
       ws.terminate()
       reject(new Error('Satellite connection timed out'))
@@ -140,7 +151,48 @@ async function openSatelliteConnection(
           msg.satelliteId === satelliteId
         ) {
           clearTimeout(timeout)
-          resolve(() => ws.close())
+          resolve({
+            close: () =>
+              new Promise<void>((resolveClose) => {
+                if (ws.readyState === ws.CLOSED) {
+                  resolveClose()
+                  return
+                }
+                ws.once('close', () => resolveClose())
+                ws.close()
+              }),
+            waitForToolCall: () =>
+              receivedToolCall
+                ? Promise.resolve(receivedToolCall)
+                : new Promise<ToolCallMessage>((resolveToolCall, rejectToolCall) => {
+                    toolCallResolver = resolveToolCall
+                    toolCallRejecter = rejectToolCall
+                    toolCallTimeout = setTimeout(() => {
+                      toolCallResolver = undefined
+                      toolCallRejecter = undefined
+                      rejectToolCall(new Error('Timed out waiting for Satellite tool call'))
+                    }, 10000)
+                  }),
+          })
+          return
+        }
+        if (msg.type === 'tool-call') {
+          const toolCall = msg as ToolCallMessage
+          if (toolCallTimeout) clearTimeout(toolCallTimeout)
+          if (toolCallResolver) {
+            toolCallResolver(toolCall)
+          } else {
+            receivedToolCall = toolCall
+          }
+          toolCallResolver = undefined
+          toolCallRejecter = undefined
+          ws.send(
+            JSON.stringify({
+              type: 'tool-result',
+              id: toolCall.id,
+              content: [{ type: 'text', text: 'integration satellite result' }],
+            })
+          )
         }
       } catch {
         // ignore unexpected messages in this helper
@@ -149,14 +201,169 @@ async function openSatelliteConnection(
 
     ws.on('close', (code) => {
       clearTimeout(timeout)
+      if (toolCallTimeout) clearTimeout(toolCallTimeout)
+      toolCallRejecter?.(new Error(`Satellite WS closed unexpectedly with code ${code}`))
       reject(new Error(`Satellite WS closed unexpectedly with code ${code}`))
     })
 
     ws.on('error', (err) => {
       clearTimeout(timeout)
+      if (toolCallTimeout) clearTimeout(toolCallTimeout)
+      toolCallRejecter?.(err)
       reject(new Error(`Satellite WS error: ${err.message}`))
     })
   })
+}
+
+async function checkRegisteredSatelliteSharedChat(
+  runId: string,
+  adminEmail: string,
+  password: string
+) {
+  console.log('Integration: registered Satellite tool call from a shared assistant')
+
+  const satelliteCreated = await request('POST', '/api/me/satellites', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: { name: `Shared Satellite ${runId}` },
+  })
+  const satellite = parseJson(satelliteCreated.text, '/api/me/satellites POST') as {
+    id: string
+    secret: string
+  }
+  const connection = await openSatelliteConnection(
+    `${satellite.id}.${satellite.secret}`,
+    satellite.id,
+    `Shared Satellite ${runId}`
+  )
+
+  const toolsResponse = await request('GET', '/api/tools', {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  const satelliteTool = (parseJson(toolsResponse.text, '/api/tools GET') as any[]).find(
+    (tool) => tool.satelliteId === satellite.id
+  )
+  if (!satelliteTool) {
+    await connection.close()
+    throw new Error(`No tool was created for registered Satellite "${satellite.id}"`)
+  }
+
+  // Make the tool public so this scenario tests the shared Satellite dispatch path,
+  // independently of the tool visibility policy.
+  await request('PATCH', `/api/tools/${satelliteTool.id}`, {
+    expectedStatus: 204,
+    headers: jsonHeaders,
+    json: { sharing: { type: 'public' } },
+  })
+
+  const backendCreated = await request('POST', '/api/backends', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: { providerType: 'mock', name: `Shared Satellite Backend ${runId}` },
+  })
+  const backendId = parseJson(backendCreated.text, '/api/backends POST (shared Satellite)')
+    .id as string
+  const assistantCreated = await request('POST', '/api/assistants', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      backendId,
+      description: 'Integration test assistant with a registered shared Satellite',
+      model: 'mock-echo',
+      name: `Shared Satellite Assistant ${runId}`,
+      systemPrompt: 'Use the Satellite tool.',
+      temperature: 0,
+      tokenLimit: 4096,
+      reasoning_effort: null,
+      tags: [],
+      prompts: [],
+      tools: [satelliteTool.id],
+      files: [],
+      iconUri: null,
+    },
+  })
+  const assistantId = parseJson(assistantCreated.text, '/api/assistants POST (shared Satellite)')
+    .assistantId as string
+  await request('POST', `/api/assistants/${assistantId}/publish`, {
+    expectedStatus: 200,
+    headers: jsonHeaders,
+    json: {},
+  })
+  await request('POST', `/api/assistants/${assistantId}/sharing`, {
+    expectedStatus: 200,
+    headers: jsonHeaders,
+    json: [{ type: 'all' }],
+  })
+
+  const userEmail = `satellite-user-${runId}@example.com`
+  await request('POST', '/api/users', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: {
+      name: 'Shared Satellite User',
+      email: userEmail,
+      password,
+      role: 'USER',
+      ssoUser: false,
+      preferences: '{}',
+      image: null,
+      properties: {},
+    },
+  })
+  await login(userEmail, password)
+
+  const conversationCreated = await request('POST', '/api/conversations', {
+    expectedStatus: 201,
+    headers: jsonHeaders,
+    json: { assistantId, name: 'Registered Satellite shared chat' },
+  })
+  const conversationId = parseJson(
+    conversationCreated.text,
+    '/api/conversations POST (shared Satellite)'
+  ).id as string
+  await request('POST', '/api/chat', {
+    expectedStatus: 200,
+    headers: { ...jsonHeaders, accept: 'text/event-stream' },
+    json: {
+      id: `satellite-msg-${runId}`,
+      conversationId,
+      parent: null,
+      role: 'user',
+      content: 'invoke the shared Satellite',
+      attachments: [],
+    },
+  })
+
+  const toolCall = await connection.waitForToolCall()
+  if (toolCall.method !== 'echo') {
+    throw new Error(`Expected Satellite method "echo", got "${toolCall.method}"`)
+  }
+  const messagesResponse = await request('GET', `/api/conversations/${conversationId}/messages`, {
+    expectedStatus: 200,
+    headers: sameOriginHeaders,
+  })
+  const messages = parseJson(
+    messagesResponse.text,
+    '/api/conversations/{id}/messages (shared Satellite)'
+  ) as any[]
+  const toolResult = [...messages]
+    .reverse()
+    .find(
+      (message) =>
+        message.role === 'tool' &&
+        message.parts?.some(
+          (part: any) =>
+            part.type === 'tool-result' &&
+            JSON.stringify(part.result).includes('integration satellite result')
+        )
+    )
+  if (!toolResult) {
+    throw new Error(`Shared Satellite result was not persisted: ${JSON.stringify(messages)}`)
+  }
+
+  await connection.close()
+  await login(adminEmail, password)
 }
 
 async function main() {
@@ -198,25 +405,24 @@ async function main() {
     })
     const apiKeyJson = parseJson(apiKeyCreated.text, '/api/users/{id}/apiKeys POST')
     const bearerToken = `${apiKeyJson.id}.${apiKeyJson.key}`
-    const satelliteCreated = await request('POST', '/api/tools', {
+    const satelliteCreated = await request('POST', '/api/me/satellites', {
       expectedStatus: 201,
       headers: jsonHeaders,
       json: {
-        type: 'satellite',
         name: `Integration Satellite ${runId}`,
-        description: 'Integration test satellite tool',
-        tags: [],
-        icon: null,
-        configuration: {},
-        promptFragment: '',
-        sharing: { type: 'public' },
       },
     })
-    const satelliteToolId = parseJson(satelliteCreated.text, '/api/tools POST (satellite)')
-      .id as string
-    const satelliteName = `integration-sat-${runId}`
+    const satelliteCreatedJson = parseJson(
+      satelliteCreated.text,
+      '/api/me/satellites POST (integration satellite)'
+    ) as { id: string }
+    const satelliteId = satelliteCreatedJson.id
 
-    const close = await openSatelliteConnection(bearerToken, satelliteToolId, satelliteName)
+    const connection = await openSatelliteConnection(
+      bearerToken,
+      satelliteId,
+      `Integration Satellite ${runId}`
+    )
 
     // Give the server a tick to process the register message
     await new Promise((resolve) => setTimeout(resolve, 100))
@@ -226,19 +432,15 @@ async function main() {
       headers: sameOriginHeaders,
     })
     const satellites = parseJson(satellitesRes.text, '/api/satellites GET') as {
-      satelliteId: string
+      id: string
       name: string
-      tools: unknown[]
     }[]
-    const registered = satellites.find((s) => s.satelliteId === satelliteToolId)
+    const registered = satellites.find((s) => s.id === satelliteId)
     if (!registered) {
-      throw new Error(`Satellite "${satelliteToolId}" not found in /api/satellites after register`)
-    }
-    if (!registered.tools.some((t: any) => t.name === 'echo')) {
-      throw new Error('Registered satellite is missing expected tool "echo"')
+      throw new Error(`Satellite "${satelliteId}" not found in /api/satellites after register`)
     }
 
-    close()
+    await connection.close()
     await new Promise((resolve) => setTimeout(resolve, 100))
 
     const satellitesAfter = await request('GET', '/api/satellites', {
@@ -248,12 +450,21 @@ async function main() {
     const satellitesAfterJson = parseJson(
       satellitesAfter.text,
       '/api/satellites GET after disconnect'
-    ) as { satelliteId: string }[]
-    if (satellitesAfterJson.some((s) => s.satelliteId === satelliteToolId)) {
-      throw new Error(`Satellite "${satelliteToolId}" still present in /api/satellites after close`)
+    ) as { id: string; connected: boolean }[]
+    const registeredAfter = satellitesAfterJson.find((s) => s.id === satelliteId)
+    if (registeredAfter?.connected) {
+      throw new Error(`Satellite "${satelliteId}" is still connected after close`)
     }
   } else {
     console.log('Integration: satellite WS skipped (set ENABLE_APIKEYS=1 to enable)')
+  }
+
+  if (process.env.ALLOW_MOCK_PROVIDER === '1' && process.env.ENABLE_APIKEYS === '1') {
+    await checkRegisteredSatelliteSharedChat(runId, adminEmail, password)
+  } else {
+    console.log(
+      'Integration: shared registered Satellite chat skipped (set ENABLE_APIKEYS=1 and ALLOW_MOCK_PROVIDER=1 to enable)'
+    )
   }
 
   if (process.env.ALLOW_MOCK_PROVIDER === '1') {

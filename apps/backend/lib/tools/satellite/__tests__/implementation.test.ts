@@ -31,7 +31,7 @@ describe('SatelliteTool.functions', () => {
     expect(Object.keys(fns)).toEqual(['do_thing'])
   })
 
-  test('rejects a user who does not own the satellite connection', async () => {
+  test('allows a user who can access the shared Satellite tool', async () => {
     connections.clear()
     connections.set('sat-1', {
       satelliteId: 'sat-1',
@@ -43,8 +43,8 @@ describe('SatelliteTool.functions', () => {
     const { SatelliteTool } = await import('@/backend/lib/tools/satellite/implementation')
     const tool = new SatelliteTool(toolParams, 'sat-1')
 
-    await expect(tool.functions({} as any, { userId: 'attacker' })).rejects.toThrow(
-      /currently offline/
+    await expect(tool.functions({} as any, { userId: 'attacker' })).resolves.toHaveProperty(
+      'do_thing'
     )
   })
 

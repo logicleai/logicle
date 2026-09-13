@@ -86,7 +86,12 @@ const createSatelliteToolFunction = (
     invoke: async (invokeParams: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
       try {
         const { callSatelliteMethod } = await import('@/lib/satellite/hub')
-        const result = await callSatelliteMethod(satelliteId, tool.name, invokeParams.uiLink, invokeParams.params)
+        const result = await callSatelliteMethod(
+          satelliteId,
+          tool.name,
+          invokeParams.uiLink,
+          invokeParams.params
+        )
         return await toToolResult(result, invokeParams)
       } catch (error) {
         return {
@@ -109,16 +114,19 @@ export class SatelliteTool extends SatelliteInterface implements ToolImplementat
     )
   }
 
-  constructor(public toolParams: ToolParams, private satelliteId: string) {
+  constructor(
+    public toolParams: ToolParams,
+    private satelliteId: string
+  ) {
     super()
   }
 
   supportedMedia = []
 
-  functions = async (_model: LlmModel, context: ToolFunctionContext): Promise<ToolFunctions> => {
+  functions = async (_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> => {
     const { connections } = await import('@/lib/satellite/hub')
     const conn = connections.get(this.satelliteId)
-    if (!conn || conn.userId !== context.userId) {
+    if (!conn) {
       throw new UserVisibleError(`Satellite "${this.toolParams.name}" is currently offline`)
     }
 
