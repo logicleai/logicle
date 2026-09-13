@@ -58,6 +58,7 @@ export const MobileChatOnlyRoute = () => {
 }
 
 export const MobileAssistantManagementRoute = () => {
-  const { isMobile } = useLayoutConfig()
-  return isMobile ? <Navigate to="/chat/assistants/select" replace /> : <Outlet />
+  // Assistant management is intentionally available on mobile. The chooser
+  // links here so users can create and configure assistants from a phone.
+  return <Outlet />
 }
