@@ -108,7 +108,6 @@ export const ToolKnowledgeSection = ({ form, toolId }: ToolKnowledgeSectionProps
       size: file.size,
       type: file.type,
       name: fileName,
-      owner: { ownerType: 'USER', ownerId: userProfile.id },
     }
     const response = await post<dto.File>(`/api/files`, insertRequest)
     if (response.error) {

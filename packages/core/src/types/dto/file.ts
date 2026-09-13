@@ -46,7 +46,13 @@ export const insertableFileSchema = fileSchema
     path: true,
   })
   .extend({
-    owner: fileOwnerSchema,
+    // Kept temporarily for backwards compatibility. Upload ownership is always
+    // derived from the authenticated session by POST /api/files.
+    owner: fileOwnerSchema.optional().meta({
+      deprecated: true,
+      description:
+        'Deprecated. Accepted for backwards compatibility and ignored. The file is always USER-owned by the authenticated uploader.',
+    }),
   })
   .meta({ id: 'InsertableFile' })
 

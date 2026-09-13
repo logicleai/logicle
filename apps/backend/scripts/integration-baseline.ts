@@ -415,8 +415,6 @@ async function main() {
   if (!profileJson.id || !profileJson.email || !profileJson.role) {
     throw new Error('Profile payload missing required fields')
   }
-  const userOwner = { ownerType: 'USER', ownerId: profileJson.id as string }
-
   console.log('Integration: core 4xx validation')
   await request('POST', '/api/me/folders', {
     headers: jsonHeaders,
@@ -434,7 +432,7 @@ async function main() {
   })
   await request('POST', '/api/files', {
     headers: jsonHeaders,
-    json: { name: `integration-${runId}.txt`, type: 'text/plain', size: 1 },
+    json: { name: `integration-${runId}.txt`, type: 'text/plain' },
     allowStatus: [400],
   })
   console.log('Integration: file creation ignores a client-supplied owner')
@@ -470,7 +468,6 @@ async function main() {
       name: `integration-${runId}-owned.txt`,
       type: 'text/plain',
       size: 1,
-      owner: userOwner,
     },
   })
   const ownedFileId = parseJson(ownedFileCreated.text, '/api/files POST (owned)').id as string

@@ -5509,12 +5509,14 @@ components:
         size:
           type: number
         owner:
+          deprecated: true
+          description: Deprecated. Accepted for backwards compatibility and ignored. The
+            file is always USER-owned by the authenticated uploader.
           $ref: "#/components/schemas/FileOwner"
       required:
         - name
         - type
         - size
-        - owner
       additionalProperties: false
       id: InsertableFile
     File:

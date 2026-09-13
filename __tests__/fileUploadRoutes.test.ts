@@ -389,6 +389,33 @@ describe('PUT /api/files/:fileId/content', () => {
 // ── POST /api/files ──────────────────────────────────────────────────────────
 
 describe('POST /api/files', () => {
+  test('creates metadata as USER-owned by the authenticated uploader without an owner payload', async () => {
+    const response = await filesRoute.POST(
+      new Request('http://localhost/api/files', {
+        method: 'POST',
+        headers: {
+          cookie: sessionCookie,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'user-upload.txt',
+          type: 'text/plain',
+          size: 12,
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(201)
+    const body = await response.json()
+    const file = await db
+      .selectFrom('File')
+      .select(['ownerType', 'ownerId'])
+      .where('id', '=', body.id)
+      .executeTakeFirstOrThrow()
+    expect(file).toEqual({ ownerType: 'USER', ownerId: testUserId })
+  })
+
   test('always creates metadata as USER-owned by the uploader, ignoring the requested owner', async () => {
     await insertConversation({ id: 'chat-1', ownerId: testUserId })
 

@@ -526,8 +526,6 @@ async function main() {
     throw new Error('Missing user id in profile response')
   }
   const userId = profileJson.id
-  const owner = { ownerType: 'USER', ownerId: userId }
-
   console.log('Smoke: user profile patch covers image')
   await requestUser('PATCH', '/api/me/profile', {
     expectedStatus: 204,
@@ -648,7 +646,6 @@ async function main() {
       name: `smoke-${runId}.txt`,
       type: 'text/plain',
       size: 11,
-      owner,
     },
   })
   const fileId = (parseJson(fileCreated.text, '/api/files POST') as { id: string }).id
@@ -699,7 +696,6 @@ async function main() {
         name: `smoke-abort-${runId}.bin`,
         type: 'application/octet-stream',
         size: abortPayload.byteLength,
-        owner,
       },
     })
     const abortFileId = (
@@ -746,7 +742,6 @@ async function main() {
       name: `smoke-${runId}.pdf`,
       type: 'application/pdf',
       size: pdfBuffer.byteLength,
-      owner,
     },
   })
   const pdfFileId = (parseJson(pdfCreated.text, '/api/files POST pdf') as { id: string }).id
