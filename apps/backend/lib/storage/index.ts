@@ -1,6 +1,7 @@
 import env from '@/lib/env'
 import { Storage } from './api'
 import { CachingStorage } from './CachingStorage'
+import { DiskCachingStorage } from './DiskCachingStorage'
 import { AeadEncryptingStorage } from '../../ee/AeadEncryptingStorage'
 import { DbBlobStorage } from './DbBlobStorage'
 import { FsStorage } from './FsStorage'
@@ -31,6 +32,10 @@ function createBasicStorage(location: string) {
 async function createStorage(
   location: string,
   cacheSizeInMb: number,
+  diskCacheLocation: string | undefined,
+  diskCacheSizeInMb: number,
+  diskCacheTtlMs: number,
+  diskCacheEncryptionKey: string,
   encryptionProvider: string,
   encryptionKey: string
 ) {
@@ -41,7 +46,15 @@ async function createStorage(
   } else {
     storage = await PgpEncryptingStorage.create(storage, encryptionKey)
   }
-  if (cacheSizeInMb) {
+  if (diskCacheLocation && diskCacheSizeInMb > 0) {
+    storage = new DiskCachingStorage(
+      storage,
+      diskCacheLocation,
+      diskCacheSizeInMb,
+      diskCacheTtlMs,
+      diskCacheEncryptionKey || undefined
+    )
+  } else if (cacheSizeInMb) {
     storage = new CachingStorage(storage, cacheSizeInMb)
   }
   return storage
@@ -58,6 +71,10 @@ if (env.fileStorage.encryptFiles && !env.fileStorage.encryptionKey) {
 export const storage: Storage = await createStorage(
   fileStorageLocation,
   env.fileStorage.cacheSizeInMb,
+  env.fileStorage.diskCacheLocation,
+  env.fileStorage.diskCacheSizeInMb,
+  env.fileStorage.diskCacheTtlMs,
+  env.fileStorage.diskCacheEncryptionKey,
   env.fileStorage.encryptionProvider,
   env.fileStorage.encryptionKey
 )

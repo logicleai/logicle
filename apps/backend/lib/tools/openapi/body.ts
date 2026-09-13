@@ -5,6 +5,7 @@ import { ToolFunctionSchemaParams } from '@/lib/tools/openapi-types'
 import { getFileWithId } from '@/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { ensureABView } from '@/backend/lib/utils'
 import { JSONSchema7 } from 'json-schema'
 
@@ -102,7 +103,11 @@ async function createFormBody(
       if (!fileEntry) {
         throw new Error(`Tool invocation required non existing file: ${propInvocationValue}`)
       }
-      const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+      const fileContent = await storage.readBuffer(
+        fileEntry.path,
+        fileEntry.encryption,
+        fileReadOptions(fileEntry)
+      )
       form.append(definedPropertyName, fileContent, {
         filename: fileEntry.name,
       })

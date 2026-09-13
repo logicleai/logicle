@@ -3,9 +3,16 @@ import type { IRunOptions } from 'docx'
 import { getFileWithId } from '@/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { safeFetch } from '@/backend/lib/net/safeFetch'
 import type * as schema from '@/db/schema'
-import type { Image as MdastImage, InlineCode as MdastInlineCode, Root, RootContent, Text as MdastText } from 'mdast'
+import type {
+  Image as MdastImage,
+  InlineCode as MdastInlineCode,
+  Root,
+  RootContent,
+  Text as MdastText,
+} from 'mdast'
 import docx from 'remark-docx'
 import { htmlPlugin } from 'remark-docx/plugins/html'
 import { imagePlugin } from 'remark-docx/plugins/image'
@@ -55,7 +62,8 @@ function cssColorToHex(color: string): string | undefined {
   if (named[s]) return named[s]
   if (s.startsWith('#')) {
     const hex = s.slice(1)
-    if (hex.length === 3) return `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`.toUpperCase()
+    if (hex.length === 3)
+      return `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`.toUpperCase()
     if (hex.length === 6) return hex.toUpperCase()
     if (hex.length === 8) return hex.slice(0, 6).toUpperCase()
   }
@@ -196,7 +204,11 @@ export const coloredHtmlPlugin = (): RemarkDocxPlugin => {
       },
       inlineCode: (node, ctx) => {
         const color = (node as MdastInlineCode).data?.color
-        return buildTextRun(node.value, { ...ctx, style: { ...ctx.style, inlineCode: true } }, color)
+        return buildTextRun(
+          node.value,
+          { ...ctx, style: { ...ctx.style, inlineCode: true } },
+          color
+        )
       },
     }
   }
@@ -211,44 +223,49 @@ const remarkNonImageFileLinks: Plugin<[string, AccessPrincipal], Root> = (
   principal: AccessPrincipal
 ) => {
   return async (tree: Root) => {
-      type Replacement = { parent: { children: RootContent[] }; index: number; text: string; url: string }
-      const replacements: Replacement[] = []
-      const tasks: Promise<void>[] = []
+    type Replacement = {
+      parent: { children: RootContent[] }
+      index: number
+      text: string
+      url: string
+    }
+    const replacements: Replacement[] = []
+    const tasks: Promise<void>[] = []
 
-      visit(tree, 'image', (node: MdastImage, index, parent) => {
-        const fileMatch = node.url.match(FILE_URL_PATTERN)
-        if (!fileMatch || index === undefined || !parent) return
+    visit(tree, 'image', (node: MdastImage, index, parent) => {
+      const fileMatch = node.url.match(FILE_URL_PATTERN)
+      if (!fileMatch || index === undefined || !parent) return
 
-        const fileId = fileMatch[1]
-        const p = parent as { children: RootContent[] }
-        const idx = index
+      const fileId = fileMatch[1]
+      const p = parent as { children: RootContent[] }
+      const idx = index
 
-        tasks.push(
-          canAccessFile(principal, fileId).then(async (allowed) => {
-            if (!allowed) return
-            const file = await getFileWithId(fileId)
-            if (!file?.type.startsWith('image/')) {
-              replacements.push({
-                parent: p,
-                index: idx,
-                text: node.alt || file?.name || 'attachment',
-                url: `${baseUrl}${node.url}`,
-              })
-            }
-          })
-        )
-      })
+      tasks.push(
+        canAccessFile(principal, fileId).then(async (allowed) => {
+          if (!allowed) return
+          const file = await getFileWithId(fileId)
+          if (!file?.type.startsWith('image/')) {
+            replacements.push({
+              parent: p,
+              index: idx,
+              text: node.alt || file?.name || 'attachment',
+              url: `${baseUrl}${node.url}`,
+            })
+          }
+        })
+      )
+    })
 
-      await Promise.all(tasks)
+    await Promise.all(tasks)
 
-      replacements.sort((a, b) => (a.parent === b.parent ? b.index - a.index : 0))
-      for (const { parent, index, text, url } of replacements) {
-        parent.children.splice(index, 1, {
-          type: 'link',
-          url,
-          children: [{ type: 'text', value: text }],
-        } as RootContent)
-      }
+    replacements.sort((a, b) => (a.parent === b.parent ? b.index - a.index : 0))
+    for (const { parent, index, text, url } of replacements) {
+      parent.children.splice(index, 1, {
+        type: 'link',
+        url,
+        children: [{ type: 'text', value: text }],
+      } as RootContent)
+    }
   }
 }
 
@@ -283,7 +300,7 @@ function createLoadImageData(principal: AccessPrincipal) {
       if (!file) {
         throw new Error(`Missing file for DOCX export image: ${fileId}`)
       }
-      const data = await storage.readBuffer(file.path, file.encryption)
+      const data = await storage.readBuffer(file.path, file.encryption, fileReadOptions(file))
       return Uint8Array.from(data).buffer
     }
 

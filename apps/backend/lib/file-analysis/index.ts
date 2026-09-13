@@ -79,7 +79,8 @@ class FileAnalysisRuntime {
       logger.info('File analysis: starting', { fileId, mimeType: file.type })
 
       const { storage } = await import('@/lib/storage')
-      const buffer = await storage.readBuffer(file.path, file.encryption)
+      const { fileReadOptions } = await import('@/lib/storage/file-options')
+      const buffer = await storage.readBuffer(file.path, file.encryption, fileReadOptions(file))
       const payload = await getFileAnalyzerRuntime().analyzeBuffer(buffer, file.type)
       logger.info('File analysis: complete', { fileId, kind: payload.kind })
       const extractedText = payload.extractedText
@@ -155,10 +156,7 @@ export const readExtractedTextFromAnalysis = async (
   }
   try {
     const { storage } = await import('@/lib/storage')
-    const textBuffer = await storage.readBuffer(
-      analysis.payload.extractedTextPath,
-      file.encryption
-    )
+    const textBuffer = await storage.readBuffer(analysis.payload.extractedTextPath, file.encryption)
     return textBuffer.toString('utf-8')
   } catch (error) {
     logger.warn('File analysis runtime: failed reading extracted text sidecar', {

@@ -138,7 +138,9 @@ describe('fileAnalysis runtime helpers', () => {
     })
     const mod = await import('@/lib/file-analysis')
     vi.spyOn(mod.fileAnalysisRuntime, 'submit').mockResolvedValue()
-    await expect(mod.ensureFileAnalysisForFile(fileEntry as any, 1)).rejects.toThrow('stale version 0')
+    await expect(mod.ensureFileAnalysisForFile(fileEntry as any, 1)).rejects.toThrow(
+      'stale version 0'
+    )
   })
 
   test('ensureFileAnalysisForFile returns undefined when no completed row appears before timeout', async () => {
@@ -152,16 +154,22 @@ describe('fileAnalysis runtime helpers', () => {
     const mod = await import('@/lib/file-analysis')
     await expect(mod.readExtractedTextFromAnalysis(fileEntry as any, undefined)).resolves.toBeNull()
     readBuffer.mockRejectedValueOnce(new Error('nope'))
-    await expect(mod.readExtractedTextFromAnalysis(fileEntry as any, readyAnalysis)).resolves.toBeNull()
+    await expect(
+      mod.readExtractedTextFromAnalysis(fileEntry as any, readyAnalysis)
+    ).resolves.toBeNull()
     readBuffer.mockRejectedValueOnce('still nope')
-    await expect(mod.readExtractedTextFromAnalysis(fileEntry as any, readyAnalysis)).resolves.toBeNull()
+    await expect(
+      mod.readExtractedTextFromAnalysis(fileEntry as any, readyAnalysis)
+    ).resolves.toBeNull()
     expect(warn).toHaveBeenCalled()
   })
 
   test('readExtractedTextFromAnalysis returns sidecar content', async () => {
     readBuffer.mockResolvedValue(Buffer.from('hello world'))
     const { readExtractedTextFromAnalysis } = await import('@/lib/file-analysis')
-    await expect(readExtractedTextFromAnalysis(fileEntry as any, readyAnalysis)).resolves.toBe('hello world')
+    await expect(readExtractedTextFromAnalysis(fileEntry as any, readyAnalysis)).resolves.toBe(
+      'hello world'
+    )
   })
 
   test('analysis type guards detect ready and completed states', async () => {
@@ -186,19 +194,25 @@ describe('fileAnalysis runtime helpers', () => {
     })
     const mod = await import('@/lib/file-analysis')
     vi.spyOn(mod.fileAnalysisRuntime, 'submit').mockResolvedValue()
-    await expect(mod.ensureFileAnalysis(fileEntry as any)).resolves.toMatchObject({ status: 'failed' })
+    await expect(mod.ensureFileAnalysis(fileEntry as any)).resolves.toMatchObject({
+      status: 'failed',
+    })
   })
 
   test('ensureFileAnalysis throws if no completed result is persisted', async () => {
     getFileAnalysis.mockResolvedValue(undefined)
     const mod = await import('@/lib/file-analysis')
     vi.spyOn(mod.fileAnalysisRuntime, 'submit').mockResolvedValue()
-    await expect(mod.ensureFileAnalysis(fileEntry as any)).rejects.toThrow('did not produce a completed result')
+    await expect(mod.ensureFileAnalysis(fileEntry as any)).rejects.toThrow(
+      'did not produce a completed result'
+    )
   })
 
   test('ensurePdfAnalysis returns undefined for non-pdf files', async () => {
     const { ensurePdfAnalysis } = await import('@/lib/file-analysis')
-    await expect(ensurePdfAnalysis({ ...fileEntry, type: 'text/plain' } as any)).resolves.toBeUndefined()
+    await expect(
+      ensurePdfAnalysis({ ...fileEntry, type: 'text/plain' } as any)
+    ).resolves.toBeUndefined()
   })
 
   test('ensurePdfAnalysis returns completed analysis for PDFs', async () => {
@@ -227,7 +241,9 @@ describe('fileAnalysis runtime helpers', () => {
     const { fileAnalysisRuntime } = await import('@/lib/file-analysis')
     await fileAnalysisRuntime.submit(fileEntry.id)
 
-    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, null)
+    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, null, {
+      expectedSizeBytes: fileEntry.size,
+    })
     expect(writeBuffer).toHaveBeenCalledWith(
       `${fileEntry.path}.analysis-v1.txt`,
       Buffer.from('hello world', 'utf-8'),

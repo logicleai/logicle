@@ -7,10 +7,7 @@ import {
   ToolFunctionContext,
 } from '@/lib/chat/tools'
 import * as dto from '@/types/dto'
-import {
-  ImageGeneratorPluginInterface,
-  ImageGeneratorPluginParams,
-} from '@/lib/tools/schemas'
+import { ImageGeneratorPluginInterface, ImageGeneratorPluginParams } from '@/lib/tools/schemas'
 import OpenAI from 'openai'
 import { getFileWithId } from '@/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
@@ -18,6 +15,7 @@ import { nanoid } from 'nanoid'
 import env from '@/lib/env'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { ImagesResponse } from 'openai/resources/images'
 import { ensureABView } from '@/backend/lib/utils'
 import { LlmModel } from '@/lib/chat/models'
@@ -135,7 +133,11 @@ export class ImageGeneratorPlugin
       throw new Error(`Tool invocation required non existing file: ${fileId}`)
     }
     // FIXME: doing an unsafe cast. There should be no problems with node
-    const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+    const fileContent = await storage.readBuffer(
+      fileEntry.path,
+      fileEntry.encryption,
+      fileReadOptions(fileEntry)
+    )
     const image = await prepareImageForEditing({
       data: Buffer.from(ensureABView(fileContent)),
       fileName: fileEntry.name || 'upload.png',

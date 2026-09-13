@@ -5,6 +5,7 @@ import { storage } from '../storage'
 import { ensureFileAnalysisForFile, readExtractedTextFromAnalysis } from '@/lib/file-analysis'
 import { logger } from '@/lib/logging'
 import { ocrExtractor } from './ocr'
+import { fileReadOptions } from '@/lib/storage/file-options'
 
 const cacheSizeInMb = 100
 
@@ -44,7 +45,11 @@ export const cachingExtractor = {
       findExtractor(fileEntry.type) ?? (isUnknownText ? genericTextExtractor : undefined)
     if (extractor) {
       try {
-        const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+        const fileContent = await storage.readBuffer(
+          fileEntry.path,
+          fileEntry.encryption,
+          fileReadOptions(fileEntry)
+        )
         const text = await extractor(fileContent)
         if (text.trim().length > 0) {
           cache.set(fileEntry.path, text)

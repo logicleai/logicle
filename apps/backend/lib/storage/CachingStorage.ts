@@ -1,10 +1,18 @@
 import { LRUCache } from 'lru-cache'
+import { createHash } from 'node:crypto'
 import { Storage, BaseStorage, StorageReadOptions, StorageEncryption } from './api'
 import { bufferToReadableStream } from './utils'
 import { logger } from '@/lib/logging'
 
+type CachedValue = {
+  bytes: Uint8Array
+  contentHash: string
+}
+
+const contentHash = (bytes: Uint8Array): string => createHash('sha256').update(bytes).digest('hex')
+
 export class CachingStorage extends BaseStorage {
-  cache: LRUCache<string, Uint8Array>
+  cache: LRUCache<string, CachedValue>
   innerStorage: Storage
   private readonly maxCacheableItemSizeBytes: number
   constructor(innerStorage: Storage, cacheSizeMb: number) {
@@ -13,7 +21,7 @@ export class CachingStorage extends BaseStorage {
     this.cache = new LRUCache({
       maxSize: Math.round(cacheSizeMb * 1048576),
       sizeCalculation: (value) => {
-        return value.length
+        return value.bytes.length
       },
     })
     this.maxCacheableItemSizeBytes = Math.round(cacheSizeMb * 1048576)
@@ -36,10 +44,18 @@ export class CachingStorage extends BaseStorage {
 
     const cachedValue = this.cache.get(path)
     if (cachedValue) {
-      return bufferToReadableStream(cachedValue)
+      const matchesExpectedContent =
+        (options?.expectedSizeBytes === undefined ||
+          options.expectedSizeBytes === cachedValue.bytes.length) &&
+        (options?.expectedContentHash === undefined ||
+          options.expectedContentHash === cachedValue.contentHash)
+      if (matchesExpectedContent) {
+        return bufferToReadableStream(cachedValue.bytes)
+      }
+      this.cache.delete(path)
     }
     const innerStream = await this.innerStorage.readStream(path, encrypted, options)
-    return this.sendToCacheStream(path, innerStream)
+    return this.sendToCacheStream(path, innerStream, options)
   }
 
   supportsRangeReads(encrypted: StorageEncryption): boolean {
@@ -56,10 +72,15 @@ export class CachingStorage extends BaseStorage {
   }
 
   rm(path: string): Promise<void> {
+    this.cache.delete(path)
     return this.innerStorage.rm(path)
   }
 
-  private sendToCacheStream(path: string, stream: ReadableStream<Uint8Array>) {
+  private sendToCacheStream(
+    path: string,
+    stream: ReadableStream<Uint8Array>,
+    options?: StorageReadOptions
+  ) {
     const cache = this.cache
     const maxCacheableItemSizeBytes = this.maxCacheableItemSizeBytes
     const chunks: Buffer[] = []
@@ -71,11 +92,22 @@ export class CachingStorage extends BaseStorage {
         try {
           const { done, value } = await reader.read()
           if (done) {
-            controller.close()
             if (shouldCache) {
-              cache.set(path, Buffer.concat(chunks))
+              const bytes = Buffer.concat(chunks)
+              const digest = contentHash(bytes)
+              if (
+                (options?.expectedSizeBytes !== undefined &&
+                  options.expectedSizeBytes !== bytes.length) ||
+                (options?.expectedContentHash !== undefined &&
+                  options.expectedContentHash !== digest)
+              ) {
+                controller.error(new Error(`Storage read checksum or size mismatch for ${path}`))
+                return
+              }
+              cache.set(path, { bytes, contentHash: digest })
               logger.debug(`cache size is ${cache.calculatedSize}`)
             }
+            controller.close()
             return
           }
           if (shouldCache) {

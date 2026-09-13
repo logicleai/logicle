@@ -58,6 +58,6 @@ describe('DOCX export authorization', () => {
     await renderDocxFromMarkdown('![img](/api/files/ok-file/content)', { userId: 'owner' })
 
     expect(canAccessFileMock).toHaveBeenCalledWith({ userId: 'owner' }, 'ok-file')
-    expect(readBufferMock).toHaveBeenCalledWith('some/path.png', null)
+    expect(readBufferMock).toHaveBeenCalledWith('some/path.png', null, {})
   })
 })

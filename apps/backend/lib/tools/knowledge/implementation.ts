@@ -5,10 +5,7 @@ import {
   ToolFunctions,
   ToolFunctionContext,
 } from '@/lib/chat/tools'
-import {
-  KnowledgePluginInterface,
-  KnowledgePluginParams,
-} from '@/lib/tools/schemas'
+import { KnowledgePluginInterface, KnowledgePluginParams } from '@/lib/tools/schemas'
 import { db } from '@/db/database'
 import env from '@/lib/env'
 import * as dto from '@/types/dto'
@@ -32,6 +29,7 @@ const fetchFileEntry = (id: string): Promise<FileDbRow | undefined> =>
       'File.type as type',
       'File.createdAt as createdAt',
       'File.fileBlobId as fileBlobId',
+      'FileBlob.contentHash as contentHash',
       'FileBlob.size as size',
       'FileBlob.encryption as encryption',
     ])
@@ -112,5 +110,4 @@ export class KnowledgePlugin extends KnowledgePluginInterface implements ToolImp
       },
     },
   }
-
 }

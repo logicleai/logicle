@@ -14,6 +14,7 @@ export interface FileDbRow {
   type: string
   createdAt: string
   fileBlobId?: string | null
+  contentHash?: string | null
   size?: number
   encryption: StoredFileEncryption | null
 }
@@ -24,10 +25,15 @@ export const getFileWithId = async (id: string): Promise<FileDbRow | undefined> 
   if (!row.fileBlobId) return { ...row, size: undefined, encryption: null }
   const blob = await db
     .selectFrom('FileBlob')
-    .select(['size', 'encryption'])
+    .select(['contentHash', 'size', 'encryption'])
     .where('id', '=', row.fileBlobId)
     .executeTakeFirst()
-  return { ...row, size: blob?.size, encryption: blob?.encryption ?? null }
+  return {
+    ...row,
+    contentHash: blob?.contentHash,
+    size: blob?.size,
+    encryption: blob?.encryption ?? null,
+  }
 }
 
 export const addFile = async (

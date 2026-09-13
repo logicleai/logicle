@@ -2,6 +2,7 @@ import type { Duplex } from 'node:stream'
 import { canAccessFile } from '@/backend/lib/files/authorization'
 import { getFileWithId } from '@/models/file'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 
 export type McpPublishedArtifact = { name: string; mimeType: string; data: Buffer }
 
@@ -50,7 +51,10 @@ export class McpFileBridge {
         this.pendingArtifact = undefined
         this.enqueue(async () => {
           this.artifacts.push({ name: artifact.name, mimeType: artifact.mimeType, data })
-          await write(this.channel, JSON.stringify({ type: 'artifact', requestId: artifact.requestId }) + '\n')
+          await write(
+            this.channel,
+            JSON.stringify({ type: 'artifact', requestId: artifact.requestId }) + '\n'
+          )
         })
         continue
       }
@@ -59,12 +63,29 @@ export class McpFileBridge {
       const line = this.buffer.subarray(0, newline).toString('utf8')
       this.buffer = this.buffer.subarray(newline + 1)
       let request: Record<string, unknown>
-      try { request = JSON.parse(line) } catch {
-        this.enqueue(() => write(this.channel, JSON.stringify({ type: 'error', message: 'Invalid bridge request' }) + '\n'))
+      try {
+        request = JSON.parse(line)
+      } catch {
+        this.enqueue(() =>
+          write(
+            this.channel,
+            JSON.stringify({ type: 'error', message: 'Invalid bridge request' }) + '\n'
+          )
+        )
         continue
       }
-      if (request.type === 'publish-artifact' && typeof request.name === 'string' && typeof request.mimeType === 'string' && safeSize(request.size)) {
-        this.pendingArtifact = { requestId: typeof request.requestId === 'string' ? request.requestId : undefined, name: request.name, mimeType: request.mimeType, size: request.size }
+      if (
+        request.type === 'publish-artifact' &&
+        typeof request.name === 'string' &&
+        typeof request.mimeType === 'string' &&
+        safeSize(request.size)
+      ) {
+        this.pendingArtifact = {
+          requestId: typeof request.requestId === 'string' ? request.requestId : undefined,
+          name: request.name,
+          mimeType: request.mimeType,
+          size: request.size,
+        }
         continue
       }
       this.enqueue(() => this.handleRequest(request))
@@ -72,29 +93,51 @@ export class McpFileBridge {
   }
 
   private enqueue(task: () => Promise<void>) {
-    this.queue = this.queue.then(task).catch(() => { this.channel.destroy() })
+    this.queue = this.queue.then(task).catch(() => {
+      this.channel.destroy()
+    })
   }
 
   private async handleRequest(request: Record<string, unknown>) {
     const requestId = typeof request.requestId === 'string' ? request.requestId : undefined
     if (request.type !== 'read-file' || !safeFileId(request.id)) {
-      await write(this.channel, JSON.stringify({ type: 'error', requestId, message: 'Invalid file request' }) + '\n')
+      await write(
+        this.channel,
+        JSON.stringify({ type: 'error', requestId, message: 'Invalid file request' }) + '\n'
+      )
       return
     }
     if (!(await canAccessFile({ userId: this.scope.userId }, request.id))) {
-      await write(this.channel, JSON.stringify({ type: 'error', requestId, message: 'File access denied' }) + '\n')
+      await write(
+        this.channel,
+        JSON.stringify({ type: 'error', requestId, message: 'File access denied' }) + '\n'
+      )
       return
     }
     const file = await getFileWithId(request.id)
     if (!file) {
-      await write(this.channel, JSON.stringify({ type: 'error', requestId, message: 'File not found' }) + '\n')
+      await write(
+        this.channel,
+        JSON.stringify({ type: 'error', requestId, message: 'File not found' }) + '\n'
+      )
       return
     }
-    const data = await storage.readBuffer(file.path, file.encryption)
-    await write(this.channel, JSON.stringify({ type: 'file', requestId, name: file.name, mimeType: file.type, size: data.length }) + '\n')
+    const data = await storage.readBuffer(file.path, file.encryption, fileReadOptions(file))
+    await write(
+      this.channel,
+      JSON.stringify({
+        type: 'file',
+        requestId,
+        name: file.name,
+        mimeType: file.type,
+        size: data.length,
+      }) + '\n'
+    )
     await write(this.channel, data)
   }
 }
 
-export const attachMcpFileBridge = (channel: Duplex, scope: { conversationId: string; userId: string }) =>
-  new McpFileBridge(channel, scope)
+export const attachMcpFileBridge = (
+  channel: Duplex,
+  scope: { conversationId: string; userId: string }
+) => new McpFileBridge(channel, scope)

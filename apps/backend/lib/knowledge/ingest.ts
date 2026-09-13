@@ -3,6 +3,7 @@ import { db } from '@/db/database'
 import { getFileWithId } from '@/models/file'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { logger } from '@/lib/logging'
 import { KnowledgeBoxSchema, type KnowledgeBoxQuestion } from '@/lib/tools/schemas'
 import { chunkText } from './chunking'
@@ -71,7 +72,7 @@ export const ingestDocument = async (boxId: string, fileId: string): Promise<Ing
 
   if (file.type.startsWith('image/')) {
     try {
-      const data = await storage.readBuffer(file.path, file.encryption)
+      const data = await storage.readBuffer(file.path, file.encryption, fileReadOptions(file))
       const description = await describeImageForIndex(
         file.name,
         file.type,

@@ -51,12 +51,13 @@ export class ContextRetrievePlugin implements ToolImplementation {
     const blob = file.fileBlobId
       ? await db
           .selectFrom('FileBlob')
-          .select(['size', 'encryption'])
+          .select(['contentHash', 'size', 'encryption'])
           .where('id', '=', file.fileBlobId)
           .executeTakeFirst()
       : undefined
     return {
       ...file,
+      contentHash: blob?.contentHash ?? (file as any).contentHash,
       size: blob?.size ?? (file as any).size,
       encryption: blob?.encryption ?? (file as any).encryption,
     } as FileDbRow
@@ -236,9 +237,7 @@ export class ContextRetrievePlugin implements ToolImplementation {
           })),
           query,
           MAX_SEARCH_RESULTS
-        ).map(({ id: messageId, role, excerpt }) =>
-          `id: ${messageId} (role: ${role})\n${excerpt}`
-        )
+        ).map(({ id: messageId, role, excerpt }) => `id: ${messageId} (role: ${role})\n${excerpt}`)
         if (matches.length === 0) {
           return { type: 'text', value: `No messages matched "${query}".` }
         }

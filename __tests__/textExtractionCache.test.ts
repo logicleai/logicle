@@ -102,7 +102,9 @@ describe('cachingExtractor', () => {
 
     expect(text).toBe('fallback text')
     expect(findExtractor).toHaveBeenCalledWith('text/plain')
-    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, null)
+    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, null, {
+      expectedSizeBytes: fileEntry.size,
+    })
     expect(extractor).toHaveBeenCalledWith(Buffer.from('raw file'))
   })
 
@@ -148,7 +150,9 @@ describe('cachingExtractor', () => {
 
     expect(text).toBe('fallback after sidecar miss')
     expect(findExtractor).toHaveBeenCalledWith('text/plain')
-    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, null)
+    expect(readBuffer).toHaveBeenCalledWith(fileEntry.path, null, {
+      expectedSizeBytes: fileEntry.size,
+    })
     expect(extractor).toHaveBeenCalledWith(Buffer.from('raw file'))
   })
 })
