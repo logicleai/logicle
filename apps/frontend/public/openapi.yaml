@@ -2823,6 +2823,8 @@ paths:
           description: Response
         "403":
           $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
       parameters:
         - name: shareId
           in: path
@@ -2871,6 +2873,8 @@ paths:
                 items:
                   type: object
                   additionalProperties: {}
+        "404":
+          $ref: "#/components/responses/Error"
       parameters:
         - name: shareId
           in: path
@@ -2890,6 +2894,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SharedConversation"
+        "404":
+          $ref: "#/components/responses/Error"
       parameters:
         - name: shareId
           in: path
