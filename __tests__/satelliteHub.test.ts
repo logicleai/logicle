@@ -422,8 +422,8 @@ describe('callSatelliteMethod', () => {
     const ws = await connectRegisteredSatellite('sat-1', [{ name: 'fn' }])
     ws.sent = []
 
-    callSatelliteMethod('sat-1', 'fn', fakeUiLink as any, { arg: 42 })
-    callSatelliteMethod('sat-1', 'fn', fakeUiLink as any, { arg: 99 })
+    void callSatelliteMethod('sat-1', 'fn', fakeUiLink as any, { arg: 42 })
+    void callSatelliteMethod('sat-1', 'fn', fakeUiLink as any, { arg: 99 })
 
     expect(ws.sent).toHaveLength(2)
     expect(JSON.parse(ws.sent[0])).toMatchObject({ type: 'tool-call', id: '1', method: 'fn' })

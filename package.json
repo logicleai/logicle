@@ -31,6 +31,7 @@
     "start:postgres": "DATABASE_URL=postgresql://admin:admin@localhost:5432/logicle pnpm run start",
     "check-types": "tsc --pretty --noEmit",
     "check-format": "prettier --check .",
+    "check-lint": "pnpm run lint",
     "lint": "biome check && pnpm run lint:i18n-literals",
     "lint:i18n-literals": "tsx apps/backend/scripts/i18n/check-i18n-literals.ts",
     "check:i18n": "tsx apps/backend/scripts/i18n/check-i18n-keys.ts",
