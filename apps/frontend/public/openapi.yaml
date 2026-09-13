@@ -3124,6 +3124,8 @@ paths:
       responses:
         "204":
           description: Response
+        "400":
+          $ref: "#/components/responses/Error"
         "403":
           $ref: "#/components/responses/Error"
         "404":
