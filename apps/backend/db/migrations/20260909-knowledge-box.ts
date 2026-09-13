@@ -13,6 +13,12 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('chunkCount', 'integer', (col) => col.notNull())
     .addColumn('createdAt', 'timestamp', (col) => col.notNull())
     .addColumn('updatedAt', 'timestamp', (col) => col.notNull())
+    .addForeignKeyConstraint('fk_KnowledgeBoxDocument_Tool', ['boxId'], 'Tool', ['id'], (cb) =>
+      cb.onDelete('cascade')
+    )
+    .addForeignKeyConstraint('fk_KnowledgeBoxDocument_File', ['fileId'], 'File', ['id'], (cb) =>
+      cb.onDelete('cascade')
+    )
     .execute()
 
   await db.schema
@@ -36,6 +42,12 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('seq', 'integer', (col) => col.notNull())
     .addColumn('heading', 'text')
     .addColumn('text', 'text', (col) => col.notNull())
+    .addForeignKeyConstraint('fk_KnowledgeChunk_Tool', ['boxId'], 'Tool', ['id'], (cb) =>
+      cb.onDelete('cascade')
+    )
+    .addForeignKeyConstraint('fk_KnowledgeChunk_File', ['fileId'], 'File', ['id'], (cb) =>
+      cb.onDelete('cascade')
+    )
     .execute()
 
   await db.schema
@@ -60,6 +72,12 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('answer', 'text')
     .addColumn('createdAt', 'timestamp', (col) => col.notNull())
     .addColumn('updatedAt', 'timestamp', (col) => col.notNull())
+    .addForeignKeyConstraint('fk_KnowledgeProjection_Tool', ['boxId'], 'Tool', ['id'], (cb) =>
+      cb.onDelete('cascade')
+    )
+    .addForeignKeyConstraint('fk_KnowledgeProjection_File', ['fileId'], 'File', ['id'], (cb) =>
+      cb.onDelete('cascade')
+    )
     .execute()
 
   await db.schema
