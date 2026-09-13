@@ -17,6 +17,7 @@ import {
   getSortedRowModel,
 } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export type RowRenderer<T> = (assistant: T) => React.JSX.Element | string
 
@@ -34,6 +35,7 @@ interface Props<T> {
   className?: string
   keygen: (arg: T) => string
   onRowClick?: (arg: T) => void
+  emptyMessage?: React.ReactNode
 }
 
 export function column<T>(name: string, renderer: RowRenderer<T>) {
@@ -43,7 +45,14 @@ export function column<T>(name: string, renderer: RowRenderer<T>) {
   }
 }
 
-export function ScrollableTable<T>({ columns, rows, keygen, className, onRowClick }: Props<T>) {
+export function ScrollableTable<T>({
+  columns,
+  rows,
+  keygen,
+  className,
+  onRowClick,
+  emptyMessage,
+}: Props<T>) {
   return (
     <ScrollArea className={className}>
       <SimpleTable
@@ -51,12 +60,21 @@ export function ScrollableTable<T>({ columns, rows, keygen, className, onRowClic
         rows={rows}
         keygen={keygen}
         onRowClick={onRowClick}
+        emptyMessage={emptyMessage}
       ></SimpleTable>
     </ScrollArea>
   )
 }
 
-export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }: Props<T>) {
+export function SimpleTable<T>({
+  columns,
+  rows,
+  keygen,
+  className,
+  onRowClick,
+  emptyMessage,
+}: Props<T>) {
+  const { t } = useTranslation()
   const [sorting, setSorting] = useState<SortingState>([])
   const tableColumns = useMemo<ColumnDef<T, any>[]>(
     () =>
@@ -121,20 +139,28 @@ export function SimpleTable<T>({ columns, rows, keygen, className, onRowClick }:
         ))}
       </TableHeader>
       <TableBody>
-        {table.getRowModel().rows.map((row) => (
-          <TableRow
-            key={keygen(row.original)}
-            onClick={() => {
-              onRowClick?.(row.original)
-            }}
-          >
-            {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
+        {table.getRowModel().rows.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={columns.length} className="py-8 text-center text-muted-foreground">
+              {emptyMessage ?? t('no-data')}
+            </TableCell>
           </TableRow>
-        ))}
+        ) : (
+          table.getRowModel().rows.map((row) => (
+            <TableRow
+              key={keygen(row.original)}
+              onClick={() => {
+                onRowClick?.(row.original)
+              }}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))
+        )}
       </TableBody>
     </Table>
   )

@@ -17,7 +17,7 @@ export const AdminPage = ({ headerActions, topBar, children, title, isLoading, e
     <WithLoadingAndError isLoading={isLoading || false} error={error}>
       <ScrollArea className="h-full flex-1 px-4 py-6">
         <div className="max-w-6xl mx-auto">
-          <div className="sticky top-0 bg-white z-10">
+          <div className="sticky top-0 bg-background z-10">
             <div className="mb-4 flex items-center justify-between">
               <h1 className="flex gap-3">
                 <span>{title}</span>
