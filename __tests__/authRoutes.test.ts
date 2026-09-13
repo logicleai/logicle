@@ -1036,7 +1036,7 @@ describe('OIDC and SAML auth flows', () => {
     await expect(response.json()).resolves.toEqual({
       error: {
         message: 'OIDC user provisioning conflict',
-        values: { email: 'duplicate@example.com', constraint: 'User.email' },
+        values: { constraint: 'User.email' },
       },
     })
   })
@@ -1074,7 +1074,7 @@ describe('OIDC and SAML auth flows', () => {
     await expect(response.json()).resolves.toEqual({
       error: {
         message: 'OIDC user provisioning conflict',
-        values: { email: 'duplicate-null@example.com', constraint: null },
+        values: { constraint: null },
       },
     })
   })
@@ -1110,7 +1110,7 @@ describe('OIDC and SAML auth flows', () => {
     await expect(response.json()).resolves.toEqual({
       error: {
         message: 'OIDC user provisioning failed',
-        values: { email: 'generic-error@example.com' },
+        values: {},
       },
     })
   })
@@ -1297,7 +1297,7 @@ describe('OIDC and SAML auth flows', () => {
       { params: Promise.resolve({}) }
     )
     expect(logoutResponse.status).toBe(302)
-    expect(logoutResponse.headers.get('location')).toBe('http://localhost:3000/login')
+    expect(logoutResponse.headers.get('location')).toBe('http://localhost:3000/auth/login')
 
     mocks.samlValidatePostResponseAsync.mockResolvedValueOnce({
       loggedOut: false,
