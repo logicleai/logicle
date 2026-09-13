@@ -31,6 +31,7 @@ export const ChatFolder: React.FC<Params> = ({ folder }) => {
     >
       <div
         className={`relative flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-h3 pr-1`}
+        title={folder.name}
       >
         {folder.name}
       </div>
