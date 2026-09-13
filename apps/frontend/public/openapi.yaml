@@ -2249,6 +2249,8 @@ paths:
           description: Response
         "403":
           $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
       parameters:
         - name: folderId
           in: path
@@ -2269,6 +2271,10 @@ paths:
       responses:
         "204":
           description: Response
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
       parameters:
         - name: folderId
           in: path
