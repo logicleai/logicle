@@ -383,7 +383,6 @@ export const ChatInput = ({
       size: file.size,
       type: type,
       name: fileName,
-      owner: { ownerType: 'USER', ownerId: userProfile!.id },
     }
     const response = await post<dto.File>('/api/files', insertRequest)
     if (response.error) {

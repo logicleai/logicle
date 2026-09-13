@@ -21,7 +21,9 @@ flowchart LR
 1. **Create** (`POST /api/files`) — the frontend creates the `File` metadata row.
    It is always created `USER`-owned by the uploader, never with the final owner
    (`CHAT`/`ASSISTANT`/`TOOL`) set directly, even when that target entity already
-   exists.
+   exists. The legacy `owner` request field is optional and deprecated: it is
+   accepted temporarily for compatibility and ignored. The backend derives the
+   initial owner exclusively from the authenticated session.
 2. **Upload** (`PUT /api/files/{id}/content`) — streams the content to storage,
    dedupes by content hash, and binds `File.fileBlobId` (`finalizeUploadedFile` in
    `apps/backend/lib/files/upload-dedup.ts`). This only ever happens while the file
