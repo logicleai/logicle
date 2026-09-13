@@ -24,7 +24,14 @@ interface UploadProps {
   modelId?: string
 }
 
-export const Upload = ({ file, className, onDownload, onDelete, disabled, modelId }: UploadProps) => {
+export const Upload = ({
+  file,
+  className,
+  onDownload,
+  onDelete,
+  disabled,
+  modelId,
+}: UploadProps) => {
   const { t } = useTranslation()
   return (
     <div className={cn('border p-2 flex flex-row items-center gap-2 relative group', className)}>
@@ -34,6 +41,8 @@ export const Upload = ({ file, className, onDownload, onDelete, disabled, modelI
           size="icon"
           rounded="full"
           className="absolute right-0 top-0 shrink-0 translate-x-1/2 -translate-y-1/2"
+          aria-label={t('remove')}
+          title={t('remove')}
           onClick={(evt) => {
             onDelete()
             evt.stopPropagation()
@@ -48,6 +57,8 @@ export const Upload = ({ file, className, onDownload, onDelete, disabled, modelI
           size="icon"
           rounded="full"
           className="absolute right-0 top-1/2 shrink-0 -translate-y-1/2 invisible group-hover:visible"
+          aria-label={t('download')}
+          title={t('download')}
           onClick={(evt) => {
             onDownload()
             evt.stopPropagation()

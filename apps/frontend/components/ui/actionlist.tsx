@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from './dropdown-menu'
 import { ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export interface ActionProps {
   icon?: TablerIcon
@@ -38,10 +39,17 @@ export interface ActionListProps {
 }
 
 export const ActionList = ({ children }: ActionListProps) => {
+  const { t } = useTranslation()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="px-1 py-1 opacity-50">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="px-1 py-1 opacity-50"
+          aria-label={t('action')}
+          title={t('action')}
+        >
           <IconDotsVertical size={18} />
         </Button>
       </DropdownMenuTrigger>
