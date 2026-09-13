@@ -211,7 +211,7 @@ const provisionApiKeys = async (apiKeys: Record<string, ProvisionableApiKey>) =>
     if (existing) {
       await updateApiKey(id, apiKey.key, apiKey)
     } else {
-      await createApiKeyWithId(id, apiKey.key, apiKey, true)
+      await createApiKeyWithId(id, apiKey.key, apiKey, true, apiKey.scope)
     }
   }
 }
