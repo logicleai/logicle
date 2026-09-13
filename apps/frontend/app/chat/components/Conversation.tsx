@@ -108,7 +108,13 @@ export const ConversationComponent = ({ conversation }: Props) => {
         <div className="absolute right-1">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="px-1 py-1 opacity-50">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="px-1 py-1 opacity-50"
+                aria-label={t('conversation-options')}
+                title={t('conversation-options')}
+              >
                 <IconDotsVertical size={18} />
               </Button>
             </PopoverTrigger>

@@ -508,6 +508,8 @@ export const ChatInput = ({
               className="absolute right-2 bottom-2 opacity-60"
               size="icon"
               variant="secondary"
+              aria-label={t('stop-generating')}
+              title={t('stop-generating')}
               disabled={
                 disabled ||
                 hardLimitReached ||
@@ -522,13 +524,20 @@ export const ChatInput = ({
               <Button
                 className="absolute right-2 bottom-2"
                 size="icon"
+                aria-label={t('send-message')}
+                title={t('send-message')}
                 disabled={disabled || hardLimitReached || msgEmpty || anyUploadRunning}
                 variant="primary"
                 onClick={() => handleSend()}
               >
                 <IconSend2 size={18} />
               </Button>
-              <label className="absolute left-2 bottom-2 p-1 cursor-pointer" htmlFor={fileInputId}>
+              <label
+                className="absolute left-2 bottom-2 cursor-pointer rounded-md p-1 hover:bg-secondary-hover"
+                htmlFor={fileInputId}
+                aria-label={t('attach-file')}
+                title={t('attach-file')}
+              >
                 <IconPaperclip size={18} />
               </label>
               <Input
