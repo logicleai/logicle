@@ -1,8 +1,17 @@
 import { db } from '@/db/database'
 import { sql } from 'kysely'
 import { canAccessFile, canWriteFile } from '@/backend/lib/files/authorization'
-import { error, noBody, notFound, forbidden, operation, responseSpec, errorSpec } from '@/lib/routes'
+import {
+  error,
+  noBody,
+  notFound,
+  forbidden,
+  operation,
+  responseSpec,
+  errorSpec,
+} from '@/lib/routes'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { logger } from '@/lib/logging'
 import { scheduleFileAnalysisForFile } from '@/lib/file-analysis'
 import { finalizeUploadedFile } from '@/backend/lib/files/upload-dedup'
@@ -10,7 +19,6 @@ import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { getConfiguredFileEncryption } from '@/lib/storage/encryption'
 import env from '@/lib/env'
-
 
 // A synchronized tee, i.e. faster reader has to wait
 function _synchronizedTee(
@@ -80,7 +88,9 @@ export const PUT = operation({
     if (!file) {
       return notFound()
     }
-    if (!(await canWriteFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
+    if (
+      !(await canWriteFile({ userId: session.userId, userRole: session.userRole }, params.fileId))
+    ) {
       return forbidden()
     }
     if (file.fileBlobId) {
@@ -107,7 +117,10 @@ export const PUT = operation({
         .execute()
     }
     const contentLength = headers.get('content-length')
-    if (contentLength && (!/^\d+$/.test(contentLength) || Number(contentLength) > env.chat.attachments.maxSize)) {
+    if (
+      contentLength &&
+      (!/^\d+$/.test(contentLength) || Number(contentLength) > env.chat.attachments.maxSize)
+    ) {
       await releaseClaim()
       return error(400, 'File exceeds the maximum upload size')
     }
@@ -195,7 +208,10 @@ function contentDispositionFor(type: string, name: string): string {
   return `${disposition}; filename="${name.replace(/[\\"\r\n]/g, '_')}"`
 }
 
-function parseRangeHeader(header: string, totalSize: number): { start: number; end: number } | null {
+function parseRangeHeader(
+  header: string,
+  totalSize: number
+): { start: number; end: number } | null {
   const match = /^bytes=(\d*)-(\d*)$/.exec(header)
   if (!match) return null
   const [, startStr, endStr] = match
@@ -222,13 +238,22 @@ export const GET = operation({
     const file = await db
       .selectFrom('File')
       .leftJoin('FileBlob', 'FileBlob.id', 'File.fileBlobId')
-      .select(['File.path as path', 'File.name as name', 'File.type as type', 'FileBlob.size as size', 'FileBlob.encryption as encryption'])
+      .select([
+        'File.path as path',
+        'File.name as name',
+        'File.type as type',
+        'FileBlob.size as size',
+        'FileBlob.contentHash as contentHash',
+        'FileBlob.encryption as encryption',
+      ])
       .where('File.id', '=', params.fileId)
       .executeTakeFirst()
     if (!file) {
       return notFound()
     }
-    if (!(await canAccessFile({ userId: session.userId, userRole: session.userRole }, params.fileId))) {
+    if (
+      !(await canAccessFile({ userId: session.userId, userRole: session.userRole }, params.fileId))
+    ) {
       return forbidden()
     }
 
@@ -246,6 +271,7 @@ export const GET = operation({
       const { start, end } = range
       const stream = await storage.readStream(file.path, file.encryption, {
         expectedSizeBytes: file.size,
+        expectedContentHash: file.contentHash ?? undefined,
         rangeStart: start,
         rangeEnd: end,
         signal,
@@ -264,7 +290,7 @@ export const GET = operation({
     }
 
     const fileContent = await storage.readStream(file.path, file.encryption, {
-      expectedSizeBytes: file.size ?? undefined,
+      ...fileReadOptions(file),
       signal,
     })
     return new Response(fileContent, {

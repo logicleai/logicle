@@ -17,6 +17,7 @@ import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { getFileWithId } from '@/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { logger } from '@/lib/logging'
 import { saveFile } from '@/backend/lib/tools/file-output-normalization'
 
@@ -186,7 +187,11 @@ export class TranslateDeepl extends TranslateDeeplInterface implements ToolImple
 
     try {
       const headers = await this.getAuthHeaders()
-      const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+      const fileContent = await storage.readBuffer(
+        fileEntry.path,
+        fileEntry.encryption,
+        fileReadOptions(fileEntry)
+      )
 
       const form = new FormData()
       form.append('target_lang', targetLang)

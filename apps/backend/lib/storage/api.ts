@@ -4,6 +4,8 @@ export type StorageEncryption = null | 'pgp' | 'aead'
 
 export interface StorageReadOptions {
   expectedSizeBytes?: number
+  /** Expected SHA-256 of the complete cleartext blob, when the DB has one. */
+  expectedContentHash?: string
   bypassCache?: boolean
   rangeStart?: number
   rangeEnd?: number
@@ -11,7 +13,11 @@ export interface StorageReadOptions {
 }
 
 export interface Storage {
-  writeStream(path: string, stream: ReadableStream<Uint8Array>, encrypted: StorageEncryption): Promise<void>
+  writeStream(
+    path: string,
+    stream: ReadableStream<Uint8Array>,
+    encrypted: StorageEncryption
+  ): Promise<void>
   writeBuffer(path: string, buffer: Uint8Array, encrypted: StorageEncryption): Promise<void>
   rm(path: string): Promise<void>
   supportsRangeReads(encrypted: StorageEncryption): boolean
@@ -20,7 +26,11 @@ export interface Storage {
     encrypted: StorageEncryption,
     options?: StorageReadOptions
   ): Promise<ReadableStream<Uint8Array>>
-  readBuffer(path: string, encrypted: StorageEncryption): Promise<Buffer>
+  readBuffer(
+    path: string,
+    encrypted: StorageEncryption,
+    options?: StorageReadOptions
+  ): Promise<Buffer>
 }
 
 export abstract class BaseStorage implements Storage {
@@ -39,8 +49,12 @@ export abstract class BaseStorage implements Storage {
     encrypted: StorageEncryption
   ): Promise<void>
 
-  async readBuffer(path: string, encrypted: StorageEncryption): Promise<Buffer> {
-    return collectStreamToBuffer(await this.readStream(path, encrypted))
+  async readBuffer(
+    path: string,
+    encrypted: StorageEncryption,
+    options?: StorageReadOptions
+  ): Promise<Buffer> {
+    return collectStreamToBuffer(await this.readStream(path, encrypted, options))
   }
 
   async writeBuffer(path: string, buffer: Uint8Array, encrypted: StorageEncryption) {

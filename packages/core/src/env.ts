@@ -146,9 +146,8 @@ const env = {
     enableShowToolResult: process.env.ENABLE_SHOW_TOOL_RESULT !== '0',
     enableTreeNavigation: process.env.ENABLE_CHAT_TREE_NAVIGATION === '1',
     disableParallelToolCalls: process.env.ENABLE_PARALLEL_TOOL_CALLS === '0',
-    contextCompressionTriggerTokens: parseOptionalInt(
-      process.env.CHAT_CONTEXT_COMPRESSION_TRIGGER_TOKENS
-    ) ?? 6000,
+    contextCompressionTriggerTokens:
+      parseOptionalInt(process.env.CHAT_CONTEXT_COMPRESSION_TRIGGER_TOKENS) ?? 6000,
     autoSummary: {
       enable: process.env.ENABLE_CHAT_AUTOSUMMARY === '1',
       useChatBackend: process.env.CHAT_AUTOSUMMARY_USE_CHAT_BACKEND === '1',
@@ -184,6 +183,16 @@ const env = {
   fileStorage: {
     location: process.env.FILE_STORAGE_LOCATION,
     cacheSizeInMb: parseFloat(process.env.FILE_STORAGE_CACHE_SIZE_MB ?? '0'),
+    diskCacheLocation: process.env.FILE_STORAGE_DISK_CACHE_DIR,
+    diskCacheSizeInMb: parseFloat(process.env.FILE_STORAGE_DISK_CACHE_SIZE_MB ?? '0'),
+    diskCacheTtlMs:
+      (parseOptionalInt(process.env.FILE_STORAGE_DISK_CACHE_TTL_SECONDS) ?? 7 * 24 * 60 * 60) *
+      1000,
+    diskCacheEncryptionKey:
+      process.env.FILE_STORAGE_DISK_CACHE_ENCRYPTION_KEY ??
+      (process.env.FILE_STORAGE_ENCRYPTION_ENABLE === '1'
+        ? process.env.FILE_STORAGE_ENCRYPTION_KEY ?? ''
+        : ''),
     encryptionProvider: process.env.FILE_STORAGE_ENCRYPTION_PROVIDER || 'aead',
     encryptionKey: process.env.FILE_STORAGE_ENCRYPTION_KEY ?? '',
     encryptFiles: process.env.FILE_STORAGE_ENCRYPTION_ENABLE === '1',

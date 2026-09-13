@@ -6,6 +6,7 @@ import path from 'node:path'
 import type { FileDbRow } from '@/backend/models/file'
 import type * as dto from '@/types/dto'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { logger } from '@/lib/logging'
 
 const execFile = promisify(execFileCallback)
@@ -122,7 +123,7 @@ export const ocrExtractor = {
 
     const directory = await mkdtemp(path.join(tmpdir(), 'logicle-ocr-'))
     try {
-      const data = await storage.readBuffer(file.path, file.encryption)
+      const data = await storage.readBuffer(file.path, file.encryption, fileReadOptions(file))
       const text =
         file.type === 'application/pdf'
           ? await extractPdf(data, directory, 'document.pdf')

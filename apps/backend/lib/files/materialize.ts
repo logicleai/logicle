@@ -32,11 +32,16 @@ const getFileWithId = async (id: string): Promise<FileDbRow | undefined> => {
   const blob = row.fileBlobId
     ? await db
         .selectFrom('FileBlob')
-        .select(['size', 'encryption'])
+        .select(['contentHash', 'size', 'encryption'])
         .where('id', '=', row.fileBlobId)
         .executeTakeFirst()
     : undefined
-  return { ...row, size: blob?.size, encryption: blob?.encryption ?? null }
+  return {
+    ...row,
+    contentHash: blob?.contentHash,
+    size: blob?.size,
+    encryption: blob?.encryption ?? null,
+  }
 }
 
 /**
@@ -108,7 +113,6 @@ export const materializeFile = async (params: MaterializeFileParams): Promise<Fi
         ownerId: params.owner.ownerId,
       } as any)
       .execute()
-
   })
 
   const created = await getFileWithId(fileId)

@@ -12,6 +12,7 @@ import { canAccessFile } from '@/backend/lib/files/authorization'
 import { nanoid } from 'nanoid'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { ensureABView } from '@/backend/lib/utils'
 import { LlmModel } from '@/lib/chat/models'
 import { editWithGemini, generateWithGemini } from '@/backend/lib/imagegen/providers/gemini'
@@ -155,7 +156,9 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
   protected abstract supportsSizeControl(model: string): boolean
   protected abstract supportsAspectRatioControl(model: string): boolean
   protected abstract providerName(): string
-  protected abstract generateDirect(request: ImageGenerationRequest): Promise<GeneratedImagesResponse>
+  protected abstract generateDirect(
+    request: ImageGenerationRequest
+  ): Promise<GeneratedImagesResponse>
   protected abstract editDirect(request: ImageEditRequest): Promise<GeneratedImagesResponse>
 
   private assertSupportedModel() {
@@ -246,7 +249,11 @@ abstract class DirectImageGeneratorPlugin implements ToolImplementation {
     if (!fileEntry) {
       throw new Error(`Tool invocation required non existing file: ${fileId}`)
     }
-    const fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+    const fileContent = await storage.readBuffer(
+      fileEntry.path,
+      fileEntry.encryption,
+      fileReadOptions(fileEntry)
+    )
     return await prepareImageForEditing({
       data: Buffer.from(ensureABView(fileContent)),
       fileName: fileEntry.name || 'upload.png',

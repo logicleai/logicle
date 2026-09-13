@@ -7,6 +7,7 @@ import { ensureFileAnalysis } from '@/lib/file-analysis'
 import { UserVisibleError } from '@/backend/lib/chat'
 import { logger } from '@/lib/logging'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { LlmModelCapabilities } from '@/lib/chat/models'
 import { cachingExtractor } from '@/lib/textextraction/cache'
 import {
@@ -18,8 +19,7 @@ import { projectMessageForEstimationCached, fileDescriptorText } from './message
 
 // LiteLLM does not support binary attachments inside tool results. Detect this by inspecting
 // the AI SDK provider string rather than storing the limitation in model capabilities.
-const supportsToolResultAttachments = (providerName: string) =>
-  !providerName.startsWith('litellm')
+const supportsToolResultAttachments = (providerName: string) => !providerName.startsWith('litellm')
 
 const toolResultAttachmentText = (fileEntry: FileDbRow) =>
   `The tool returned a file attachment "${fileEntry.name}" (${fileEntry.type}, id ${fileEntry.id}) that is available in the UI, but this provider cannot receive binary tool attachments.`
@@ -28,9 +28,15 @@ type ToolCallResultOutput = ai.ToolResultPart['output']
 export const loadImagePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.ImagePart> => {
   let fileContent: Buffer
   try {
-    fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+    fileContent = await storage.readBuffer(
+      fileEntry.path,
+      fileEntry.encryption,
+      fileReadOptions(fileEntry)
+    )
   } catch (err) {
-    throw new UserVisibleError(`File not readable: "${fileEntry.name}" (id: ${fileEntry.id})`, { cause: err })
+    throw new UserVisibleError(`File not readable: "${fileEntry.name}" (id: ${fileEntry.id})`, {
+      cause: err,
+    })
   }
   const image: ai.ImagePart = {
     type: 'image',
@@ -42,9 +48,15 @@ export const loadImagePartFromFileEntry = async (fileEntry: FileDbRow): Promise<
 export const loadFilePartFromFileEntry = async (fileEntry: FileDbRow): Promise<ai.FilePart> => {
   let fileContent: Buffer
   try {
-    fileContent = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+    fileContent = await storage.readBuffer(
+      fileEntry.path,
+      fileEntry.encryption,
+      fileReadOptions(fileEntry)
+    )
   } catch (err) {
-    throw new UserVisibleError(`File not readable: "${fileEntry.name}" (id: ${fileEntry.id})`, { cause: err })
+    throw new UserVisibleError(`File not readable: "${fileEntry.name}" (id: ${fileEntry.id})`, {
+      cause: err,
+    })
   }
   const image: ai.FilePart = {
     type: 'file',
@@ -131,7 +143,11 @@ const dtoFileToToolResultOutputPart = async (
     }
   }
   if (canSendAsNativeImage(fileEntry.type, capabilities)) {
-    const data = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+    const data = await storage.readBuffer(
+      fileEntry.path,
+      fileEntry.encryption,
+      fileReadOptions(fileEntry)
+    )
     return {
       type: 'image-data',
       data: data.toString('base64'),
@@ -146,7 +162,11 @@ const dtoFileToToolResultOutputPart = async (
         text: pdfFallback.text,
       }
     }
-    const data = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+    const data = await storage.readBuffer(
+      fileEntry.path,
+      fileEntry.encryption,
+      fileReadOptions(fileEntry)
+    )
     return {
       type: 'file-data',
       data: data.toString('base64'),
@@ -169,7 +189,9 @@ export const dtoMessageToLlmMessage = async (
   if (projected.role === 'tool') {
     const results = projected.items.filter((item) => item.kind === 'tool_result')
     if (results.length === 0) return undefined
-    const convertOutput = async (output: dto.ToolCallResultOutput): Promise<ToolCallResultOutput> => {
+    const convertOutput = async (
+      output: dto.ToolCallResultOutput
+    ): Promise<ToolCallResultOutput> => {
       if ((output as dto.ToolCallResultOutput).type) {
         switch (output.type) {
           case 'text':
@@ -192,8 +214,20 @@ export const dtoMessageToLlmMessage = async (
                   throw new Error(`Can't find entry for attachment ${v.id}`)
                 }
                 fileOrdinal++
-                parts.push({ type: 'text', text: fileDescriptorText(v.name, v.id, v.mimetype, v.size, fileOrdinal, 'Attachment') })
-                parts.push(await dtoFileToToolResultOutputPart(fileEntry, capabilities, providerName))
+                parts.push({
+                  type: 'text',
+                  text: fileDescriptorText(
+                    v.name,
+                    v.id,
+                    v.mimetype,
+                    v.size,
+                    fileOrdinal,
+                    'Attachment'
+                  ),
+                })
+                parts.push(
+                  await dtoFileToToolResultOutputPart(fileEntry, capabilities, providerName)
+                )
               }
             }
             return { type: 'content', value: parts } satisfies ToolCallResultOutput
@@ -238,7 +272,11 @@ export const dtoMessageToLlmMessage = async (
               }
             : {}),
         })
-      } else if (item.kind === 'text' && item.source === 'assistant_reasoning' && item.reasoningSignature) {
+      } else if (
+        item.kind === 'text' &&
+        item.source === 'assistant_reasoning' &&
+        item.reasoningSignature
+      ) {
         parts.push({
           type: 'reasoning',
           text: item.text,

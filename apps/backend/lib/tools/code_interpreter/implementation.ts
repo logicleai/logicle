@@ -6,16 +6,14 @@ import {
   ToolParams,
   ToolInvokeParams,
 } from '@/lib/chat/tools'
-import {
-  CodeInterpreterInterface,
-  CodeInterpreterParams,
-} from '@/lib/tools/schemas'
+import { CodeInterpreterInterface, CodeInterpreterParams } from '@/lib/tools/schemas'
 import { LlmModel } from '@/lib/chat/models'
 import * as dto from '@/types/dto'
 import { expandToolParameter } from '@/backend/lib/tools/configSecrets'
 import { getFileWithId } from '@/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { nanoid } from 'nanoid'
 import { logger } from '@/lib/logging'
 import path from 'node:path'
@@ -47,10 +45,7 @@ function extractContainerFileCitations(
   return citations
 }
 
-export class CodeInterpreter
-  extends CodeInterpreterInterface
-  implements ToolImplementation
-{
+export class CodeInterpreter extends CodeInterpreterInterface implements ToolImplementation {
   static builder: ToolBuilder = (toolParams: ToolParams, params: Record<string, unknown>) =>
     new CodeInterpreter(toolParams, params as CodeInterpreterParams)
   supportedMedia = []
@@ -112,7 +107,10 @@ export class CodeInterpreter
     }
   }
 
-  private async uploadFiles({ params, userId }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
+  private async uploadFiles({
+    params,
+    userId,
+  }: ToolInvokeParams): Promise<dto.ToolCallResultOutput> {
     const containerId = `${params.containerId ?? ''}`
     if (!containerId) {
       return { type: 'error-text', value: 'containerId is required' }
@@ -140,7 +138,11 @@ export class CodeInterpreter
       if (!fileEntry) {
         return { type: 'error-text', value: `File not found: ${fileId}` }
       }
-      const content = await storage.readBuffer(fileEntry.path, fileEntry.encryption)
+      const content = await storage.readBuffer(
+        fileEntry.path,
+        fileEntry.encryption,
+        fileReadOptions(fileEntry)
+      )
       const upload = await toFile(content, file.path, { type: fileEntry.type })
       const created = await client.containers.files.create(containerId, { file: upload })
       results.push({

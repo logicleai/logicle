@@ -12,6 +12,7 @@ import { assistantVersionFiles, canUserAccessAssistant, getAssistant } from '@/m
 import { getFileWithId, reassignUserOwnedFilesToConversation } from '@/models/file'
 import { canAccessFile } from '@/backend/lib/files/authorization'
 import { storage } from '@/lib/storage'
+import { fileReadOptions } from '@/lib/storage/file-options'
 import { getUserParameters } from '@/lib/parameters'
 import { error, forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { getUserSecretValue } from '@/models/userSecrets'
@@ -196,7 +197,8 @@ export const POST = operation({
                   }
                   const fileContent = await storage.readBuffer(
                     fileEntry.path,
-                    fileEntry.encryption
+                    fileEntry.encryption,
+                    fileReadOptions(fileEntry)
                   )
                   if (fileEntry.type.startsWith('image/')) {
                     response.parts.push({
