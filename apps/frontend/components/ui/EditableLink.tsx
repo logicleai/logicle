@@ -72,6 +72,7 @@ export const EditableLink: FC<Props> = ({
           className={`relative flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-h3 ${
             selected ? 'pr-4' : 'pr-1'
           }`}
+          title={value}
         >
           {value}
         </span>

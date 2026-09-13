@@ -251,7 +251,10 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2 min-w-0">
-                          <div className="font-medium text-sm truncate">
+                          <div
+                            className="font-medium text-sm truncate"
+                            title={c.conversation.name || t('untitled-conversation')}
+                          >
                             {c.conversation.name || t('untitled-conversation')}
                           </div>
 

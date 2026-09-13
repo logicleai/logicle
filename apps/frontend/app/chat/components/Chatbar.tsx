@@ -224,32 +224,32 @@ export const Chatbar = () => {
             {groupedConversation.conversationsToday.length > 0 && (
               <div>
                 <h5 className="text-muted-foreground">{t('today')}</h5>
-                {groupedConversation.conversationsToday.map((conversation, index) => (
-                  <ConversationComponent key={index} conversation={conversation} />
+                {groupedConversation.conversationsToday.map((conversation) => (
+                  <ConversationComponent key={conversation.id} conversation={conversation} />
                 ))}
               </div>
             )}
             {groupedConversation.conversationsYesterday.length > 0 && (
               <div>
                 <h5 className="text-muted-foreground">{t('yesterday')}</h5>
-                {groupedConversation.conversationsYesterday.map((conversation, index) => (
-                  <ConversationComponent key={index} conversation={conversation} />
+                {groupedConversation.conversationsYesterday.map((conversation) => (
+                  <ConversationComponent key={conversation.id} conversation={conversation} />
                 ))}
               </div>
             )}
             {groupedConversation.conversationsCurrentWeek.length > 0 && (
               <div>
                 <h5 className="text-muted-foreground">{t('previous-week')}</h5>
-                {groupedConversation.conversationsCurrentWeek.map((conversation, index) => (
-                  <ConversationComponent key={index} conversation={conversation} />
+                {groupedConversation.conversationsCurrentWeek.map((conversation) => (
+                  <ConversationComponent key={conversation.id} conversation={conversation} />
                 ))}
               </div>
             )}
             {groupedConversation.conversationsOlder.length > 0 && (
               <div>
                 <h5 className="text-muted-foreground">{t('older')}</h5>
-                {groupedConversation.conversationsOlder.map((conversation, index) => (
-                  <ConversationComponent key={index} conversation={conversation} />
+                {groupedConversation.conversationsOlder.map((conversation) => (
+                  <ConversationComponent key={conversation.id} conversation={conversation} />
                 ))}
               </div>
             )}
