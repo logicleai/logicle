@@ -83,7 +83,11 @@ async function insertFile(params: {
 }) {
   await sql`
     INSERT INTO "File" ("id", "name", "path", "type", "size", "uploaded", "createdAt", "encrypted", "fileBlobId", "ownerType", "ownerId")
-    VALUES (${params.id}, ${'test.txt'}, ${params.path}, ${'text/plain'}, ${100}, ${0}, ${new Date().toISOString()}, ${0}, NULL, ${params.ownerType ?? 'USER'}, ${params.ownerId ?? testUserId})
+    VALUES (${params.id}, ${'test.txt'}, ${
+      params.path
+    }, ${'text/plain'}, ${100}, ${0}, ${new Date().toISOString()}, ${0}, NULL, ${
+      params.ownerType ?? 'USER'
+    }, ${params.ownerId ?? testUserId})
   `.execute(db)
 }
 
@@ -187,7 +191,12 @@ describe('PUT /api/files/:fileId/content', () => {
   })
 
   test('returns 403 when uploading content to a file the user cannot access', async () => {
-    await insertFile({ id: 'f-private', path: 'private.txt', ownerType: 'USER', ownerId: 'other-user' })
+    await insertFile({
+      id: 'f-private',
+      path: 'private.txt',
+      ownerType: 'USER',
+      ownerId: 'other-user',
+    })
 
     const response = await contentRoute.PUT(
       new Request('http://localhost/api/files/f-private/content', {
@@ -241,7 +250,11 @@ describe('PUT /api/files/:fileId/content', () => {
         createdAt: new Date().toISOString(),
       })
       .execute()
-    await db.updateTable('File').set({ fileBlobId: 'canonical' }).where('id', '=', 'canonical').execute()
+    await db
+      .updateTable('File')
+      .set({ fileBlobId: 'canonical' })
+      .where('id', '=', 'canonical')
+      .execute()
 
     mocks.writeStream.mockImplementation(
       async (_path: string, stream: ReadableStream<Uint8Array>) => consumeStream(stream)
@@ -296,7 +309,11 @@ describe('PUT /api/files/:fileId/content', () => {
     expect(statuses).toEqual([204, 400])
     const blobs = await db.selectFrom('FileBlob').selectAll().execute()
     expect(blobs).toHaveLength(1)
-    const file = await db.selectFrom('File').selectAll().where('id', '=', 'f-race').executeTakeFirstOrThrow()
+    const file = await db
+      .selectFrom('File')
+      .selectAll()
+      .where('id', '=', 'f-race')
+      .executeTakeFirstOrThrow()
     expect(file.fileBlobId).toEqual(blobs[0].id)
   })
 
@@ -454,7 +471,9 @@ async function insertFileWithBlob(params: {
     .execute()
   await sql`
     INSERT INTO "File" ("id", "name", "path", "type", "size", "uploaded", "createdAt", "encrypted", "fileBlobId", "ownerType", "ownerId")
-    VALUES (${params.fileId}, ${'test.txt'}, ${params.path}, ${'text/plain'}, ${params.size}, ${0}, ${new Date().toISOString()}, ${0}, ${params.blobId}, ${'USER'}, ${testUserId})
+    VALUES (${params.fileId}, ${'test.txt'}, ${params.path}, ${'text/plain'}, ${
+      params.size
+    }, ${0}, ${new Date().toISOString()}, ${0}, ${params.blobId}, ${'USER'}, ${testUserId})
   `.execute(db)
 }
 
@@ -510,7 +529,13 @@ describe('GET /api/files/:fileId/content', () => {
   })
 
   test('returns 200 with Accept-Ranges: bytes for an AEAD file without a Range header', async () => {
-    await insertFileWithBlob({ fileId: 'f-aead', blobId: 'b-aead', path: 'aead.txt', size: 100, encryption: 'aead' })
+    await insertFileWithBlob({
+      fileId: 'f-aead',
+      blobId: 'b-aead',
+      path: 'aead.txt',
+      size: 100,
+      encryption: 'aead',
+    })
     mocks.readStream.mockResolvedValue(makeStream('full content'))
 
     const response = await contentRoute.GET(
@@ -525,7 +550,13 @@ describe('GET /api/files/:fileId/content', () => {
   })
 
   test('returns 206 with Content-Range for a valid range request on an AEAD file', async () => {
-    await insertFileWithBlob({ fileId: 'f-aead', blobId: 'b-aead', path: 'aead.txt', size: 100, encryption: 'aead' })
+    await insertFileWithBlob({
+      fileId: 'f-aead',
+      blobId: 'b-aead',
+      path: 'aead.txt',
+      size: 100,
+      encryption: 'aead',
+    })
     mocks.readStream.mockResolvedValue(makeStream('0123456789'))
 
     const response = await contentRoute.GET(
@@ -548,7 +579,13 @@ describe('GET /api/files/:fileId/content', () => {
   })
 
   test('returns 416 for an unsatisfiable range on an AEAD file', async () => {
-    await insertFileWithBlob({ fileId: 'f-aead', blobId: 'b-aead', path: 'aead.txt', size: 100, encryption: 'aead' })
+    await insertFileWithBlob({
+      fileId: 'f-aead',
+      blobId: 'b-aead',
+      path: 'aead.txt',
+      size: 100,
+      encryption: 'aead',
+    })
 
     const response = await contentRoute.GET(
       new Request('http://localhost/api/files/f-aead/content', {
@@ -563,7 +600,13 @@ describe('GET /api/files/:fileId/content', () => {
   })
 
   test('returns 206 when a Range header is sent for a plaintext file', async () => {
-    await insertFileWithBlob({ fileId: 'f-plain', blobId: 'b-plain', path: 'plain.txt', size: 100, encryption: null })
+    await insertFileWithBlob({
+      fileId: 'f-plain',
+      blobId: 'b-plain',
+      path: 'plain.txt',
+      size: 100,
+      encryption: null,
+    })
     mocks.readStream.mockResolvedValue(makeStream('full content'))
 
     const response = await contentRoute.GET(
@@ -586,7 +629,13 @@ describe('GET /api/files/:fileId/content', () => {
 
   test('returns 200 when the storage backend rejects range reads', async () => {
     mocks.supportsRangeReads.mockReturnValue(false)
-    await insertFileWithBlob({ fileId: 'f-pgp', blobId: 'b-pgp', path: 'pgp.txt', size: 100, encryption: 'pgp' })
+    await insertFileWithBlob({
+      fileId: 'f-pgp',
+      blobId: 'b-pgp',
+      path: 'pgp.txt',
+      size: 100,
+      encryption: 'pgp',
+    })
     mocks.readStream.mockResolvedValue(makeStream('full content'))
 
     const response = await contentRoute.GET(
@@ -600,6 +649,7 @@ describe('GET /api/files/:fileId/content', () => {
     expect(response.headers.get('accept-ranges')).toBe('none')
     expect(mocks.readStream).toHaveBeenCalledWith('pgp.txt', 'pgp', {
       expectedSizeBytes: 100,
+      expectedContentHash: 'a'.repeat(64),
       signal: expect.any(AbortSignal),
     })
   })

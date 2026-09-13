@@ -29,9 +29,7 @@ class FakeChannel extends EventEmitter {
     this.destroyed = true
   }
   writtenMessages(): Record<string, unknown>[] {
-    return this.written
-      .filter((w): w is string => typeof w === 'string')
-      .map((w) => JSON.parse(w))
+    return this.written.filter((w): w is string => typeof w === 'string').map((w) => JSON.parse(w))
   }
 }
 
@@ -61,7 +59,9 @@ describe('McpFileBridge request framing', () => {
     channel.emit('data', Buffer.from('not json\n'))
     await flush()
 
-    expect(channel.writtenMessages()).toEqual([{ type: 'error', message: 'Invalid bridge request' }])
+    expect(channel.writtenMessages()).toEqual([
+      { type: 'error', message: 'Invalid bridge request' },
+    ])
   })
 
   it('replies with an error for an unrecognized request type', async () => {
@@ -124,7 +124,12 @@ describe('McpFileBridge read-file requests', () => {
 
   it('streams the file header followed by its raw bytes', async () => {
     mockCanAccessFile.mockResolvedValue(true)
-    mockGetFileWithId.mockResolvedValue({ path: '/f', encryption: null, name: 'a.txt', type: 'text/plain' })
+    mockGetFileWithId.mockResolvedValue({
+      path: '/f',
+      encryption: null,
+      name: 'a.txt',
+      type: 'text/plain',
+    })
     mockReadBuffer.mockResolvedValue(Buffer.from('hello'))
     const { channel } = makeBridge()
     channel.emit(
@@ -133,7 +138,7 @@ describe('McpFileBridge read-file requests', () => {
     )
     await flush()
 
-    expect(mockReadBuffer).toHaveBeenCalledWith('/f', null)
+    expect(mockReadBuffer).toHaveBeenCalledWith('/f', null, {})
     expect(channel.writtenMessages()).toEqual([
       { type: 'file', requestId: 'r1', name: 'a.txt', mimeType: 'text/plain', size: 5 },
     ])
@@ -142,7 +147,12 @@ describe('McpFileBridge read-file requests', () => {
 
   it('destroys the channel if handling the request throws', async () => {
     mockCanAccessFile.mockResolvedValue(true)
-    mockGetFileWithId.mockResolvedValue({ path: '/f', encryption: null, name: 'a.txt', type: 'text/plain' })
+    mockGetFileWithId.mockResolvedValue({
+      path: '/f',
+      encryption: null,
+      name: 'a.txt',
+      type: 'text/plain',
+    })
     mockReadBuffer.mockRejectedValue(new Error('disk error'))
     const { channel } = makeBridge()
     channel.emit('data', Buffer.from(JSON.stringify({ type: 'read-file', id: 'file-1' }) + '\n'))
@@ -156,8 +166,13 @@ describe('McpFileBridge publish-artifact requests', () => {
   it('buffers the declared number of raw bytes, acks, and exposes the artifact via takeArtifacts', async () => {
     const { bridge, channel } = makeBridge()
     const header =
-      JSON.stringify({ type: 'publish-artifact', name: 'out.png', mimeType: 'image/png', size: 4, requestId: 'r9' }) +
-      '\n'
+      JSON.stringify({
+        type: 'publish-artifact',
+        name: 'out.png',
+        mimeType: 'image/png',
+        size: 4,
+        requestId: 'r9',
+      }) + '\n'
     channel.emit('data', Buffer.from(header))
     channel.emit('data', Buffer.from([1, 2]))
     await flush()
@@ -169,7 +184,9 @@ describe('McpFileBridge publish-artifact requests', () => {
 
     expect(channel.writtenMessages()).toEqual([{ type: 'artifact', requestId: 'r9' }])
     const artifacts = bridge.takeArtifacts()
-    expect(artifacts).toEqual([{ name: 'out.png', mimeType: 'image/png', data: Buffer.from([1, 2, 3, 4]) }])
+    expect(artifacts).toEqual([
+      { name: 'out.png', mimeType: 'image/png', data: Buffer.from([1, 2, 3, 4]) },
+    ])
     // Draining clears the buffer.
     expect(bridge.takeArtifacts()).toEqual([])
   })
@@ -178,7 +195,9 @@ describe('McpFileBridge publish-artifact requests', () => {
     const { channel } = makeBridge()
     channel.emit(
       'data',
-      Buffer.from(JSON.stringify({ type: 'publish-artifact', name: 'x', mimeType: 'x', size: -1 }) + '\n')
+      Buffer.from(
+        JSON.stringify({ type: 'publish-artifact', name: 'x', mimeType: 'x', size: -1 }) + '\n'
+      )
     )
     await flush()
 
@@ -189,10 +208,17 @@ describe('McpFileBridge publish-artifact requests', () => {
     const { channel } = makeBridge()
     mockCanAccessFile.mockResolvedValue(false)
     const header =
-      JSON.stringify({ type: 'publish-artifact', name: 'out.bin', mimeType: 'application/octet-stream', size: 2 }) +
-      '\n'
+      JSON.stringify({
+        type: 'publish-artifact',
+        name: 'out.bin',
+        mimeType: 'application/octet-stream',
+        size: 2,
+      }) + '\n'
     const nextRequest = JSON.stringify({ type: 'read-file', id: 'file-2', requestId: 'r2' }) + '\n'
-    channel.emit('data', Buffer.concat([Buffer.from(header), Buffer.from([9, 9]), Buffer.from(nextRequest)]))
+    channel.emit(
+      'data',
+      Buffer.concat([Buffer.from(header), Buffer.from([9, 9]), Buffer.from(nextRequest)])
+    )
     await flush()
 
     expect(channel.writtenMessages()).toEqual([

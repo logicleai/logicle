@@ -167,7 +167,9 @@ describe('dtoFileToLlmFilePart', () => {
       data: Buffer.from('pdf-bytes').toString('base64'),
       mediaType: pdfFile.type,
     })
-    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, null)
+    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, null, {
+      expectedSizeBytes: pdfFile.size,
+    })
   })
 })
 
@@ -268,7 +270,9 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
       ],
     })
     expect(getFileWithId).toHaveBeenCalledWith(pdfFile.id)
-    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, null)
+    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, null, {
+      expectedSizeBytes: pdfFile.size,
+    })
   })
 
   test('eagerly injects tool-result PDFs', async () => {
@@ -361,7 +365,9 @@ describe('dtoMessageToLlmMessage tool file conversion', () => {
       ],
     })
     expect(getFileWithId).toHaveBeenCalledWith(pdfFile.id)
-    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, null)
+    expect(readBuffer).toHaveBeenCalledWith(pdfFile.path, null, {
+      expectedSizeBytes: pdfFile.size,
+    })
   })
 
   test('keeps tool-result file attachments as descriptor-only for litellm even when eager injection is on', async () => {
@@ -632,7 +638,9 @@ describe('dtoMessageToLlmMessage authorization', () => {
         citations: [],
         role: 'user',
         content: 'hello',
-        attachments: [{ id: 'other-tenant-file', name: 'secret.pdf', mimetype: 'application/pdf', size: 10 }],
+        attachments: [
+          { id: 'other-tenant-file', name: 'secret.pdf', mimetype: 'application/pdf', size: 10 },
+        ],
       },
       { vision: false, function_calling: true, supportedMedia: ['application/pdf'] },
       openaiLanguageModel.provider,
@@ -676,7 +684,15 @@ describe('dtoMessageToLlmMessage authorization', () => {
               toolName: 'some_tool',
               result: {
                 type: 'content',
-                value: [{ type: 'file', id: 'other-tenant-file', mimetype: 'application/pdf', name: 'secret.pdf', size: 10 }],
+                value: [
+                  {
+                    type: 'file',
+                    id: 'other-tenant-file',
+                    mimetype: 'application/pdf',
+                    name: 'secret.pdf',
+                    size: 10,
+                  },
+                ],
               },
             },
           ],

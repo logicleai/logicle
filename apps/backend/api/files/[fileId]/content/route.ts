@@ -271,7 +271,6 @@ export const GET = operation({
       const { start, end } = range
       const stream = await storage.readStream(file.path, file.encryption, {
         expectedSizeBytes: file.size,
-        expectedContentHash: file.contentHash ?? undefined,
         rangeStart: start,
         rangeEnd: end,
         signal,
