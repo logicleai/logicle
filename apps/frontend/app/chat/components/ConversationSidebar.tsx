@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { IconX } from '@tabler/icons-react'
 import { nanoid } from 'nanoid'
 import { Button } from '@/components/ui/button'
+import { useTranslation } from 'react-i18next'
 
 const Citation = ({ citation: citation_ }: { citation: dto.Citation }) => {
   const citation =
@@ -49,11 +50,17 @@ export const ConversationSidebar = ({
   className?: string
 }) => {
   const { setSideBarContent } = useContext(ChatPageContext)
+  const { t } = useTranslation()
   return (
     <div className={`flex flex-col gap-3 ${className ?? ''}`}>
       <div className="flex">
         <div className="flex-1 text-h3 border-b-2 border-b-gray-200">{content.title}</div>
-        <Button variant="ghost" onClick={() => setSideBarContent?.(undefined)}>
+        <Button
+          variant="ghost"
+          aria-label={t('close')}
+          title={t('close')}
+          onClick={() => setSideBarContent?.(undefined)}
+        >
           <IconX></IconX>
         </Button>
       </div>
