@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { createDndChatReference } from '@/lib/dnd'
 import { AssistantAvatar } from '@/components/app/Avatars'
 import { useUserProfile } from '@/components/providers/userProfileContext'
+import toast from 'react-hot-toast'
 
 interface Props {
   conversation: dto.ConversationWithFolder
@@ -37,9 +38,13 @@ export const ConversationComponent = ({ conversation }: Props) => {
 
   const handleRename = async () => {
     if (renameValue.trim().length > 0) {
-      await saveConversation(conversation.id, {
+      const response = await saveConversation(conversation.id, {
         name: renameValue,
       })
+      if (response.error) {
+        toast.error(response.error.message)
+        return
+      }
       if (selectedConversation && selectedConversation.id === conversation.id) {
         setSelectedConversation({
           ...selectedConversation,
@@ -71,9 +76,15 @@ export const ConversationComponent = ({ conversation }: Props) => {
       confirmMsg: t('remove-chat'),
     })
     if (confirmed) {
-      await deleteConversation(conversation.id)
+      const response = await deleteConversation(conversation.id)
+      if (response.error) {
+        toast.error(response.error.message)
+        return
+      }
       await mutate('/api/conversations')
-      navigateToChat(undefined)
+      if (selectedConversation?.id === conversation.id) {
+        navigateToChat(undefined)
+      }
     }
   }
 
