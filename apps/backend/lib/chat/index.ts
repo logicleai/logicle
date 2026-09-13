@@ -982,7 +982,7 @@ export class ChatAssistant {
       for await (const chunk of stream.fullStream) {
         this.throwIfAborted()
         if (env.dumpLlmConversation && chunk.type !== 'text-delta') {
-          logger.warn('SDK chunk', chunk)
+          logger.warn('SDK chunk', { type: chunk.type })
         }
 
         if (chunk.type === 'start') {

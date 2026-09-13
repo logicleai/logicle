@@ -148,27 +148,41 @@ interface SSEEvent {
   data: string
 }
 
+function getSafeRequestTarget(input: string | URL | globalThis.Request): string {
+  const rawTarget = input instanceof globalThis.Request ? input.url : input.toString()
+  try {
+    const target = new URL(rawTarget)
+    target.search = ''
+    target.hash = ''
+    return target.toString()
+  } catch {
+    return '<invalid-url>'
+  }
+}
+
+function getBodyLength(body: BodyInit): number | undefined {
+  if (typeof body === 'string') return Buffer.byteLength(body)
+  if (Buffer.isBuffer(body)) return body.byteLength
+  if (body instanceof ArrayBuffer) return body.byteLength
+  if (ArrayBuffer.isView(body)) return body.byteLength
+  return undefined
+}
+
 /**
- * Wraps fetch to log the outgoing JSON body and also tap into
- * text/event-stream responses to log each SSE event's parsed data.
+ * Wraps fetch to log safe request metadata and tap into text/event-stream
+ * responses without logging their contents.
  */
 export async function loggingFetch(
   input: string | URL | globalThis.Request,
   init?: RequestInit
 ): Promise<Response> {
-  // Log outgoing JSON request bodies
-  if (init?.body && typeof init.body !== 'string') {
-    try {
-      console.log(`[LLM request @${input}]:`, init.body)
-    } catch {
-      console.log(`[LLM request @${input}]:`, String(init.body))
-    }
-  } else if (init?.body && typeof init.body === 'string') {
-    try {
-      console.log(`[LLM request @${input}]:`, JSON.parse(init.body))
-    } catch {
-      console.log(`[LLM request @${input}]:`, init.body)
-    }
+  if (init?.body) {
+    logger.debug('LLM request', {
+      target: getSafeRequestTarget(input),
+      method: init.method ?? 'GET',
+      contentType: new Headers(init.headers).get('content-type') ?? undefined,
+      bodyBytes: getBodyLength(init.body),
+    })
   }
 
   const res = await fetch(input, init)
@@ -213,7 +227,7 @@ function stringToBytesStream(): TransformStream<string, Uint8Array> {
   })
 }
 
-/** Parses SSE chunks, logs each event as JSON, and re‑emits raw text */
+/** Parses SSE chunks, logs safe event metadata, and re-emits raw text. */
 function sseLoggingStream(): TransformStream<string, string> {
   let buffer = ''
   return new TransformStream<string, string>({
@@ -243,12 +257,10 @@ function sseLoggingStream(): TransformStream<string, string> {
           }
         }
 
-        // Attempt to JSON‑parse data for logging
-        try {
-          console.log('[LLM response]', /*event.event, */ JSON.parse(event.data))
-        } catch {
-          console.log('[LLM response]', event)
-        }
+        logger.debug('LLM response event', {
+          event: event.event,
+          dataBytes: Buffer.byteLength(event.data),
+        })
 
         // Re‑emit raw event (including the blank line)
         controller.enqueue(`${raw}\n\n`)
