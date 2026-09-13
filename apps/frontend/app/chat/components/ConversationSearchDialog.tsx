@@ -199,7 +199,12 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
             name="query"
             render={({ field }) => (
               <FormItem>
-                <Input placeholder={t('search-placeholder')} autoFocus {...field} />
+                <Input
+                  placeholder={t('search-placeholder')}
+                  aria-label={t('search')}
+                  autoFocus
+                  {...field}
+                />
               </FormItem>
             )}
           />

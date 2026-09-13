@@ -55,6 +55,7 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
               size="icon"
               variant="ghost"
               title={t('show-sidebar')}
+              aria-label={t('show-sidebar')}
               onClick={() => setShowDrawer(true)}
             >
               <IconMenu2 size={24} />
@@ -78,6 +79,17 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
             <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
             <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-[min(22rem,85vw)] flex-col overflow-hidden border-r bg-background p-0 pt-[env(safe-area-inset-top)] shadow-xl">
               <Dialog.Title className="sr-only">{t('show-sidebar')}</Dialog.Title>
+              <Dialog.Close asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-2 top-2 z-10"
+                  title={t('close')}
+                  aria-label={t('close')}
+                >
+                  <span aria-hidden="true">×</span>
+                </Button>
+              </Dialog.Close>
               {leftBar}
             </Dialog.Content>
           </Dialog.Portal>
