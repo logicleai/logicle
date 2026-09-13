@@ -43,7 +43,7 @@ export const PATCH = operation({
     if (existingFolder.ownerId !== session.userId) {
       return forbidden("Can't update a non-owned folder")
     }
-    await updateFolder(folderId, data)
+    await updateFolder(folderId, session.userId, data)
     return noBody()
   },
 })
@@ -52,8 +52,15 @@ export const DELETE = operation({
   name: 'Delete folder',
   description: 'Delete a folder for the current user.',
   authentication: 'user',
-  responses: [responseSpec(204)] as const,
+  responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
   implementation: async ({ params, session }) => {
+    const folder = await getFolder(params.folderId)
+    if (!folder) {
+      return notFound(`There is no folder with id ${params.folderId} for the session user`)
+    }
+    if (folder.ownerId !== session.userId) {
+      return forbidden("Can't delete a non-owned folder")
+    }
     await deleteFolder(params.folderId, session.userId)
     return noBody()
   },
@@ -64,8 +71,15 @@ export const POST = operation({
   description: 'Add or move a conversation into a folder.',
   authentication: 'user',
   requestBodySchema: dto.addConversationToFolderSchema,
-  responses: [responseSpec(204), errorSpec(403)] as const,
+  responses: [responseSpec(204), errorSpec(403), errorSpec(404)] as const,
   implementation: async ({ params, session, body }) => {
+    const folder = await getFolder(params.folderId)
+    if (!folder) {
+      return notFound(`There is no folder with id ${params.folderId} for the session user`)
+    }
+    if (folder.ownerId !== session.userId) {
+      return forbidden("Can't add a conversation to a non-owned folder")
+    }
     const { conversationId } = body
     const conversation = await getConversation(conversationId)
     if (conversation?.ownerId !== session.userId) {

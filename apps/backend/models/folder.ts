@@ -21,12 +21,14 @@ export const createFolder = async (ownerId: string, folder: dto.InsertableConver
 
 export const updateFolder = async (
   folderId: dto.ConversationFolder['id'],
+  ownerId: string,
   folder: Partial<dto.ConversationFolder>
 ) => {
   await db
     .updateTable('ConversationFolder')
     .set(folder)
     .where('id', '=', folderId)
+    .where('ownerId', '=', ownerId)
     .executeTakeFirst()
 }
 
@@ -42,6 +44,10 @@ export const getFolders = async (ownerId: string) => {
   return db.selectFrom('ConversationFolder').selectAll().where('ownerId', '=', ownerId).execute()
 }
 
-export const deleteFolder = async (folderId: dto.ConversationFolder['id'], _ownerId: string) => {
-  return db.deleteFrom('ConversationFolder').where('id', '=', folderId).execute()
+export const deleteFolder = async (folderId: dto.ConversationFolder['id'], ownerId: string) => {
+  return db
+    .deleteFrom('ConversationFolder')
+    .where('id', '=', folderId)
+    .where('ownerId', '=', ownerId)
+    .execute()
 }
