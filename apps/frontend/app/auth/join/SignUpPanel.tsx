@@ -76,7 +76,7 @@ const Signup = () => {
               name="name"
               render={({ field }) => (
                 <FormItem label={t('your-name')}>
-                  <Input placeholder={t('your-name')} {...field} />
+                  <Input autoComplete="name" placeholder={t('your-name')} {...field} />
                 </FormItem>
               )}
             />
@@ -85,7 +85,7 @@ const Signup = () => {
               name="email"
               render={({ field }) => (
                 <FormItem label={t('email')}>
-                  <Input placeholder={t('email')} {...field} />
+                  <Input autoComplete="email" placeholder={t('email')} {...field} />
                 </FormItem>
               )}
             />
@@ -94,7 +94,12 @@ const Signup = () => {
               name="password"
               render={({ field }) => (
                 <FormItem label={t('password')}>
-                  <Input type="password" placeholder={t('password')} {...field} />
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder={t('password')}
+                    {...field}
+                  />
                 </FormItem>
               )}
             />
