@@ -15,7 +15,13 @@ export const GET = operation({
   name: 'OIDC callback',
   description: 'Handle OIDC authorization code grant.',
   authentication: 'public',
-  responses: [responseSpec(303), errorSpec(400), errorSpec(403), errorSpec(409), errorSpec(500)] as const,
+  responses: [
+    responseSpec(303),
+    errorSpec(400),
+    errorSpec(403),
+    errorSpec(409),
+    errorSpec(500),
+  ] as const,
   implementation: async ({ headers, cookies, url }) => {
     const session = await getSsoFlowSession(cookies)
     const idpConnection = await findIdpConnection(session.idp)
@@ -35,16 +41,11 @@ export const GET = operation({
       session.destroy()
 
       const claims = tokenSet.claims()!
-      const rawEmail = String(claims.email ?? '')
-      const rawSub = String(claims.sub ?? '')
       const normalizedEmailOrSub = resolveOidcEmailClaim(claims)
       logger.info('OIDC callback claims received', {
         idpConnectionId: idpConnection.id,
-        hasEmailClaim: !!claims.email,
-        emailRaw: rawEmail,
-        emailJson: JSON.stringify(rawEmail),
-        subRaw: rawSub,
-        normalizedEmailOrSub,
+        hasEmailClaim: typeof claims.email === 'string' && claims.email.length > 0,
+        hasSubClaim: typeof claims.sub === 'string' && claims.sub.length > 0,
       })
 
       if (!normalizedEmailOrSub) {
@@ -65,25 +66,21 @@ export const GET = operation({
         const dbErrorCode = interpretDbException(e)
         logger.error('OIDC user provisioning failed', {
           idpConnectionId: idpConnection.id,
-          normalizedEmailOrSub,
           dbErrorCode,
           dbCode: (e as { code?: string }).code,
           dbConstraint: (e as { constraint?: string }).constraint,
         })
         if (dbErrorCode === KnownDbErrorCode.DUPLICATE_KEY) {
           return error(409, 'OIDC user provisioning conflict', {
-            email: normalizedEmailOrSub,
             constraint: (e as { constraint?: string }).constraint ?? null,
           })
         }
-        return error(500, 'OIDC user provisioning failed', {
-          email: normalizedEmailOrSub,
-        })
+        return error(500, 'OIDC user provisioning failed')
       }
     } catch (e) {
       logger.error('OIDC callback failed during token exchange', {
         idpConnectionId: idpConnection.id,
-        error: e instanceof Error ? e.message : String(e),
+        errorType: e instanceof Error ? e.constructor.name : typeof e,
       })
       return error(400, 'OIDC token exchange failed')
     }

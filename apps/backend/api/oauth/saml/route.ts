@@ -14,7 +14,13 @@ export const POST = operation({
   name: 'SAML ACS',
   description: 'Handle SAML ACS response.',
   authentication: 'public',
-  responses: [responseSpec(303), errorSpec(400), errorSpec(401), errorSpec(403), errorSpec(500)] as const,
+  responses: [
+    responseSpec(303),
+    errorSpec(400),
+    errorSpec(401),
+    errorSpec(403),
+    errorSpec(500),
+  ] as const,
   implementation: async ({ headers, cookies, request }) => {
     const session = await getSsoFlowSession(cookies)
     const parsedFormData = await request.formData()
@@ -66,7 +72,7 @@ export const POST = operation({
       })
 
       if (loggedOut) {
-        return Response.redirect(new URL('/login', env.appUrl))
+        return Response.redirect(new URL('/auth/login', env.appUrl))
       }
 
       if (!profile) {
@@ -83,7 +89,10 @@ export const POST = operation({
       await addSessionCookie(user, cookies, idpConnection, { headers })
       return Response.redirect(new URL('/chat', env.appUrl), 303)
     } catch (err) {
-      logger.error('SAML callback error', err)
+      logger.error('SAML callback error', {
+        idpConnectionId: idpConnection.id,
+        errorType: err instanceof Error ? err.constructor.name : typeof err,
+      })
       return error(500, 'SAML callback failed')
     }
   },
