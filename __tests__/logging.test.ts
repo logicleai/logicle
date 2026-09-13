@@ -1,5 +1,12 @@
-import { describe, expect, test } from 'vitest'
-import { sanitizeAndTransform, smartStringify } from '@/lib/logging'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import { loggingFetch, sanitizeAndTransform, smartStringify } from '@/lib/logging'
+
+const originalFetch = globalThis.fetch
+
+afterEach(() => {
+  globalThis.fetch = originalFetch
+  vi.restoreAllMocks()
+})
 
 describe('sanitizeAndTransform', () => {
   test('passes through short strings unchanged', () => {
@@ -111,5 +118,44 @@ describe('smartStringify', () => {
     // so it arrives as { type: 'Buffer', data: [...] } — still serializable
     const result = JSON.parse(smartStringify({ buf }))
     expect(result.buf).toBeDefined()
+  })
+})
+
+describe('loggingFetch', () => {
+  test('logs request metadata without logging the request body or query string', async () => {
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const secretPrompt = 'this prompt must never be written to logs'
+    globalThis.fetch = vi.fn(async () => new Response('{}'))
+
+    await loggingFetch('https://provider.example/v1/chat?api_key=secret-query-value', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ messages: [{ content: secretPrompt }], api_key: 'secret-body-value' }),
+    })
+
+    const output = JSON.stringify(debug.mock.calls)
+    expect(output).toContain('https://provider.example/v1/chat')
+    expect(output).toContain('bodyBytes')
+    expect(output).not.toContain(secretPrompt)
+    expect(output).not.toContain('secret-query-value')
+    expect(output).not.toContain('secret-body-value')
+  })
+
+  test('logs SSE metadata without logging response contents', async () => {
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const secretResponse = 'this response must never be written to logs'
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(`data: ${JSON.stringify({ text: secretResponse })}\n\n`, {
+          headers: { 'content-type': 'text/event-stream' },
+        })
+    )
+
+    const response = await loggingFetch('https://provider.example/v1/stream')
+    await response.text()
+
+    const output = JSON.stringify(debug.mock.calls)
+    expect(output).toContain('dataBytes')
+    expect(output).not.toContain(secretResponse)
   })
 })
