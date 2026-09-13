@@ -104,9 +104,15 @@ const SelectAssistantPage = () => {
     <WithLoadingAndError isLoading={isLoading} error={error}>
       <div className="flex h-full w-full flex-1 justify-center">
         <div className="flex w-full max-w-[1440px] flex-1 flex-col gap-3 px-3 py-4 sm:w-5/6 sm:px-4 sm:py-6">
-          <div className="flex items-center justify-between gap-3">
+          <div
+            className={`flex gap-3 ${
+              isMobile ? 'flex-col items-stretch' : 'items-center justify-between'
+            }`}
+          >
             <h1 className="text-center">{t('select-assistant')}</h1>
-            {!isMobile && <Button onClick={gotoMyAssistants}>{t('my-assistants')}</Button>}
+            <Button className={isMobile ? 'self-end' : ''} onClick={gotoMyAssistants}>
+              {t('my-assistants')}
+            </Button>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-3 md:flex-row">
             <div className="flex w-full shrink-0 flex-col md:h-full md:w-[220px]">
