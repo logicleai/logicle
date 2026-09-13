@@ -91,7 +91,10 @@ export const POST = operation({
         .selectFrom('Message')
         .select('conversationId')
         .where('id', '=', previousResponse)
-        .executeTakeFirstOrThrow()
+        .executeTakeFirst()
+      if (!conversation) {
+        return error(400, 'No such previous response')
+      }
       conversationId = conversation.conversationId
     } else if (userMessage.assistant) {
       const assistant = await getAssistant(userMessage.assistant)

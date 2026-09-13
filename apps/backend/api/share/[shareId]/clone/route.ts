@@ -1,5 +1,5 @@
 import { db } from '@/db/database'
-import { forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
+import { errorSpec, forbidden, notFound, ok, operation, responseSpec } from '@/lib/routes'
 import { getConversation, getConversationMessages } from '@/models/conversation'
 import { extractLinearConversation } from '@/lib/chat/conversationUtils'
 import { nanoid } from 'nanoid'
@@ -69,7 +69,7 @@ export const POST = operation({
   name: 'Clone shared conversation',
   description: 'Clone a shared conversation into the current user account.',
   authentication: 'user',
-  responses: [responseSpec(200), errorSpec(403)] as const,
+  responses: [responseSpec(200), errorSpec(403), errorSpec(404)] as const,
   implementation: async ({ params, session }) => {
     const conversation = await db
       .selectFrom('ConversationSharing')
@@ -90,7 +90,10 @@ export const POST = operation({
         'Message.conversationId',
         'ConversationSharing.lastMessageId',
       ])
-      .executeTakeFirstOrThrow()
+      .executeTakeFirst()
+    if (!conversation) {
+      return notFound(`No shared conversation with id ${params.shareId}`)
+    }
     const id = nanoid()
 
     const assistants = await getUserAssistants(
@@ -120,7 +123,9 @@ export const POST = operation({
       owner: { ownerType: 'CHAT', ownerId: newConversation.id },
       userId: session.userId,
     })
-    const linearWithClonedFiles = linear.map((message) => remapMessageFileIds(message, clonedFileIds))
+    const linearWithClonedFiles = linear.map((message) =>
+      remapMessageFileIds(message, clonedFileIds)
+    )
     const idMap = new Map(linear.map((m) => [m.id, nanoid()]))
     const newMessages = linearWithClonedFiles
       .map((m) => {
