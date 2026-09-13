@@ -50,11 +50,24 @@ const OpenApiToolFields = ({ form, apiKeys, setApiKeys }: Props) => {
         })
       }
       const docObject = doc.toJSON()
-      try {
-        const nextKeys = await extractApiKeysFromOpenApiSchema(docObject)
-        setApiKeys(nextKeys)
-      } catch {
-        console.error(`Failed extracting API keys...`)
+      // An empty editor is a normal initial state, not an extraction error.
+      // Avoid passing null/scalars to the OpenAPI parser while the user is
+      // typing an invalid or incomplete document.
+      if (
+        docObject &&
+        typeof docObject === 'object' &&
+        !Array.isArray(docObject) &&
+        Object.keys(docObject).length > 0
+      ) {
+        try {
+          const nextKeys = await extractApiKeysFromOpenApiSchema(docObject)
+          setApiKeys(nextKeys)
+        } catch {
+          // Schema diagnostics below provide the user-facing validation
+          // feedback; parser failures are expected for incomplete specs.
+          setApiKeys([])
+        }
+      } else {
         setApiKeys([])
       }
       const result = validateSchema(docObject)
