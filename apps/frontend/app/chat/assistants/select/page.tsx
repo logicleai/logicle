@@ -148,7 +148,13 @@ const SelectAssistantPage = () => {
                 {' '}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button className="w-[4em]">
+                    <Button
+                      className="w-[4em]"
+                      title={ordering === 'name' ? t('order-by-name') : t('order-by-last-usage')}
+                      aria-label={
+                        ordering === 'name' ? t('order-by-name') : t('order-by-last-usage')
+                      }
+                    >
                       {ordering === 'name' ? (
                         <IconSortAZ />
                       ) : (

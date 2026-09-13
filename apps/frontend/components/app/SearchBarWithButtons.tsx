@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useId } from 'react'
 import { Input } from '../ui/input'
 import { IconSearch } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
@@ -15,10 +15,15 @@ export const SearchBarWithButtonsOnRight = ({
   children,
 }: Params) => {
   const { t } = useTranslation()
+  const inputId = useId()
   return (
     <div className="flex gap-3">
       <div className="flex-1 relative">
+        <label htmlFor={inputId} className="sr-only">
+          {t('search')}
+        </label>
         <Input
+          id={inputId}
           className="flex-1 pl-10"
           value={searchTerm}
           placeholder={t('search-placeholder')}
