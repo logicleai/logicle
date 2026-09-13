@@ -258,6 +258,52 @@ OPENAI_API_KEY=... npx tsx apps/backend/scripts/eval-replay-production-chats.ts 
 Keep bundles, reviews, raw responses, decrypted files, and identifiers outside the repository.
 Publish only sanitized aggregates and reviewed failure labels.
 
+## Cheap LLM probes
+
+The repository also contains a small opt-in suite of source-grounded probes. These are not
+production replays: they use sanitized fixtures and a mocked knowledge search result, so they are
+cheap enough to run while changing prompts or retrieval behavior, and they never copy tenant data
+into the repository.
+
+```bash
+# Static coverage ledger only; live probes remain skipped.
+pnpm exec vitest run __tests__/llm-knowledge-probes.test.ts
+
+# Live probes, using the cheap first backend by default.
+pnpm run test:llm-probes
+
+# Optional model override.
+LLM_PROBE_MODEL=gpt-4.1-mini pnpm run test:llm-probes
+```
+
+The suite intentionally has two kinds of checks:
+
+- **Forced retrieval** fixes the first function name so that the test isolates the hard part after
+  retrieval: the model must use the returned evidence, preserve distinctions, abstain at a source
+  boundary, and avoid mixing conflicting document versions. It does not measure whether the model
+  decided to search.
+- **Unforced retrieval** leaves tool selection on `auto`. A source-dependent question must cause a
+  search, while a self-contained arithmetic question must not. These are the checks that expose a
+  retrieval-strategy failure.
+
+Each live probe checks the tool-call arguments as well as the answer. For example, the phone-book
+fixture contains Luca's number and a neighbouring contact's different number; the user asks for
+Luca, the search call must contain `Luca`, and the `answer-check.submit_answer` argument must
+contain only Luca's number.
+The search argument is the lookup key, not the phone number itself: the number must come from the
+retrieved source passage. The suite also checks the actual mocked search invocation and source
+evidence, so an answer that happens to guess correctly does not pass.
+
+The compression benchmark uses the same downstream-action oracle. Its recovery function is
+controlled only to isolate compression's source-to-answer path; the final `answer-check` argument
+must still be correct, and the recovery call must carry the exact compressed message or file id.
+The unforced probes are the place to measure whether a model independently decides to retrieve.
+
+These probes complement, rather than replace, production replay. Replay remains the authority for
+real retrieval-call rate, BM25/ingestion quality, compression savings, and tenant-specific
+failures. In particular, a no-call result on an eligible source-dependent production turn remains
+a failure; it must not be hidden by forcing a tool call in the probe suite.
+
 ## The flip test — measuring what an arm does when the answer is not there
 
 A success rate on answerable questions cannot tell a system that _covered_ the corpus from one that
