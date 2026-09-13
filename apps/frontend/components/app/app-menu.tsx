@@ -60,10 +60,14 @@ export const AppMenu: FC<Params> = ({ chatOnly = false }) => {
   return (
     <div className="relative p-1 appmenu" ref={dropdownContainer}>
       <DropdownMenu>
-        <DropdownMenuTrigger className="w-full">
-          <div className="flex flex-row w-full items-center justify-center">
+        <DropdownMenuTrigger
+          className="w-full"
+          aria-label={t('my-profile')}
+          title={t('my-profile')}
+        >
+          <span className="flex flex-row w-full items-center justify-center">
             <Avatar url={userProfile?.image ?? undefined} fallback={userName ?? ''} />
-          </div>
+          </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           {!chatOnly && (
