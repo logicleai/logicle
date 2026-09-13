@@ -1,6 +1,7 @@
 import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import {
   conflict,
+  error,
   forbidden,
   noBody,
   notFound,
@@ -50,7 +51,13 @@ export const PATCH = operation({
   description: 'Update an existing tool.',
   authentication: 'admin',
   requestBodySchema: updateableToolSchema,
-  responses: [responseSpec(204), errorSpec(403), errorSpec(404), errorSpec(500)] as const,
+  responses: [
+    responseSpec(204),
+    errorSpec(400),
+    errorSpec(403),
+    errorSpec(404),
+    errorSpec(500),
+  ] as const,
   implementation: async ({ params, body, session }) => {
     const data = body
     const existingTool = await getTool(params.toolId)
@@ -68,13 +75,14 @@ export const PATCH = operation({
       )
       if (schema) {
         const parsed = schema.safeParse(data.configuration)
-        if (parsed.success) {
-          const { sanitizedConfig, secrets } = extractSecretsFromConfig(schema, parsed.data)
-          for (const secret of secrets) {
-            await upsertToolSecret(params.toolId, secret.key, secret.value)
-          }
-          data.configuration = sanitizedConfig
+        if (!parsed.success) {
+          return error(400, 'Invalid tool configuration')
         }
+        const { sanitizedConfig, secrets } = extractSecretsFromConfig(schema, parsed.data)
+        for (const secret of secrets) {
+          await upsertToolSecret(params.toolId, secret.key, secret.value)
+        }
+        data.configuration = sanitizedConfig
       }
     }
     await updateTool(params.toolId, data, undefined, session.userId)
