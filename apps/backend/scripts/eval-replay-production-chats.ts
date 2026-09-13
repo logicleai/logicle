@@ -370,9 +370,10 @@ if (selectedAssistant.model !== selectedAudit.model && !explicitModelOverride) {
 const subAssistants = selectedAssistant.subAssistants
   ? (JSON.parse(String(selectedAssistant.subAssistants)) as unknown[])
   : []
-if (Array.isArray(subAssistants) && subAssistants.length > 0) {
+if (Array.isArray(subAssistants) && subAssistants.length > 0 && !disableConfiguredTools) {
   await abortReplay(
-    `Assistant ${selectedAudit.assistantId} has sub-assistants; replay has no fixture.`
+    `Assistant ${selectedAudit.assistantId} has sub-assistants; pass --disable-configured-tools ` +
+      `for a target turn that did not use them.`
   )
 }
 const configuredTool = await db

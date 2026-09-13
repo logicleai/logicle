@@ -185,12 +185,9 @@ try {
   if (!assistant) throw new Error('Assistant or its published version is unavailable')
   if (assistant.assistantDeleted !== 0) throw new Error('Assistant is deleted')
 
-  const subAssistants = assistant.subAssistants
-    ? (JSON.parse(String(assistant.subAssistants)) as unknown[])
-    : []
-  if (Array.isArray(subAssistants) && subAssistants.length > 0) {
-    throw new Error('Assistant has sub-assistants, which the offline replay cannot reconstruct')
-  }
+  // The replay runner can omit configured tools for a target turn that made no tool call. Keep
+  // the published version intact in the bundle so the case remains auditable; the runner decides
+  // whether the unsupported sub-assistant tool surface is relevant to the selected turn.
   const configuredTools = await source
     .selectFrom('AssistantVersionToolAssociation')
     .select('toolId')
