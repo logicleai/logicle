@@ -8,7 +8,11 @@ import { BRAND_I18N_ELEMENT_ID, readBootstrapJson } from '@/lib/bootstrapPlaceho
 
 let inited = false
 
-export default function ClientI18nProvider({ children }: { children: React.ReactNode }): React.ReactNode {
+export default function ClientI18nProvider({
+  children,
+}: {
+  children: React.ReactNode
+}): React.ReactNode {
   if (!inited) {
     // server.ts splices the provisioned brand.json (if any) into a
     // <script id="__logicle_brand_i18n__"> tag before sending the HTML.
@@ -26,7 +30,7 @@ export default function ClientI18nProvider({ children }: { children: React.React
   const [loadedLanguage, setLoadedLanguage] = useState<string>('')
   const i18any = i18n as any
   const browserLanguages = navigator.languages // Array of languages
-  const defaultLanguage = browserLanguages[0] // First preferred language
+  const defaultLanguage = browserLanguages[0] ?? 'en' // First preferred language
   const preferredLanguage = userProfile?.preferences.language ?? 'default'
   const targetLanguage = preferredLanguage === 'default' ? defaultLanguage : preferredLanguage
   const currentUserId = userProfile?.id
@@ -37,6 +41,10 @@ export default function ClientI18nProvider({ children }: { children: React.React
       setWaitForLanguageLoad(false)
     }
     void changeLanguage()
+  }, [targetLanguage])
+
+  useEffect(() => {
+    document.documentElement.lang = targetLanguage
   }, [targetLanguage])
 
   // When we switch user... we want to enforce that the user's language is loaded

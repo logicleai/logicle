@@ -99,7 +99,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
               name="email"
               render={({ field }) => (
                 <FormItem label={t('email')}>
-                  <Input placeholder={t('email')} {...field} />
+                  <Input autoComplete="email" placeholder={t('email')} {...field} />
                 </FormItem>
               )}
             />
@@ -108,7 +108,11 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
               name="password"
               render={({ field }) => (
                 <FormItem label={t('password')}>
-                  <PasswordInput placeholder={t('password')} {...field} />
+                  <PasswordInput
+                    autoComplete="current-password"
+                    placeholder={t('password')}
+                    {...field}
+                  />
                 </FormItem>
               )}
             />

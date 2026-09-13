@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import ThemeProvider from '@/components/providers/themeContext'
 import LayoutConfigProvider from '@/components/providers/layoutconfigContext'
@@ -18,27 +18,36 @@ import { ChatPageContextProvider } from '@/app/chat/components/ChatPageContextPr
 // src/shims/clientRouterShim.tsx's comment for why that hand-rolled
 // provider existed in the first place and why it has no counterpart here.
 export function RootLayout() {
+  const { pathname } = useLocation()
+  const isPublicAuthRoute = pathname.startsWith('/auth/')
+
   return (
     <div className="h-full">
       <ThemeProvider>
         <LayoutConfigProvider>
           <ConfirmationModalContextProvider>
             <Toaster toastOptions={{ duration: 4000 }} />
-            <UserProfileProvider>
-              <TokenRateLimitProvider>
+            <EnvironmentProvider>
+              {isPublicAuthRoute ? (
                 <ClientI18nProvider>
-                  <EnvironmentProvider>
-                    <SessionRefreshProvider>
-                      <ActiveWorkspaceProvider>
-                        <ChatPageContextProvider>
-                          <Outlet />
-                        </ChatPageContextProvider>
-                      </ActiveWorkspaceProvider>
-                    </SessionRefreshProvider>
-                  </EnvironmentProvider>
+                  <Outlet />
                 </ClientI18nProvider>
-              </TokenRateLimitProvider>
-            </UserProfileProvider>
+              ) : (
+                <UserProfileProvider>
+                  <TokenRateLimitProvider>
+                    <ClientI18nProvider>
+                      <SessionRefreshProvider>
+                        <ActiveWorkspaceProvider>
+                          <ChatPageContextProvider>
+                            <Outlet />
+                          </ChatPageContextProvider>
+                        </ActiveWorkspaceProvider>
+                      </SessionRefreshProvider>
+                    </ClientI18nProvider>
+                  </TokenRateLimitProvider>
+                </UserProfileProvider>
+              )}
+            </EnvironmentProvider>
           </ConfirmationModalContextProvider>
         </LayoutConfigProvider>
       </ThemeProvider>
