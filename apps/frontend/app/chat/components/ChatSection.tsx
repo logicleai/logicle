@@ -170,7 +170,7 @@ const ExistingChat = ({ chatId }: { chatId: string }) => {
 
   const assistantId = selectedConversation?.assistantId
   const { data: assistant } = useSWRJson<dto.UserAssistantWithSupportedMedia>(
-    `/api/me/assistants/${assistantId}`
+    assistantId ? `/api/me/assistants/${assistantId}` : null
   )
 
   if (selectedConversation?.id !== chatId || !assistant) {
