@@ -122,8 +122,10 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
   const [results, setResults] = React.useState<Hit[]>([])
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const requestIdRef = React.useRef(0)
   const performSearch = React.useCallback(
     async (query: string) => {
+      const requestId = ++requestIdRef.current
       const trimmed = query.trim()
 
       // you can decide whether to clear or keep last results when empty
@@ -141,6 +143,8 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
         const url = `/api/conversations/search?query=${encodeURIComponent(trimmed)}`
         const response = await post<dto.ConversationWithMessages[]>(url, { query: trimmed })
 
+        if (requestId !== requestIdRef.current) return
+
         if (response.error) {
           setError(response.error.message)
           return
@@ -154,11 +158,14 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
           })
         )
       } catch (err) {
+        if (requestId !== requestIdRef.current) return
         console.error(err)
         setError(t('generic-error'))
         toast.error(t('generic-error'))
       } finally {
-        setIsLoading(false)
+        if (requestId === requestIdRef.current) {
+          setIsLoading(false)
+        }
       }
     },
     [t]
@@ -225,19 +232,19 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
             {!isLoading && !error && results.length > 0 && (
               <ul className="space-y-1">
                 {results.map((c) => (
-                  <a
-                    key={c.conversation.id}
-                    href={`/chat/${c.conversation.id}`}
-                    onClick={(e) => {
-                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
-                        return
-                      }
-                      e.preventDefault()
-                      navigateToChat(c.conversation.id)
-                      onClose()
-                    }}
-                  >
-                    <li className="flex items-start gap-3 rounded-xl px-3 py-2 cursor-pointer hover:bg-accent/60 transition-colors">
+                  <li key={c.conversation.id}>
+                    <a
+                      className="flex items-start gap-3 rounded-xl px-3 py-2 cursor-pointer hover:bg-accent/60 transition-colors"
+                      href={`/chat/${c.conversation.id}`}
+                      onClick={(e) => {
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+                          return
+                        }
+                        e.preventDefault()
+                        navigateToChat(c.conversation.id)
+                        onClose()
+                      }}
+                    >
                       <div className="mt-1 flex h-8 w-8 flex-none items-center justify-center rounded-full border border-muted-foreground/20">
                         <span className="text-xs text-muted-foreground">💬</span>
                       </div>
@@ -263,8 +270,8 @@ export const ConversationSearchDialog: React.FC<Params> = ({ onClose }) => {
                           // biome-ignore-end lint/security/noDangerouslySetInnerHtml: not dangerous (I hope)
                         )}{' '}
                       </div>
-                    </li>
-                  </a>
+                    </a>
+                  </li>
                 ))}
               </ul>
             )}

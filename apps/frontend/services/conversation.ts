@@ -21,5 +21,5 @@ export const saveConversation = async (
 }
 
 export const deleteConversation = async (conversationId: string) => {
-  await delete_(`/api/conversations/${conversationId}`)
+  return await delete_(`/api/conversations/${conversationId}`)
 }

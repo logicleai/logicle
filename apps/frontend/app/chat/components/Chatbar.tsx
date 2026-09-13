@@ -18,6 +18,7 @@ import { ChatFolder } from './ChatFolder'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 import { ConversationSearchDialog } from './ConversationSearchDialog'
+import { ErrorMsg, Loading } from '@/components/ui'
 
 export const Chatbar = () => {
   const { t } = useTranslation()
@@ -46,8 +47,17 @@ export const Chatbar = () => {
     )
   })
 
-  let { data: conversations } = useSWRJson<dto.ConversationWithFolder[]>(`/api/conversations`)
-  const { data: folders } = useSWRJson<dto.ConversationFolder[]>(`/api/me/folders`)
+  const {
+    data: conversationData,
+    error: conversationsError,
+    isLoading: conversationsLoading,
+  } = useSWRJson<dto.ConversationWithFolder[]>(`/api/conversations`)
+  const {
+    data: folders,
+    error: foldersError,
+    isLoading: foldersLoading,
+  } = useSWRJson<dto.ConversationFolder[]>(`/api/me/folders`)
+  let conversations = conversationData
   conversations = (conversations ?? [])
     .slice()
     .sort((a, b) => ((a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1))
@@ -182,7 +192,18 @@ export const Chatbar = () => {
         </div>
       )}
       <ScrollArea className="flex-1 scroll-workaround pr-2">
-        {conversations?.length > 0 ? (
+        {conversationsLoading ? (
+          <div className="mt-8 flex justify-center">
+            <Loading />
+          </div>
+        ) : conversationsError ? (
+          <div className="mt-8 flex flex-col items-center gap-2 text-center">
+            <ErrorMsg>{t('generic-error')}</ErrorMsg>
+            <Button variant="secondary" onClick={() => void mutate('/api/conversations')}>
+              {t('retry')}
+            </Button>
+          </div>
+        ) : conversations?.length > 0 ? (
           <>
             {environment.enableChatFolders && (
               <div className="flex flex-col">
@@ -192,6 +213,8 @@ export const Chatbar = () => {
                     <IconPlus />
                   </Button>
                 </h5>
+                {foldersLoading && <Loading />}
+                {foldersError && <ErrorMsg>{t('generic-error')}</ErrorMsg>}
                 {(folders ?? []).map((f) => {
                   return <ChatFolder key={f.id} folder={f}></ChatFolder>
                 })}
