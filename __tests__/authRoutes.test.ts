@@ -23,6 +23,7 @@ import * as userRoute from '@/api/users/[userId]/route'
 import * as samlLoginRoute from '@/api/auth/saml/login/route'
 import * as oidcCallbackRoute from '@/api/oauth/oidc/route'
 import * as samlCallbackRoute from '@/api/oauth/saml/route'
+import * as apiKeysRoute from '@/api/me/apikeys/route'
 
 const mocks = vi.hoisted(() => ({
   discovery: vi.fn(async () => ({ issuer: 'https://issuer.example.com' })),
@@ -95,10 +96,9 @@ async function migrateTestDb() {
             name,
             {
               up: async (client: Kysely<any>) => {
-                await (migration as { up: (db: Kysely<any>, dialect?: string) => Promise<void> }).up(
-                  client,
-                  dialectName
-                )
+                await (
+                  migration as { up: (db: Kysely<any>, dialect?: string) => Promise<void> }
+                ).up(client, dialectName)
               },
             } satisfies Migration,
           ])
@@ -137,8 +137,8 @@ function _mergeResponseCookies(currentCookieHeader: string | undefined, response
     typeof response.headers.getSetCookie === 'function'
       ? response.headers.getSetCookie()
       : response.headers.get('set-cookie')
-        ? [response.headers.get('set-cookie')!]
-        : []
+      ? [response.headers.get('set-cookie')!]
+      : []
 
   for (const setCookie of setCookies) {
     const cookiePair = firstCookiePair(setCookie)
@@ -295,7 +295,10 @@ describe('password auth routes', () => {
           'user-agent': 'Vitest Browser',
           'x-forwarded-for': '203.0.113.10, 198.51.100.2',
         }),
-        body: JSON.stringify({ email: 'ADA@example.com', password: 'correct-horse-battery-staple' }),
+        body: JSON.stringify({
+          email: 'ADA@example.com',
+          password: 'correct-horse-battery-staple',
+        }),
       }),
       { params: Promise.resolve({}) }
     )
@@ -389,7 +392,9 @@ describe('password auth routes', () => {
     expect(response.headers.getSetCookie()[0]).toContain(`${SESSION_COOKIE_NAME}=${session.id}`)
 
     const refreshedSession = await getUserSessionById(user.id, session.id)
-    expect(new Date(refreshedSession!.expiresAt).getTime()).toBeGreaterThan(previousExpiry.getTime())
+    expect(new Date(refreshedSession!.expiresAt).getTime()).toBeGreaterThan(
+      previousExpiry.getTime()
+    )
   })
 
   test('refresh rejects disabled users with an existing session', async () => {
@@ -491,20 +496,14 @@ describe('password auth routes', () => {
         clientSecret: 'client-secret',
       },
     })
-    const current = await createSession(
-      user.id,
-      new Date(Date.now() + 60_000),
-      'password',
-      null,
-      { userAgent: 'Current Browser', ipAddress: '192.0.2.10' }
-    )
-    const other = await createSession(
-      user.id,
-      new Date(Date.now() + 60_000),
-      'idp',
-      'oidc-1',
-      { userAgent: 'Other Browser', ipAddress: '198.51.100.8' }
-    )
+    const current = await createSession(user.id, new Date(Date.now() + 60_000), 'password', null, {
+      userAgent: 'Current Browser',
+      ipAddress: '192.0.2.10',
+    })
+    const other = await createSession(user.id, new Date(Date.now() + 60_000), 'idp', 'oidc-1', {
+      userAgent: 'Other Browser',
+      ipAddress: '198.51.100.8',
+    })
 
     const response = await sessionsRoute.GET(
       new Request('http://localhost/api/auth/sessions', {
@@ -643,6 +642,31 @@ describe('password auth routes', () => {
   })
 })
 
+describe('API key scopes', () => {
+  test('persists the scope supplied when creating a user API key', async () => {
+    const user = await createPasswordUser('apikey-scope@example.com')
+    const session = await createSession(user.id, new Date(Date.now() + 60_000), 'password', null)
+    const response = await apiKeysRoute.POST(
+      new Request('http://localhost/api/me/apikeys', {
+        method: 'POST',
+        headers: sameOriginHeaders({
+          cookie: `${SESSION_COOKIE_NAME}=${session.id}`,
+          'content-type': 'application/json',
+        }),
+        body: JSON.stringify({
+          description: 'Scoped key',
+          expiresAt: null,
+          scope: ['chat:read'],
+        }),
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(201)
+    await expect(response.json()).resolves.toMatchObject({ scope: ['chat:read'] })
+  })
+})
+
 describe('OIDC and SAML auth flows', () => {
   test('rejects SSO login without a connection id', async () => {
     const response = await samlLoginRoute.GET(
@@ -706,7 +730,10 @@ describe('OIDC and SAML auth flows', () => {
       type: 'SAML',
       config: {
         entityID: 'urn:test:idp',
-        sso: { postUrl: 'https://idp.example.com/post', redirectUrl: 'https://idp.example.com/redirect' },
+        sso: {
+          postUrl: 'https://idp.example.com/post',
+          redirectUrl: 'https://idp.example.com/redirect',
+        },
         publicKey: 'cert',
       },
     })
@@ -730,7 +757,10 @@ describe('OIDC and SAML auth flows', () => {
       type: 'SAML',
       config: {
         entityID: 'urn:test:idp',
-        sso: { postUrl: 'https://idp.example.com/post', redirectUrl: 'https://idp.example.com/redirect' },
+        sso: {
+          postUrl: 'https://idp.example.com/post',
+          redirectUrl: 'https://idp.example.com/redirect',
+        },
         publicKey: 'cert',
       },
     })
@@ -755,7 +785,10 @@ describe('OIDC and SAML auth flows', () => {
       type: 'SAML',
       config: {
         entityID: 'urn:test:idp',
-        sso: { postUrl: 'https://idp.example.com/post', redirectUrl: 'https://idp.example.com/redirect' },
+        sso: {
+          postUrl: 'https://idp.example.com/post',
+          redirectUrl: 'https://idp.example.com/redirect',
+        },
         publicKey: 'cert',
       },
     })
@@ -1207,7 +1240,10 @@ describe('OIDC and SAML auth flows', () => {
       type: 'SAML',
       config: {
         entityID: 'urn:test:idp',
-        sso: { postUrl: 'https://idp.example.com/post', redirectUrl: 'https://idp.example.com/redirect' },
+        sso: {
+          postUrl: 'https://idp.example.com/post',
+          redirectUrl: 'https://idp.example.com/redirect',
+        },
         publicKey: 'cert',
       },
     })
@@ -1239,7 +1275,10 @@ describe('OIDC and SAML auth flows', () => {
       type: 'SAML',
       config: {
         entityID: 'urn:test:idp',
-        sso: { postUrl: 'https://idp.example.com/post', redirectUrl: 'https://idp.example.com/redirect' },
+        sso: {
+          postUrl: 'https://idp.example.com/post',
+          redirectUrl: 'https://idp.example.com/redirect',
+        },
         publicKey: 'cert',
       },
     })

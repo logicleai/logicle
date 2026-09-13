@@ -55,7 +55,7 @@ export const deleteApiKey = async (userId: string, id: string) => {
 }
 
 export const createApiKey = async (userId: string, key: string, data: dto.InsertableUserApiKey) => {
-  return await createApiKeyWithId(nanoid(), key, { userId: userId, ...data }, false)
+  return await createApiKeyWithId(nanoid(), key, { userId: userId, ...data }, false, data.scope)
 }
 export const createApiKeyWithId = async (
   id: string,
