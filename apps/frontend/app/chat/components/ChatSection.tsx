@@ -4,7 +4,7 @@ import { useContext, useEffect, useRef, useState } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import { ChatInputOrApiKey } from '@/app/chat/components/ChatInputOrApiKey'
 import { createConversation } from '@/services/conversation'
-import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { mutate } from 'swr'
 import { useSWRJson } from '@/hooks/swr'
 import toast from 'react-hot-toast'
@@ -68,19 +68,19 @@ const StartChat = () => {
 
   const { t } = useTranslation()
   const tokenRateLimit = useTokenRateLimit()
+  const router = useRouter()
 
   const assistantId = newChatAssistantId
 
-  if (!assistantId) {
-    // A genuinely different, statically-known route (no dynamic segment),
-    // so Next's static export has a real prefetch payload for it — this one
-    // is fine to leave as a real Next navigation.
-    redirect('/chat/assistants/select')
-  }
+  useEffect(() => {
+    if (!assistantId) router.replace('/chat/assistants/select')
+  }, [assistantId, router])
 
   const swrAssistant = useSWRJson<dto.UserAssistantWithSupportedMedia>(
-    `/api/me/assistants/${assistantId}`
+    assistantId ? `/api/me/assistants/${assistantId}` : null
   )
+
+  if (!assistantId) return null
 
   const startChat = async ({
     content,

@@ -19,7 +19,7 @@ import { Avatar } from '../ui/avatar'
 import { useUserProfile } from '../providers/userProfileContext'
 import * as dto from '@/types/dto'
 import { UserDialog } from './UserDialog'
-import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 type Params = {
   /** Keep the mobile shell focused on conversations; logout remains available. */
@@ -50,11 +50,12 @@ export const AppMenu: FC<Params> = ({ chatOnly = false }) => {
   const userProfile = useUserProfile()
   const userName = userProfile?.name
   const [showUserDialog, setShowUserDialog] = useState<boolean>(false)
+  const router = useRouter()
   const signOut = async () => {
     await fetch(`/api/auth/logout`, {
       method: 'post',
     })
-    redirect('/auth/login')
+    router.replace('/auth/login')
   }
   return (
     <div className="relative p-1 appmenu" ref={dropdownContainer}>

@@ -1,4 +1,5 @@
 import { useLocation, useNavigate, useSearchParams as useRRSearchParams } from 'react-router-dom'
+import { useMemo } from 'react'
 
 // Aliased over `next/navigation` (see vite.config.ts) — real app code is
 // imported unmodified across the whole app (not just chat), so this covers
@@ -13,12 +14,15 @@ interface NextRouterShim {
 
 export function useRouter(): NextRouterShim {
   const navigate = useNavigate()
-  return {
-    push: (href: string) => void navigate(href),
-    replace: (href: string) => void navigate(href, { replace: true }),
-    back: () => void navigate(-1),
-    refresh: () => {},
-  }
+  return useMemo(
+    () => ({
+      push: (href: string) => void navigate(href),
+      replace: (href: string) => void navigate(href, { replace: true }),
+      back: () => void navigate(-1),
+      refresh: () => {},
+    }),
+    [navigate]
+  )
 }
 
 export function usePathname(): string {
@@ -31,13 +35,4 @@ export function usePathname(): string {
 export function useSearchParams(): URLSearchParams {
   const [params] = useRRSearchParams()
   return params
-}
-
-// next/navigation's redirect() is a throw-based signal meant for React
-// Server Components; the one call site in this app that survives into the
-// spike (ChatSection's missing-api-key redirect) only ever runs client-side,
-// where Next's own implementation degrades to a plain navigation anyway.
-export function redirect(url: string): never {
-  window.location.assign(url)
-  throw new Error(`NEXT_REDIRECT:${url}`)
 }
