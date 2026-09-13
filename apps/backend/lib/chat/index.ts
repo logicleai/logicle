@@ -99,6 +99,10 @@ export interface AssistantParams {
   tokenLimit: number
   reasoning_effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | null
   contextCompression: dto.ContextCompressionConfig
+  /** Optional test/evaluation override; normal assistants leave tool selection on auto. */
+  toolChoice?: ai.ToolChoice<Record<string, ai.Tool>>
+  /** Optional test/evaluation sequence; normal assistants leave tool selection on auto. */
+  toolChoiceSequence?: ai.ToolChoice<Record<string, ai.Tool>>[]
 }
 
 export type AssistantParamsSource = Pick<
@@ -167,6 +171,7 @@ export class ChatAssistant {
   functions: ToolFunctions
   functionToolIdMap: Map<string, string>
   setupError: string | undefined
+  private forcedToolChoiceIndex = 0
 
   constructor(
     private providerConfig: ProviderConfig,
@@ -631,13 +636,34 @@ export class ChatAssistant {
         compressionApplied = plan.applied
       }
     }
-    const { tools: promptTools, functions: promptFunctions } = selectCompressionPromptCapabilities({
+    const forcedToolChoice =
+      this.assistantParams.toolChoiceSequence?.[this.forcedToolChoiceIndex] ??
+      (this.forcedToolChoiceIndex === 0 ? this.assistantParams.toolChoice : undefined)
+    let { tools: promptTools, functions: promptFunctions } = selectCompressionPromptCapabilities({
       tools: this.tools,
       functions: this.functions,
       functionToolIdMap: this.functionToolIdMap,
       compressionConfigured: compression !== null,
       compressionApplied,
     })
+    // A test/evaluation may require a specific first-step tool call even when the economic guard
+    // would otherwise omit context-retrieve from this particular prompt. Production assistants
+    // leave toolChoice unset, so this does not alter the normal compression policy.
+    if (
+      forcedToolChoice &&
+      typeof forcedToolChoice === 'object' &&
+      forcedToolChoice.type === 'tool'
+    ) {
+      const forcedFunction = this.functions[forcedToolChoice.toolName]
+      if (forcedFunction && !promptFunctions[forcedToolChoice.toolName]) {
+        promptFunctions = { ...promptFunctions, [forcedToolChoice.toolName]: forcedFunction }
+        const forcedToolId = this.functionToolIdMap.get(forcedToolChoice.toolName)
+        const forcedTool = this.tools.find((tool) => tool.toolParams.id === forcedToolId)
+        if (forcedTool && !promptTools.some((tool) => tool.toolParams.id === forcedToolId)) {
+          promptTools = [...promptTools, forcedTool]
+        }
+      }
+    }
     const truncatedChat = await this.truncateChat(promptMessages, historyCosts, promptTools)
 
     const preambleSegments = await buildPreambleSegments({
@@ -667,6 +693,7 @@ export class ChatAssistant {
     const llmMessages = [...preambleSegments, ...historySegments].map((s) => s.message)
     const tools = await this.createAiTools(promptFunctions)
     const providerOptions = this.providerOptions(llmMessages, promptTools)
+    const toolChoice = forcedToolChoice ? (this.forcedToolChoiceIndex++, forcedToolChoice) : 'auto'
     let maxOutputTokens = minOptional(this.llmModel.maxOutputTokens, env.chat.maxOutputTokens)
     if (maxOutputTokens && isAnthropic) {
       const anthropicProviderOptions = providerOptions?.anthropic as
@@ -685,7 +712,7 @@ export class ChatAssistant {
       tools: this.llmModelCapabilities.function_calling ? { ...tools } : undefined,
       toolChoice:
         this.llmModelCapabilities.function_calling && Object.keys(promptFunctions).length !== 0
-          ? 'auto'
+          ? toolChoice
           : undefined,
       temperature:
         modelSupportsReasoning(this.llmModel) || this.llmModelCapabilities.temperature === false
@@ -714,6 +741,9 @@ export class ChatAssistant {
   async processUserMessageWithSink(chatHistory: dto.Message[], clientSink: ClientSink) {
     const chatState = new ChatState(chatHistory)
     try {
+      // Evaluation probes may force a short tool-choice sequence. Once it is exhausted, resume the
+      // normal auto policy so the model can answer instead of calling the same tool forever.
+      this.forcedToolChoiceIndex = 0
       this.throwIfAborted()
       const userMessage = chatHistory[chatHistory.length - 1]
       if (userMessage.role === 'user-response') {
