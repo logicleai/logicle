@@ -140,7 +140,7 @@ const env = {
   chat: {
     enableSharing: process.env.ENABLE_CHAT_SHARING !== '0',
     enableFolders: process.env.ENABLE_CHAT_FOLDERS === '1',
-    enableShowToolResult: process.env.ENABLE_SHOW_TOOL_RESULT === '1',
+    enableShowToolResult: process.env.ENABLE_SHOW_TOOL_RESULT !== '0',
     enableTreeNavigation: process.env.ENABLE_CHAT_TREE_NAVIGATION === '1',
     disableParallelToolCalls: process.env.ENABLE_PARALLEL_TOOL_CALLS === '0',
     contextCompressionTriggerTokens: parseOptionalInt(
