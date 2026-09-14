@@ -264,6 +264,8 @@ jobs:
             -e APP_URL=http://localhost:3000 \
             -e NEXTAUTH_SECRET=ci-smoke-only-session-secret \
             -e DATABASE_URL="${DATABASE_URL}" \
+            -e ALLOW_MOCK_PROVIDER=1 \
+            -e ENABLE_APIKEYS=1 \
             -e FILE_STORAGE_ENCRYPTION_ENABLE=1 \
             -e FILE_STORAGE_ENCRYPTION_KEY=ci-smoke-only-not-a-secret \
             -e FILE_STORAGE_LOCATION=/data/files \
