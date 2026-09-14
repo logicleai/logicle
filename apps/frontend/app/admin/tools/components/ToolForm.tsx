@@ -118,7 +118,12 @@ const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
 
   const formSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
-    description: z.string().min(2, 'Description must be at least 2 characters'),
+    // Satellite tools are created automatically when a satellite connects and
+    // intentionally start with no description.
+    description:
+      type === SatelliteInterface.toolName
+        ? z.string()
+        : z.string().min(2, 'Description must be at least 2 characters'),
     tags: z.string().array(),
     promptFragment: z.string(),
     configuration: configurationSchema(type, apiKeys),
