@@ -80,7 +80,13 @@ export class ReplicateImageGeneratorPluginInterface {
   static toolName = 'imagegen.replicate'
 }
 
-export const SatelliteSchema = z.object({}).strict()
+export const SatelliteSchema = z
+  .object({
+    // Registered satellite tools persist the connection target in their
+    // configuration; it is used by SatelliteTool.builder at runtime.
+    satelliteId: z.string(),
+  })
+  .strict()
 export type SatelliteParams = z.infer<typeof SatelliteSchema>
 export class SatelliteInterface {
   static toolName = 'satellite'
