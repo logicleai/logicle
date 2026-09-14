@@ -67,9 +67,11 @@ export const chatRunSchema = z.object({
 
 export type ChatRun = z.infer<typeof chatRunSchema>
 
-export const activeChatRunResponseSchema = z.object({
-  run: chatRunSchema.nullable(),
-}).meta({ id: 'ActiveChatRunResponse' })
+export const activeChatRunResponseSchema = z
+  .object({
+    run: chatRunSchema.nullable(),
+  })
+  .meta({ id: 'ActiveChatRunResponse' })
 
 export type ActiveChatRunResponse = z.infer<typeof activeChatRunResponseSchema>
 
@@ -96,6 +98,15 @@ export const ConversationWithMessagesSchema = z.object({
 }).meta({ id: 'ConversationWithMessages' })
 
 export type ConversationWithFolder = z.infer<typeof ConversationWithFolderSchema>
+
+export const conversationPageSchema = z
+  .object({
+    conversations: ConversationWithFolderSchema.array(),
+    nextCursor: z.string().nullable(),
+  })
+  .meta({ id: 'ConversationPage' })
+
+export type ConversationPage = z.infer<typeof conversationPageSchema>
 
 export type ConversationWithMessages = z.infer<typeof ConversationWithMessagesSchema>
 

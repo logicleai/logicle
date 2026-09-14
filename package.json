@@ -38,6 +38,7 @@
     "format": "prettier --write .",
     "test-all": "pnpm run check-format && pnpm run check-lint && pnpm run check-types && pnpm run build",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "test:coverage": "vitest run --coverage",
     "test:integration": "tsx apps/backend/scripts/integration-baseline.ts",
     "test:providers:live": "tsx apps/backend/scripts/providers-live.ts",
@@ -194,6 +195,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.2",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/forms": "0.5.6",
     "@trivago/prettier-plugin-sort-imports": "4.2.0",
     "@types/bcryptjs": "2.4.3",

@@ -157,6 +157,7 @@
   "created": "Creato",
   "creating": "Creazione in corso",
   "loading": "Caricamento",
+  "load-more-conversations": "Carica altre conversazioni",
   "not-found": "Non trovato",
   "rate-limit-exceeded-warning": "Hai raggiunto il limite di utilizzo dei token per questo periodo. Per ora puoi continuare a chattare.",
   "choose-new-provider-type": "Scegli il tipo di provider",

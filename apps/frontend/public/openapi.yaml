@@ -1493,16 +1493,16 @@ paths:
   /api/conversations:
     get:
       summary: List conversations
-      description: Fetch all conversations for the session user.
+      description: Fetch a page of conversations for the session user.
       responses:
         "200":
           description: Response
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ConversationWithFolder"
+                $ref: "#/components/schemas/ConversationPage"
+        "400":
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
     post:
@@ -5042,6 +5042,22 @@ components:
         - iconUri
       additionalProperties: false
       id: AssistantIdentification
+    ConversationPage:
+      type: object
+      properties:
+        conversations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConversationWithFolder"
+        nextCursor:
+          anyOf:
+            - type: string
+            - type: "null"
+      required:
+        - conversations
+        - nextCursor
+      additionalProperties: false
+      id: ConversationPage
     InsertableConversation:
       type: object
       properties:

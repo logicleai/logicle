@@ -3,9 +3,8 @@ import { useContext, useEffect, useRef, useState } from 'react'
 
 import ChatPageContext from '@/app/chat/components/context'
 import { ChatInputOrApiKey } from '@/app/chat/components/ChatInputOrApiKey'
-import { createConversation } from '@/services/conversation'
+import { createConversation, mutateConversationList } from '@/services/conversation'
 import { useRouter } from 'next/navigation'
-import { mutate } from 'swr'
 import { useSWRJson } from '@/hooks/swr'
 import toast from 'react-hot-toast'
 import { StartChatFromHere } from './StartChatFromHere'
@@ -99,7 +98,7 @@ const StartChat = () => {
     }
     const conversation = result.data
     // force a reload of the conversation list
-    await mutate('/api/conversations')
+    await mutateConversationList()
 
     // create a new conversation without messages
     const conversationWithMessages = {

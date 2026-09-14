@@ -2,9 +2,9 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { get, post } from '@/lib/fetch'
 import * as dto from '@/types/dto'
 import { ChatStatus } from '@/app/chat/components/ChatStatus'
-import { mutate } from 'swr'
 import { ConversationWithMessages } from '@/lib/chat/types'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
+import { mutateConversationList } from './conversation'
 
 class BackendError extends Error {}
 
@@ -39,7 +39,7 @@ export const fetchChatResponse = async (
       onmessage(ev) {
         const msg = JSON.parse(ev.data) as dto.TextStreamPart
         if (msg.type === 'summary') {
-          void mutate('/api/conversations')
+          void mutateConversationList()
           conversation = {
             ...conversation,
             name: msg.summary,

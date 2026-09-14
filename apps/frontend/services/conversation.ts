@@ -1,5 +1,14 @@
 import { delete_, get, patch, post } from '@/lib/fetch'
+import { mutate as globalMutate } from 'swr'
 import * as dto from '@/types/dto'
+
+export const conversationListKey = '/api/conversations'
+
+export const isConversationListKey = (key: unknown): key is string =>
+  key === conversationListKey ||
+  (typeof key === 'string' && key.startsWith(`${conversationListKey}?`))
+
+export const mutateConversationList = () => globalMutate(isConversationListKey)
 
 export const getConversation = async (conversationId: string) => {
   return await get<dto.Conversation>(`/api/conversations/${conversationId}`)

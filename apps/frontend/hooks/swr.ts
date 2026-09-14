@@ -1,4 +1,5 @@
 import useSWR, { SWRConfiguration } from 'swr'
+import useSWRInfinite, { SWRInfiniteConfiguration } from 'swr/infinite'
 import { handleUnauthenticated } from '@/lib/authRedirect'
 
 const fetcher = async (url: string) => {
@@ -18,4 +19,11 @@ const fetcher = async (url: string) => {
 
 export function useSWRJson<T>(url: string | null, options?: SWRConfiguration) {
   return useSWR<T, Error>(url, fetcher, options)
+}
+
+export function useSWRInfiniteJson<T>(
+  getKey: (pageIndex: number, previousPageData: T | null) => string | null,
+  options?: SWRInfiniteConfiguration<T, Error>
+) {
+  return useSWRInfinite<T, Error>(getKey, fetcher, options)
 }
