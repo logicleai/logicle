@@ -47,6 +47,13 @@ describe('toolConfigSchema', () => {
     expect(result).toBeDefined()
   })
 
+  it('accepts the persisted satellite target configuration', async () => {
+    const schema = await toolConfigSchema('satellite')
+
+    expect(schema?.safeParse({ satelliteId: 'satellite-123' }).success).toBe(true)
+    expect(schema?.safeParse({}).success).toBe(false)
+  })
+
   it('returns null for an unknown tool type', async () => {
     const result = await toolConfigSchema('does-not-exist')
     expect(result).toBeNull()
