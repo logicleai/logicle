@@ -23,12 +23,41 @@ import toast from 'react-hot-toast'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { useUserProfile } from '@/components/providers/userProfileContext'
 import { limitImageSize } from '@/lib/resizeImage'
-import { isMimeTypeAllowed, mimeTypeOfFile } from '@/lib/mimeTypes'
+import { isMimeTypeAllowed } from '../../../lib/mimeTypeValidation'
+import { mimeTypeOfFile } from '../../../lib/browserMimeType'
 import { filesize } from 'filesize'
 import { ContextLengthIndicator } from '@/components/app/ContextLengthIndicator'
 import { estimateAssistantTokens } from '@/services/tokens'
 import { estimateAssistantDraftTokens } from '@/services/tokens'
-import { countTextForModel } from '@/lib/chat/tokenizer'
+
+// The exact OpenAI tokenizers are intentionally loaded on demand. The shared
+// tokenizer module includes js-tiktoken's encoding tables, which are several
+// megabytes and are not needed to render or use an otherwise empty composer.
+const usesExactTokenizer = (model: { tokenizer?: string; owned_by: string }) =>
+  model.tokenizer === 'cl100k_base' ||
+  model.tokenizer === 'o200k_base' ||
+  (model.tokenizer === undefined &&
+    (model.owned_by === 'openai' || model.owned_by === 'perplexity'))
+
+const estimateDraftTokens = (model: { tokenizer?: string; owned_by: string }, text: string) => {
+  const tokenizer =
+    model.tokenizer ??
+    (model.owned_by === 'openai' || model.owned_by === 'perplexity'
+      ? 'cl100k_base'
+      : model.owned_by === 'anthropic'
+      ? 'anthropic_heuristic'
+      : 'approx_4chars')
+
+  if (tokenizer === 'approx_4chars') return Math.ceil(text.length / 4)
+  if (tokenizer !== 'anthropic_heuristic') return Math.ceil(text.length / 4)
+
+  const pipes = (text.match(/\|/g) ?? []).length
+  const whitespace = (text.match(/\s/g) ?? []).length
+  return Math.max(
+    1,
+    Math.round(2.38 * pipes + 0.31 * (text.length - pipes - whitespace) + 0.07 * whitespace)
+  )
+}
 
 type ContextEstimateState = Readonly<{
   serverEstimate?: Readonly<{
@@ -256,7 +285,37 @@ export const ChatInput = ({
     targetMessageId,
   ])
 
-  const localDraftTokens = model ? countTextForModel(model, chatInput) : 0
+  const [exactDraftTokens, setExactDraftTokens] = useState<
+    { text: string; tokens: number } | undefined
+  >(undefined)
+
+  useEffect(() => {
+    if (!model || !chatInput || !usesExactTokenizer(model)) {
+      setExactDraftTokens(undefined)
+      return
+    }
+
+    let cancelled = false
+    void import('@/lib/chat/tokenizer').then(({ countTextForModel }) => {
+      if (!cancelled) {
+        setExactDraftTokens({
+          text: chatInput,
+          tokens: countTextForModel(model, chatInput),
+        })
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [chatInput, model])
+
+  const localDraftTokens =
+    model && exactDraftTokens?.text === chatInput
+      ? exactDraftTokens.tokens
+      : model
+      ? estimateDraftTokens(model, chatInput)
+      : 0
   const shownContextLength =
     chatStatus.state === 'idle'
       ? (contextEstimate.serverEstimate?.total ?? 0) + localDraftTokens
@@ -354,7 +413,7 @@ export const ChatInput = ({
   const processAndUploadFile = async (file: Blob, fileName: string) => {
     let fileType = file.type
     if (!fileType) {
-      fileType = mimeTypeOfFile(fileName) ?? fileType
+      fileType = (await mimeTypeOfFile(fileName)) ?? fileType
     }
     if (!isMimeTypeAllowed(fileType, supportedMedia)) {
       toast.error(t('unsupported-file-format'))
