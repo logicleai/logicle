@@ -4,8 +4,11 @@ import { useContext, useEffect, useState } from 'react'
 import ChatPageContext from '@/app/chat/components/context'
 import { EditableLink } from '@/components/ui/EditableLink'
 import * as dto from '@/types/dto'
-import { deleteConversation, saveConversation } from '@/services/conversation'
-import { mutate } from 'swr'
+import {
+  deleteConversation,
+  mutateConversationList,
+  saveConversation,
+} from '@/services/conversation'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { Menu, MenuItem } from '@/components/ui/menu'
@@ -51,7 +54,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
           name: renameValue,
         })
       }
-      await mutate('/api/conversations')
+      await mutateConversationList()
       setRenameValue('')
       setIsRenaming(false)
     }
@@ -81,7 +84,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
         toast.error(response.error.message)
         return
       }
-      await mutate('/api/conversations')
+      await mutateConversationList()
       if (selectedConversation?.id === conversation.id) {
         navigateToChat(undefined)
       }
@@ -95,7 +98,12 @@ export const ConversationComponent = ({ conversation }: Props) => {
   }, [isRenaming, selectedConversation?.id, conversation.id])
 
   return (
-    <div onDragStart={handleDragStart} className="relative flex items-center">
+    <div
+      data-testid="conversation-item"
+      data-conversation-id={conversation.id}
+      onDragStart={handleDragStart}
+      className="relative flex items-center"
+    >
       {userPreferences.showIconsInChatbar && (
         <AssistantAvatar
           size="small"

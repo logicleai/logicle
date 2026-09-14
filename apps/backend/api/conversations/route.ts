@@ -1,21 +1,40 @@
-import { createConversation, getConversationsWithFolder } from '@/models/conversation'
+import {
+  createConversation,
+  decodeConversationCursor,
+  getConversationsPage,
+} from '@/models/conversation'
 import * as dto from '@/types/dto'
 import env from '@/lib/env'
 import { canUserAccessAssistant, updateAssistantUserData } from '@/models/assistant'
-import { forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
+import { error, forbidden, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
+const conversationPageQuerySchema = z.object({
+  cursor: z.string().optional(),
+})
+
+const DEFAULT_CONVERSATION_PAGE_SIZE = 50
+const MAX_CONVERSATION_PAGE_SIZE = 100
+
 export const GET = operation({
   name: 'List conversations',
-  description: 'Fetch all conversations for the session user.',
+  description: 'Fetch a page of conversations for the session user.',
   authentication: 'user',
-  responses: [responseSpec(200, dto.ConversationWithFolderSchema.array())] as const,
-  implementation: async ({ session }) => {
+  querySchema: conversationPageQuerySchema,
+  responses: [responseSpec(200, dto.conversationPageSchema), errorSpec(400)] as const,
+  implementation: async ({ session, query }) => {
+    if (query.cursor && !decodeConversationCursor(query.cursor)) {
+      return error(400, 'Invalid conversation cursor')
+    }
+    const configuredPageSize = env.conversationLimit ?? DEFAULT_CONVERSATION_PAGE_SIZE
+    const pageSize = Math.min(Math.max(configuredPageSize, 1), MAX_CONVERSATION_PAGE_SIZE)
     return ok(
-      await getConversationsWithFolder({
+      await getConversationsPage({
         ownerId: session.userId,
-        limit: env.conversationLimit,
+        cursor: query.cursor,
+        limit: pageSize,
       })
     )
   },

@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ChatSharingDialog } from './ChatSharingDialog'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { AssistantDropdown } from './AssistantDropdown'
-import { saveConversation } from '@/services/conversation'
-import { mutate } from 'swr'
+import { mutateConversationList, saveConversation } from '@/services/conversation'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
 
 interface Props {
@@ -45,7 +44,7 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
         ...selectedConversation,
         name: trimmed,
       })
-      await mutate('/api/conversations')
+      await mutateConversationList()
     }
     setIsRenaming(false)
   }

@@ -1,8 +1,33 @@
 import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import { nanoid } from 'nanoid'
+import { sql } from 'kysely'
 import { dtoMessageFromDbMessage } from './utils'
 import { parseContextCompression } from './assistant'
+
+type ConversationCursor = {
+  sortKey: string
+  id: string
+}
+
+const conversationSortKey = sql<string>`coalesce("Conversation"."lastMsgSentAt", "Conversation"."createdAt")`
+
+export const encodeConversationCursor = (cursor: ConversationCursor) =>
+  Buffer.from(JSON.stringify(cursor)).toString('base64url')
+
+export const decodeConversationCursor = (value: string): ConversationCursor | undefined => {
+  try {
+    const parsed = JSON.parse(
+      Buffer.from(value, 'base64url').toString('utf8')
+    ) as Partial<ConversationCursor>
+    if (typeof parsed.sortKey !== 'string' || typeof parsed.id !== 'string') {
+      return undefined
+    }
+    return { sortKey: parsed.sortKey, id: parsed.id }
+  } catch {
+    return undefined
+  }
+}
 
 export const createConversation = async (
   ownerId: string,
@@ -221,6 +246,76 @@ export const getConversationsWithFolder = async ({
     }
   })
   return mapped as unknown as dto.ConversationWithFolder[]
+}
+
+export const getConversationsPage = async ({
+  ownerId,
+  cursor,
+  limit,
+}: {
+  ownerId: string
+  cursor?: string
+  limit: number
+}): Promise<dto.ConversationPage> => {
+  let query = db
+    .selectFrom('Conversation')
+    .leftJoin('ConversationFolderMembership', (join) =>
+      join.onRef('ConversationFolderMembership.conversationId', '=', 'Conversation.id')
+    )
+    .leftJoin('Assistant', (join) => join.onRef('Conversation.assistantId', '=', 'Assistant.id'))
+    .leftJoin('AssistantVersion', (join) =>
+      join.onRef('Assistant.publishedVersionId', '=', 'AssistantVersion.id')
+    )
+    .select('AssistantVersion.name as assistantName')
+    .select('AssistantVersion.imageId as assistantImageId')
+    .selectAll('Conversation')
+    .select('ConversationFolderMembership.folderId' as 'folderId')
+    .select(conversationSortKey.as('conversationSortKey'))
+    .where('Conversation.ownerId', '=', ownerId)
+
+  const decodedCursor = cursor ? decodeConversationCursor(cursor) : undefined
+  if (decodedCursor) {
+    query = query.where(
+      sql<boolean>`(${conversationSortKey} < ${decodedCursor.sortKey}) OR (${conversationSortKey} = ${decodedCursor.sortKey} AND "Conversation"."id" < ${decodedCursor.id})`
+    )
+  }
+
+  const result = await query
+    .orderBy(conversationSortKey, 'desc')
+    .orderBy('Conversation.id', 'desc')
+    .limit(limit + 1)
+    .execute()
+
+  const hasMore = result.length > limit
+  const page = result.slice(0, limit)
+  const conversations = page.map((c) => {
+    const {
+      assistantName,
+      assistantImageId,
+      conversationSortKey: _conversationSortKey,
+      ...rest
+    } = c
+    return {
+      ...rest,
+      assistant: {
+        id: rest.assistantId,
+        iconUri: assistantImageId ? `/api/images/${assistantImageId}` : null,
+        name: assistantName,
+      },
+    }
+  }) as unknown as dto.ConversationWithFolder[]
+
+  const lastConversation = page.at(-1)
+  return {
+    conversations,
+    nextCursor:
+      hasMore && lastConversation
+        ? encodeConversationCursor({
+            sortKey: String(lastConversation.conversationSortKey),
+            id: lastConversation.id,
+          })
+        : null,
+  }
 }
 
 export const deleteConversation = async (id: string) => {

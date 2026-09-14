@@ -12,6 +12,7 @@ import { ChatStatus } from './ChatStatus'
 import { nanoid } from 'nanoid'
 import * as dto from '@/types/dto'
 import { useTranslation } from 'react-i18next'
+import { mutate } from 'swr'
 import { ConversationWithMessages } from '@/lib/chat/types'
 import { ImageEditorModal } from './ImageEditorModal'
 import { useUserProfile } from '@/components/providers/userProfileContext'
@@ -21,8 +22,8 @@ import {
   createConversation,
   getConversation,
   getConversationMessages,
+  mutateConversationList,
 } from '@/services/conversation'
-import { mutate } from 'swr'
 import toast from 'react-hot-toast'
 import { imageGenToolNames } from '@/lib/tools/tools'
 import {
@@ -234,7 +235,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
             })
           )
           if (event.type === 'summary') {
-            void mutate('/api/conversations')
+            void mutateConversationList()
           }
           setSelectedConversationState(applyChatRunEventToConversation(currentConversation, event))
         },
@@ -280,7 +281,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
               runId,
             })
           )
-          void mutate('/api/conversations')
+          void mutateConversationList()
           void mutate('/api/me/token-rate-limit')
         },
         onFailed(error) {
@@ -599,7 +600,7 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
                 toast.error(created.error.message ?? t('something-went-wrong'))
                 return
               }
-              await mutate('/api/conversations')
+              await mutateConversationList()
               targetConversation = { ...created.data, messages: [] }
               setSelectedConversationState(targetConversation)
               navigateToChat(created.data.id)

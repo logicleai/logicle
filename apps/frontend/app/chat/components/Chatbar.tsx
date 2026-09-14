@@ -1,16 +1,24 @@
 'use client'
-import { useContext, useEffect, useState } from 'react'
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type UIEvent,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import ChatPageContext from '@/app/chat/components/context'
 import { useRouter } from 'next/navigation'
 import { IconEdit, IconMistOff, IconPlus, IconSearch } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
-import { useSWRJson } from '@/hooks/swr'
+import { useSWRInfiniteJson, useSWRJson } from '@/hooks/swr'
 import { ConversationComponent } from './Conversation'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import dayjs from 'dayjs'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { mutate } from 'swr'
 import * as dto from '@/types/dto'
 import { AssistantAvatar } from '@/components/app/Avatars'
 import { CreateFolderDialog } from './CreateFolderDialog'
@@ -19,6 +27,7 @@ import { useEnvironment } from '@/app/context/environmentProvider'
 import { isSharedWithAllOrAnyWorkspace } from '@/types/dto'
 import { ConversationSearchDialog } from './ConversationSearchDialog'
 import { ErrorMsg, Loading } from '@/components/ui'
+import { conversationListKey } from '@/services/conversation'
 
 export const Chatbar = () => {
   const { t } = useTranslation()
@@ -48,23 +57,100 @@ export const Chatbar = () => {
   })
 
   const {
-    data: conversationData,
+    data: conversationPages,
     error: conversationsError,
     isLoading: conversationsLoading,
-  } = useSWRJson<dto.ConversationWithFolder[]>(`/api/conversations`)
+    isValidating: conversationsValidating,
+    mutate: mutateConversationPages,
+    setSize,
+    size,
+  } = useSWRInfiniteJson<dto.ConversationPage>(
+    (pageIndex, previousPageData) => {
+      if (pageIndex === 0) {
+        return conversationListKey
+      }
+      if (!previousPageData?.nextCursor) {
+        return null
+      }
+      return `${conversationListKey}?cursor=${encodeURIComponent(previousPageData.nextCursor)}`
+    },
+    {
+      revalidateFirstPage: false,
+    }
+  )
   const {
     data: folders,
     error: foldersError,
     isLoading: foldersLoading,
   } = useSWRJson<dto.ConversationFolder[]>(`/api/me/folders`)
-  let conversations = conversationData
-  conversations = (conversations ?? [])
-    .slice()
-    .sort((a, b) => ((a.lastMsgSentAt ?? a.createdAt) < (b.lastMsgSentAt ?? b.createdAt) ? 1 : -1))
+  const conversations = useMemo(() => {
+    const byId = new Map<string, dto.ConversationWithFolder>()
+    for (const page of conversationPages ?? []) {
+      for (const conversation of page.conversations) {
+        byId.set(conversation.id, conversation)
+      }
+    }
+    return [...byId.values()].sort((a, b) => {
+      const aDate = a.lastMsgSentAt ?? a.createdAt
+      const bDate = b.lastMsgSentAt ?? b.createdAt
+      if (aDate === bDate) return b.id.localeCompare(a.id)
+      return aDate < bDate ? 1 : -1
+    })
+  }, [conversationPages])
+
+  const conversationViewportRef = useRef<HTMLDivElement>(null)
+  const scrollTopRef = useRef(0)
+  const requestedConversationSizeRef = useRef(0)
+  const hasMoreConversations = conversationPages
+    ? conversationPages.at(-1)?.nextCursor !== null
+    : false
+  const isLoadingMore =
+    conversationsValidating &&
+    conversationPages !== undefined &&
+    conversationPages[size - 1] === undefined
+
+  const loadMoreConversations = useCallback(() => {
+    const nextSize = size + 1
+    if (
+      !hasMoreConversations ||
+      isLoadingMore ||
+      requestedConversationSizeRef.current >= nextSize
+    ) {
+      return
+    }
+    requestedConversationSizeRef.current = nextSize
+    void setSize(nextSize).catch(() => {
+      requestedConversationSizeRef.current = size
+    })
+  }, [hasMoreConversations, isLoadingMore, setSize, size])
+
+  const handleConversationScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      const viewport = event.currentTarget
+      scrollTopRef.current = viewport.scrollTop
+      if (viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 240) {
+        loadMoreConversations()
+      }
+    },
+    [loadMoreConversations]
+  )
+
+  useLayoutEffect(() => {
+    if (conversationViewportRef.current) {
+      conversationViewportRef.current.scrollTop = scrollTopRef.current
+    }
+  }, [conversationPages])
+
+  useEffect(() => {
+    const viewport = conversationViewportRef.current
+    if (viewport && viewport.scrollHeight <= viewport.clientHeight && hasMoreConversations) {
+      loadMoreConversations()
+    }
+  }, [conversations.length, hasMoreConversations, loadMoreConversations])
 
   useEffect(() => {
     const selectedConversation = chatState.selectedConversation
-    if (!selectedConversation || !conversations) {
+    if (!selectedConversation) {
       return
     }
     const matchingConversation = conversations.find((c) => c.id === selectedConversation.id)
@@ -76,22 +162,21 @@ export const Chatbar = () => {
         .map((a) => a.sentAt)
         .reduce((a, b) => (a > b ? a : b), '')
       if (lastMsgSentAt !== matchingConversation.lastMsgSentAt) {
-        const patchedConversations = conversations.map((c) => {
-          if (c.id === selectedConversation.id) {
-            return {
-              ...c,
-              lastMsgSentAt,
-            }
-          } else {
-            return c
-          }
-        })
-        void mutate('/api/conversations', patchedConversations, {
-          revalidate: false,
-        })
+        void mutateConversationPages(
+          (currentPages) =>
+            currentPages?.map((page) => ({
+              ...page,
+              conversations: page.conversations.map((conversation) =>
+                conversation.id === selectedConversation.id
+                  ? { ...conversation, lastMsgSentAt }
+                  : conversation
+              ),
+            })),
+          { revalidate: false }
+        )
       }
     }
-  }, [chatState.selectedConversation, conversations])
+  }, [chatState.selectedConversation, conversations, mutateConversationPages])
 
   const handleNewConversation = () => {
     setSelectedConversation(undefined)
@@ -139,7 +224,7 @@ export const Chatbar = () => {
 
   return (
     <div
-      className={`z-40 flex flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden relative`}
+      className={`z-40 flex min-h-0 flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden relative`}
     >
       <div className="flex flex-col gap-2">
         <Button
@@ -191,19 +276,24 @@ export const Chatbar = () => {
           })}
         </div>
       )}
-      <ScrollArea className="flex-1 scroll-workaround pr-2">
+      <ScrollArea
+        ref={conversationViewportRef}
+        onScroll={handleConversationScroll}
+        data-testid="conversation-scroll-area"
+        className="min-h-0 flex-1 scroll-workaround pr-2"
+      >
         {conversationsLoading ? (
           <div className="mt-8 flex justify-center">
             <Loading />
           </div>
-        ) : conversationsError ? (
+        ) : conversationsError && !conversationPages ? (
           <div className="mt-8 flex flex-col items-center gap-2 text-center">
             <ErrorMsg>{t('generic-error')}</ErrorMsg>
-            <Button variant="secondary" onClick={() => void mutate('/api/conversations')}>
+            <Button variant="secondary" onClick={() => void mutateConversationPages()}>
               {t('retry')}
             </Button>
           </div>
-        ) : conversations?.length > 0 ? (
+        ) : conversations.length > 0 ? (
           <>
             {environment.enableChatFolders && (
               <div className="flex flex-col">
@@ -251,6 +341,27 @@ export const Chatbar = () => {
                 {groupedConversation.conversationsOlder.map((conversation) => (
                   <ConversationComponent key={conversation.id} conversation={conversation} />
                 ))}
+              </div>
+            )}
+            {hasMoreConversations && (
+              <div
+                className="flex flex-col items-center gap-2 py-3"
+                data-testid="conversation-load-more"
+              >
+                {conversationsError ? (
+                  <>
+                    <ErrorMsg>{t('generic-error')}</ErrorMsg>
+                    <Button variant="secondary" onClick={() => void setSize(size)}>
+                      {t('retry')}
+                    </Button>
+                  </>
+                ) : isLoadingMore ? (
+                  <Loading />
+                ) : (
+                  <Button variant="ghost" onClick={loadMoreConversations}>
+                    {t('load-more-conversations')}
+                  </Button>
+                )}
               </div>
             )}
           </>

@@ -6,6 +6,7 @@ import { SESSION_COOKIE_NAME } from '@/lib/auth/session'
 import { createSession } from '@/models/session'
 import { createUser } from '@/models/user'
 import { createAssistant } from '@/models/assistant'
+import { getConversationsPage } from '@/models/conversation'
 import * as dto from '@/types/dto'
 import * as conversationsRoute from '@/api/conversations/route'
 
@@ -154,5 +155,55 @@ describe('POST /api/conversations', () => {
     const body = await response.json()
     expect(body.assistantId).toBe(ownAssistantId)
     expect(body.ownerId).toBe(requesterId)
+  })
+})
+
+describe('GET /api/conversations', () => {
+  test('returns a cursor for the next conversation page', async () => {
+    const now = Date.now()
+    await db
+      .insertInto('Conversation')
+      .values(
+        [0, 1, 2].map((index) => ({
+          id: `page-${index}`,
+          ownerId: requesterId,
+          assistantId: ownAssistantId,
+          name: `Conversation ${index}`,
+          createdAt: new Date(now - index * 1000).toISOString(),
+          lastMsgSentAt: new Date(now - index * 1000).toISOString(),
+        }))
+      )
+      .execute()
+
+    const firstPage = await getConversationsPage({
+      ownerId: requesterId,
+      limit: 2,
+    })
+    expect(firstPage.conversations).toHaveLength(2)
+    expect(firstPage.nextCursor).toEqual(expect.any(String))
+
+    const response = await conversationsRoute.GET(
+      new Request(
+        `http://localhost/api/conversations?cursor=${encodeURIComponent(firstPage.nextCursor!)}`,
+        { headers: { cookie: requesterCookie } }
+      ),
+      { params: Promise.resolve({}) }
+    )
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      conversations: [{ id: 'page-2' }],
+      nextCursor: null,
+    })
+  })
+
+  test('rejects malformed cursors', async () => {
+    const response = await conversationsRoute.GET(
+      new Request('http://localhost/api/conversations?cursor=not-a-cursor', {
+        headers: { cookie: requesterCookie },
+      }),
+      { params: Promise.resolve({}) }
+    )
+
+    expect(response.status).toBe(400)
   })
 })
