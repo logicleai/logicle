@@ -281,8 +281,8 @@ importers:
         specifier: ^0.487.0
         version: 0.487.0(react@19.2.8)
       mammoth:
-        specifier: ^1.10.0
-        version: 1.10.0
+        specifier: ^1.12.3
+        version: 1.12.3
       meilisearch:
         specifier: ^0.41.0
         version: 0.41.0(encoding@0.1.13)
@@ -684,8 +684,8 @@ importers:
         specifier: ^11.0.2
         version: 11.2.6
       mammoth:
-        specifier: ^1.10.0
-        version: 1.10.0
+        specifier: ^1.12.3
+        version: 1.12.3
       meilisearch:
         specifier: ^0.41.0
         version: 0.41.0(encoding@0.1.13)
@@ -5929,8 +5929,8 @@ packages:
     resolution: {integrity: sha512-QMjGbFTP0blj97EeidG5hk/QhKQ3T4ICckQGLgz38QF7Vgbk6e6FTARN8KhKxyBbWn8R0HU+bnw8aSoFPD4qtQ==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
-  mammoth@1.10.0:
-    resolution: {integrity: sha512-9HOmqt8uJ5rz7q8XrECU5gRjNftCq4GNG0YIrA6f9iQPCeLgpvgcmRBHi9NQWJQIpT/MAXeg1oKliAK1xoB3eg==}
+  mammoth@1.12.3:
+    resolution: {integrity: sha512-kkv2MrSFk3f/w3uLsz4FG/91LdWp2j+qmp7AjG2v7w2xgX5YDxiaFlaWourXrXtyUR6335+9guyIlPBnhHLvKw==}
     engines: {node: '>=12.0.0'}
     hasBin: true
 
@@ -14237,7 +14237,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  mammoth@1.10.0:
+  mammoth@1.12.3:
     dependencies:
       '@xmldom/xmldom': 0.8.13
       argparse: 1.0.10
