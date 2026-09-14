@@ -111,6 +111,10 @@ export async function provision() {
     const children = fs.readdirSync(provisionPath).sort()
     for (const child of children) {
       const childPath = path.resolve(provisionPath, child)
+      // Kubernetes ConfigMap volumes include implementation directories such
+      // as `..data` and `..<timestamp>` alongside the symlinks for the actual
+      // keys. Follow the key symlinks, but never try to provision a directory.
+      if (!fs.statSync(childPath).isFile()) continue
       await provisionFile(childPath)
     }
   } else {
