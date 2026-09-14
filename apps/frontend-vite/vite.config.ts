@@ -3,6 +3,78 @@ import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import path from 'node:path'
+import { gzipSync } from 'node:zlib'
+import type { Plugin } from 'vite'
+
+const bundleReportPlugin = (): Plugin => ({
+  name: 'logicle-bundle-report',
+  apply: 'build',
+  generateBundle(_options, bundle) {
+    const chunks = Object.values(bundle).filter(
+      (output): output is typeof output & { type: 'chunk' } => output.type === 'chunk'
+    )
+    const chunkReports = chunks.map((chunk) => ({
+      file: chunk.fileName,
+      bytes: Buffer.byteLength(chunk.code),
+      gzipBytes: gzipSync(chunk.code).byteLength,
+      isEntry: chunk.isEntry,
+      isDynamicEntry: chunk.isDynamicEntry,
+      imports: chunk.imports,
+      dynamicImports: chunk.dynamicImports,
+      modules: Object.entries(chunk.modules)
+        .map(([id, module]) => ({
+          id: id.startsWith(`${repoRoot}/`) ? id.slice(repoRoot.length + 1) : id,
+          bytes: module.renderedLength ?? 0,
+        }))
+        .sort((a, b) => b.bytes - a.bytes),
+    }))
+
+    const chunksByFile = new Map(chunkReports.map((chunk) => [chunk.file, chunk]))
+    const chatEntry = chunkReports.find((chunk) =>
+      chunk.modules.some((module) => module.id.endsWith('/app/chat/components/ChatSection.tsx'))
+    )
+    const chatFiles = new Set<string>()
+    const visitChatChunk = (file: string) => {
+      if (chatFiles.has(file)) return
+      chatFiles.add(file)
+      const chunk = chunksByFile.get(file)
+      if (!chunk) return
+      for (const importedFile of chunk.imports) visitChatChunk(importedFile)
+    }
+    if (chatEntry) {
+      visitChatChunk(chatEntry.file)
+      for (const chunk of chunkReports) {
+        if (chunk.isEntry) chatFiles.add(chunk.file)
+      }
+    }
+
+    const sum = (files: Set<string>, key: 'bytes' | 'gzipBytes') =>
+      [...files].reduce((total, file) => total + (chunksByFile.get(file)?.[key] ?? 0), 0)
+
+    this.emitFile({
+      type: 'asset',
+      fileName: 'bundle-report.json',
+      source: JSON.stringify(
+        {
+          version: 1,
+          generatedAt: new Date().toISOString(),
+          chunks: chunkReports,
+          entrypoints: {
+            chat: chatEntry
+              ? {
+                  chunks: [...chatFiles],
+                  bytes: sum(chatFiles, 'bytes'),
+                  gzipBytes: sum(chatFiles, 'gzipBytes'),
+                }
+              : undefined,
+          },
+        },
+        null,
+        2
+      ),
+    })
+  },
+})
 
 // Spike counterpart to apps/frontend/next.config.ts. `next build`'s
 // `output: 'export'` produces one HTML file per route (see
@@ -31,6 +103,7 @@ export default defineConfig(({ command }) => ({
     // exactly as it does today, without duplicating that alias table here.
     tsconfigPaths({ root: repoRoot, projects: [path.join(repoRoot, 'tsconfig.json')] }),
     react(),
+    bundleReportPlugin(),
     // Some real backend-shared code reachable from the client bundle
     // (packages/core/src/openapi.ts, via @readme/openapi-parser and its own
     // dependency tree — used by the admin tools OpenAPI-import form) checks
