@@ -48,7 +48,7 @@
     "json-schema": "^0.4.0",
     "kysely": "^0.28.17",
     "lru-cache": "^11.0.2",
-    "mammoth": "^1.10.0",
+    "mammoth": "^1.12.3",
     "meilisearch": "^0.41.0",
     "micromatch": "^4.0.5",
     "mime-types": "^3.0.1",
