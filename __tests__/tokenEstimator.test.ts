@@ -25,11 +25,17 @@ const anthropicPdfTokens = (visionPages: number, totalPages: number, textTokens:
       1.0741231860618194 * textTokens
   )
 
+const ONE_BY_ONE_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/a7cAAAAASUVORK5CYII=',
+  'base64'
+)
+
 const getFileWithId = vi.fn()
 const ensureFileAnalysis = vi.fn()
 const readExtractedTextFromAnalysis = vi.fn()
 const readBuffer = vi.fn()
 const extractFromFile = vi.fn()
+const loadKnowledgeFilePart = vi.fn()
 
 vi.mock('@/models/file', () => ({
   getFileWithId,
@@ -52,6 +58,11 @@ vi.mock('@/lib/textextraction/cache', () => ({
   cachingExtractor: {
     extractFromFile,
   },
+}))
+
+vi.mock('@/backend/lib/tools/knowledge/implementation', () => ({
+  loadKnowledgeFilePart,
+  KnowledgePlugin: class KnowledgePlugin {},
 }))
 
 const assistantParams = {
@@ -94,6 +105,22 @@ const makeImageFile = (id: string) => ({
   encryption: null,
 })
 
+const makeExpandingImageLoader = () => {
+  const imageBytes = Buffer.concat([ONE_BY_ONE_PNG, Buffer.alloc(4 * 1024 * 1024, 0x41)])
+  let expandedBytes = 0
+  return {
+    load: vi.fn(async (knowledgeFile: { type: string }) => {
+      const dataUrl = `data:${knowledgeFile.type};base64,${imageBytes.toString('base64')}`
+      expandedBytes += imageBytes.length
+      return { type: 'image', image: dataUrl }
+    }),
+    get expandedBytes() {
+      return expandedBytes
+    },
+    imageBytes,
+  }
+}
+
 const countFileDescriptorTokens = (
   model: Parameters<typeof countTextForModel>[0],
   files: Array<{ id: string; name: string; mimetype: string; size: number }>
@@ -110,6 +137,7 @@ describe('estimateInputTokens', () => {
   beforeEach(async () => {
     vi.resetModules()
     vi.clearAllMocks()
+    loadKnowledgeFilePart.mockReset()
     delete process.env.TOKEN_ESTIMATOR_FILE_CACHE_MAX_ENTRIES
 
     const { setTokenizerCounter } = await import('@/backend/lib/chat/prompt-token-counter')
@@ -1608,9 +1636,11 @@ describe('estimateInputTokens', () => {
 
   test('estimatePreambleTokens uses plan + estimated segments without materialization', async () => {
     const preambleModule = await import('@/backend/lib/chat/preamble')
+    const materializeKnowledgeSegment = vi.fn()
     const buildPlanSpy = vi.spyOn(preambleModule, 'preparePreamblePlan').mockResolvedValue({
       systemPromptMessage: { role: 'system', content: 'system' },
       knowledgeFileEntries: [{ fileId: 'k1', fileName: 'k1.png', mimetype: 'image/png', size: 0, partIndex: 0 }],
+      materializeKnowledgeSegment,
     })
     const buildEstimatedSpy = vi.spyOn(preambleModule, 'buildEstimatedPreambleSegments')
     const renderSpy = vi.spyOn(preambleModule, 'renderPreamblePlan')
@@ -1627,6 +1657,81 @@ describe('estimateInputTokens', () => {
     expect(buildPlanSpy).toHaveBeenCalledTimes(1)
     expect(buildEstimatedSpy).toHaveBeenCalledTimes(1)
     expect(renderSpy).not.toHaveBeenCalled()
+    expect(materializeKnowledgeSegment).not.toHaveBeenCalled()
+  })
+
+  test('estimatePreambleTokens uses analyzed knowledge image metadata without loading its bytes', async () => {
+    const fileId = 'knowledge-image-metadata'
+    const file = makeImageFile(fileId)
+    const imageLoader = makeExpandingImageLoader()
+    const knowledge = [{ id: fileId, name: file.name, type: file.type, size: file.size }]
+    loadKnowledgeFilePart.mockImplementation(imageLoader.load)
+    getFileWithId.mockResolvedValue(file)
+    ensureFileAnalysis.mockResolvedValue({
+      fileId,
+      kind: 'image',
+      status: 'ready',
+      analyzerVersion: 1,
+      payload: {
+        kind: 'image',
+        mimeType: file.type,
+        sizeBytes: file.size,
+        width: 1024,
+        height: 768,
+        frameCount: 1,
+        hasAlpha: false,
+        format: 'png',
+        extractedTextPath: null,
+      },
+      error: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } satisfies dto.FileAnalysis)
+
+    const preambleModule = await import('@/backend/lib/chat/preamble')
+    const plan = await preambleModule.preparePreamblePlan({
+      assistantParams: { systemPrompt: 'system' },
+      llmModel: gpt41MiniModel,
+      tools: [],
+      parameters: {},
+      knowledge,
+    })
+    expect(plan.knowledgeFileEntries).toEqual([
+      { fileId, fileName: file.name, mimetype: file.type, size: file.size, partIndex: 1 },
+    ])
+    expect(loadKnowledgeFilePart).not.toHaveBeenCalled()
+
+    const { estimatePreambleTokens } = await import('@/backend/lib/chat/token-estimator')
+    const result = await estimatePreambleTokens({
+      assistantParams: { ...assistantParams, model: gpt41MiniModel.id, systemPrompt: 'system' },
+      model: gpt41MiniModel,
+      tools: [],
+      parameters: {},
+      knowledgeFiles: knowledge,
+    })
+
+    const { countModelMessageTokens, countTextTokensCached } = await import(
+      '@/backend/lib/chat/prompt-token-counter'
+    )
+    const expectedImageTokens = Math.ceil(
+      estimateNativeImageTokensFromDimensions(gpt41MiniModel, 1024, 768)
+    )
+    const estimatedSegments = preambleModule.buildEstimatedPreambleSegments(plan)
+    const estimatedSystemTokens = await countModelMessageTokens(
+      gpt41MiniModel,
+      estimatedSegments[0]!.message
+    )
+    expect(result).toBe(
+      estimatedSystemTokens +
+        (await countTextTokensCached(
+          gpt41MiniModel,
+          fileDescriptorText(file.name, fileId, file.type, file.size, 1, 'Knowledge')
+        )) +
+        expectedImageTokens
+    )
+    expect(loadKnowledgeFilePart).not.toHaveBeenCalled()
+    expect(imageLoader.expandedBytes).toBe(0)
+    expect(readBuffer).not.toHaveBeenCalled()
   })
 
   test('estimatePreambleTokens counts non-native knowledge fallback text without rendering the preamble', async () => {
