@@ -31,7 +31,10 @@ export default function ClientI18nProvider({
   const i18any = i18n as any
   const browserLanguages = navigator.languages // Array of languages
   const defaultLanguage = browserLanguages[0] ?? 'en' // First preferred language
-  const preferredLanguage = userProfile?.preferences.language ?? 'default'
+  // Auth routes intentionally render outside UserProfileProvider, and an
+  // authenticated user can also have a profile without preferences while it
+  // is loading. Treat either case as the browser-language default.
+  const preferredLanguage = userProfile?.preferences?.language ?? 'default'
   const targetLanguage = preferredLanguage === 'default' ? defaultLanguage : preferredLanguage
   const currentUserId = userProfile?.id
   useEffect(() => {
