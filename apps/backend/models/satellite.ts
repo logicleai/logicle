@@ -3,13 +3,21 @@ import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { hashPassword } from '@/lib/auth/password'
+import {
+  createPermissionTargetAnd,
+  deletePermissionTarget,
+  getPermissionTargetsSharing,
+  satellitePermissionTarget,
+} from './permissionTarget'
 
-function dbToDto(satellite: schema.Satellite): dto.Satellite {
+const dbToDto = async (satellite: schema.Satellite): Promise<dto.Satellite> => {
+  const sharing = await getPermissionTargetsSharing([satellitePermissionTarget(satellite.id)])
   return {
     id: satellite.id,
     name: satellite.name,
     userId: satellite.userId,
     secret: satellite.secret,
+    sharing: sharing.get(satellite.id) ?? { type: 'private' },
     createdAt: satellite.createdAt,
     updatedAt: satellite.updatedAt,
   }
@@ -21,12 +29,12 @@ export const getSatellite = async (id: string): Promise<dto.Satellite | undefine
     .selectAll()
     .where('id', '=', id)
     .executeTakeFirst()
-  return result ? dbToDto(result) : undefined
+  return result ? await dbToDto(result) : undefined
 }
 
 export const getAllSatellites = async (): Promise<dto.Satellite[]> => {
   const result = await db.selectFrom('Satellite').selectAll().orderBy('createdAt', 'desc').execute()
-  return result.map(dbToDto)
+  return await Promise.all(result.map(dbToDto))
 }
 
 export const getUserSatellites = async (userId: string): Promise<dto.Satellite[]> => {
@@ -36,7 +44,7 @@ export const getUserSatellites = async (userId: string): Promise<dto.Satellite[]
     .where('userId', '=', userId)
     .orderBy('createdAt', 'desc')
     .execute()
-  return result.map(dbToDto)
+  return await Promise.all(result.map(dbToDto))
 }
 
 export const createSatellite = async (
@@ -46,17 +54,23 @@ export const createSatellite = async (
   const id = nanoid()
   const now = new Date().toISOString()
   const secret = nanoid()
-  await db
-    .insertInto('Satellite')
-    .values({
-      id,
-      name: data.name,
-      userId,
-      secret: await hashPassword(secret),
-      createdAt: now,
-      updatedAt: now,
-    })
-    .executeTakeFirstOrThrow()
+  await createPermissionTargetAnd(
+    satellitePermissionTarget(id, userId),
+    { type: 'private' },
+    async (trx) => {
+      return await trx
+        .insertInto('Satellite')
+        .values({
+          id,
+          name: data.name,
+          userId,
+          secret: await hashPassword(secret),
+          createdAt: now,
+          updatedAt: now,
+        })
+        .executeTakeFirstOrThrow()
+    }
+  )
   const created = await getSatellite(id)
   if (!created) {
     throw new Error('Failed creating satellite')
@@ -128,4 +142,5 @@ export const deleteSatellite = async (id: string, userId: string): Promise<void>
     throw new Error('Unauthorized')
   }
   await db.deleteFrom('Satellite').where('id', '=', id).execute()
+  await deletePermissionTarget(id)
 }

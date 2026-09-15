@@ -1,11 +1,13 @@
 import { z } from 'zod'
 import { iso8601UtcDateTimeSchema } from './common'
+import { sharing2Schema } from './tool'
 
 export const satelliteSchema = z.object({
   id: z.string(),
   name: z.string(),
   userId: z.string(),
   secret: z.string().nullable(),
+  sharing: sharing2Schema,
   createdAt: iso8601UtcDateTimeSchema,
   updatedAt: iso8601UtcDateTimeSchema,
 }).meta({ id: 'Satellite' })

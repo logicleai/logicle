@@ -6315,6 +6315,47 @@ components:
         - name
       additionalProperties: false
       id: InsertablePrompt
+    ToolSharing:
+      oneOf:
+        - $ref: "#/components/schemas/ToolSharingPrivate"
+        - $ref: "#/components/schemas/ToolSharingPublic"
+        - $ref: "#/components/schemas/ToolSharingWorkspace"
+      id: ToolSharing
+    ToolSharingPrivate:
+      type: object
+      properties:
+        type:
+          type: string
+          const: private
+      required:
+        - type
+      additionalProperties: false
+      id: ToolSharingPrivate
+    ToolSharingPublic:
+      type: object
+      properties:
+        type:
+          type: string
+          const: public
+      required:
+        - type
+      additionalProperties: false
+      id: ToolSharingPublic
+    ToolSharingWorkspace:
+      type: object
+      properties:
+        type:
+          type: string
+          const: workspace
+        workspaces:
+          type: array
+          items:
+            type: string
+      required:
+        - type
+        - workspaces
+      additionalProperties: false
+      id: ToolSharingWorkspace
     Satellite:
       type: object
       properties:
@@ -6328,6 +6369,8 @@ components:
           anyOf:
             - type: string
             - type: "null"
+        sharing:
+          $ref: "#/components/schemas/ToolSharing"
         createdAt:
           type: string
           format: date-time
@@ -6341,6 +6384,7 @@ components:
         - name
         - userId
         - secret
+        - sharing
         - createdAt
         - updatedAt
       additionalProperties: false
@@ -6698,47 +6742,6 @@ components:
         - documents
       additionalProperties: false
       id: KnowledgeBoxStatus
-    ToolSharing:
-      oneOf:
-        - $ref: "#/components/schemas/ToolSharingPrivate"
-        - $ref: "#/components/schemas/ToolSharingPublic"
-        - $ref: "#/components/schemas/ToolSharingWorkspace"
-      id: ToolSharing
-    ToolSharingPrivate:
-      type: object
-      properties:
-        type:
-          type: string
-          const: private
-      required:
-        - type
-      additionalProperties: false
-      id: ToolSharingPrivate
-    ToolSharingPublic:
-      type: object
-      properties:
-        type:
-          type: string
-          const: public
-      required:
-        - type
-      additionalProperties: false
-      id: ToolSharingPublic
-    ToolSharingWorkspace:
-      type: object
-      properties:
-        type:
-          type: string
-          const: workspace
-        workspaces:
-          type: array
-          items:
-            type: string
-      required:
-        - type
-        - workspaces
-      additionalProperties: false
-      id: ToolSharingWorkspace
     Tool:
       type: object
       properties:

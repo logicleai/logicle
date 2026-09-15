@@ -12,7 +12,8 @@ const tables: Record<string, Row[]> = {
   ConversationSharing: [],
   Message: [],
   Tool: [],
-  ToolSharing: [],
+  PermissionTarget: [],
+  PermissionTargetWorkspace: [],
   User: [],
 }
 
@@ -119,10 +120,13 @@ describe('file authorization', () => {
   })
 
   test('canAccess TOOL owner type supports public/workspace/private', async () => {
-    tables.Tool.push({ id: 't-public', sharing: 'public' })
-    tables.Tool.push({ id: 't-workspace', sharing: 'workspace' })
-    tables.Tool.push({ id: 't-private', sharing: 'private' })
-    tables.ToolSharing.push({ id: 'ts1', toolId: 't-workspace', workspaceId: 'w1' })
+    tables.Tool.push({ id: 't-public', satelliteId: null })
+    tables.Tool.push({ id: 't-workspace', satelliteId: null })
+    tables.Tool.push({ id: 't-private', satelliteId: null })
+    tables.PermissionTarget.push({ id: 't-public', sharing: 'public' })
+    tables.PermissionTarget.push({ id: 't-workspace', sharing: 'workspace' })
+    tables.PermissionTarget.push({ id: 't-private', sharing: 'private' })
+    tables.PermissionTargetWorkspace.push({ permissionTargetId: 't-workspace', workspaceId: 'w1' })
     tables.User.push({ id: 'u-admin', role: 'ADMIN' })
     tables.User.push({ id: 'u-user', role: 'USER' })
 
