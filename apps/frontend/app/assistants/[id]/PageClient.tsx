@@ -408,6 +408,8 @@ const AssistantPage = () => {
         return t('assistant-icon')
       case 'subAssistants':
         return t('sub-assistants')
+      case 'satellites':
+        return t('satellites')
       default:
         return field
     }

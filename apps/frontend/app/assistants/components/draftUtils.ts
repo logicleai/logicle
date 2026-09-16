@@ -13,6 +13,7 @@ export const toUpdateableAssistantDraft = (
   prompts: assistant.prompts,
   reasoning_effort: assistant.reasoning_effort,
   subAssistants: assistant.subAssistants ?? [],
+  satellites: assistant.satellites ?? [],
   systemPrompt: assistant.systemPrompt,
   tags: assistant.tags,
   temperature: assistant.temperature,
@@ -33,6 +34,7 @@ export const normalizeUpdateableAssistantDraft = (
   prompts: assistant.prompts ?? [],
   reasoning_effort: assistant.reasoning_effort ?? null,
   subAssistants: [...(assistant.subAssistants ?? [])].sort(),
+  satellites: [...(assistant.satellites ?? [])].sort(),
   systemPrompt: assistant.systemPrompt,
   tags: [...(assistant.tags ?? [])].sort(),
   temperature: assistant.temperature === undefined ? undefined : Number(assistant.temperature),
@@ -65,6 +67,7 @@ const trackedDraftFields: UpdateableAssistantDraftField[] = [
   'reasoning_effort',
   'iconUri',
   'subAssistants',
+  'satellites',
 ]
 
 export const getChangedAssistantDraftFields = (

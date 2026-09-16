@@ -1,11 +1,13 @@
 import { z } from 'zod'
 import { iso8601UtcDateTimeSchema } from './common'
+import { sharing2Schema } from './tool'
 
 export const satelliteSchema = z.object({
   id: z.string(),
   name: z.string(),
   userId: z.string(),
   secret: z.string().nullable(),
+  sharing: sharing2Schema,
   createdAt: iso8601UtcDateTimeSchema,
   updatedAt: iso8601UtcDateTimeSchema,
 }).meta({ id: 'Satellite' })
@@ -24,7 +26,9 @@ export const insertableSatelliteSchema = z.object({
   name: z.string(),
 })
 
-export const updateableSatelliteSchema = insertableSatelliteSchema.partial()
+export const updateableSatelliteSchema = insertableSatelliteSchema.partial().extend({
+  sharing: sharing2Schema.optional(),
+})
 
 export type Satellite = z.infer<typeof satelliteSchema>
 export type SatelliteListItem = z.infer<typeof satelliteListItemSchema>

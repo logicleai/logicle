@@ -8,8 +8,14 @@ import {
 } from '@/backend/lib/knowledge/lifecycle'
 import * as schema from '@/db/schema'
 import { getOrCreateImageFromDataUri } from './images'
-import { getUserWorkspaceMemberships } from './user'
-import { UserRole } from '@/types/dto'
+import {
+  createPermissionTargetAnd,
+  deletePermissionTarget,
+  filterVisiblePermissionTargetKeys,
+  getPermissionTargetsSharing,
+  toolPermissionTarget,
+  updatePermissionTargetSharing,
+} from './permissionTarget'
 
 export interface BuildableTool {
   id: string
@@ -18,7 +24,6 @@ export interface BuildableTool {
   configuration: Record<string, unknown>
   promptFragment: string
   provisioned: boolean
-  satelliteId?: string | null
 }
 
 export const dbToolToBuildableTool = (tool: schema.Tool): BuildableTool => {
@@ -29,51 +34,17 @@ export const dbToolToBuildableTool = (tool: schema.Tool): BuildableTool => {
     configuration: JSON.parse(tool.configuration),
     promptFragment: tool.promptFragment,
     provisioned: !!tool.provisioned,
-    satelliteId: tool.satelliteId,
   }
-}
-
-const toolWorkspaceSharingData = async (toolIds: string[]): Promise<Map<string, string[]>> => {
-  if (toolIds.length === 0) {
-    return new Map()
-  }
-
-  const sharingList = await db
-    .selectFrom('ToolSharing')
-    .selectAll()
-    .where('ToolSharing.toolId', 'in', toolIds)
-    .execute()
-
-  // Group by assistantId in one pass:
-  const grouped = sharingList.reduce<Record<string, string[]>>((acc, s) => {
-    if (!(s.toolId in acc)) {
-      acc[s.toolId] = []
-    }
-    const entry = acc[s.toolId]
-    entry.push(s.workspaceId)
-    return acc
-  }, {})
-
-  // Turn the plain object into a Map<string, dto.Sharing[]>
-  return new Map(Object.entries(grouped))
 }
 
 export type ToolAccessPrincipal = { userId: string; userRole?: schema.UserRole }
-
-const isAdminUser = async (user: ToolAccessPrincipal): Promise<boolean> => {
-  if (user.userRole) {
-    return user.userRole === UserRole.ADMIN
-  }
-  const row = await db.selectFrom('User').select('role').where('id', '=', user.userId).executeTakeFirst()
-  return row?.role === UserRole.ADMIN
-}
 
 /** Which of the given tool ids are visible to this user: public tools to
  * anyone, workspace tools to members of a sharing workspace, private tools
  * to admins only. Tools attached to an assistant/sub-assistant/evaluate
  * request must always be filtered through this before being built or
  * exposed to a run, since a tool a user can't see may hold server-side
- * credentials or reach another user's satellite connection. */
+ * credentials. */
 export const filterVisibleToolIds = async (
   user: ToolAccessPrincipal,
   toolIds: string[]
@@ -82,36 +53,10 @@ export const filterVisibleToolIds = async (
   if (uniqueIds.length === 0) {
     return new Set()
   }
-  const tools = await db
-    .selectFrom('Tool')
-    .select(['id', 'sharing'])
-    .where('id', 'in', uniqueIds)
-    .execute()
-  const isAdmin = await isAdminUser(user)
-  const visible = new Set(
-    tools
-      .filter((t) => t.sharing === 'public' || (t.sharing === 'private' && isAdmin))
-      .map((t) => t.id)
-  )
-  const workspaceToolIds = tools.filter((t) => t.sharing === 'workspace').map((t) => t.id)
-  if (workspaceToolIds.length === 0) {
-    return visible
-  }
-  const memberships = await getUserWorkspaceMemberships(user.userId)
-  if (memberships.length === 0) {
-    return visible
-  }
-  const workspaceIds = memberships.map((m) => m.id)
-  const shared = await db
-    .selectFrom('ToolSharing')
-    .select('toolId')
-    .where('toolId', 'in', workspaceToolIds)
-    .where('workspaceId', 'in', workspaceIds)
-    .execute()
-  for (const row of shared) {
-    visible.add(row.toolId)
-  }
-  return visible
+  const tools = await db.selectFrom('Tool').select(['id']).where('id', 'in', uniqueIds).execute()
+  const refs = tools.map((tool) => toolPermissionTarget(tool.id))
+  const visibleResourceKeys = await filterVisiblePermissionTargetKeys(user, refs)
+  return new Set(tools.filter((tool) => visibleResourceKeys.has(tool.id)).map((tool) => tool.id))
 }
 
 export const canUserAccessTool = async (
@@ -121,18 +66,9 @@ export const canUserAccessTool = async (
   return (await filterVisibleToolIds(user, [toolId])).has(toolId)
 }
 
-export const makeSharing = (type: string, workspaces: string[]): dto.Sharing2 => {
-  if (type === 'public') {
-    return { type: 'public' }
-  } else if (type === 'workspace') {
-    return { type: 'workspace', workspaces: workspaces }
-  } else {
-    return { type: 'private' }
-  }
-}
-
 export const toolsToDtos = async (tools: schema.Tool[]): Promise<dto.Tool[]> => {
-  const sharingData = await toolWorkspaceSharingData(tools.map((t) => t.id))
+  const refs = tools.map((tool) => toolPermissionTarget(tool.id))
+  const sharingData = await getPermissionTargetsSharing(refs)
   return tools.map((tool) => {
     const { imageId, ...toolWithoutImage } = tool
     return {
@@ -142,9 +78,7 @@ export const toolsToDtos = async (tools: schema.Tool[]): Promise<dto.Tool[]> => 
       icon: tool.imageId == null ? null : `/api/images/${tool.imageId}`,
       tags: JSON.parse(tool.tags),
       configuration: JSON.parse(tool.configuration),
-      sharing: makeSharing(tool.sharing, sharingData.get(tool.id) ?? []),
-      satelliteId: tool.satelliteId,
-      enabled: !!tool.enabled,
+      sharing: sharingData.get(tool.id) ?? { type: 'private' },
     }
   })
 }
@@ -154,7 +88,8 @@ export const getBuildableTools = async (): Promise<BuildableTool[]> => {
 }
 
 export const getTools = async (): Promise<dto.Tool[]> => {
-  return toolsToDtos(await db.selectFrom('Tool').selectAll().execute())
+  const tools = await db.selectFrom('Tool').selectAll().execute()
+  return toolsToDtos(tools)
 }
 
 export const getToolsFiltered = async (ids: string[]): Promise<BuildableTool[]> => {
@@ -184,24 +119,23 @@ export const createToolWithId = async (
   provisioned?: boolean,
   ownerUserId?: string
 ): Promise<dto.Tool> => {
-  const { icon, ...toolWithoutIcon } = tool
+  const { icon, sharing, ...toolFields } = tool
   const dbTool: schema.Tool = {
-    ...toolWithoutIcon,
+    ...toolFields,
     imageId: icon == null ? null : await getOrCreateImageFromDataUri(icon),
     configuration: JSON.stringify(tool.configuration),
     tags: JSON.stringify(tool.tags),
     id: id,
     provisioned: provisioned ? 1 : 0,
     capability: capability ? 1 : 0,
-    satelliteId: null,
-    enabled: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    sharing: tool.sharing.type,
   }
 
-  await db.insertInto('Tool').values(dbTool).executeTakeFirstOrThrow()
-  await updateWorkspaceSharing(id, tool.sharing)
+  await createPermissionTargetAnd(toolPermissionTarget(id), sharing, async (trx) => {
+    await trx.insertInto('Tool').values(dbTool).executeTakeFirstOrThrow()
+    return undefined
+  })
   await transferFilesToToolOwner(id, tool.configuration, ownerUserId)
   await syncKnowledgeBoxConfiguration(id, tool.type, tool.configuration)
   const created = await getTool(id)
@@ -235,24 +169,6 @@ const transferFilesToToolOwner = async (
   await query.execute()
 }
 
-const updateWorkspaceSharing = async (toolId: string, sharing: dto.Sharing2) => {
-  await db.deleteFrom('ToolSharing').where('toolId', '=', toolId).execute()
-  if (sharing.type === 'workspace' && sharing.workspaces.length !== 0) {
-    await db
-      .insertInto('ToolSharing')
-      .values(
-        sharing.workspaces.map((workspace) => {
-          return {
-            id: nanoid(),
-            toolId,
-            workspaceId: workspace,
-          }
-        })
-      )
-      .execute()
-  }
-}
-
 export const updateTool = async (
   toolId: string,
   data: dto.UpdateableTool,
@@ -269,7 +185,6 @@ export const updateTool = async (
     configuration: data.configuration ? JSON.stringify(data.configuration) : undefined,
     capability: capability !== undefined ? (capability ? 1 : 0) : undefined,
     tags: data.tags ? JSON.stringify(data.tags) : undefined,
-    sharing: sharing?.type,
   }
   await db.updateTable('Tool').set(update).where('id', '=', toolId).execute()
   if (data.configuration) {
@@ -280,7 +195,7 @@ export const updateTool = async (
     }
   }
   if (data.sharing) {
-    await updateWorkspaceSharing(toolId, data.sharing)
+    await updatePermissionTargetSharing(toolId, data.sharing)
   }
 }
 
@@ -293,20 +208,7 @@ export const deleteTool = async (toolId: schema.Tool['id']) => {
   if (isKnowledgeBoxType((await getToolType(toolId)) ?? '')) {
     await deleteKnowledgeBox(toolId)
   }
-  return db.deleteFrom('Tool').where('id', '=', toolId).executeTakeFirstOrThrow()
-}
-
-export const updateToolSatelliteInfo = async (
-  toolId: string,
-  satelliteId: string,
-  enabled: boolean
-): Promise<void> => {
-  await db
-    .updateTable('Tool')
-    .set({
-      satelliteId,
-      enabled: enabled ? 1 : 0,
-    })
-    .where('id', '=', toolId)
-    .execute()
+  const deleted = await db.deleteFrom('Tool').where('id', '=', toolId).executeTakeFirstOrThrow()
+  await deletePermissionTarget(toolId)
+  return deleted
 }

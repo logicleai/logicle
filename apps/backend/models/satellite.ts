@@ -3,13 +3,24 @@ import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { hashPassword } from '@/lib/auth/password'
+import {
+  createPermissionTargetAnd,
+  deletePermissionTarget,
+  filterVisiblePermissionTargetKeys,
+  getPermissionTargetsSharing,
+  satellitePermissionTarget,
+  updatePermissionTargetSharing,
+  type PermissionTargetAccessPrincipal,
+} from './permissionTarget'
 
-function dbToDto(satellite: schema.Satellite): dto.Satellite {
+const dbToDto = async (satellite: schema.Satellite): Promise<dto.Satellite> => {
+  const sharing = await getPermissionTargetsSharing([satellitePermissionTarget(satellite.id)])
   return {
     id: satellite.id,
     name: satellite.name,
     userId: satellite.userId,
     secret: satellite.secret,
+    sharing: sharing.get(satellite.id) ?? { type: 'private' },
     createdAt: satellite.createdAt,
     updatedAt: satellite.updatedAt,
   }
@@ -21,12 +32,12 @@ export const getSatellite = async (id: string): Promise<dto.Satellite | undefine
     .selectAll()
     .where('id', '=', id)
     .executeTakeFirst()
-  return result ? dbToDto(result) : undefined
+  return result ? await dbToDto(result) : undefined
 }
 
 export const getAllSatellites = async (): Promise<dto.Satellite[]> => {
   const result = await db.selectFrom('Satellite').selectAll().orderBy('createdAt', 'desc').execute()
-  return result.map(dbToDto)
+  return await Promise.all(result.map(dbToDto))
 }
 
 export const getUserSatellites = async (userId: string): Promise<dto.Satellite[]> => {
@@ -36,7 +47,7 @@ export const getUserSatellites = async (userId: string): Promise<dto.Satellite[]
     .where('userId', '=', userId)
     .orderBy('createdAt', 'desc')
     .execute()
-  return result.map(dbToDto)
+  return await Promise.all(result.map(dbToDto))
 }
 
 export const createSatellite = async (
@@ -46,17 +57,23 @@ export const createSatellite = async (
   const id = nanoid()
   const now = new Date().toISOString()
   const secret = nanoid()
-  await db
-    .insertInto('Satellite')
-    .values({
-      id,
-      name: data.name,
-      userId,
-      secret: await hashPassword(secret),
-      createdAt: now,
-      updatedAt: now,
-    })
-    .executeTakeFirstOrThrow()
+  await createPermissionTargetAnd(
+    satellitePermissionTarget(id, userId),
+    { type: 'private' },
+    async (trx) => {
+      return await trx
+        .insertInto('Satellite')
+        .values({
+          id,
+          name: data.name,
+          userId,
+          secret: await hashPassword(secret),
+          createdAt: now,
+          updatedAt: now,
+        })
+        .executeTakeFirstOrThrow()
+    }
+  )
   const created = await getSatellite(id)
   if (!created) {
     throw new Error('Failed creating satellite')
@@ -94,7 +111,7 @@ export const regenerateSatelliteSecret = async (
 export const updateSatellite = async (
   id: string,
   userId: string,
-  data: Partial<dto.InsertableSatellite>
+  data: dto.UpdateableSatellite
 ): Promise<dto.Satellite> => {
   const satellite = await getSatellite(id)
   if (!satellite) {
@@ -103,15 +120,20 @@ export const updateSatellite = async (
   if (satellite.userId !== userId) {
     throw new Error('Unauthorized')
   }
-  const now = new Date().toISOString()
-  await db
-    .updateTable('Satellite')
-    .set({
-      ...data,
-      updatedAt: now,
-    })
-    .where('id', '=', id)
-    .execute()
+  const { sharing, ...satelliteTableFields } = data
+  if (Object.keys(satelliteTableFields).length !== 0) {
+    await db
+      .updateTable('Satellite')
+      .set({
+        ...satelliteTableFields,
+        updatedAt: new Date().toISOString(),
+      })
+      .where('id', '=', id)
+      .execute()
+  }
+  if (sharing) {
+    await updatePermissionTargetSharing(id, sharing)
+  }
   const updated = await getSatellite(id)
   if (!updated) {
     throw new Error('Failed updating satellite')
@@ -128,4 +150,33 @@ export const deleteSatellite = async (id: string, userId: string): Promise<void>
     throw new Error('Unauthorized')
   }
   await db.deleteFrom('Satellite').where('id', '=', id).execute()
+  await deletePermissionTarget(id)
+}
+
+export const getSatellitesByIds = async (
+  ids: string[]
+): Promise<Pick<schema.Satellite, 'id' | 'name'>[]> => {
+  if (ids.length === 0) return []
+  return db.selectFrom('Satellite').select(['id', 'name']).where('id', 'in', ids).execute()
+}
+
+/** Which of the given satellite ids are visible to this user: a satellite's
+ * own owner always sees it; otherwise it follows its PermissionTarget sharing
+ * (public to anyone, workspace to members of a sharing workspace, private to
+ * admins only) — the same rule already used for tools. Attaching a satellite
+ * a user can't see to an assistant would let its owner's connection be
+ * invoked by others without ever having agreed to share it. */
+export const filterVisibleSatelliteIds = async (
+  principal: PermissionTargetAccessPrincipal,
+  satelliteIds: string[]
+): Promise<Set<string>> => {
+  const uniqueIds = [...new Set(satelliteIds)]
+  if (uniqueIds.length === 0) return new Set()
+  const satellites = await db
+    .selectFrom('Satellite')
+    .select(['id', 'userId'])
+    .where('id', 'in', uniqueIds)
+    .execute()
+  const refs = satellites.map((s) => satellitePermissionTarget(s.id, s.userId))
+  return filterVisiblePermissionTargetKeys(principal, refs)
 }

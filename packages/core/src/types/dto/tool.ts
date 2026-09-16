@@ -1,5 +1,6 @@
 import * as z from 'zod'
 import { iso8601UtcDateTimeSchema } from './common'
+import type { Sharing2 } from './sharing'
 
 export const privateSharingSchema = z.object({
   type: z.literal('private'),
@@ -20,6 +21,11 @@ export const sharing2Schema = z.discriminatedUnion('type', [
   workspaceSharingSchema,
 ]).meta({ id: 'ToolSharing' })
 
+// Kept as an alias for consumers that need to describe the sharing policy of
+// any PermissionTarget. Tool DTOs continue to expose the same `sharing` field.
+export const permissionTargetSharingSchema = sharing2Schema
+export type PermissionTargetSharing = Sharing2
+
 export const toolSchema = z.object({
   id: z.string(),
   type: z.string(),
@@ -28,11 +34,9 @@ export const toolSchema = z.object({
   configuration: z.record(z.string(), z.unknown()),
   tags: z.array(z.string()),
   icon: z.string().nullable(),
-  sharing: sharing2Schema,
+  sharing: permissionTargetSharingSchema,
   provisioned: z.boolean(),
   capability: z.boolean(),
-  satelliteId: z.string().nullable(),
-  enabled: z.boolean(),
   createdAt: iso8601UtcDateTimeSchema,
   updatedAt: iso8601UtcDateTimeSchema,
   promptFragment: z.string(),
@@ -44,8 +48,6 @@ export const insertableToolSchema = toolSchema.omit({
   createdAt: true,
   updatedAt: true,
   capability: true,
-  satelliteId: true,
-  enabled: true,
 }).meta({ id: 'InsertableTool' })
 
 export const updateableToolSchema = insertableToolSchema

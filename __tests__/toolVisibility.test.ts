@@ -7,7 +7,8 @@ const getUserWorkspaceMembershipsMock = vi.fn()
 
 const tables: Record<string, Row[]> = {
   Tool: [],
-  ToolSharing: [],
+  PermissionTarget: [],
+  PermissionTargetWorkspace: [],
   User: [],
 }
 
@@ -58,15 +59,17 @@ describe('tool visibility', () => {
   })
 
   test('filterVisibleToolIds includes public tools for any user', async () => {
-    tables.Tool.push({ id: 't-public', sharing: 'public' })
+    tables.Tool.push({ id: 't-public', satelliteId: null })
+    tables.PermissionTarget.push({ id: 't-public', sharing: 'public' })
     const { filterVisibleToolIds } = await import('@/models/tool')
     const visible = await filterVisibleToolIds({ userId: 'u-any' }, ['t-public'])
     expect(visible.has('t-public')).toBe(true)
   })
 
   test('filterVisibleToolIds includes workspace tools only for members of a sharing workspace', async () => {
-    tables.Tool.push({ id: 't-workspace', sharing: 'workspace' })
-    tables.ToolSharing.push({ id: 'ts1', toolId: 't-workspace', workspaceId: 'w1' })
+    tables.Tool.push({ id: 't-workspace', satelliteId: null })
+    tables.PermissionTarget.push({ id: 't-workspace', sharing: 'workspace' })
+    tables.PermissionTargetWorkspace.push({ permissionTargetId: 't-workspace', workspaceId: 'w1' })
 
     const { filterVisibleToolIds } = await import('@/models/tool')
 
@@ -80,7 +83,8 @@ describe('tool visibility', () => {
   })
 
   test('filterVisibleToolIds excludes private tools for a regular user', async () => {
-    tables.Tool.push({ id: 't-private', sharing: 'private' })
+    tables.Tool.push({ id: 't-private', satelliteId: null })
+    tables.PermissionTarget.push({ id: 't-private', sharing: 'private' })
     tables.User.push({ id: 'u-user', role: 'USER' })
 
     const { filterVisibleToolIds } = await import('@/models/tool')
@@ -89,7 +93,8 @@ describe('tool visibility', () => {
   })
 
   test('filterVisibleToolIds includes private tools for an admin, using the userRole hint', async () => {
-    tables.Tool.push({ id: 't-private', sharing: 'private' })
+    tables.Tool.push({ id: 't-private', satelliteId: null })
+    tables.PermissionTarget.push({ id: 't-private', sharing: 'private' })
 
     const { filterVisibleToolIds } = await import('@/models/tool')
     const visible = await filterVisibleToolIds(
@@ -100,7 +105,8 @@ describe('tool visibility', () => {
   })
 
   test('filterVisibleToolIds falls back to a DB role lookup when userRole is not provided', async () => {
-    tables.Tool.push({ id: 't-private', sharing: 'private' })
+    tables.Tool.push({ id: 't-private', satelliteId: null })
+    tables.PermissionTarget.push({ id: 't-private', sharing: 'private' })
     tables.User.push({ id: 'u-admin-no-hint', role: 'ADMIN' })
 
     const { filterVisibleToolIds } = await import('@/models/tool')
@@ -115,8 +121,10 @@ describe('tool visibility', () => {
   })
 
   test('canUserAccessTool delegates to filterVisibleToolIds for a single id', async () => {
-    tables.Tool.push({ id: 't-public', sharing: 'public' })
-    tables.Tool.push({ id: 't-private', sharing: 'private' })
+    tables.Tool.push({ id: 't-public', satelliteId: null })
+    tables.Tool.push({ id: 't-private', satelliteId: null })
+    tables.PermissionTarget.push({ id: 't-public', sharing: 'public' })
+    tables.PermissionTarget.push({ id: 't-private', sharing: 'private' })
     tables.User.push({ id: 'u-user', role: 'USER' })
 
     const { canUserAccessTool } = await import('@/models/tool')

@@ -9,8 +9,10 @@ import { IconX } from '@tabler/icons-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AddToolsDialog } from './AddToolsDialog'
 import { AddAssistantDialog } from './AddAssistantDialog'
+import { AddSatelliteDialog } from './AddSatelliteDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSWRJson } from '@/hooks/swr'
+import { useSatellites } from '@/hooks/satellites'
 import { FormFields } from './AssistantFormField'
 
 interface ToolsTabPanelProps {
@@ -24,10 +26,13 @@ export const ToolsTabPanel = ({ form, visible, className, assistantId }: ToolsTa
   const { t } = useTranslation()
   const [isAddToolsDialogVisible, setAddToolsDialogVisible] = useState(false)
   const [isAddAssistantDialogVisible, setAddAssistantDialogVisible] = useState(false)
+  const [isAddSatelliteDialogVisible, setAddSatelliteDialogVisible] = useState(false)
   const { data: allTools } = useSWRJson<dto.AssistantTool[]>('/api/me/tools')
   const { data: allAssistants } = useSWRJson<dto.UserAssistant[]>(
     '/api/me/assistants/explore?includeHidden=true'
   )
+  const { data: allSatellites } = useSatellites()
+  const registeredSatellites = allSatellites.filter((s) => s.kind === 'registered')
   const allCapabilities = allTools?.filter((t) => t.capability) || []
   const allNonCapabilities = allTools?.filter((t) => !t.capability) || []
   return (
@@ -178,6 +183,60 @@ export const ToolsTabPanel = ({ form, visible, className, assistantId }: ToolsTa
               )
             }}
           />
+          <FormField
+            control={form.control}
+            name="satellites"
+            render={({ field }) => {
+              const currentSatellites = field.value ?? []
+              const selectedSatellites = registeredSatellites.filter((s) =>
+                currentSatellites.includes(s.id)
+              )
+              return (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <CardTitle>{t('satellites')}</CardTitle>
+                    {!field.disabled && (
+                      <Button
+                        type="button"
+                        onClick={(evt) => {
+                          setAddSatelliteDialogVisible(true)
+                          evt.preventDefault()
+                        }}
+                      >
+                        {t('add-satellites')}
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                      {selectedSatellites.map((s) => (
+                        <div
+                          key={s.id}
+                          className="flex flex-row items-center space-y-0 border p-3"
+                        >
+                          <div className="flex-1">
+                            <div className="flex-1">{s.name}</div>
+                          </div>
+                          <Button
+                            disabled={field.disabled}
+                            onClick={() => {
+                              form.setValue(
+                                'satellites',
+                                currentSatellites.filter((id) => id !== s.id)
+                              )
+                            }}
+                            variant="ghost"
+                          >
+                            <IconX stroke="1"></IconX>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            }}
+          />
         </div>
       </ScrollArea>
       {isAddToolsDialogVisible && (
@@ -203,6 +262,19 @@ export const ToolsTabPanel = ({ form, visible, className, assistantId }: ToolsTa
             const idsToAdd = assistants.map((a) => a.id)
             const patched = [...(form.getValues().subAssistants ?? []), ...idsToAdd]
             form.setValue('subAssistants', patched)
+          }}
+        />
+      )}
+      {isAddSatelliteDialogVisible && (
+        <AddSatelliteDialog
+          candidates={registeredSatellites.filter(
+            (s) => !(form.getValues().satellites ?? []).includes(s.id)
+          )}
+          onClose={() => setAddSatelliteDialogVisible(false)}
+          onAddSatellites={(satellites: dto.SatelliteListItem[]) => {
+            const idsToAdd = satellites.map((s) => s.id)
+            const patched = [...(form.getValues().satellites ?? []), ...idsToAdd]
+            form.setValue('satellites', patched)
           }}
         />
       )}

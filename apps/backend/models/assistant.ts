@@ -3,6 +3,7 @@ import { db } from 'db/database'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
 import { BuildableTool, dbToolToBuildableTool, filterVisibleToolIds } from './tool'
+import { filterVisibleSatelliteIds } from './satellite'
 import { Expression, SqlBool, SqliteAdapter, sql } from 'kysely'
 import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
@@ -52,6 +53,18 @@ function toAssistantToolAssociation(
   })
 }
 
+function toAssistantSatelliteAssociation(
+  assistantVersionId: string,
+  satelliteIds: string[]
+): schema.AssistantVersionSatelliteAssociation[] {
+  return satelliteIds.map((satelliteId) => {
+    return {
+      assistantVersionId,
+      satelliteId,
+    }
+  })
+}
+
 /** Only a file the acting user currently owns, or one already belonging to this
  * same assistant (kept across an edit), may be attached to an assistant's
  * knowledge set — assistant knowledge files are trusted server-side and sent
@@ -97,6 +110,24 @@ const assertToolsAttachableToAssistant = async (
   for (const id of uniqueIds) {
     if (!visible.has(id)) {
       throw new Error(`Tool ${id} is not accessible and cannot be attached to an assistant`)
+    }
+  }
+}
+
+/** Same rule as assertToolsAttachableToAssistant, for satellites: a satellite
+ * not visible to the acting editor must never be attached to an assistant,
+ * since that would let its owner's connection be invoked by any user of the
+ * assistant. */
+const assertSatellitesAttachableToAssistant = async (
+  satelliteIds: string[],
+  editorId: string
+): Promise<void> => {
+  const uniqueIds = [...new Set(satelliteIds)]
+  if (uniqueIds.length === 0) return
+  const visible = await filterVisibleSatelliteIds({ userId: editorId }, uniqueIds)
+  for (const id of uniqueIds) {
+    if (!visible.has(id)) {
+      throw new Error(`Satellite ${id} is not accessible and cannot be attached to an assistant`)
     }
   }
 }
@@ -171,6 +202,7 @@ export const getAssistantDraft = async (
     subAssistants: assistantVersion.subAssistants
       ? JSON.parse(assistantVersion.subAssistants)
       : [],
+    satellites: await assistantVersionSatellites(assistantVersion.id),
     pendingChanges: assistant.draftVersionId !== assistant.publishedVersionId,
   }
 }
@@ -496,6 +528,7 @@ export const createAssistantWithId = async (
     files: dtoFiles,
     iconUri: dtoIconUri,
     subAssistants: dtoSubAssistants,
+    satellites: dtoSatellites,
     ...assistantWithoutExcluded
   } = assistant
   const withoutTools: schema.AssistantVersion = {
@@ -540,6 +573,11 @@ export const createAssistantWithId = async (
     await assertToolsAttachableToAssistant(dtoTools, owner)
     await db.insertInto('AssistantVersionToolAssociation').values(tools).execute()
   }
+  const satellites = toAssistantSatelliteAssociation(id, dtoSatellites ?? [])
+  if (satellites.length !== 0) {
+    await assertSatellitesAttachableToAssistant(dtoSatellites ?? [], owner)
+    await db.insertInto('AssistantVersionSatelliteAssociation').values(satellites).execute()
+  }
   const files = toAssistantFileAssociation(id, dtoFiles)
   if (files.length !== 0) {
     const fileIds = files.map((f) => f.fileId)
@@ -555,6 +593,7 @@ export const createAssistantWithId = async (
   return {
     ...created,
     tools,
+    satellites,
   }
 }
 
@@ -613,6 +652,22 @@ export const cloneAssistantVersion = async (assistantVersionId: string) => {
       )
       .execute()
   }
+
+  const satellites = await db
+    .selectFrom('AssistantVersionSatelliteAssociation')
+    .where('assistantVersionId', '=', assistantVersion.id)
+    .select('satelliteId')
+    .execute()
+  if (satellites.length) {
+    await db
+      .insertInto('AssistantVersionSatelliteAssociation')
+      .values(
+        satellites.map((s) => {
+          return { satelliteId: s.satelliteId, assistantVersionId: id }
+        })
+      )
+      .execute()
+  }
   return id
 }
 
@@ -665,6 +720,7 @@ export const updateAssistantVersion = async (
     tools: dtoTools,
     iconUri: dtoIconUri,
     subAssistants: dtoSubAssistants,
+    satellites: dtoSatellites,
     ...assistantCleaned
   } = assistant
   if (assistant.files) {
@@ -704,6 +760,16 @@ export const updateAssistantVersion = async (
     await deleteAssistantVersionToolAssociations(assistantVersionId)
     if (tools.length !== 0) {
       await db.insertInto('AssistantVersionToolAssociation').values(tools).execute()
+    }
+  }
+  if (dtoSatellites) {
+    const satellites = toAssistantSatelliteAssociation(assistantVersionId, dtoSatellites)
+    if (satellites.length !== 0) {
+      await assertSatellitesAttachableToAssistant(dtoSatellites, userId)
+    }
+    await deleteAssistantVersionSatelliteAssociations(assistantVersionId)
+    if (satellites.length !== 0) {
+      await db.insertInto('AssistantVersionSatelliteAssociation').values(satellites).execute()
     }
   }
   const imageId =
@@ -819,6 +885,13 @@ const deleteAssistantVersionToolAssociations = async (assistantId: string) => {
     .execute()
 }
 
+const deleteAssistantVersionSatelliteAssociations = async (assistantVersionId: string) => {
+  await db
+    .deleteFrom('AssistantVersionSatelliteAssociation')
+    .where('assistantVersionId', '=', assistantVersionId)
+    .execute()
+}
+
 export const setAssistantDeleted = async (assistantId: string) => {
   return await db
     .updateTable('Assistant')
@@ -835,6 +908,16 @@ export const assistantVersionEnabledTools = async (assistantVersionId: string) =
     .where('AssistantVersionToolAssociation.assistantVersionId', '=', assistantVersionId)
     .execute()
   return tools.map((t) => t.toolId)
+}
+
+// list all satellites directly attached to a given assistant version
+export const assistantVersionSatellites = async (assistantVersionId: string): Promise<string[]> => {
+  const rows = await db
+    .selectFrom('AssistantVersionSatelliteAssociation')
+    .select('satelliteId')
+    .where('assistantVersionId', '=', assistantVersionId)
+    .execute()
+  return rows.map((r) => r.satelliteId)
 }
 
 // list all associated files

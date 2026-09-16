@@ -45,7 +45,8 @@ export const POST = operation({
       assistant.tools,
       assistant.model,
       { userId: session.userId, userRole: session.userRole },
-      assistant.subAssistants
+      assistant.subAssistants,
+      assistant.satellites
     )
 
     if ('apiKey' in backend && isUserProvidedApiKey(backend.apiKey)) {

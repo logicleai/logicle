@@ -8,7 +8,8 @@ const tables: Record<string, Row[]> = {
   File: [],
   AssistantVersionFile: [],
   Tool: [],
-  ToolSharing: [],
+  PermissionTarget: [],
+  PermissionTargetWorkspace: [],
   User: [],
   AssistantVersionToolAssociation: [],
 }
@@ -189,7 +190,8 @@ describe('updateAssistantVersion tool authorization', () => {
 
   test('rejects and never associates a tool the acting editor cannot see', async () => {
     tables.AssistantVersion.push({ id: 'av1', assistantId: 'a1' })
-    tables.Tool.push({ id: 'private-tool', sharing: 'private' })
+    tables.Tool.push({ id: 'private-tool', satelliteId: null })
+    tables.PermissionTarget.push({ id: 'private-tool', sharing: 'private' })
     tables.User.push({ id: 'editor', role: 'USER' })
 
     const { updateAssistantVersion } = await import('@/models/assistant')
@@ -204,7 +206,8 @@ describe('updateAssistantVersion tool authorization', () => {
 
   test('allows a public tool', async () => {
     tables.AssistantVersion.push({ id: 'av1', assistantId: 'a1' })
-    tables.Tool.push({ id: 'public-tool', sharing: 'public' })
+    tables.Tool.push({ id: 'public-tool', satelliteId: null })
+    tables.PermissionTarget.push({ id: 'public-tool', sharing: 'public' })
 
     const { updateAssistantVersion } = await import('@/models/assistant')
 
@@ -219,7 +222,8 @@ describe('updateAssistantVersion tool authorization', () => {
 
   test('allows a private tool for an admin editor', async () => {
     tables.AssistantVersion.push({ id: 'av1', assistantId: 'a1' })
-    tables.Tool.push({ id: 'private-tool', sharing: 'private' })
+    tables.Tool.push({ id: 'private-tool', satelliteId: null })
+    tables.PermissionTarget.push({ id: 'private-tool', sharing: 'private' })
     tables.User.push({ id: 'admin-editor', role: 'ADMIN' })
 
     const { updateAssistantVersion } = await import('@/models/assistant')
@@ -244,7 +248,8 @@ describe('createAssistantWithId tool authorization', () => {
   })
 
   test('rejects creation and never associates a tool the acting owner cannot see', async () => {
-    tables.Tool.push({ id: 'private-tool', sharing: 'private' })
+    tables.Tool.push({ id: 'private-tool', satelliteId: null })
+    tables.PermissionTarget.push({ id: 'private-tool', sharing: 'private' })
     tables.User.push({ id: 'owner', role: 'USER' })
 
     const { createAssistantWithId } = await import('@/models/assistant')

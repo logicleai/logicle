@@ -281,16 +281,17 @@ export interface Tool {
   configuration: string
   provisioned: number
   capability: number
-  sharing: 'private' | 'public' | 'workspace'
-  satelliteId: string | null
-  enabled: number
   createdAt: string
   updatedAt: string
 }
 
-export interface ToolSharing {
+export interface PermissionTarget {
   id: string
-  toolId: string
+  sharing: 'private' | 'public' | 'workspace'
+}
+
+export interface PermissionTargetWorkspace {
+  permissionTargetId: string
   workspaceId: string
 }
 
@@ -326,6 +327,11 @@ export interface MessageAudit {
 export interface AssistantVersionToolAssociation {
   assistantVersionId: string
   toolId: string
+}
+
+export interface AssistantVersionSatelliteAssociation {
+  assistantVersionId: string
+  satelliteId: string
 }
 
 export interface ApiKey {
@@ -436,6 +442,7 @@ export interface DB {
   AssistantVersionFile: AssistantVersionFile
   AssistantSharing: AssistantSharing
   AssistantVersionToolAssociation: AssistantVersionToolAssociation
+  AssistantVersionSatelliteAssociation: AssistantVersionSatelliteAssociation
   AssistantUserData: AssistantUserData
   Backend: Backend
   Conversation: Conversation
@@ -454,7 +461,8 @@ export interface DB {
   MessageFeedback: MessageFeedback
   MessageAudit: MessageAudit
   Tool: Tool
-  ToolSharing: ToolSharing
+  PermissionTarget: PermissionTarget
+  PermissionTargetWorkspace: PermissionTargetWorkspace
   Prompt: Prompt
   Property: Property
   Satellite: Satellite
