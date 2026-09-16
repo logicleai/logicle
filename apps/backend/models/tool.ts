@@ -119,9 +119,9 @@ export const createToolWithId = async (
   provisioned?: boolean,
   ownerUserId?: string
 ): Promise<dto.Tool> => {
-  const { icon, ...toolWithoutIcon } = tool
+  const { icon, sharing, ...toolFields } = tool
   const dbTool: schema.Tool = {
-    ...toolWithoutIcon,
+    ...toolFields,
     imageId: icon == null ? null : await getOrCreateImageFromDataUri(icon),
     configuration: JSON.stringify(tool.configuration),
     tags: JSON.stringify(tool.tags),
@@ -132,7 +132,7 @@ export const createToolWithId = async (
     updatedAt: new Date().toISOString(),
   }
 
-  await createPermissionTargetAnd(toolPermissionTarget(id), tool.sharing, async (trx) => {
+  await createPermissionTargetAnd(toolPermissionTarget(id), sharing, async (trx) => {
     await trx.insertInto('Tool').values(dbTool).executeTakeFirstOrThrow()
     return undefined
   })
