@@ -29,6 +29,9 @@ data:
   {{- if .Values.config.CHAT_HARD_MESSAGE_LIMIT }}
   CHAT_HARD_MESSAGE_LIMIT: "{{ .Values.config.CHAT_HARD_MESSAGE_LIMIT }}"
   {{- end }}
+  {{- if .Values.config.CHAT_ATTACHMENTS_MAX_SIZE }}
+  CHAT_ATTACHMENTS_MAX_SIZE: "{{ .Values.config.CHAT_ATTACHMENTS_MAX_SIZE }}"
+  {{- end }}
   {{- if .Values.brand.files }}
   PROVISION_BRAND_PATH: "/brand"
   {{- end }}
