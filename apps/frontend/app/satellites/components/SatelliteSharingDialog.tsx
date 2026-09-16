@@ -1,0 +1,231 @@
+'use client'
+
+import { useTranslation } from 'react-i18next'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { useUserProfile } from '@/components/providers/userProfileContext'
+import * as dto from '@/types/dto'
+import { SetStateAction, useId, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import toast from 'react-hot-toast'
+import { patch } from '@/lib/fetch'
+import { mutateSatellites, mutateAdminSatellites } from '@/hooks/satellites'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/frontend/lib/utils'
+
+interface Props {
+  scope?: 'me' | 'admin'
+  satellite: dto.Satellite
+  onClose: () => void
+  onSaved: (satellite: dto.Satellite) => void
+}
+
+const PRIVATE: dto.PrivateSharing['type'] = 'private'
+const PUBLIC: dto.PublicSharing['type'] = 'public'
+const WORKSPACE: dto.WorkspaceSharing['type'] = 'workspace'
+
+const toggleWorkspace = (
+  sharing: dto.WorkspaceSharing,
+  workspaceId: string,
+  add: boolean
+): dto.WorkspaceSharing => {
+  const workspaces = sharing.workspaces.filter((w) => w !== workspaceId)
+  if (add) {
+    workspaces.push(workspaceId)
+  }
+  return {
+    ...sharing,
+    workspaces,
+  }
+}
+
+export const SatelliteSharingDialog = ({ scope = 'me', satellite, onClose, onSaved }: Props) => {
+  const { t } = useTranslation()
+  const profile = useUserProfile()
+  const visibleWorkspaces = profile?.workspaces || []
+  const [open, setOpen] = useState(false)
+  const [sharing, setSharing] = useState<dto.Sharing2>(satellite.sharing)
+  const [saving, setSaving] = useState(false)
+
+  const uid = useId()
+  const idPrivate = `${uid}-private`
+  const idWorkspace = `${uid}-workspace`
+  const idPublic = `${uid}-public`
+
+  const canShareWithWorkspace = (workspaceMembership: dto.WorkspaceMembership): boolean => {
+    return (
+      workspaceMembership.role === 'ADMIN' ||
+      workspaceMembership.role === 'OWNER' ||
+      workspaceMembership.role === 'EDITOR'
+    )
+  }
+
+  const isSharedWithWorkspace = (workspaceId: string) => {
+    return sharing.type === 'workspace' && sharing.workspaces.includes(workspaceId)
+  }
+
+  const handleModeChange = (value: SetStateAction<string>) => {
+    if (value === PRIVATE) {
+      setSharing({ type: 'private' })
+    } else if (value === PUBLIC) {
+      setSharing({ type: 'public' })
+    } else {
+      setSharing({ type: 'workspace', workspaces: [] })
+    }
+  }
+
+  async function onSave() {
+    setSaving(true)
+    try {
+      const url = `${scope === 'admin' ? '/api/satellites' : '/api/me/satellites'}/${satellite.id}`
+      const response = await patch<dto.Satellite>(url, { sharing })
+      if (response.error) {
+        toast.error(response.error.message)
+        return
+      }
+      await (scope === 'admin' ? mutateAdminSatellites() : mutateSatellites())
+      onSaved(response.data as dto.Satellite)
+      toast.success(t('saved'))
+      onClose()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const showWorkspaces = visibleWorkspaces.length !== 0 || sharing.type === 'workspace'
+  const selectedWorkspaces = visibleWorkspaces.filter((w) => isSharedWithWorkspace(w.id))
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{t('sharing')}</DialogTitle>
+        </DialogHeader>
+        <RadioGroup
+          value={sharing.type}
+          onValueChange={handleModeChange}
+          className="flex flex-col gap-4"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value={PRIVATE} id={idPrivate} />
+            <Label htmlFor={idPrivate} className="flex flex-col">
+              <span>{t('only-me')}</span>
+              <span className="text-sm text-muted-foreground">
+                {t('only-you-will-have-access-to-this-satellite')}
+              </span>
+            </Label>
+          </div>
+
+          {showWorkspaces && (
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value={WORKSPACE} id={idWorkspace} />
+              <div className="flex-1">
+                <Label htmlFor={idWorkspace} className="flex flex-col">
+                  <span>{t('share-with-workspace')}</span>
+                  <span className="text-sm text-muted-foreground mb-2">
+                    {t('share-satellite-with-one-or-more-workspaces')}
+                  </span>
+                </Label>
+                {sharing.type === WORKSPACE && (
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="small"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="justify-between w-full px-0"
+                      >
+                        <div className="flex flex-wrap gap-2">
+                          {selectedWorkspaces.length === 0 ? (
+                            <span className="px-2 text-muted-foreground">
+                              {t('select-workspaces')}
+                            </span>
+                          ) : (
+                            selectedWorkspaces.map((workspace) => (
+                              <Badge
+                                key={workspace.id}
+                                variant="secondary"
+                                className="flex items-center gap-1 text-sm"
+                              >
+                                {workspace.name}
+                              </Badge>
+                            ))
+                          )}
+                        </div>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0 w-[--radix-popover-trigger-width]">
+                      <Command>
+                        <CommandList>
+                          <CommandEmpty>{t('no-workspace-found')}</CommandEmpty>
+                          <CommandGroup>
+                            {visibleWorkspaces.map((workspace) => (
+                              <CommandItem
+                                key={workspace.id}
+                                value={workspace.name}
+                                disabled={!canShareWithWorkspace(workspace)}
+                                onSelect={() => {
+                                  setSharing(
+                                    toggleWorkspace(
+                                      sharing,
+                                      workspace.id,
+                                      !isSharedWithWorkspace(workspace.id)
+                                    )
+                                  )
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    isSharedWithWorkspace(workspace.id)
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                {workspace.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem disabled={profile?.role !== 'ADMIN'} value={PUBLIC} id={idPublic} />
+            <Label htmlFor={idPublic} className="flex flex-col">
+              <span>{t('everyone-in-the-company')}</span>
+              <span className="text-sm text-muted-foreground mb-2">
+                {t('everyone-in-the-company-will-be-able-to-use-this-satellite')}
+              </span>
+            </Label>
+          </div>
+        </RadioGroup>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+            {t('cancel')}
+          </Button>
+          <Button type="button" onClick={onSave} disabled={saving}>
+            {saving ? t('saving') : t('save')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -57,6 +57,7 @@ const AssistantHistoryEntry = ({ assistantVersion }: { assistantVersion: dto.Ass
       backendId: assistantVersion.backendId,
     },
     subAssistants: assistantVersion.subAssistants ?? [],
+    satellites: assistantVersion.satellites ?? [],
   } as FormFields
 
   const resolver = zodResolver(formSchema)

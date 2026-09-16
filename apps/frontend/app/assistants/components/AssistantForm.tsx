@@ -146,6 +146,7 @@ export const AssistantForm = ({
       backendId: assistant.backendId,
     },
     subAssistants: assistant.subAssistants ?? [],
+    satellites: assistant.satellites ?? [],
   } as FormFields
 
   const resolver = zodResolver(formSchema)

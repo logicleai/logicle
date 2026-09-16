@@ -7,6 +7,7 @@ import { Prop, PropList } from '@/components/ui/proplist'
 import { useSatellite } from '@/hooks/satellites'
 import { AdminPage } from '@/app/admin/components/AdminPage'
 import { SatelliteDialog } from '../components/SatelliteDialog'
+import { SatelliteSharingDialog } from '../components/SatelliteSharingDialog'
 import { useUrlSegment } from '@/hooks/useUrlSegment'
 
 const SatelliteDetail = () => {
@@ -14,6 +15,7 @@ const SatelliteDetail = () => {
   const satelliteId = useUrlSegment(1)
   const { data: satellite, isLoading, mutate } = useSatellite(satelliteId)
   const [renamingSatellite, setRenamingSatellite] = useState(false)
+  const [sharingSatellite, setSharingSatellite] = useState(false)
 
   if (!isLoading && !satellite) {
     return <AdminPage title={t('satellite-not-found')}>{null}</AdminPage>
@@ -24,9 +26,14 @@ const SatelliteDetail = () => {
       isLoading={isLoading}
       title={satellite?.name ?? ''}
       headerActions={
-        <Button variant="secondary" onClick={() => setRenamingSatellite(true)}>
-          {t('rename')}
-        </Button>
+        <>
+          <Button variant="secondary" onClick={() => setSharingSatellite(true)}>
+            {t('sharing')}
+          </Button>
+          <Button variant="secondary" onClick={() => setRenamingSatellite(true)}>
+            {t('rename')}
+          </Button>
+        </>
       }
     >
       {satellite && (
@@ -49,6 +56,13 @@ const SatelliteDetail = () => {
               mode="rename"
               satellite={satellite}
               onClose={() => setRenamingSatellite(false)}
+              onSaved={(updated) => mutate(updated, { revalidate: false })}
+            />
+          )}
+          {sharingSatellite && (
+            <SatelliteSharingDialog
+              satellite={satellite}
+              onClose={() => setSharingSatellite(false)}
               onSaved={(updated) => mutate(updated, { revalidate: false })}
             />
           )}
