@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 const assistantVersionToolsMock = vi.fn()
+const assistantVersionSatellitesMock = vi.fn()
 const canUserAccessAssistantMock = vi.fn()
 const getPublishedAssistantVersionMock = vi.fn()
 const filterVisibleToolIdsMock = vi.fn()
 const getToolsFilteredMock = vi.fn()
 const getBuildableToolsMock = vi.fn()
+const filterVisibleSatelliteIdsMock = vi.fn()
+const getSatellitesByIdsMock = vi.fn()
 
 vi.mock('@/models/assistant', () => ({
   assistantVersionTools: assistantVersionToolsMock,
+  assistantVersionSatellites: assistantVersionSatellitesMock,
   canUserAccessAssistant: canUserAccessAssistantMock,
   getPublishedAssistantVersion: getPublishedAssistantVersionMock,
 }))
@@ -17,6 +21,11 @@ vi.mock('@/models/tool', () => ({
   filterVisibleToolIds: filterVisibleToolIdsMock,
   getToolsFiltered: getToolsFilteredMock,
   getBuildableTools: getBuildableToolsMock,
+}))
+
+vi.mock('@/models/satellite', () => ({
+  filterVisibleSatelliteIds: filterVisibleSatelliteIdsMock,
+  getSatellitesByIds: getSatellitesByIdsMock,
 }))
 
 const executeTakeFirstMock = vi.fn()
@@ -49,6 +58,9 @@ describe('enumerate.ts tool visibility filtering', () => {
     vi.clearAllMocks()
     executeTakeFirstMock.mockResolvedValue(undefined)
     getToolsFilteredMock.mockResolvedValue([])
+    assistantVersionSatellitesMock.mockResolvedValue([])
+    filterVisibleSatelliteIdsMock.mockResolvedValue(new Set())
+    getSatellitesByIdsMock.mockResolvedValue([])
   })
 
   test('availableToolsForAssistantVersion never builds a tool the principal cannot see', async () => {

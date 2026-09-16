@@ -52,6 +52,7 @@ import * as m20260708PostgresTimestampColumns from './migrations/20260708-postgr
 import * as m20260711SatelliteSecret from './migrations/20260711-satellite_secret'
 import * as m20260909KnowledgeBox from './migrations/20260909-knowledge-box'
 import * as m20260916PermissionTargets from './migrations/20260916-permission_targets'
+import * as m202609162SatelliteToolRemoval from './migrations/20260916.2-satellite_tool_removal'
 
 import type { MigrationWithDialect } from './migrations'
 
@@ -108,4 +109,5 @@ export const migrationModules: Record<string, MigrationWithDialect> = {
   '20260711-satellite_secret': m20260711SatelliteSecret,
   '20260909-knowledge-box': m20260909KnowledgeBox,
   '20260916-permission_targets': m20260916PermissionTargets,
+  '20260916.2-satellite_tool_removal': m202609162SatelliteToolRemoval,
 }

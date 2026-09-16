@@ -81,18 +81,6 @@ export class ReplicateImageGeneratorPluginInterface {
   static toolName = 'imagegen.replicate'
 }
 
-export const SatelliteSchema = z
-  .object({
-    // Registered satellite tools persist the connection target in their
-    // configuration; it is used by SatelliteTool.builder at runtime.
-    satelliteId: z.string(),
-  })
-  .strict()
-export type SatelliteParams = z.infer<typeof SatelliteSchema>
-export class SatelliteInterface {
-  static toolName = 'satellite'
-}
-
 export const knowledgeBoxQuestionSchema = z.object({
   id: z.string().min(1),
   // Short label the model sees next to the answer in `list_documents`.

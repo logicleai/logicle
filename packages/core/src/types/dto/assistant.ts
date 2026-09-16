@@ -98,6 +98,7 @@ export const assistantDraftSchema = assistantVersionSchema
     hidden: z.boolean(),
     pendingChanges: z.boolean(),
     subAssistants: z.array(z.string()).optional(),
+    satellites: z.array(z.string()).optional(),
   })
   .meta({ id: 'AssistantDraft' })
 

@@ -31,8 +31,6 @@ import {
   OpenApiSchema,
   ReplicateImageGeneratorSchema,
   ReplicateImageGeneratorPluginInterface,
-  SatelliteInterface,
-  SatelliteSchema,
   RouterInterface,
   RouterSchema,
   TimeOfDayInterface,
@@ -77,10 +75,6 @@ export const toolSchemaRegistry: Record<string, ToolSchemaRegistryEntry> = {
   [ReplicateImageGeneratorPluginInterface.toolName]: {
     toolName: ReplicateImageGeneratorPluginInterface.toolName,
     schema: ReplicateImageGeneratorSchema,
-  },
-  [SatelliteInterface.toolName]: {
-    toolName: SatelliteInterface.toolName,
-    schema: SatelliteSchema,
   },
   [OpenApiInterface.toolName]: {
     toolName: OpenApiInterface.toolName,

@@ -1,6 +1,5 @@
 import * as dto from '@/types/dto'
 import {
-  ToolBuilder,
   ToolFunction,
   ToolFunctionContext,
   ToolFunctions,
@@ -8,7 +7,6 @@ import {
   ToolInvokeParams,
   ToolParams,
 } from '@/lib/chat/tools'
-import { SatelliteInterface } from '@/lib/tools/schemas'
 import { UserVisibleError } from '@/backend/lib/chat/exceptions'
 import { LlmModel } from '@/lib/chat/models'
 import { saveFile } from '@/backend/lib/tools/file-output-normalization'
@@ -103,23 +101,31 @@ const createSatelliteToolFunction = (
   }
 }
 
-export class SatelliteTool extends SatelliteInterface implements ToolImplementation {
-  static builder: ToolBuilder = (toolParams: ToolParams, params: any) =>
-    new SatelliteTool(toolParams, params.satelliteId as string)
-
+/** A satellite is never backed by a Tool row: its functions are resolved live
+ * from the hub connection (see `functions()` below), so it is built directly
+ * from a Satellite/connection reference, the same way SubAssistantTool is
+ * built directly from assistant ids rather than through the `builders`
+ * registry in enumerate.ts. */
+export class SatelliteTool implements ToolImplementation {
   static fromConnection(conn: { satelliteId: string; name: string }): SatelliteTool {
+    return SatelliteTool.fromSatellite({ id: conn.satelliteId, name: conn.name })
+  }
+
+  /** Builds the tool a registered satellite exposes directly from its Satellite
+   * row, with no backing Tool row: the satellite's functions are resolved live
+   * from the hub connection at call time (see `functions()` below), whether or
+   * not it happens to be online right now. */
+  static fromSatellite(satellite: { id: string; name: string }): SatelliteTool {
     return new SatelliteTool(
-      { id: conn.satelliteId, provisioned: false, promptFragment: '', name: conn.name },
-      conn.satelliteId
+      { id: satellite.id, provisioned: false, promptFragment: '', name: satellite.name },
+      satellite.id
     )
   }
 
   constructor(
     public toolParams: ToolParams,
     private satelliteId: string
-  ) {
-    super()
-  }
+  ) {}
 
   supportedMedia = []
 

@@ -6,8 +6,11 @@ import { hashPassword } from '@/lib/auth/password'
 import {
   createPermissionTargetAnd,
   deletePermissionTarget,
+  filterVisiblePermissionTargetKeys,
   getPermissionTargetsSharing,
   satellitePermissionTarget,
+  updatePermissionTargetSharing,
+  type PermissionTargetAccessPrincipal,
 } from './permissionTarget'
 
 const dbToDto = async (satellite: schema.Satellite): Promise<dto.Satellite> => {
@@ -108,7 +111,7 @@ export const regenerateSatelliteSecret = async (
 export const updateSatellite = async (
   id: string,
   userId: string,
-  data: Partial<dto.InsertableSatellite>
+  data: dto.UpdateableSatellite
 ): Promise<dto.Satellite> => {
   const satellite = await getSatellite(id)
   if (!satellite) {
@@ -117,15 +120,20 @@ export const updateSatellite = async (
   if (satellite.userId !== userId) {
     throw new Error('Unauthorized')
   }
-  const now = new Date().toISOString()
-  await db
-    .updateTable('Satellite')
-    .set({
-      ...data,
-      updatedAt: now,
-    })
-    .where('id', '=', id)
-    .execute()
+  const { sharing, ...satelliteTableFields } = data
+  if (Object.keys(satelliteTableFields).length !== 0) {
+    await db
+      .updateTable('Satellite')
+      .set({
+        ...satelliteTableFields,
+        updatedAt: new Date().toISOString(),
+      })
+      .where('id', '=', id)
+      .execute()
+  }
+  if (sharing) {
+    await updatePermissionTargetSharing(id, sharing)
+  }
   const updated = await getSatellite(id)
   if (!updated) {
     throw new Error('Failed updating satellite')
@@ -143,4 +151,32 @@ export const deleteSatellite = async (id: string, userId: string): Promise<void>
   }
   await db.deleteFrom('Satellite').where('id', '=', id).execute()
   await deletePermissionTarget(id)
+}
+
+export const getSatellitesByIds = async (
+  ids: string[]
+): Promise<Pick<schema.Satellite, 'id' | 'name'>[]> => {
+  if (ids.length === 0) return []
+  return db.selectFrom('Satellite').select(['id', 'name']).where('id', 'in', ids).execute()
+}
+
+/** Which of the given satellite ids are visible to this user: a satellite's
+ * own owner always sees it; otherwise it follows its PermissionTarget sharing
+ * (public to anyone, workspace to members of a sharing workspace, private to
+ * admins only) — the same rule already used for tools. Attaching a satellite
+ * a user can't see to an assistant would let its owner's connection be
+ * invoked by others without ever having agreed to share it. */
+export const filterVisibleSatelliteIds = async (
+  principal: PermissionTargetAccessPrincipal,
+  satelliteIds: string[]
+): Promise<Set<string>> => {
+  const uniqueIds = [...new Set(satelliteIds)]
+  if (uniqueIds.length === 0) return new Set()
+  const satellites = await db
+    .selectFrom('Satellite')
+    .select(['id', 'userId'])
+    .where('id', 'in', uniqueIds)
+    .execute()
+  const refs = satellites.map((s) => satellitePermissionTarget(s.id, s.userId))
+  return filterVisiblePermissionTargetKeys(principal, refs)
 }

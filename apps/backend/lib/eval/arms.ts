@@ -175,8 +175,6 @@ export const createKnowledgeBoxArm = (options: KnowledgeBoxArmOptions = {}): Arm
           configuration: JSON.stringify(configuration),
           provisioned: 0,
           capability: 0,
-          satelliteId: null,
-          enabled: 1,
           createdAt: now,
           updatedAt: now,
         })

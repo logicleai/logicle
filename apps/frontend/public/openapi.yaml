@@ -2531,6 +2531,8 @@ paths:
               properties:
                 name:
                   type: string
+                sharing:
+                  $ref: "#/components/schemas/ToolSharing"
               additionalProperties: false
   /api/me/satellites/connected:
     get:
@@ -2777,6 +2779,8 @@ paths:
               properties:
                 name:
                   type: string
+                sharing:
+                  $ref: "#/components/schemas/ToolSharing"
               additionalProperties: false
   /api/satellites:
     get:
@@ -3913,6 +3917,10 @@ components:
           type: array
           items:
             type: string
+        satellites:
+          type: array
+          items:
+            type: string
       required:
         - id
         - assistantId
@@ -4019,6 +4027,10 @@ components:
             - type: string
             - type: "null"
         subAssistants:
+          type: array
+          items:
+            type: string
+        satellites:
           type: array
           items:
             type: string
@@ -4138,6 +4150,10 @@ components:
             - type: string
             - type: "null"
         subAssistants:
+          type: array
+          items:
+            type: string
+        satellites:
           type: array
           items:
             type: string
@@ -6770,12 +6786,6 @@ components:
           type: boolean
         capability:
           type: boolean
-        satelliteId:
-          anyOf:
-            - type: string
-            - type: "null"
-        enabled:
-          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -6797,8 +6807,6 @@ components:
         - sharing
         - provisioned
         - capability
-        - satelliteId
-        - enabled
         - createdAt
         - updatedAt
         - promptFragment

@@ -1,4 +1,9 @@
-import { assistantVersionTools, canUserAccessAssistant, getPublishedAssistantVersion } from '@/models/assistant'
+import {
+  assistantVersionTools,
+  assistantVersionSatellites,
+  canUserAccessAssistant,
+  getPublishedAssistantVersion,
+} from '@/models/assistant'
 import { ToolBuilder, ToolImplementation } from '@/lib/chat/tools'
 import { TimeOfDay } from './timeofday/implementation'
 import {
@@ -33,6 +38,7 @@ import { db } from 'db/database'
 import { AudioTranscription } from './audio_transcription/implementation'
 import { SatelliteTool } from './satellite/implementation'
 import { TranslateDeepl } from './translate.deepl/implementation'
+import { filterVisibleSatelliteIds, getSatellitesByIds } from '@/models/satellite'
 
 const builders: Record<string, ToolBuilder> = {
   [AudioTranscription.toolName]: AudioTranscription.builder,
@@ -42,7 +48,6 @@ const builders: Record<string, ToolBuilder> = {
   [GoogleImageGeneratorPlugin.toolName]: GoogleImageGeneratorPlugin.builder,
   [TogetherImageGeneratorPlugin.toolName]: TogetherImageGeneratorPlugin.builder,
   [ReplicateImageGeneratorPlugin.toolName]: ReplicateImageGeneratorPlugin.builder,
-  [SatelliteTool.toolName]: SatelliteTool.builder,
   [OpenApiPlugin.toolName]: OpenApiPlugin.builder,
   [McpPlugin.toolName]: McpPlugin.builder,
   [NativeTool.toolName]: NativeTool.builder,
@@ -110,7 +115,26 @@ export const availableToolsForAssistantVersion = async (
     if (subTool) implementations.push(subTool)
   }
 
+  const satelliteIds = await assistantVersionSatellites(assistantVersionId)
+  implementations.push(...(await buildSatelliteTools(satelliteIds, principal)))
+
   return implementations
+}
+
+/** Builds one ToolImplementation per satellite directly attached to this
+ * assistant version, with no backing Tool row: a satellite id that no longer
+ * exists or is no longer visible to the principal is silently dropped, the
+ * same way buildSubAssistantTool drops sub-assistants the principal can't
+ * reach. The satellite's actual functions are resolved live from the hub
+ * connection when the tool runs (see SatelliteTool.functions), not here. */
+export const buildSatelliteTools = async (
+  satelliteIds: string[],
+  principal: ToolAccessPrincipal
+): Promise<SatelliteTool[]> => {
+  if (satelliteIds.length === 0) return []
+  const visibleIds = await filterVisibleSatelliteIds(principal, satelliteIds)
+  const satellites = await getSatellitesByIds([...visibleIds])
+  return satellites.map((satellite) => SatelliteTool.fromSatellite(satellite))
 }
 
 export const buildSubAssistantTool = async (
@@ -150,7 +174,8 @@ export const availableToolsFiltered = async (
   ids: string[],
   model: string,
   principal: ToolAccessPrincipal,
-  subAssistantIds?: string[]
+  subAssistantIds?: string[],
+  satelliteIds?: string[]
 ) => {
   const visibleToolIds = await filterVisibleToolIds(principal, ids)
   const tools = await getToolsFiltered([...visibleToolIds])
@@ -161,6 +186,10 @@ export const availableToolsFiltered = async (
   if (subAssistantIds && subAssistantIds.length > 0) {
     const subTool = await buildSubAssistantTool(subAssistantIds, principal)
     if (subTool) implementations.push(subTool)
+  }
+
+  if (satelliteIds && satelliteIds.length > 0) {
+    implementations.push(...(await buildSatelliteTools(satelliteIds, principal)))
   }
 
   return implementations

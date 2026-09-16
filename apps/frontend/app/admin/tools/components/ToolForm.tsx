@@ -20,8 +20,6 @@ import {
   OpenAiImageGeneratorPluginInterface,
   ReplicateImageGeneratorSchema,
   ReplicateImageGeneratorPluginInterface,
-  SatelliteInterface,
-  SatelliteSchema,
   TogetherImageGeneratorPluginInterface,
   TranslateDeeplInterface,
   TranslateDeeplParams,
@@ -82,8 +80,6 @@ const configurationSchema = (type: ToolType, apiKeys: string[]) => {
     return WebSearchSchema
   } else if (type === McpInterface.toolName) {
     return mcpPluginSchema
-  } else if (type === SatelliteInterface.toolName) {
-    return SatelliteSchema
   } else if (type === KnowledgeBoxInterface.toolName) {
     // `files` lives in the configuration but is edited through the shared knowledge section,
     // which writes it into the form's own `files` field; handleSubmit merges it back in.
@@ -118,12 +114,7 @@ const ToolForm: FC<Props> = ({ className, type, tool, toolId, onSubmit }) => {
 
   const formSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
-    // Satellite tools are created automatically when a satellite connects and
-    // intentionally start with no description.
-    description:
-      type === SatelliteInterface.toolName
-        ? z.string()
-        : z.string().min(2, 'Description must be at least 2 characters'),
+    description: z.string().min(2, 'Description must be at least 2 characters'),
     tags: z.string().array(),
     promptFragment: z.string(),
     configuration: configurationSchema(type, apiKeys),

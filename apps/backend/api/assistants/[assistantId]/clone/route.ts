@@ -4,6 +4,7 @@ import {
   assistantSharingData,
   assistantVersionEnabledTools,
   assistantVersionFiles,
+  assistantVersionSatellites,
   createAssistantWithId,
   getAssistant,
   getAssistantVersion,
@@ -69,6 +70,7 @@ export const POST = operation({
       subAssistants: assistantVersion.subAssistants
         ? JSON.parse(assistantVersion.subAssistants)
         : undefined,
+      satellites: await assistantVersionSatellites(assistantVersion.id),
       contextCompression: parseContextCompression(assistantVersion.contextCompression),
     }
     const created = await createAssistantWithId(newAssistantId, assistantDraft, session.userId, false)

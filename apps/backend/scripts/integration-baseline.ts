@@ -237,22 +237,10 @@ async function checkRegisteredSatelliteSharedChat(
     `Shared Satellite ${runId}`
   )
 
-  const toolsResponse = await request('GET', '/api/tools', {
+  // Make the satellite public so this scenario tests the shared Satellite dispatch path,
+  // independently of the satellite visibility policy.
+  await request('PATCH', `/api/me/satellites/${satellite.id}`, {
     expectedStatus: 200,
-    headers: sameOriginHeaders,
-  })
-  const satelliteTool = (parseJson(toolsResponse.text, '/api/tools GET') as any[]).find(
-    (tool) => tool.satelliteId === satellite.id
-  )
-  if (!satelliteTool) {
-    await connection.close()
-    throw new Error(`No tool was created for registered Satellite "${satellite.id}"`)
-  }
-
-  // Make the tool public so this scenario tests the shared Satellite dispatch path,
-  // independently of the tool visibility policy.
-  await request('PATCH', `/api/tools/${satelliteTool.id}`, {
-    expectedStatus: 204,
     headers: jsonHeaders,
     json: { sharing: { type: 'public' } },
   })
@@ -278,7 +266,8 @@ async function checkRegisteredSatelliteSharedChat(
       reasoning_effort: null,
       tags: [],
       prompts: [],
-      tools: [satelliteTool.id],
+      tools: [],
+      satellites: [satellite.id],
       files: [],
       iconUri: null,
     },

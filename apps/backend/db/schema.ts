@@ -281,8 +281,6 @@ export interface Tool {
   configuration: string
   provisioned: number
   capability: number
-  satelliteId: string | null
-  enabled: number
   createdAt: string
   updatedAt: string
 }
@@ -329,6 +327,11 @@ export interface MessageAudit {
 export interface AssistantVersionToolAssociation {
   assistantVersionId: string
   toolId: string
+}
+
+export interface AssistantVersionSatelliteAssociation {
+  assistantVersionId: string
+  satelliteId: string
 }
 
 export interface ApiKey {
@@ -439,6 +442,7 @@ export interface DB {
   AssistantVersionFile: AssistantVersionFile
   AssistantSharing: AssistantSharing
   AssistantVersionToolAssociation: AssistantVersionToolAssociation
+  AssistantVersionSatelliteAssociation: AssistantVersionSatelliteAssociation
   AssistantUserData: AssistantUserData
   Backend: Backend
   Conversation: Conversation

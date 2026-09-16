@@ -3,21 +3,13 @@ import { EventEmitter } from 'node:events'
 
 // --- hoisted mocks ---
 
-const {
-  mockFindSatelliteAuthByApiKey,
-  mockFindSatelliteBySecret,
-  mockGetSatellite,
-  mockCreateToolWithId,
-  mockUpdateToolSatelliteInfo,
-  mockDbExecuteTakeFirst,
-} = vi.hoisted(() => ({
-  mockFindSatelliteAuthByApiKey: vi.fn(),
-  mockFindSatelliteBySecret: vi.fn(),
-  mockGetSatellite: vi.fn(),
-  mockCreateToolWithId: vi.fn().mockResolvedValue({ id: 'created-tool-id' }),
-  mockUpdateToolSatelliteInfo: vi.fn().mockResolvedValue(undefined),
-  mockDbExecuteTakeFirst: vi.fn().mockResolvedValue(undefined),
-}))
+const { mockFindSatelliteAuthByApiKey, mockFindSatelliteBySecret, mockGetSatellite } = vi.hoisted(
+  () => ({
+    mockFindSatelliteAuthByApiKey: vi.fn(),
+    mockFindSatelliteBySecret: vi.fn(),
+    mockGetSatellite: vi.fn(),
+  })
+)
 
 vi.mock('@/backend/api/utils/auth', () => ({
   findSatelliteAuthByApiKey: mockFindSatelliteAuthByApiKey,
@@ -26,21 +18,6 @@ vi.mock('@/backend/api/utils/auth', () => ({
 
 vi.mock('@/models/satellite', () => ({
   getSatellite: mockGetSatellite,
-}))
-
-vi.mock('@/models/tool', () => ({
-  createToolWithId: mockCreateToolWithId,
-  updateToolSatelliteInfo: mockUpdateToolSatelliteInfo,
-}))
-
-vi.mock('@/db/database', () => ({
-  db: {
-    selectFrom: () => ({
-      select: () => ({
-        where: () => ({ executeTakeFirst: mockDbExecuteTakeFirst }),
-      }),
-    }),
-  },
 }))
 
 vi.mock('@/lib/satellite/events', () => ({
@@ -115,9 +92,6 @@ beforeEach(() => {
   hub.nextCallId = 1
   vi.clearAllMocks()
   mockFindSatelliteBySecret.mockResolvedValue(null) // no satellite secret match by default; falls through to the api key path
-  mockCreateToolWithId.mockResolvedValue({ id: 'created-tool-id' })
-  mockUpdateToolSatelliteInfo.mockResolvedValue(undefined)
-  mockDbExecuteTakeFirst.mockResolvedValue(undefined) // no existing tool by default
 })
 
 /** Connect a registered satellite and flush the async registration. */
@@ -178,49 +152,6 @@ describe('register message', () => {
       satelliteId: 'sat-1',
       name: 'My Satellite', // comes from DB, not from the register message
     })
-  })
-
-  test('registered satellite: creates tool record on first connect', async () => {
-    mockFindSatelliteAuthByApiKey.mockResolvedValue(validAuth())
-    mockGetSatellite.mockResolvedValue(validSatellite('sat-1'))
-    mockDbExecuteTakeFirst.mockResolvedValue(undefined) // no existing tool
-
-    const ws = new MockWebSocket()
-    await handleSatelliteConnection(ws as any, makeReq('Bearer valid-key'))
-    ws.emit('message', JSON.stringify({ type: 'register', satelliteId: 'sat-1', name: 'ignored', tools: [] }))
-    await flushAsyncWork()
-
-    expect(mockCreateToolWithId).toHaveBeenCalledOnce()
-    expect(mockUpdateToolSatelliteInfo).toHaveBeenCalledWith('created-tool-id', 'sat-1', true)
-  })
-
-  test('registered satellite: updates existing tool record instead of creating a new one', async () => {
-    mockFindSatelliteAuthByApiKey.mockResolvedValue(validAuth())
-    mockGetSatellite.mockResolvedValue(validSatellite('sat-1'))
-    mockDbExecuteTakeFirst.mockResolvedValue({ id: 'existing-tool-id' })
-
-    const ws = new MockWebSocket()
-    await handleSatelliteConnection(ws as any, makeReq('Bearer valid-key'))
-    ws.emit('message', JSON.stringify({ type: 'register', satelliteId: 'sat-1', name: 'ignored', tools: [] }))
-    await flushAsyncWork()
-
-    expect(mockCreateToolWithId).not.toHaveBeenCalled()
-    expect(mockUpdateToolSatelliteInfo).toHaveBeenCalledWith('existing-tool-id', 'sat-1', true)
-  })
-
-  test('ephemeral satellite: does not create a tool record', async () => {
-    // Regression: ephemeral connections used to call ensureSatelliteTool,
-    // inserting a new orphaned Tool row on every reconnect because each
-    // ephemeral session gets a fresh ephemeral_<nanoid> id.
-    mockFindSatelliteAuthByApiKey.mockResolvedValue(validAuth())
-    const ws = new MockWebSocket()
-    await handleSatelliteConnection(ws as any, makeReq('Bearer valid-key'))
-
-    ws.emit('message', JSON.stringify({ type: 'register', name: 'my-bridge', tools: [] }))
-    await flushAsyncWork()
-
-    expect(mockCreateToolWithId).not.toHaveBeenCalled()
-    expect(mockUpdateToolSatelliteInfo).not.toHaveBeenCalled()
   })
 
   test('ephemeral satellite: adds connection to hub with generated ephemeral id', async () => {
