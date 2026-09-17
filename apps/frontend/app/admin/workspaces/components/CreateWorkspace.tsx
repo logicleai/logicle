@@ -37,7 +37,7 @@ const CreateWorkspace = ({ onClose }: { onClose: () => void }) => {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const response = await post<dto.Workspace>('/api/workspaces/', values)
+    const response = await post<dto.Workspace>('/api/workspaces', values)
     if (response.error) {
       toast.error(response.error.message)
       return
@@ -62,7 +62,7 @@ const CreateWorkspace = ({ onClose }: { onClose: () => void }) => {
             control={form.control}
             name="name"
             render={({ field }) => (
-            <FormItem label={t('name')}>
+              <FormItem label={t('name')}>
                 <Input placeholder={t('workspace-name-placeholder')} {...field} />
               </FormItem>
             )}
