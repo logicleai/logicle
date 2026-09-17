@@ -13,6 +13,8 @@ config:
   useHttps: true
   fqdn: 'chat.example.com'
   NEXTAUTH_SECRET: ''
+  ENABLE_APIKEYS: false
+  ENABLE_APIKEYS_UI: false
   ENABLE_SIGNUP: true
   ENABLE_CHAT_SHARING: true
   LLM_PROVIDER_CONFIG_LOCK: false

@@ -11,6 +11,8 @@ data:
   NEXTAUTH_URL: "{{ if .Values.config.useHttps }}https{{ else }}http{{ end }}://{{ .Values.config.fqdn }}"
   LLM_PROVIDER_CONFIG_LOCK: "{{ if .Values.config.LLM_PROVIDER_CONFIG_LOCK }}1{{ else }}0{{ end }}"
   SSO_CONFIG_LOCK: "{{ if .Values.config.SSO_CONFIG_LOCK }}1{{ else }}0{{ end }}"
+  ENABLE_APIKEYS: "{{ if .Values.config.ENABLE_APIKEYS }}1{{ else }}0{{ end }}"
+  ENABLE_APIKEYS_UI: "{{ if .Values.config.ENABLE_APIKEYS_UI }}1{{ else }}0{{ end }}"
   ENABLE_SIGNUP: "{{ if .Values.config.ENABLE_SIGNUP }}1{{ else }}0{{ end }}"
   ENABLE_TOOLS: "1"
   ENABLE_CHAT_SHARING: "{{ if .Values.config.ENABLE_CHAT_SHARING }}1{{ else }}0{{ end }}"
