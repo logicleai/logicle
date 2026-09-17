@@ -29,6 +29,13 @@ export const toNodeRequestUrl = (req: IncomingMessage) => {
   return new URL(req.url ?? '/', `${protocol}://${host}`)
 }
 
+/**
+ * Route files define canonical paths without a trailing slash. Accept the
+ * equivalent URL form from browsers and API clients before exact matching.
+ */
+export const normalizeApiPathname = (pathname: string) =>
+  pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+
 export const toWebRequest = (req: IncomingMessage, signal: AbortSignal) => {
   const url = toNodeRequestUrl(req)
   const headers = new Headers()
@@ -150,7 +157,7 @@ export async function handleApiRequest(req: IncomingMessage, res: ServerResponse
 
   const request = toWebRequest(req, abortController.signal)
   const url = new URL(request.url)
-  const match = matchRoute(url.pathname)
+  const match = matchRoute(normalizeApiPathname(url.pathname))
 
   if (!match) {
     return false
