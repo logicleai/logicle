@@ -63,7 +63,7 @@ export const removeWorkspaceMember = async (workspaceId: string, userId: string)
 }
 
 export const getWorkspaces = async () => {
-  return await db
+  const rows = await db
     .selectFrom('Workspace')
     .selectAll('Workspace')
     .select((eb) => [
@@ -80,6 +80,8 @@ export const getWorkspaces = async () => {
         .as('memberCount'),
     ])
     .execute()
+  // COUNT(*) comes back as a string from PostgreSQL
+  return rows.map((row) => ({ ...row, memberCount: Number(row.memberCount ?? 0) }))
 }
 
 export async function getWorkspaceRoles(userId: string) {

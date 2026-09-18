@@ -75,7 +75,7 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
             <MessageSquare size={22} />
           </Link>
         </div>
-        <AppMenu chatOnly />
+        <AppMenu withNavigation />
       </header>
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">{children}</div>
       {LeftBar && (

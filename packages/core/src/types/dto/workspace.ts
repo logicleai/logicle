@@ -11,6 +11,10 @@ export const workspaceSchema = z.object({
   updatedAt: iso8601UtcDateTimeSchema,
 }).meta({ id: 'Workspace' })
 
+export const workspaceWithMemberCountSchema = workspaceSchema.extend({
+  memberCount: z.number(),
+}).meta({ id: 'WorkspaceWithMemberCount' })
+
 export const insertableWorkspaceSchema = workspaceSchema.omit({
   id: true,
   slug: true,
@@ -55,4 +59,4 @@ export const updateableWorkspaceMemberSchema = workspaceMemberSchema.pick({
 export type InsertableWorkspaceMember = z.infer<typeof insertableWorkspaceMemberSchema>
 export type UpdateableWorkspaceMember = z.infer<typeof updateableWorkspaceMemberSchema>
 export type WorkspaceMember = z.infer<typeof workspaceMemberSchema>
-export type WorkspaceWithMemberCount = Workspace & { memberCount: number }
+export type WorkspaceWithMemberCount = z.infer<typeof workspaceWithMemberCountSchema>

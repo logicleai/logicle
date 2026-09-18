@@ -13,17 +13,26 @@ import React from 'react'
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/frontend/lib/utils'
-import { IconLogout, IconSettings, IconUserCode } from '@tabler/icons-react'
+import {
+  IconCompass,
+  IconLogout,
+  IconPhoto,
+  IconSatellite,
+  IconSettings,
+  IconUserCode,
+} from '@tabler/icons-react'
 import { IconUser } from '@tabler/icons-react'
 import { Avatar } from '../ui/avatar'
 import { useUserProfile } from '../providers/userProfileContext'
 import * as dto from '@/types/dto'
 import { UserDialog } from './UserDialog'
 import { useRouter } from 'next/navigation'
+import { useEnvironment } from '@/app/context/environmentProvider'
+import { useSatellites } from '@/hooks/satellites'
 
 type Params = {
-  /** Keep the mobile shell focused on conversations; logout remains available. */
-  chatOnly?: boolean
+  /** Mobile has no icon rail, so the menu also links to the sections the rail offers. */
+  withNavigation?: boolean
 }
 
 const DropdownMenuContent = React.forwardRef<
@@ -44,13 +53,27 @@ DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 
 DropdownMenuContent.displayName = 'DropdownMenuContent'
 
-export const AppMenu: FC<Params> = ({ chatOnly = false }) => {
+const SatellitesMenuLink: FC = () => {
+  const { t } = useTranslation()
+  const userProfile = useUserProfile()
+  const { data, isLoading } = useSatellites()
+  const isAdmin = userProfile?.role === dto.UserRole.ADMIN
+  if (!isAdmin && !isLoading && data.length === 0) return null
+  return (
+    <DropdownMenuLink href="/satellites" icon={IconSatellite}>
+      {t('satellites')}
+    </DropdownMenuLink>
+  )
+}
+
+export const AppMenu: FC<Params> = ({ withNavigation = false }) => {
   const { t } = useTranslation()
   const dropdownContainer = createRef<HTMLDivElement>()
   const userProfile = useUserProfile()
   const userName = userProfile?.name
   const [showUserDialog, setShowUserDialog] = useState<boolean>(false)
   const router = useRouter()
+  const environment = useEnvironment()
   const signOut = async () => {
     await fetch(`/api/auth/logout`, {
       method: 'post',
@@ -70,22 +93,30 @@ export const AppMenu: FC<Params> = ({ chatOnly = false }) => {
           </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          {!chatOnly && (
+          {withNavigation && (
             <>
-              <DropdownMenuButton icon={IconUser} onClick={async () => setShowUserDialog(true)}>
-                {t('my-profile')}
-              </DropdownMenuButton>
-              <DropdownMenuLink href="/chat/assistants/mine" icon={IconUserCode}>
-                {t('my-assistants')}
+              <DropdownMenuLink href="/chat/assistants/select" icon={IconCompass}>
+                {t('select-assistant')}
               </DropdownMenuLink>
-              {userProfile?.role === dto.UserRole.ADMIN && (
-                <DropdownMenuLink href="/admin/analytics" icon={IconSettings}>
-                  {t('administrator-settings')}
-                </DropdownMenuLink>
-              )}
+              <DropdownMenuLink href="/images" icon={IconPhoto}>
+                {t('images')}
+              </DropdownMenuLink>
+              {environment.enableSatellitesUi && <SatellitesMenuLink />}
               <DropdownMenuSeparator />
             </>
           )}
+          <DropdownMenuButton icon={IconUser} onClick={async () => setShowUserDialog(true)}>
+            {t('my-profile')}
+          </DropdownMenuButton>
+          <DropdownMenuLink href="/chat/assistants/mine" icon={IconUserCode}>
+            {t('my-assistants')}
+          </DropdownMenuLink>
+          {userProfile?.role === dto.UserRole.ADMIN && (
+            <DropdownMenuLink href="/admin/analytics" icon={IconSettings}>
+              {t('administrator-settings')}
+            </DropdownMenuLink>
+          )}
+          <DropdownMenuSeparator />
           <DropdownMenuButton
             variant="destructive"
             onClick={async () => await signOut()}
@@ -96,9 +127,7 @@ export const AppMenu: FC<Params> = ({ chatOnly = false }) => {
         </DropdownMenuContent>
         <DropdownMenuPortal container={dropdownContainer.current}></DropdownMenuPortal>
       </DropdownMenu>
-      {!chatOnly && showUserDialog && (
-        <UserDialog onClose={() => setShowUserDialog(false)}></UserDialog>
-      )}
+      {showUserDialog && <UserDialog onClose={() => setShowUserDialog(false)}></UserDialog>}
     </div>
   )
 }

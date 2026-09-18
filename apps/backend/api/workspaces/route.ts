@@ -2,14 +2,18 @@ import { KnownDbErrorCode, interpretDbException } from '@/db/exception'
 import { slugify } from '@/backend/lib/utils'
 import { conflict, ok, operation, responseSpec, errorSpec } from '@/lib/routes'
 import { createWorkspace, getWorkspaces } from '@/models/workspace'
-import { insertableWorkspaceSchema, workspaceSchema } from '@/types/dto'
+import {
+  insertableWorkspaceSchema,
+  workspaceSchema,
+  workspaceWithMemberCountSchema,
+} from '@/types/dto'
 
 // Get workspaces
 export const GET = operation({
   name: 'List workspaces',
   description: 'Fetch all workspaces.',
   authentication: 'admin',
-  responses: [responseSpec(200, workspaceSchema.array())] as const,
+  responses: [responseSpec(200, workspaceWithMemberCountSchema.array())] as const,
   implementation: async () => {
     const workspaces = await getWorkspaces()
     return ok(workspaces)
