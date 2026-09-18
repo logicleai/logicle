@@ -137,7 +137,7 @@ const MyAssistantPage = () => {
     }
     await mutate('/api/assistants')
     await mutate('/api/me/profile')
-            await mutate('/api/me/assistants/explore')
+    await mutate('/api/me/assistants/explore')
     await mutate('/api/me/assistants/mine')
     toast.success(t('assistant-deleted'))
   }
@@ -261,10 +261,10 @@ const MyAssistantPage = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex flex-1 flex-col gap-2 items-center px-4 py-6">
-        <div className="max-w-[1280px] w-5/6 h-full flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <h1 className="mb-4">{t('my-assistants')}</h1>
+      <div className="flex flex-1 flex-col items-center overflow-hidden px-8 py-8">
+        <div className="flex h-full w-full max-w-6xl flex-col gap-6">
+          <div className="flex items-end justify-between gap-4">
+            <h1 className="text-2xl font-bold">{t('my-assistants')}</h1>
           </div>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
             <Button disabled={!haveDefaultBackend} onClick={() => onCreateNew()} variant="primary">
@@ -272,7 +272,7 @@ const MyAssistantPage = () => {
             </Button>
           </SearchBarWithButtonsOnRight>
           <ScrollArea className="flex-1 min-h-0">
-            <div className=" gap-4 flex flex-col">
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-2">
               <SimpleTable
                 className="flex-1 text-sm table-fixed"
                 columns={columns}

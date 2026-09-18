@@ -7,7 +7,7 @@ import { AssistantDropdown } from './AssistantDropdown'
 import { Badge } from '@/components/ui/badge'
 
 interface SplashParams {
-  assistant: dto.UserAssistant
+  assistant: dto.UserAssistant & { files?: dto.AssistantFile[] }
   className: string
   onPrompt: (prompt: string) => void
 }
@@ -33,7 +33,11 @@ export const StartChatFromHere = ({ assistant, className, onPrompt }: SplashPara
                 {t('tools')}: {assistant.tools.length}
               </Badge>
             )}
-            <Badge variant="secondary">{t('knowledge')}</Badge>
+            {assistant.files && assistant.files.length > 0 && (
+              <Badge variant="secondary">
+                {t('knowledge')}: {assistant.files.length}
+              </Badge>
+            )}
           </div>
           {assistant.prompts.length > 0 && (
             <div className="mt-8 grid w-full grid-cols-1 gap-3 text-left sm:grid-cols-2">

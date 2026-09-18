@@ -125,7 +125,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
             title={t('goto-chats')}
             href="/chat"
             className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
-              pathname.startsWith('/chat')
+              pathname.startsWith('/chat') && !pathname.startsWith('/chat/assistants')
                 ? 'bg-primary-soft text-primary'
                 : 'text-muted-foreground hover:bg-secondary-hover hover:text-foreground'
             }`}

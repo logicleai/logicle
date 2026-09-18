@@ -88,7 +88,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
     const name = connection.name.toLowerCase()
     if (name.includes('google')) return t('continue-with-google')
     if (name.includes('github')) return t('continue-with-github')
-    if (connection.type === 'SAML') return t('continue-with-saml-sso')
+    if (connection.type === 'SAML') return connection.name
     return connection.name
   }
   return (
