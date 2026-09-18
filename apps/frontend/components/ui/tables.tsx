@@ -91,7 +91,10 @@ export function SimpleTable<T>({
               column.getToggleSortingHandler()?.(evt)
             }}
           >
-            <span className={`min-w-0 flex-1 truncate ${col.headerClass ?? ''}`} title={col.name}>
+            <span
+              className={`min-w-0 flex-1 truncate text-left ${col.headerClass ?? ''}`}
+              title={col.name}
+            >
               {col.name}
             </span>
             {col.accessorFn && (

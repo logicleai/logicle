@@ -18,44 +18,44 @@ module.exports = {
     },
     fontSize: {
       h1: [
-        '30px',
+        '24px',
         {
-          lineHeight: '39.69px',
+          lineHeight: '32px',
           fontWeight: '700',
         },
       ],
       h2: [
-        '24px',
+        '18px',
         {
-          lineHeight: '31.75px',
+          lineHeight: '25px',
           fontWeight: '700',
         },
       ],
       h3: [
-        '18px',
+        '14px',
         {
-          lineHeight: '23.81px',
-          fontWeight: '500',
+          lineHeight: '20px',
+          fontWeight: '600',
         },
       ],
       h4: [
-        '14px',
+        '13px',
         {
-          lineHeight: '18.52px',
+          lineHeight: '18px',
           fontWeight: '500',
         },
       ],
       h5: [
-        '14px',
+        '13px',
         {
-          lineHeight: '18.52px',
+          lineHeight: '18px',
           fontWeight: '700',
         },
       ],
       body1: [
-        '18px',
+        '15px',
         {
-          lineHeight: '23.81px',
+          lineHeight: '24px',
           fontWeight: '400',
         },
       ],
@@ -67,21 +67,21 @@ module.exports = {
         },
       ],
       label: [
-        '16px',
+        '13px',
         {
           lineHeight: '18px',
           fontWeight: '500',
         },
       ],
       button: [
-        '20px',
+        '14px',
         {
-          lineHeight: '25px',
-          fontWeight: '700',
+          lineHeight: '20px',
+          fontWeight: '600',
         },
       ],
       link: [
-        '16px',
+        '14px',
         {
           lineHeight: '19px',
           fontWeight: '500',
@@ -92,10 +92,16 @@ module.exports = {
       base: ['16px', '24px'],
       bg: ['20px', '28px'],
       xl: ['24px', '32px'],
+      lg: ['18px', '28px'],
+      '2xl': ['24px', '32px'],
+      '3xl': ['30px', '36px'],
+      '4xl': ['36px', '40px'],
+      '5xl': ['48px', '1'],
+      '6xl': ['60px', '1'],
     },
     extend: {
       fontFamily: {
-        sans: ['"Red Hat Display"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"Red Hat Text"', '"Red Hat Display"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       transitionProperty: {
         width: 'width',
@@ -103,6 +109,7 @@ module.exports = {
       },
       colors: {
         border: 'hsl(var(--border))',
+        'border-strong': 'var(--border-strong)',
         input: 'hsl(var(--input))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
@@ -110,6 +117,7 @@ module.exports = {
           DEFAULT: 'var(--primary)',
           foreground: 'var(--primary-foreground)',
           hover: 'var(--primary-hover)',
+          soft: 'var(--primary-soft)',
         },
         secondary: {
           DEFAULT: 'var(--secondary)',

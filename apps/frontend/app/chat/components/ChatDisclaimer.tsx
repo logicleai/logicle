@@ -8,10 +8,10 @@ interface Props {
 export const ChatDisclaimer = ({ rightSlot }: Props) => {
   const { t } = useTranslation()
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 pt-2 pb-3 text-[12px] md:px-4 md:pt-3 md:pb-6">
-      <div />
-      <div className="text-center opacity-50">{t('legal-disclaimer')}</div>
-      <div className="flex justify-end">{rightSlot}</div>
+    <div className="flex items-center justify-between gap-2 px-3 pt-2 pb-3 text-[12px] md:grid md:grid-cols-[1fr_auto_1fr] md:px-4 md:pt-3 md:pb-6">
+      <div className="hidden md:block" />
+      <div className="flex-1 text-center opacity-50 md:flex-none">{t('legal-disclaimer')}</div>
+      <div className="flex shrink-0 justify-end">{rightSlot}</div>
     </div>
   )
 }

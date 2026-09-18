@@ -12,9 +12,9 @@ export default function ImagesPage() {
   const { data: images } = useSWRJson<UserImage[]>(`/api/files/images`)
 
   return (
-    <div className="flex-1 overflow-auto p-6">
+    <div className="flex-1 overflow-auto px-4 py-6 md:px-8 md:py-8">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-h2 mb-4">{t('images')}</h2>
+        <h1 className="mb-6 text-2xl font-bold">{t('images')}</h1>
         {!images?.length ? (
           <div className="text-muted-foreground">{t('no-data')}</div>
         ) : (

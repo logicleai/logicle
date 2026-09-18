@@ -70,6 +70,12 @@ const SectionHeader = ({ label }: { label: string }) => (
   <div className="pb-0.5 pt-2 text-[10px] uppercase tracking-wide text-zinc-500">{label}</div>
 )
 
+const compactTokenCount = (value: number): string => {
+  if (value < 1000) return value.toLocaleString()
+  if (value < 1000000) return `${Math.round(value / 100) / 10}k`
+  return `${Math.round(value / 100000) / 10}m`
+}
+
 export const ContextLengthIndicator = ({
   current,
   limit,
@@ -82,11 +88,6 @@ export const ContextLengthIndicator = ({
   const safeCurrent = Math.max(0, current)
   const usageRatio = limit && limit > 0 ? Math.min(safeCurrent / limit, 1) : 0
   const percentage = limit && limit > 0 ? Math.round(usageRatio * 100) : 0
-  const size = 26
-  const strokeWidth = 4
-  const radius = (size - strokeWidth) / 2
-  const circumference = 2 * Math.PI * radius
-  const dashOffset = circumference * (1 - usageRatio)
 
   const preambleParts = tokenDetail?.preamble ?? []
   const historyMessages = tokenDetail?.history ?? []
@@ -115,37 +116,14 @@ export const ContextLengthIndicator = ({
             )}
             aria-label={t('context-length')}
           >
-            <span aria-hidden className="relative block h-[26px] w-[26px]">
-              <svg
-                viewBox={`0 0 ${size} ${size}`}
-                className={cn('h-[26px] w-[26px] -rotate-90', pending ? 'animate-pulse' : '')}
-                aria-hidden="true"
-              >
-                <circle
-                  cx={size / 2}
-                  cy={size / 2}
-                  r={radius}
-                  fill="none"
-                  stroke="rgb(63 63 70)"
-                  strokeWidth={strokeWidth}
-                  className="opacity-100"
-                />
-                <circle
-                  cx={size / 2}
-                  cy={size / 2}
-                  r={radius}
-                  fill="none"
-                  stroke="rgb(161 161 170)"
-                  strokeWidth={strokeWidth}
-                  strokeLinecap="round"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={dashOffset}
-                  className="transition-[stroke-dashoffset] duration-300"
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-[7px] font-semibold leading-none text-zinc-900">
-                {percentage}%
-              </span>
+            <span
+              aria-hidden
+              className={cn('whitespace-nowrap px-1 text-[11px] font-medium', pending ? 'animate-pulse' : '')}
+            >
+              {percentage}%
+              {limit !== undefined
+                ? ` · ${compactTokenCount(safeCurrent)}/${compactTokenCount(limit)}`
+                : ''}
             </span>
             <span className="sr-only">
               {t('context-length')}: {current.toLocaleString()}

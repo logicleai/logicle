@@ -5,6 +5,7 @@ import {
   IconLayoutSidebarLeftExpand,
   IconMenu2,
   IconSatellite,
+  IconX,
 } from '@tabler/icons-react'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
@@ -25,8 +26,12 @@ const SatelliteNavIcon: React.FC = () => {
   const isAdmin = userProfile?.role === dto.UserRole.ADMIN
   if (!isAdmin && !isLoading && data.length === 0) return null
   return (
-    <Link href="/satellites" title="Satellites" className="relative">
-      <IconSatellite size={28}></IconSatellite>
+    <Link
+      href="/satellites"
+      title="Satellites"
+      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground"
+    >
+      <IconSatellite size={20}></IconSatellite>
     </Link>
   )
 }
@@ -79,17 +84,13 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
             <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
             <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-[min(22rem,85vw)] flex-col overflow-hidden border-r bg-background p-0 pt-[env(safe-area-inset-top)] shadow-xl">
               <Dialog.Title className="sr-only">{t('show-sidebar')}</Dialog.Title>
-              <Dialog.Close asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="absolute right-2 top-2 z-10"
-                  title={t('close')}
-                  aria-label={t('close')}
-                >
-                  <span aria-hidden="true">×</span>
-                </Button>
-              </Dialog.Close>
+              <div className="flex shrink-0 justify-end px-2 pt-2">
+                <Dialog.Close asChild>
+                  <Button size="icon" variant="ghost" title={t('close')} aria-label={t('close')}>
+                    <IconX size={20} />
+                  </Button>
+                </Dialog.Close>
+              </div>
               {leftBar}
             </Dialog.Content>
           </Dialog.Portal>
@@ -104,29 +105,55 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
   const layoutconfigContext = useLayoutConfig()
   const environment = useEnvironment()
   const hideLeftBar = pathname === '/chat/assistants/select'
+  const leftBarWidth = pathname.startsWith('/admin') ? 'w-[240px]' : 'w-[288px]'
   return (
-    <main className="flex h-[100dvh] w-screen flex-row overflow-hidden divide-x text-sm">
-      <div className="flex flex-col justify-between align-center justify-center gap-3 p-2">
-        <div className="flex flex-col flex-1 items-center gap-3">
+    <main className="flex h-[100dvh] w-screen flex-row overflow-hidden bg-background text-sm">
+      <div className="flex w-14 shrink-0 flex-col items-center justify-between border-r bg-background py-3">
+        <div className="flex flex-col items-center gap-2">
           <button
             type="button"
             title={t('show-sidebar')}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground"
             onClick={() => layoutconfigContext.setShowSidebar(!layoutconfigContext.showSidebar)}
           >
             {layoutconfigContext.showSidebar ? (
-              <IconLayoutSidebarLeftCollapse size={28}></IconLayoutSidebarLeftCollapse>
+              <IconLayoutSidebarLeftCollapse size={20}></IconLayoutSidebarLeftCollapse>
             ) : (
-              <IconLayoutSidebarLeftExpand size={28}></IconLayoutSidebarLeftExpand>
+              <IconLayoutSidebarLeftExpand size={20}></IconLayoutSidebarLeftExpand>
             )}
           </button>
-          <Link title={t('goto-chats')} href="/chat">
-            <MessageSquare size={28}></MessageSquare>
+          <Link
+            title={t('goto-chats')}
+            href="/chat"
+            className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+              pathname.startsWith('/chat') && !pathname.startsWith('/chat/assistants')
+                ? 'bg-primary-soft text-primary'
+                : 'text-muted-foreground hover:bg-secondary-hover hover:text-foreground'
+            }`}
+          >
+            <MessageSquare size={20}></MessageSquare>
           </Link>
-          <Link title={t('select-assistant')} href="/chat/assistants/select">
-            <Compass size={28}></Compass>
+          <Link
+            title={t('select-assistant')}
+            href="/chat/assistants/select"
+            className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+              pathname.startsWith('/chat/assistants')
+                ? 'bg-primary-soft text-primary'
+                : 'text-muted-foreground hover:bg-secondary-hover hover:text-foreground'
+            }`}
+          >
+            <Compass size={20}></Compass>
           </Link>
-          <Link title={t('images')} href="/images">
-            <Images size={28}></Images>
+          <Link
+            title={t('images')}
+            href="/images"
+            className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+              pathname.startsWith('/images')
+                ? 'bg-primary-soft text-primary'
+                : 'text-muted-foreground hover:bg-secondary-hover hover:text-foreground'
+            }`}
+          >
+            <Images size={20}></Images>
           </Link>
           {environment.enableSatellitesUi && <SatelliteNavIcon />}
         </div>
@@ -137,8 +164,8 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
       {leftBar && (
         <div
           className={`${
-            layoutconfigContext.showSidebar ? 'w-[260px] opacity-1' : 'w-0 opacity-0'
-          } transition-all duration-300 ease-in-out flex shrink-0 flex-col text-foreground overflow-hidden ${
+            layoutconfigContext.showSidebar ? `${leftBarWidth} opacity-1` : 'w-0 opacity-0'
+          } transition-all duration-300 ease-in-out flex shrink-0 flex-col border-r bg-[hsl(var(--sidebar))] text-foreground overflow-hidden ${
             hideLeftBar ? 'hidden' : ''
           }`}
         >
