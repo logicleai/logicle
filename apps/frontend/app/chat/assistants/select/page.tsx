@@ -127,16 +127,16 @@ const SelectAssistantPage = () => {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="secondary"
-                    className="w-10 px-0"
+                    className="min-w-10 gap-0.5 px-2 [&_svg]:shrink-0"
                     title={ordering === 'name' ? t('order-by-name') : t('order-by-last-usage')}
                     aria-label={ordering === 'name' ? t('order-by-name') : t('order-by-last-usage')}
                   >
                     {ordering === 'name' ? (
-                      <IconSortAZ />
+                      <IconSortAZ size={22} />
                     ) : (
                       <>
-                        <IconCalendar />
-                        <IconArrowNarrowDown />
+                        <IconCalendar size={20} />
+                        <IconArrowNarrowDown size={16} />
                       </>
                     )}
                   </Button>

@@ -215,11 +215,11 @@ const MyAssistantPage = () => {
           <div className="flex items-center gap-2 text-sm tabular-nums text-muted-foreground whitespace-nowrap">
             <span>{s.messages}</span>
             <span className="flex items-center gap-0.5">
-              <IconThumbUp size={13} />
+              <IconThumbUp size={16} />
               {s.likes}
             </span>
             <span className="flex items-center gap-0.5">
-              <IconThumbDown size={13} />
+              <IconThumbDown size={16} />
               {s.dislikes}
             </span>
           </div>

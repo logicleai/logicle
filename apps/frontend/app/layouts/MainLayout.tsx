@@ -25,8 +25,12 @@ const SatelliteNavIcon: React.FC = () => {
   const isAdmin = userProfile?.role === dto.UserRole.ADMIN
   if (!isAdmin && !isLoading && data.length === 0) return null
   return (
-    <Link href="/satellites" title="Satellites" className="relative">
-      <IconSatellite size={28}></IconSatellite>
+    <Link
+      href="/satellites"
+      title="Satellites"
+      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground"
+    >
+      <IconSatellite size={20}></IconSatellite>
     </Link>
   )
 }
@@ -116,9 +120,9 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
             onClick={() => layoutconfigContext.setShowSidebar(!layoutconfigContext.showSidebar)}
           >
             {layoutconfigContext.showSidebar ? (
-              <IconLayoutSidebarLeftCollapse size={28}></IconLayoutSidebarLeftCollapse>
+              <IconLayoutSidebarLeftCollapse size={20}></IconLayoutSidebarLeftCollapse>
             ) : (
-              <IconLayoutSidebarLeftExpand size={28}></IconLayoutSidebarLeftExpand>
+              <IconLayoutSidebarLeftExpand size={20}></IconLayoutSidebarLeftExpand>
             )}
           </button>
           <Link
@@ -130,7 +134,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
                 : 'text-muted-foreground hover:bg-secondary-hover hover:text-foreground'
             }`}
           >
-            <MessageSquare size={18}></MessageSquare>
+            <MessageSquare size={20}></MessageSquare>
           </Link>
           <Link
             title={t('select-assistant')}
@@ -141,7 +145,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
                 : 'text-muted-foreground hover:bg-secondary-hover hover:text-foreground'
             }`}
           >
-            <Compass size={18}></Compass>
+            <Compass size={20}></Compass>
           </Link>
           <Link
             title={t('images')}
@@ -152,7 +156,7 @@ const StandardLayout: React.FC<Props> = ({ leftBar, children }) => {
                 : 'text-muted-foreground hover:bg-secondary-hover hover:text-foreground'
             }`}
           >
-            <Images size={18}></Images>
+            <Images size={20}></Images>
           </Link>
           {environment.enableSatellitesUi && <SatelliteNavIcon />}
         </div>
