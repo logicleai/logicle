@@ -67,63 +67,61 @@ const Signup = () => {
     }
   }
   return (
-    <div>
-      <div className="flex flex-col rounded p-6 border gap-2">
-        <Form {...form} className="flex flex-col gap-2" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="flex flex-col gap-2">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem label={t('your-name')}>
-                  <Input autoComplete="name" placeholder={t('your-name')} {...field} />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem label={t('email')}>
-                  <Input autoComplete="email" placeholder={t('email')} {...field} />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem label={t('password')}>
-                  <Input
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder={t('password')}
-                    {...field}
-                  />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div></div>
-          <div></div>
-          <div className="flex flex-col gap-2">
-            <Button
-              className="w-full"
-              type="submit"
-              color="primary"
-              disabled={
-                !form.formState.isValid ||
-                form.formState.isSubmitting ||
-                form.formState.isValidating
-              }
-              size="default"
-            >
-              {t('create-account')}
-            </Button>
-          </div>
-        </Form>
+    <div className="flex flex-col">
+      <div className="mb-7">
+        <h1 className="text-2xl font-bold">{t('create-a-new-account')}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t('sign-up-message')}</p>
       </div>
-      <p className="text-center text-sm text-gray-600 pt-2">
+      <Form {...form} className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="flex flex-col gap-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem label={t('your-name')}>
+                <Input autoComplete="name" placeholder={t('your-name')} {...field} />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem label={t('email')}>
+                <Input autoComplete="email" placeholder={t('email')} {...field} />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem label={t('password')}>
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder={t('password')}
+                  {...field}
+                />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="flex flex-col gap-3 pt-1">
+          <Button
+            className="w-full"
+            type="submit"
+            color="primary"
+            disabled={
+              !form.formState.isValid || form.formState.isSubmitting || form.formState.isValidating
+            }
+            size="default"
+          >
+            {t('create-account')}
+          </Button>
+        </div>
+      </Form>
+      <p className="pt-8 text-center text-sm text-muted-foreground">
         {t('already-have-an-account')}&nbsp;
         <Link href="/auth/login">{t('sign-in')}</Link>
       </p>
