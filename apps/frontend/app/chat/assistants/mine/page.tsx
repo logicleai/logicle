@@ -1,5 +1,4 @@
 'use client'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { useRouter } from 'next/navigation'
 import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
@@ -145,7 +144,7 @@ const MyAssistantPage = () => {
   const columns: Column<dto.UserAssistant>[] = [
     {
       name: t(' '),
-      thClass: 'w-12',
+      thClass: 'w-20',
       renderer: (assistant: dto.UserAssistant) => (
         <AssistantAvatar className="shrink-0 self-center" size="big" assistant={assistant} />
       ),
@@ -261,7 +260,7 @@ const MyAssistantPage = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex flex-1 flex-col items-center overflow-hidden px-8 py-8">
+      <div className="flex flex-1 flex-col items-center overflow-hidden px-4 py-6 md:px-8 md:py-8">
         <div className="flex h-full w-full max-w-6xl flex-col gap-6">
           <div className="flex items-end justify-between gap-4">
             <h1 className="text-2xl font-bold">{t('my-assistants')}</h1>
@@ -271,10 +270,10 @@ const MyAssistantPage = () => {
               {t('create-new')}
             </Button>
           </SearchBarWithButtonsOnRight>
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-2">
               <SimpleTable
-                className="flex-1 text-sm table-fixed"
+                className="min-w-[860px] flex-1 table-fixed text-sm"
                 columns={columns}
                 rows={(assistants ?? [])
                   .filter(
@@ -287,7 +286,7 @@ const MyAssistantPage = () => {
                 keygen={(t) => t.id}
               />
             </div>
-          </ScrollArea>
+          </div>
         </div>
       </div>
     </WithLoadingAndError>

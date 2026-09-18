@@ -297,9 +297,9 @@ const AnalyticsPage = () => {
 
   return (
     <div className="h-full lg:flex flex-col space-y-4 p-8 pt-6 overflow-auto">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
         <h2 className="text-3xl font-bold tracking-tight">{t('dashboard')}</h2>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <Popover
             open={customOpen}
             onOpenChange={(open) => {

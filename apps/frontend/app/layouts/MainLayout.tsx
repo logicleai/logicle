@@ -5,6 +5,7 @@ import {
   IconLayoutSidebarLeftExpand,
   IconMenu2,
   IconSatellite,
+  IconX,
 } from '@tabler/icons-react'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
@@ -83,17 +84,13 @@ const MobileLayout: React.FC<Props> = ({ leftBar, leftBarCollapsible, children }
             <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
             <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-[min(22rem,85vw)] flex-col overflow-hidden border-r bg-background p-0 pt-[env(safe-area-inset-top)] shadow-xl">
               <Dialog.Title className="sr-only">{t('show-sidebar')}</Dialog.Title>
-              <Dialog.Close asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="absolute right-2 top-2 z-10"
-                  title={t('close')}
-                  aria-label={t('close')}
-                >
-                  <span aria-hidden="true">×</span>
-                </Button>
-              </Dialog.Close>
+              <div className="flex shrink-0 justify-end px-2 pt-2">
+                <Dialog.Close asChild>
+                  <Button size="icon" variant="ghost" title={t('close')} aria-label={t('close')}>
+                    <IconX size={20} />
+                  </Button>
+                </Dialog.Close>
+              </div>
               {leftBar}
             </Dialog.Content>
           </Dialog.Portal>

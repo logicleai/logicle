@@ -118,7 +118,7 @@ export const ContextLengthIndicator = ({
           >
             <span
               aria-hidden
-              className={cn('px-1 text-[11px] font-medium', pending ? 'animate-pulse' : '')}
+              className={cn('whitespace-nowrap px-1 text-[11px] font-medium', pending ? 'animate-pulse' : '')}
             >
               {percentage}%
               {limit !== undefined
