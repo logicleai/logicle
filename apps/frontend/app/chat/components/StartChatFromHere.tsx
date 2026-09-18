@@ -4,6 +4,7 @@ import * as dto from '@/types/dto'
 import { AssistantAvatar } from '@/components/app/Avatars'
 import { Button } from '@/components/ui/button'
 import { AssistantDropdown } from './AssistantDropdown'
+import { Badge } from '@/components/ui/badge'
 
 interface SplashParams {
   assistant: dto.UserAssistant
@@ -14,47 +15,49 @@ interface SplashParams {
 export const StartChatFromHere = ({ assistant, className, onPrompt }: SplashParams) => {
   const { t } = useTranslation()
   return (
-    <>
-      <div className="flex flex-row p-2">
+    <div className={`flex min-h-0 flex-col ${className}`}>
+      <div className="flex shrink-0 flex-row border-b px-4 py-2">
         <AssistantDropdown assistant={assistant}></AssistantDropdown>
       </div>
-      <div className={`flex flex-col ${className}`}>
-        <div className="max-h-full overflow-x-hidden flex items-center">
-          <div className="mx-auto flex flex-col gap-3 px-3 pt-12 align-center group">
-            <h1 className="text-center">{t('new-chat-title')}</h1>
-            <div className="flex flex-horz self-center">
-              <div className="flex flex-col items-center">
-                <AssistantAvatar size="big" assistant={assistant}></AssistantAvatar>
-                <h3 className="text-center">{assistant?.name}</h3>
-              </div>
-            </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-auto px-4 py-10 sm:px-8">
+        <div className="mx-auto flex w-full max-w-[760px] flex-col items-center gap-3 text-center">
+          <AssistantAvatar size="big" className="h-16 w-16" assistant={assistant} />
+          <h1 className="mt-1 text-2xl">{assistant?.name}</h1>
+          <p className="max-w-[560px] text-sm text-muted-foreground">{assistant.description}</p>
+          <div className="flex flex-wrap justify-center gap-2 pt-1">
+            <Badge variant="secondary">
+              {t('model')}: {assistant.model}
+            </Badge>
+            {assistant.tools.length > 0 && (
+              <Badge variant="secondary">
+                {t('tools')}: {assistant.tools.length}
+              </Badge>
+            )}
+            <Badge variant="secondary">{t('knowledge')}</Badge>
           </div>
-        </div>
-        {assistant.prompts.length === 0 ? (
-          <div className="flex flex-col m-auto items-center p-8 border border-primary w-[400px] max-w-[80%]">
-            <IconSend size="18"></IconSend>
-            <h2>{t('start-from-here')}</h2>
-            <div className="text-center">{assistant.description}</div>
-          </div>
-        ) : (
-          <div className="flex flex-row flex-wrap m-auto items-stretch p-8 max-w-[80%] gap-4">
-            {assistant.prompts.map((prompt, index) => {
-              return (
+          {assistant.prompts.length > 0 && (
+            <div className="mt-8 grid w-full grid-cols-1 gap-3 text-left sm:grid-cols-2">
+              {assistant.prompts.map((prompt, index) => (
                 <Button
                   key={index}
                   variant="outline"
-                  className="w-40 border border-primary items-stretch justify-center"
+                  className="h-auto min-h-20 items-start justify-start whitespace-normal rounded-xl border-border bg-background p-4 text-left font-normal leading-5 hover:border-primary hover:bg-primary-soft"
                   onClick={() => onPrompt(prompt)}
                 >
-                  <div className="text-body1 text-ellipsis font-normal line-clamp-3 max-w-full whitespace-normal break-word text-balance">
-                    {prompt}
-                  </div>
+                  {prompt}
                 </Button>
-              )
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+          {assistant.prompts.length === 0 && (
+            <div className="mt-12 flex max-w-[420px] flex-col items-center gap-2 rounded-xl border border-dashed border-border p-8 text-center">
+              <IconSend size={18} className="text-primary" />
+              <h2>{t('start-from-here')}</h2>
+              <p className="text-sm text-muted-foreground">{t('message-logicle')}</p>
+            </div>
+          )}
+        </div>
       </div>
-    </>
+    </div>
   )
 }

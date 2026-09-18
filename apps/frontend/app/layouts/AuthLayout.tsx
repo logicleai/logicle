@@ -15,24 +15,48 @@ export default function AuthLayout({ children, heading, description }: AuthLayou
   const { t } = useTranslation()
   const environment = useEnvironment()
   return (
-    <div className="flex min-h-full items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div>
+    <div className="flex min-h-screen bg-background text-foreground">
+      <aside className="hidden w-[42%] flex-col justify-between bg-[hsl(var(--sidebar))] p-12 lg:flex xl:p-16">
+        <div className="flex items-center gap-3">
           <Image
             src={environment.logoPath ?? Logo}
-            className="mx-auto h-16 w-auto"
+            className="h-10 w-auto"
             alt={environment.appDisplayName}
             width={80}
             height={80}
             unoptimized
           />
-          {heading && (
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">{t(heading)}</h2>
-          )}
-          {description && <p className="mt-2 text-center text-gray-600">{t(description)}</p>}
+          <span className="text-lg font-bold">{environment.appDisplayName}</span>
         </div>
-        {children}
-      </div>
+        <div className="max-w-md">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-primary">
+            {environment.appDisplayName}
+          </p>
+          <h1 className="text-4xl font-bold leading-tight xl:text-5xl">
+            {t('sign-in-with-email')}
+          </h1>
+          <p className="mt-5 max-w-sm text-base leading-7 text-muted-foreground">
+            {description ? t(description) : t('sign-in-with-password')}
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground">v{environment.appVersion}</p>
+      </aside>
+      <main className="flex flex-1 items-center justify-center px-5 py-10 sm:px-10">
+        <div className="w-full max-w-[420px]">
+          <div className="mb-8 lg:hidden">
+            <Image
+              src={environment.logoPath ?? Logo}
+              className="mx-auto h-12 w-auto"
+              alt={environment.appDisplayName}
+              width={80}
+              height={80}
+              unoptimized
+            />
+          </div>
+          {heading && <h2 className="mb-2 text-center text-2xl font-bold">{t(heading)}</h2>}
+          {children}
+        </div>
+      </main>
     </div>
   )
 }

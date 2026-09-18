@@ -1,4 +1,3 @@
-
 import { default as NextLink } from 'next/link'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/frontend/lib/utils'
@@ -12,7 +11,7 @@ const linkVariants = cva(
       variant: {
         primary: 'text-primary underline-offset-4 underline',
         ghost: 'border-none bg-transparent',
-        sidebar_active: 'text-primary underline-offset-4 bg-secondary-hover',
+        sidebar_active: 'text-primary bg-primary-soft font-semibold',
       },
       size: {
         default: 'text-link',

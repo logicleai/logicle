@@ -16,12 +16,13 @@
     --popover-foreground: 0 0% 3.9%;
 
     --primary: #4260ff;
-    --primary-foreground: #f8faff;
-    --primary-hover: #3955e8;
+    --primary-foreground: #ffffff;
+    --primary-hover: #3450e6;
+    --primary-soft: #e9edff;
 
-    --secondary: #f8faff;
-    --secondary-foreground: #11282d;
-    --secondary-hover: #f5f5f5;
+    --secondary: #f5f6fa;
+    --secondary-foreground: #15171f;
+    --secondary-hover: #eceef5;
 
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
@@ -32,12 +33,13 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 72.2% 50.6%;
+    --border: 228 20% 91%;
+    --border-strong: #cfd4e0;
+    --input: 228 20% 91%;
+    --ring: 228 100% 63%;
     --radius: 0.5rem;
     --dialog-background: 0 0% 100%;
-    --sidebar: 0 0% 95%;
+    --sidebar: 220 33% 97%;
 
     --accent_color: #d8e8ff;
     --alert: #e84136;
@@ -47,27 +49,31 @@
   }
 
   .dark {
-    --background: 235, 11%, 23%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 72.2% 50.6%;
-    --primary-foreground: 0 85.7% 97.3%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 30.6%;
-    --input: 0 0% 30.6%;
-    --ring: 0 72.2% 50.6%;
-    --dialog-background: 0 0% 10%;
-    --sidebar: 0 0% 13%;
+    --background: 235 11% 12%;
+    --foreground: 220 20% 96%;
+    --card: 235 11% 14%;
+    --card-foreground: 220 20% 96%;
+    --popover: 235 11% 14%;
+    --popover-foreground: 220 20% 96%;
+    --primary: #6f86ff;
+    --primary-foreground: #0f1330;
+    --primary-hover: #8496ff;
+    --primary-soft: #2a3260;
+    --secondary: #22252f;
+    --secondary-foreground: #f2f3f7;
+    --secondary-hover: #2b2f3b;
+    --muted: 235 11% 17%;
+    --muted-foreground: 225 17% 68%;
+    --accent: 235 11% 17%;
+    --accent-foreground: 220 20% 96%;
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 228 18% 24%;
+    --border-strong: #454b60;
+    --input: 228 18% 24%;
+    --ring: 228 100% 72%;
+    --dialog-background: 235 11% 14%;
+    --sidebar: 235 14% 10%;
     --user-message: 235 11% 23%;
     --assistant-message: 233 11% 30%;
   }
@@ -84,7 +90,10 @@
     min-height: 100%;
   }
   body {
-    @apply bg-background text-foreground min-h-screen;
+    @apply bg-background text-foreground min-h-screen antialiased;
+    font-family: 'Red Hat Text', 'Red Hat Display', ui-sans-serif, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
   }
   .dropdown-content-full {
     width: var(--radix-dropdown-menu-trigger-width);

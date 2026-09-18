@@ -102,131 +102,124 @@ const SelectAssistantPage = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex h-full w-full flex-1 justify-center">
-        <div className="flex w-full max-w-[1440px] flex-1 flex-col gap-3 px-3 py-4 sm:w-5/6 sm:px-4 sm:py-6">
-          <div
-            className={`flex gap-3 ${
-              isMobile ? 'flex-col items-stretch' : 'items-center justify-between'
-            }`}
-          >
-            <h1 className="text-center">{t('select-assistant')}</h1>
-            <Button className={isMobile ? 'self-end' : ''} onClick={gotoMyAssistants}>
+      <div className="flex h-full w-full flex-1 justify-center overflow-hidden">
+        <div className="flex w-full max-w-[1440px] flex-1 flex-col gap-5 overflow-hidden px-5 py-6 sm:px-8 sm:py-8">
+          <div className="flex items-center gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl">{t('select-assistant')}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {availableAssistants.length} {t('assistants').toLowerCase()}
+              </p>
+            </div>
+            <span className="flex-1" />
+            <Button
+              variant="secondary"
+              className={isMobile ? 'self-end' : ''}
+              onClick={gotoMyAssistants}
+            >
               {t('my-assistants')}
             </Button>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-3 md:flex-row">
-            <div className="flex w-full shrink-0 flex-col md:h-full md:w-[220px]">
-              <h2 className="hidden p-2 md:block">{t('tags')}</h2>
-              <ScrollArea className="scroll-workaround w-full md:h-full md:p-2">
-                <RovingFocus.Root orientation={isMobile ? 'horizontal' : 'vertical'} loop>
-                  <ul className="flex gap-1 pb-1 md:block md:space-y-1">
-                    {tags.map((tag) => (
-                      <li
-                        key={tag?.key ?? ''}
-                        className={`flex shrink-0 items-center gap-2 rounded px-1 py-1 hover:bg-gray-100 ${
-                          tagsFilter === tag?.key ? 'bg-secondary-hover' : ''
-                        }`}
-                      >
-                        <RovingFocus.Item asChild>
-                          <button
-                            type="button"
-                            role="option"
-                            aria-selected={tagsFilter === tag?.key}
-                            className="w-full whitespace-nowrap rounded px-2 py-1 text-left text-small ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            onClick={() => setTagsFilter(tag?.key ?? null)}
-                          >
-                            <span className="flex-1 first-letter:capitalize truncate block overflow-hidden">
-                              {tag?.label ?? t('no-filter')}
-                            </span>
-                          </button>
-                        </RovingFocus.Item>
-                      </li>
-                    ))}
-                  </ul>
-                </RovingFocus.Root>
-              </ScrollArea>
-            </div>
-            <div className="flex min-h-0 flex-1 flex-col gap-3">
-              <SearchBarWithButtonsOnRight
-                searchTerm={searchTerm}
-                onSearchTermChange={setSearchTerm}
-              >
-                {' '}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      className="w-[4em]"
-                      title={ordering === 'name' ? t('order-by-name') : t('order-by-last-usage')}
-                      aria-label={
-                        ordering === 'name' ? t('order-by-name') : t('order-by-last-usage')
-                      }
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
+              {' '}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    className="w-10 px-0"
+                    title={ordering === 'name' ? t('order-by-name') : t('order-by-last-usage')}
+                    aria-label={ordering === 'name' ? t('order-by-name') : t('order-by-last-usage')}
+                  >
+                    {ordering === 'name' ? (
+                      <IconSortAZ />
+                    ) : (
+                      <>
+                        <IconCalendar />
+                        <IconArrowNarrowDown />
+                      </>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="" sideOffset={5}>
+                  <DropdownMenuButton icon={IconSortAZ} onClick={() => setOrdering('name')}>
+                    {t('order-by-name')}
+                  </DropdownMenuButton>
+                  <DropdownMenuButton icon={IconClock} onClick={() => setOrdering('lastused')}>
+                    {t('order-by-last-usage')}
+                  </DropdownMenuButton>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SearchBarWithButtonsOnRight>
+            <RovingFocus.Root orientation="horizontal" loop>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {tags.map((tag) => (
+                  <RovingFocus.Item asChild key={tag?.key ?? ''}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={tagsFilter === tag?.key}
+                      className={`shrink-0 rounded-full border px-3 py-1 text-xs transition-colors ${
+                        tagsFilter === tag?.key
+                          ? 'border-foreground bg-foreground text-background'
+                          : 'border-border bg-background text-muted-foreground hover:border-border-strong hover:text-foreground'
+                      }`}
+                      onClick={() => setTagsFilter(tag?.key ?? null)}
                     >
-                      {ordering === 'name' ? (
-                        <IconSortAZ />
-                      ) : (
-                        <>
-                          <IconCalendar />
-                          <IconArrowNarrowDown />
-                        </>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="" sideOffset={5}>
-                    <DropdownMenuButton icon={IconSortAZ} onClick={() => setOrdering('name')}>
-                      {t('order-by-name')}
-                    </DropdownMenuButton>
-                    <DropdownMenuButton icon={IconClock} onClick={() => setOrdering('lastused')}>
-                      {t('order-by-last-usage')}
-                    </DropdownMenuButton>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </SearchBarWithButtonsOnRight>
-              <ScrollArea className="flex-1">
-                {
-                  //     grid-template-columns: repeat(auto-fill, minmax(max(var(--max-item-width), calc((100% - var(--gap) * (var(--rows) - 1)) / var(--rows))), 1fr));
-                }
-                <div className="m-auto grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {availableAssistants
-                    .filter(filterWithSearch)
-                    .filter(filterWithTags)
-                    .sort(
-                      ordering === 'lastused'
-                        ? (a, b) =>
-                            (b.lastUsed ?? '1970-01-01').localeCompare(a.lastUsed ?? '1970-01-01')
-                        : (a, b) => a.name.localeCompare(b.name)
-                    )
-                    .map((assistant) => {
-                      return (
-                        <button
-                          type="button"
-                          key={assistant.id}
-                          className="flex gap-3 py-2 px-4 border text-left w-full overflow-hidden h-18 group"
-                          onClick={() => handleSelect(assistant)}
-                        >
-                          <AssistantAvatar
-                            className="shrink-0 self-center"
-                            size="big"
-                            assistant={assistant}
-                          />
-                          <span className="flex flex-col flex-1 h-full overflow-hidden">
-                            <span className="font-bold truncate">{assistant.name}</span>
-                            <span className="opacity-50 overflow-hidden text-ellipsis line-clamp-2 leading-[1.2rem] h-[2.4rem]">
-                              {assistant.description}
-                            </span>
-                            <span className="flex flex-row flex-wrap gap-1 pt-1">
-                              {assistant.tags.map((tag) => (
-                                <Badge key={tag ?? ''} variant="outline">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </span>
+                      {tag?.label ?? t('no-filter')}
+                    </button>
+                  </RovingFocus.Item>
+                ))}
+              </div>
+            </RovingFocus.Root>
+            <ScrollArea className="flex-1">
+              <div className="grid grid-cols-1 gap-3 pb-4 sm:grid-cols-2 xl:grid-cols-3">
+                {availableAssistants
+                  .filter(filterWithSearch)
+                  .filter(filterWithTags)
+                  .sort(
+                    ordering === 'lastused'
+                      ? (a, b) =>
+                          (b.lastUsed ?? '1970-01-01').localeCompare(a.lastUsed ?? '1970-01-01')
+                      : (a, b) => a.name.localeCompare(b.name)
+                  )
+                  .map((assistant) => {
+                    return (
+                      <button
+                        type="button"
+                        key={assistant.id}
+                        className="group flex h-auto w-full gap-3 overflow-hidden rounded-xl border border-border bg-background p-4 text-left shadow-sm transition-shadow hover:border-border-strong hover:shadow-md"
+                        onClick={() => handleSelect(assistant)}
+                      >
+                        <AssistantAvatar
+                          className="h-10 w-10 shrink-0 self-start"
+                          size="default"
+                          assistant={assistant}
+                        />
+                        <span className="flex h-full min-w-0 flex-1 flex-col gap-1 overflow-hidden">
+                          <span className="truncate text-[15px] font-semibold">
+                            {assistant.name}
                           </span>
-                        </button>
-                      )
-                    })}
-                </div>
-              </ScrollArea>
-            </div>
+                          <span className="line-clamp-2 overflow-hidden text-ellipsis text-[13px] leading-5 text-muted-foreground">
+                            {assistant.description}
+                          </span>
+                          <span className="flex flex-row flex-wrap gap-1 pt-1">
+                            {assistant.tags.map((tag) => (
+                              <Badge
+                                key={tag ?? ''}
+                                variant="secondary"
+                                className="text-[11px] font-medium"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </span>
+                        </span>
+                      </button>
+                    )
+                  })}
+              </div>
+            </ScrollArea>
           </div>
         </div>
       </div>

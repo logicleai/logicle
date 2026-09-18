@@ -54,10 +54,10 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
     setIsRenaming(false)
   }
   return (
-    <div className="group flex h-14 flex-row items-center justify-center gap-2 px-3 sm:h-16 sm:gap-3">
+    <div className="group flex h-14 flex-row items-center justify-center gap-2 border-b px-3 sm:gap-3">
       <AssistantDropdown assistant={assistant} />
       {!isMobile && (
-        <h3 className="min-w-0 flex-1 text-center">
+        <h3 className="min-w-0 flex-1 text-center text-sm font-semibold">
           {!isRenaming && (
             <button
               type="button"
@@ -73,7 +73,7 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
           )}
           {isRenaming && (
             <input
-              className="max-w-[360px] w-full bg-transparent text-center text-h3 outline-none"
+              className="w-full max-w-[360px] bg-transparent text-center text-sm outline-none"
               type="text"
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
@@ -94,6 +94,7 @@ export const ChatHeader: FC<Props> = ({ assistant }) => {
       )}
       {environment.enableChatSharing && (
         <Button
+          variant="secondary"
           className={isMobile ? 'ml-auto shrink-0 px-2 text-base' : undefined}
           size={isMobile ? 'small' : undefined}
           onClick={() => setShowSharingDialog(true)}

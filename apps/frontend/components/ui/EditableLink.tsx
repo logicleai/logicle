@@ -54,13 +54,13 @@ export const EditableLink: FC<Props> = ({
   //console.debug(`isRenaming = ${isRenaming} value = ${value} renameValue = ${renameValue}`)
   return (
     <div
-      className={`relative w-full hover:bg-secondary-hover ${
-        selected ? 'bg-secondary-hover' : 'hover:bg-secondary-hover/50'
+      className={`relative w-full rounded-md transition-colors ${
+        selected ? 'bg-background shadow-sm' : 'hover:bg-secondary-hover/70'
       }`}
     >
       <Link
         prefetch={false}
-        className={`flex w-full cursor-pointer items-center gap-3 rounded-lg p-2 text-h3 transition-colors duration-200 ${
+        className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-200 ${
           disabled ? 'disabled:cursor-not-allowed' : ''
         } ${isRenaming ? 'invisible' : ''} `}
         onBlur={() => onCancel()}
@@ -69,7 +69,7 @@ export const EditableLink: FC<Props> = ({
         draggable="true"
       >
         <span
-          className={`relative flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-h3 ${
+          className={`relative flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-sm ${
             selected ? 'pr-4' : 'pr-1'
           }`}
           title={value}
@@ -79,7 +79,7 @@ export const EditableLink: FC<Props> = ({
       </Link>
       {isRenaming && (
         <input
-          className="absolute top-1 bottom-1 right-1 left-1 pl-1 bg-transparent overflow-hidden overflow-ellipsis border-neutral-400 text-left text-h3 leading-3 outline-none focus:border-neutral-100"
+          className="absolute bottom-1 left-1 right-1 top-1 overflow-hidden overflow-ellipsis border-neutral-400 bg-transparent pl-1 text-left text-sm leading-3 outline-none focus:border-neutral-100"
           type="text"
           value={renameValue}
           onChange={(e) => {

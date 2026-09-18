@@ -537,15 +537,15 @@ export const ChatInput = ({
     <div
       onDrop={handleDrop}
       onDragOver={(event) => event.preventDefault()}
-      className="px-3 pt-0.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-4"
+      className="px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1 sm:px-4"
     >
-      <div className="max-w-[48em] mx-auto w-full">
-        <div className="relative flex flex-col rounded-md border">
+      <div className="mx-auto w-full max-w-[48em]">
+        <div className="relative flex flex-col rounded-2xl border border-border bg-background shadow-sm transition-shadow focus-within:shadow-md">
           <UploadList files={uploadedFiles.current} onDelete={handleDelete} modelId={modelId} />
           <textarea
             disabled={disabled || hardLimitReached}
             ref={textareaRefInt}
-            className="m-0 w-full resize-none border-0 p-0 py-2 pr-8 pl-10 md:py-3 md:pl-10 bg-background text-body1 focus:ring-0 focus:ring-offset-0"
+            className="m-0 w-full resize-none border-0 bg-transparent p-0 py-3 pl-11 pr-12 text-[15px] focus:ring-0 focus:ring-offset-0 md:py-3"
             style={{
               resize: 'none',
               bottom: `${textareaRefInt?.current?.scrollHeight}px`,
@@ -564,7 +564,7 @@ export const ChatInput = ({
 
           {chatStatus.state !== 'idle' ? (
             <Button
-              className="absolute right-2 bottom-2 opacity-60"
+              className="absolute bottom-2 right-2 rounded-full opacity-60"
               size="icon"
               variant="secondary"
               aria-label={t('stop-generating')}
@@ -581,7 +581,7 @@ export const ChatInput = ({
           ) : (
             <>
               <Button
-                className="absolute right-2 bottom-2"
+                className="absolute bottom-2 right-2 rounded-full"
                 size="icon"
                 aria-label={t('send-message')}
                 title={t('send-message')}
@@ -592,7 +592,7 @@ export const ChatInput = ({
                 <IconSend2 size={18} />
               </Button>
               <label
-                className="absolute left-2 bottom-2 cursor-pointer rounded-md p-1 hover:bg-secondary-hover"
+                className="absolute bottom-2 left-2 cursor-pointer rounded-full p-2 text-muted-foreground hover:bg-secondary-hover hover:text-foreground"
                 htmlFor={fileInputId}
                 aria-label={t('attach-file')}
                 title={t('attach-file')}

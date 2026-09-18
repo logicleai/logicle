@@ -84,16 +84,49 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
     // and 404 without ever hitting the server).
     window.location.href = `/api/auth/saml/login?connection=${encodeURIComponent(client_id)}`
   }
+  const connectionLabel = (connection: dto.PublicIdpConnection) => {
+    const name = connection.name.toLowerCase()
+    if (name.includes('google')) return t('continue-with-google')
+    if (name.includes('github')) return t('continue-with-github')
+    if (connection.type === 'SAML') return t('continue-with-saml-sso')
+    return connection.name
+  }
   return (
     <div className="flex flex-col">
+      <div className="mb-7">
+        <h1 className="text-2xl font-bold">{t('sign-in')}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t('sign-in-with-email')}</p>
+      </div>
       {errorMessage && <ErrorMsg>{t(errorMessage)}</ErrorMsg>}
-      <div className="flex flex-col rounded p-6 border gap-3">
+      <div className="flex flex-col gap-6">
+        {connections.length !== 0 && (
+          <div className="flex flex-col gap-2">
+            {connections.map((connection) => (
+              <Button
+                key={connection.id}
+                variant="secondary"
+                onClick={() => onSubmitSso(connection.id)}
+                className="w-full"
+                type="button"
+              >
+                {connectionLabel(connection)}
+              </Button>
+            ))}
+          </div>
+        )}
+        {connections.length !== 0 && (
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            <span>{t('or-sign-in-with')}</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+        )}
         <Form
           {...form}
-          className="flex flex-col gap-2"
+          className="flex flex-col gap-4"
           onSubmit={form.handleSubmit((values) => onSubmit(values))}
         >
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             <FormField
               control={form.control}
               name="email"
@@ -117,9 +150,7 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
               )}
             />
           </div>
-          <div />
-          <div />
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 pt-1">
             <Button
               className="w-full"
               type="submit"
@@ -135,31 +166,9 @@ const Login: FC<Props> = ({ connections, enableSignup }) => {
             </Button>
           </div>
         </Form>
-        {connections.length !== 0 && (
-          <div className="flex flex-col gap-3">
-            <div className="self-center">{t('or-sign-in-with')}</div>
-            <div className="flex flex-col gap-3">
-              {connections.map((connection) => {
-                return (
-                  <div key={connection.id}>
-                    <Button
-                      variant="secondary"
-                      onClick={() => onSubmitSso(connection.id)}
-                      className="w-full"
-                      type="submit"
-                      size="default"
-                    >
-                      {connection.name}
-                    </Button>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
       </div>
       {enableSignup && (
-        <p className="text-center text-sm text-gray-600 pt-2">
+        <p className="pt-8 text-center text-sm text-muted-foreground">
           {t('dont-have-an-account')}&nbsp;
           <Link href="/auth/join">{t('create-a-new-account')}</Link>
         </p>

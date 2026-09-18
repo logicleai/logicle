@@ -28,11 +28,11 @@ export function Navbar({ className, entries }: Props) {
         })
   return (
     <nav className={className}>
-      <ul className="flex flex-col text-h3">
+      <ul className="flex flex-col gap-0.5 text-sm">
         {entries.map((item) => (
           <li key={`li-${item.href}`} className="relative">
             <Link
-              className={`w-full px-2 py-3 ${
+              className={`w-full gap-2 px-3 py-2 ${
                 item.href === match.href ? '' : 'hover:bg-secondary-hover/50'
               }`}
               variant={item.href === match.href ? 'sidebar_active' : 'ghost'}

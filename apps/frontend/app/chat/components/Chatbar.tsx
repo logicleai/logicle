@@ -224,14 +224,14 @@ export const Chatbar = () => {
 
   return (
     <div
-      className={`z-40 flex min-h-0 flex-1 flex-col space-y-2 p-2 text-[14px] transition-all overflow-hidden relative`}
+      className={`z-40 flex min-h-0 flex-1 flex-col gap-3 p-3 text-[14px] transition-all overflow-hidden relative`}
     >
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
         <Button
           variant="ghost"
           size="body1"
           style={{ justifyContent: 'start' }}
-          className="flex flex-1 justify-start py-1 px-1 gap-2"
+          className="flex flex-1 justify-start gap-2 px-2"
           onClick={() => {
             handleNewConversation()
           }}
@@ -243,7 +243,7 @@ export const Chatbar = () => {
           variant="ghost"
           size="body1"
           style={{ justifyContent: 'start' }}
-          className="flex flex-1 justify-start py-1 px-1 gap-2"
+          className="flex flex-1 justify-start gap-2 px-2 text-muted-foreground"
           onClick={() => {
             handleSearchConversation()
           }}
@@ -254,11 +254,11 @@ export const Chatbar = () => {
       </div>
 
       {pinnedAssistants.length !== 0 && (
-        <div className="flex flex-col items-start border-b">
+        <div className="flex flex-col items-start border-b pb-3">
           {pinnedAssistants.map((assistant) => {
             return (
               <Button
-                className="w-full p-2"
+                className="w-full justify-start gap-2 px-2"
                 variant="ghost"
                 size="link"
                 key={assistant.id}
@@ -267,7 +267,7 @@ export const Chatbar = () => {
                 <AssistantAvatar className="shrink-0" assistant={assistant} />
                 <div
                   key={assistant.id}
-                  className="flex-1 min-w-0 text-left overflow-hidden text-ellipsis px-2"
+                  className="min-w-0 flex-1 overflow-hidden text-left text-ellipsis"
                 >
                   {assistant.name}
                 </div>
@@ -297,7 +297,7 @@ export const Chatbar = () => {
           <>
             {environment.enableChatFolders && (
               <div className="flex flex-col">
-                <h5 className="text-muted-foreground flex items-center">
+                <h5 className="mb-1 flex items-center px-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
                   <span className="flex-1">{t('folders')}</span>
                   <Button variant="ghost" onClick={() => setCreatingFolder(true)}>
                     <IconPlus />
@@ -313,7 +313,9 @@ export const Chatbar = () => {
 
             {groupedConversation.conversationsToday.length > 0 && (
               <div>
-                <h5 className="text-muted-foreground">{t('today')}</h5>
+                <h5 className="mb-1 px-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                  {t('today')}
+                </h5>
                 {groupedConversation.conversationsToday.map((conversation) => (
                   <ConversationComponent key={conversation.id} conversation={conversation} />
                 ))}
@@ -321,7 +323,9 @@ export const Chatbar = () => {
             )}
             {groupedConversation.conversationsYesterday.length > 0 && (
               <div>
-                <h5 className="text-muted-foreground">{t('yesterday')}</h5>
+                <h5 className="mb-1 mt-4 px-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                  {t('yesterday')}
+                </h5>
                 {groupedConversation.conversationsYesterday.map((conversation) => (
                   <ConversationComponent key={conversation.id} conversation={conversation} />
                 ))}
@@ -329,7 +333,9 @@ export const Chatbar = () => {
             )}
             {groupedConversation.conversationsCurrentWeek.length > 0 && (
               <div>
-                <h5 className="text-muted-foreground">{t('previous-week')}</h5>
+                <h5 className="mb-1 mt-4 px-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                  {t('previous-week')}
+                </h5>
                 {groupedConversation.conversationsCurrentWeek.map((conversation) => (
                   <ConversationComponent key={conversation.id} conversation={conversation} />
                 ))}
@@ -337,7 +343,9 @@ export const Chatbar = () => {
             )}
             {groupedConversation.conversationsOlder.length > 0 && (
               <div>
-                <h5 className="text-muted-foreground">{t('older')}</h5>
+                <h5 className="mb-1 mt-4 px-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                  {t('older')}
+                </h5>
                 {groupedConversation.conversationsOlder.map((conversation) => (
                   <ConversationComponent key={conversation.id} conversation={conversation} />
                 ))}
