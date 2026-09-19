@@ -31,6 +31,7 @@ import * as dto from '@/types/dto'
 import { normalizeMcpToolResult, saveFile } from '@/backend/lib/tools/file-output-normalization'
 import { prepareMcpConversationSandbox, type McpConversationSandbox } from './sandbox'
 import { attachMcpFileBridge, type McpFileBridge } from './file-bridge'
+import { buildMcpRequestMeta } from './request-meta'
 import { SandboxedStdioClientTransport } from './sandboxed-stdio-transport'
 
 interface CacheItem {
@@ -305,6 +306,7 @@ async function convertMcpSpecToToolFunctions(
           clientToUse = await getClient(toolParams, accessToken, userId)
         }
 
+        const requestMeta = await buildMcpRequestMeta(invokeParams)
         let result: Awaited<ReturnType<Client['callTool']>> | undefined
         const maxAttempts = 1 + Math.max(0, env.tools.mcp.callToolMaxRetries)
         let lastError: unknown
@@ -314,6 +316,7 @@ async function convertMcpSpecToToolFunctions(
             result = await clientToUse.callTool({
               name: tool.name,
               arguments: params,
+              _meta: requestMeta,
             })
             lastError = undefined
             break
