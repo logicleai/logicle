@@ -16,6 +16,8 @@ data:
   ENABLE_SIGNUP: "{{ if .Values.config.ENABLE_SIGNUP }}1{{ else }}0{{ end }}"
   ENABLE_TOOLS: "1"
   ENABLE_CHAT_SHARING: "{{ if .Values.config.ENABLE_CHAT_SHARING }}1{{ else }}0{{ end }}"
+  ENABLE_ASSISTANT_INFO: "{{ if .Values.config.ENABLE_ASSISTANT_INFO }}1{{ else }}0{{ end }}"
+  ENABLE_ASSISTANT_DUPLICATE: "{{ if .Values.config.ENABLE_ASSISTANT_DUPLICATE }}1{{ else }}0{{ end }}"
   CHAT_ATTACHMENTS_ALLOWED_FORMATS: "{{ .Values.config.CHAT_ATTACHMENTS_ALLOWED_FORMATS }}"
   PROVISION_PATH: "/provisioning"
   FILE_STORAGE_LOCATION: "{{ if eq .Values.storage.type "s3" }}s3://{{ .Values.storage.s3.bucket_name }}{{ else }}/data/files{{ end }}"
