@@ -19,6 +19,12 @@ interface Props {
   onNavigate?: () => void
 }
 
+const moveCaretToEnd = (input: HTMLInputElement) => {
+  const end = input.value.length
+  input.setSelectionRange(end, end)
+  input.scrollLeft = input.scrollWidth
+}
+
 export const EditableLink: FC<Props> = ({
   href,
   value,
@@ -54,23 +60,23 @@ export const EditableLink: FC<Props> = ({
   //console.debug(`isRenaming = ${isRenaming} value = ${value} renameValue = ${renameValue}`)
   return (
     <div
-      className={`relative w-full rounded-md transition-colors ${
+      className={`relative min-w-0 flex-1 rounded-md transition-colors ${
         selected ? 'bg-background shadow-sm' : 'hover:bg-secondary-hover/70'
-      }`}
+      } ${isRenaming ? 'box-border h-8 border border-input focus-within:border-primary' : ''}`}
     >
       <Link
         prefetch={false}
-        className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-200 ${
+        className={`flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-200 ${
           disabled ? 'disabled:cursor-not-allowed' : ''
-        } ${isRenaming ? 'invisible' : ''} `}
+        } ${isRenaming ? 'invisible' : ''}`}
         onBlur={() => onCancel()}
         onClick={handleClick}
         href={href}
         draggable="true"
       >
         <span
-          className={`relative flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-sm ${
-            selected ? 'pr-4' : 'pr-1'
+          className={`relative min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-sm ${
+            selected ? 'pr-8' : 'pr-1'
           }`}
           title={value}
         >
@@ -79,15 +85,16 @@ export const EditableLink: FC<Props> = ({
       </Link>
       {isRenaming && (
         <input
-          className="absolute bottom-1 left-1 right-1 top-1 overflow-hidden overflow-ellipsis border-neutral-400 bg-transparent pl-1 text-left text-sm leading-3 outline-none focus:border-neutral-100"
+          className="absolute inset-0 rounded-md border-0 bg-transparent px-2 text-left text-sm leading-3 outline-none"
           type="text"
+          autoFocus
           value={renameValue}
+          onFocus={(event) => moveCaretToEnd(event.currentTarget)}
           onChange={(e) => {
             onRenameValueChange(e.target.value)
           }}
           onKeyDown={handleInputKeyDown}
           onBlur={onCancel}
-          autoFocus
         />
       )}
     </div>

@@ -102,7 +102,7 @@ export const ConversationComponent = ({ conversation }: Props) => {
       data-testid="conversation-item"
       data-conversation-id={conversation.id}
       onDragStart={handleDragStart}
-      className="relative flex items-center"
+      className="relative flex min-w-0 items-center gap-2"
     >
       {userPreferences.showIconsInChatbar && (
         <AssistantAvatar
