@@ -8,10 +8,12 @@ const conversationListInfiniteKey = unstable_serialize(() => conversationListKey
 
 export const isConversationListKey = (key: unknown): key is string =>
   key === conversationListKey ||
-  key === conversationListInfiniteKey ||
   (typeof key === 'string' && key.startsWith(`${conversationListKey}?`))
 
-export const mutateConversationList = () => globalMutate(isConversationListKey)
+export const mutateConversationList = async () => {
+  await globalMutate(isConversationListKey)
+  await globalMutate(conversationListInfiniteKey)
+}
 
 export const getConversation = async (conversationId: string) => {
   return await get<dto.Conversation>(`/api/conversations/${conversationId}`)
