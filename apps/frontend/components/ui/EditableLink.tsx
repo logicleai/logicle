@@ -60,13 +60,32 @@ export const EditableLink: FC<Props> = ({
   //console.debug(`isRenaming = ${isRenaming} value = ${value} renameValue = ${renameValue}`)
   return (
     <div
-      className={`min-w-0 flex-1 rounded-md transition-colors ${
+      className={`relative min-w-0 flex-1 rounded-md transition-colors ${
         selected ? 'bg-background shadow-sm' : 'hover:bg-secondary-hover/70'
       } ${isRenaming ? 'box-border h-8 border border-input focus-within:border-primary' : ''}`}
     >
-      {isRenaming ? (
+      <Link
+        prefetch={false}
+        className={`flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-200 ${
+          disabled ? 'disabled:cursor-not-allowed' : ''
+        } ${isRenaming ? 'invisible' : ''}`}
+        onBlur={() => onCancel()}
+        onClick={handleClick}
+        href={href}
+        draggable="true"
+      >
+        <span
+          className={`relative min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-sm ${
+            selected ? 'pr-8' : 'pr-1'
+          }`}
+          title={value}
+        >
+          {value}
+        </span>
+      </Link>
+      {isRenaming && (
         <input
-          className="h-full w-full min-w-0 rounded-md border-0 bg-transparent px-2 text-left text-sm leading-3 outline-none"
+          className="absolute inset-0 rounded-md border-0 bg-transparent px-2 text-left text-sm leading-3 outline-none"
           type="text"
           autoFocus
           value={renameValue}
@@ -77,26 +96,6 @@ export const EditableLink: FC<Props> = ({
           onKeyDown={handleInputKeyDown}
           onBlur={onCancel}
         />
-      ) : (
-        <Link
-          prefetch={false}
-          className={`flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-200 ${
-            disabled ? 'disabled:cursor-not-allowed' : ''
-          }`}
-          onBlur={() => onCancel()}
-          onClick={handleClick}
-          href={href}
-          draggable="true"
-        >
-          <span
-            className={`relative min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-sm ${
-              selected ? 'pr-8' : 'pr-1'
-            }`}
-            title={value}
-          >
-            {value}
-          </span>
-        </Link>
       )}
     </div>
   )
