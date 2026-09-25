@@ -1,14 +1,19 @@
 import { delete_, get, patch, post } from '@/lib/fetch'
 import { mutate as globalMutate } from 'swr'
+import { unstable_serialize } from 'swr/infinite'
 import * as dto from '@/types/dto'
 
 export const conversationListKey = '/api/conversations'
+const conversationListInfiniteKey = unstable_serialize(() => conversationListKey)
 
 export const isConversationListKey = (key: unknown): key is string =>
   key === conversationListKey ||
   (typeof key === 'string' && key.startsWith(`${conversationListKey}?`))
 
-export const mutateConversationList = () => globalMutate(isConversationListKey)
+export const mutateConversationList = async () => {
+  await globalMutate(isConversationListKey)
+  await globalMutate(conversationListInfiniteKey)
+}
 
 export const getConversation = async (conversationId: string) => {
   return await get<dto.Conversation>(`/api/conversations/${conversationId}`)
