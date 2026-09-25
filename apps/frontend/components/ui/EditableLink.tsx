@@ -1,4 +1,4 @@
-import { FC, KeyboardEvent, MouseEvent, useEffect, useRef } from 'react'
+import { FC, KeyboardEvent, MouseEvent } from 'react'
 import Link from 'next/link'
 
 interface Props {
@@ -37,15 +37,6 @@ export const EditableLink: FC<Props> = ({
   onCancel,
   onNavigate,
 }) => {
-  const renameInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    const input = renameInputRef.current
-    if (isRenaming && input) {
-      input.focus({ preventScroll: true })
-    }
-  }, [isRenaming])
-
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (!onNavigate) return
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
@@ -75,9 +66,9 @@ export const EditableLink: FC<Props> = ({
     >
       {isRenaming ? (
         <input
-          ref={renameInputRef}
           className="h-full w-full min-w-0 rounded-md border-0 bg-transparent px-2 text-left text-sm leading-3 outline-none"
           type="text"
+          autoFocus
           value={renameValue}
           onFocus={(event) => moveCaretToEnd(event.currentTarget)}
           onChange={(e) => {
