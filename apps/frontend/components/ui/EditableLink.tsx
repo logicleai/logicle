@@ -43,7 +43,6 @@ export const EditableLink: FC<Props> = ({
     const input = renameInputRef.current
     if (isRenaming && input) {
       input.focus({ preventScroll: true })
-      moveCaretToEnd(input)
     }
   }, [isRenaming])
 
@@ -70,7 +69,7 @@ export const EditableLink: FC<Props> = ({
   //console.debug(`isRenaming = ${isRenaming} value = ${value} renameValue = ${renameValue}`)
   return (
     <div
-      className={`relative min-w-0 flex-1 rounded-md transition-colors ${
+      className={`min-w-0 flex-1 rounded-md transition-colors ${
         selected ? 'bg-background shadow-sm' : 'hover:bg-secondary-hover/70'
       } ${isRenaming ? 'box-border h-8 border border-input focus-within:border-primary' : ''}`}
     >
@@ -100,7 +99,7 @@ export const EditableLink: FC<Props> = ({
         >
           <span
             className={`relative min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap break-all text-left text-sm ${
-              selected ? 'pr-4' : 'pr-1'
+              selected ? 'pr-8' : 'pr-1'
             }`}
             title={value}
           >
