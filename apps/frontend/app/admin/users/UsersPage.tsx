@@ -7,6 +7,7 @@ import { delete_, patch } from '@/lib/fetch'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
 import AddUser from './AddUser'
+import { Link } from '@/components/ui/link'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { Button } from '@/components/ui/button'
 import { AdminPage } from '../components/AdminPage'
@@ -14,8 +15,6 @@ import { Action, ActionList } from '@/components/ui/actionlist'
 import { IconLock, IconLockOpen, IconTrash } from '@tabler/icons-react'
 import * as dto from '@/types/dto'
 import { useUserProfile } from '@/components/providers/userProfileContext'
-import { Avatar } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 
 const UsersPage = () => {
   const { t } = useTranslation()
@@ -64,34 +63,15 @@ const UsersPage = () => {
 
   const columns: Column<dto.AdminUser>[] = [
     column(t('table-column-name'), (user) => (
-      <a
-        href={`/admin/users/${user.id}`}
-        className="flex min-w-[220px] items-center gap-3 text-left hover:text-primary"
-      >
-        <Avatar size="default" fallback={user.name} fallbackColor={undefined} />
-        <span className="min-w-0">
-          <span className="block truncate font-semibold">{user.name}</span>
-          <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
-        </span>
-      </a>
+      <Link variant="ghost" href={`/admin/users/${user.id}`} native>
+        {user.name}
+      </Link>
     )),
-    column(t('table-column-user-role'), (user) => (
-      <Badge variant={user.role === dto.UserRole.ADMIN ? 'default' : 'secondary'}>
-        {t(user.role.toLowerCase())}
-      </Badge>
-    )),
-    column(t('status'), (user) => (
-      <span className="inline-flex items-center gap-2 text-sm">
-        <span
-          className={`h-2 w-2 rounded-full ${
-            user.enabled ? 'bg-emerald-500' : 'bg-muted-foreground'
-          }`}
-        />
-        {t(user.enabled ? 'active' : 'disabled')}
-      </span>
-    )),
+    column(t('table-column-email'), (user) => user.email),
+    column(t('table-column-user-role'), (user) => t(user.role.toLowerCase())),
+    column(t('status'), (user) => t(user.enabled ? 'active' : 'disabled')),
     column(t('table-column-sso-user'), (user) => (
-      <div className="text-center text-emerald-600">{user.ssoUser ? '✓' : '—'}</div>
+      <div className="text-center">{t(user.ssoUser ? '✔' : '')}</div>
     )),
     column(t('table-column-actions'), (user) => (
       <ActionList>

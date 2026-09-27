@@ -1,4 +1,5 @@
 'use client'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { useRouter } from 'next/navigation'
 import { useSWRJson } from '@/hooks/swr'
 import { WithLoadingAndError } from '@/components/ui'
@@ -136,7 +137,7 @@ const MyAssistantPage = () => {
     }
     await mutate('/api/assistants')
     await mutate('/api/me/profile')
-    await mutate('/api/me/assistants/explore')
+            await mutate('/api/me/assistants/explore')
     await mutate('/api/me/assistants/mine')
     toast.success(t('assistant-deleted'))
   }
@@ -144,7 +145,7 @@ const MyAssistantPage = () => {
   const columns: Column<dto.UserAssistant>[] = [
     {
       name: t(' '),
-      thClass: 'w-20',
+      thClass: 'w-12',
       renderer: (assistant: dto.UserAssistant) => (
         <AssistantAvatar className="shrink-0 self-center" size="big" assistant={assistant} />
       ),
@@ -214,11 +215,11 @@ const MyAssistantPage = () => {
           <div className="flex items-center gap-2 text-sm tabular-nums text-muted-foreground whitespace-nowrap">
             <span>{s.messages}</span>
             <span className="flex items-center gap-0.5">
-              <IconThumbUp size={16} />
+              <IconThumbUp size={13} />
               {s.likes}
             </span>
             <span className="flex items-center gap-0.5">
-              <IconThumbDown size={16} />
+              <IconThumbDown size={13} />
               {s.dislikes}
             </span>
           </div>
@@ -260,20 +261,20 @@ const MyAssistantPage = () => {
 
   return (
     <WithLoadingAndError isLoading={isLoading} error={error}>
-      <div className="flex flex-1 flex-col items-center overflow-hidden px-4 py-6 md:px-8 md:py-8">
-        <div className="flex h-full w-full max-w-6xl flex-col gap-6">
-          <div className="flex items-end justify-between gap-4">
-            <h1 className="text-2xl font-bold">{t('my-assistants')}</h1>
+      <div className="flex flex-1 flex-col gap-2 items-center px-4 py-6">
+        <div className="max-w-[1280px] w-5/6 h-full flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <h1 className="mb-4">{t('my-assistants')}</h1>
           </div>
           <SearchBarWithButtonsOnRight searchTerm={searchTerm} onSearchTermChange={setSearchTerm}>
             <Button disabled={!haveDefaultBackend} onClick={() => onCreateNew()} variant="primary">
               {t('create-new')}
             </Button>
           </SearchBarWithButtonsOnRight>
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-2">
+          <ScrollArea className="flex-1 min-h-0">
+            <div className=" gap-4 flex flex-col">
               <SimpleTable
-                className="min-w-[860px] flex-1 table-fixed text-sm"
+                className="flex-1 text-sm table-fixed"
                 columns={columns}
                 rows={(assistants ?? [])
                   .filter(
@@ -286,7 +287,7 @@ const MyAssistantPage = () => {
                 keygen={(t) => t.id}
               />
             </div>
-          </div>
+          </ScrollArea>
         </div>
       </div>
     </WithLoadingAndError>
