@@ -27,6 +27,7 @@ import { logger } from '@/lib/logging'
 import { type SimpleSession } from '@/types/session'
 import { type Usage } from '@/backend/lib/chat/usage'
 import { warmCompressionCache } from '@/backend/lib/chat/compression-planner'
+import { captureToolRequestContext } from '@/backend/lib/chat/toolRequestContext'
 
 type StartRunResult =
   | {
@@ -257,6 +258,11 @@ export const startServerChatRun = async ({
           updateChatTitle,
           user: session.userId,
           conversationId: userMessage.conversationId,
+          requestContext: captureToolRequestContext(
+            linearThread,
+            session.userId,
+            userMessage.conversationId
+          ),
           userLanguage: acceptLanguageHeader ?? undefined,
           abortSignal: abortController.signal,
         }

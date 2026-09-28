@@ -9,12 +9,20 @@ export interface ToolUILink {
   citations: dto.Citation[]
 }
 
+/** Identity of the user turn that caused a tool call, including nested assistants. */
+export interface ToolRequestContext {
+  conversationId?: string
+  messageId?: string
+  userId?: string
+}
+
 export interface ToolInvokeParams {
   llmModel: LlmModel
   messages: dto.Message[]
   assistantId: string
   userId: string
   conversationId?: string
+  requestContext?: ToolRequestContext
   rootOwner?: {
     type: 'CHAT' | 'USER' | 'ASSISTANT'
     id: string
@@ -48,7 +56,6 @@ export interface ToolAuthParams {
   params: Record<string, unknown>
   debug?: boolean
 }
-
 
 export interface ToolFunction {
   description: string

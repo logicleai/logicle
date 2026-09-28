@@ -16,7 +16,9 @@ import {
   ToolImplementation,
   ToolNative,
   ToolUILink,
+  type ToolRequestContext,
 } from '@/lib/chat/tools'
+import { captureToolRequestContext } from './toolRequestContext'
 import { logger } from '@/lib/logging'
 import { LlmModel, LlmModelCapabilities, modelSupportsReasoning } from '@/lib/chat/models'
 import { claudeThinkingBudgetTokens } from '@/lib/chat/models/anthropic'
@@ -120,6 +122,7 @@ interface Options {
   userLanguage?: string
   user: string
   conversationId?: string
+  requestContext?: ToolRequestContext
   rootOwner?: {
     type: 'CHAT' | 'USER' | 'ASSISTANT'
     id: string
@@ -172,6 +175,7 @@ export class ChatAssistant {
   functionToolIdMap: Map<string, string>
   setupError: string | undefined
   private forcedToolChoiceIndex = 0
+  private requestContext?: ToolRequestContext
 
   constructor(
     private providerConfig: ProviderConfig,
@@ -198,6 +202,7 @@ export class ChatAssistant {
       user: options.user,
     })
     this.debug = options.debug ?? false
+    this.requestContext = options.requestContext
   }
 
   // ---- Static factories ----
@@ -740,6 +745,11 @@ export class ChatAssistant {
 
   async processUserMessageWithSink(chatHistory: dto.Message[], clientSink: ClientSink) {
     const chatState = new ChatState(chatHistory)
+    this.requestContext ??= captureToolRequestContext(
+      chatHistory,
+      this.options.user,
+      this.options.conversationId ?? chatState.conversationId
+    )
     try {
       // Evaluation probes may force a short tool-choice sequence. Once it is exhausted, resume the
       // normal auto policy so the model can answer instead of calling the same tool forever.
@@ -889,6 +899,7 @@ export class ChatAssistant {
         assistantId: this.assistantParams.assistantId,
         userId: this.options.user,
         conversationId,
+        requestContext: this.requestContext,
         rootOwner:
           this.options.rootOwner ??
           (conversationId ? { type: 'CHAT', id: conversationId } : undefined),
