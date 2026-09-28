@@ -24,13 +24,13 @@ export const SearchBarWithButtonsOnRight = ({
         </label>
         <Input
           id={inputId}
-          className="flex-1 pl-9"
+          className="flex-1 pl-10"
           value={searchTerm}
           placeholder={t('search-placeholder')}
           onChange={(evt) => onSearchTermChange(evt.target.value)}
         ></Input>
         <div className="absolute top-0 bottom-0 left-0 flex items-center ml-2">
-          <IconSearch size={18} className="text-muted-foreground"></IconSearch>
+          <IconSearch></IconSearch>
         </div>
       </div>
       {children}
