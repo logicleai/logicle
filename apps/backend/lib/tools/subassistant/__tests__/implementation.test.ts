@@ -125,6 +125,7 @@ type InvokeParamsOverrides = {
   conversationId?: string
   rootOwner?: { type: 'CHAT' | 'USER' | 'ASSISTANT'; id: string }
   requestContext?: { conversationId?: string; messageId?: string; userId?: string }
+  requestMeta?: Record<string, unknown>
   toolCallId?: string
   toolName?: string
   assistantId?: string
@@ -245,5 +246,12 @@ describe('invoke_assistant — ownership', () => {
 
     const buildOptions = mockBuild.mock.calls[0][5]
     expect(buildOptions.requestContext).toEqual(requestContext)
+  })
+
+  test('forwards other per-request metadata to the child', async () => {
+    setupSubAssistantRun([], 'done')
+    await invokeAssistant(invokeParams({ requestMeta: { traceId: 'trace-1' } }))
+
+    expect(mockBuild.mock.calls[0][5].requestMeta).toEqual({ traceId: 'trace-1' })
   })
 })

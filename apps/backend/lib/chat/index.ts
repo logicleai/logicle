@@ -123,6 +123,7 @@ interface Options {
   user: string
   conversationId?: string
   requestContext?: ToolRequestContext
+  requestMeta?: Record<string, unknown>
   rootOwner?: {
     type: 'CHAT' | 'USER' | 'ASSISTANT'
     id: string
@@ -900,6 +901,7 @@ export class ChatAssistant {
         userId: this.options.user,
         conversationId,
         requestContext: this.requestContext,
+        requestMeta: this.options.requestMeta,
         rootOwner:
           this.options.rootOwner ??
           (conversationId ? { type: 'CHAT', id: conversationId } : undefined),

@@ -1,12 +1,21 @@
 import { db } from '@/db/database'
 import { logger } from '@/lib/logging'
 import type { ToolInvokeParams } from '@/lib/chat/tools'
+import { WorkspaceRole } from '@/types/workspace'
 
-const META_PREFIX = 'logicle/'
+const META_PREFIX = 'custom/'
+const META_FIELDS = [
+  'conversationId',
+  'messageId',
+  'userId',
+  'userName',
+  'workspaceMemberships',
+] as const
 
 export interface McpWorkspaceMembership {
   workspaceId: string
-  role: string
+  workspaceName: string
+  role: WorkspaceRole
 }
 
 // Memberships are limited to workspaces the invoking assistant is shared with,
@@ -18,12 +27,29 @@ const computeMemberships = async (
   const rows = await db
     .selectFrom('WorkspaceMember')
     .innerJoin('AssistantSharing', 'AssistantSharing.workspaceId', 'WorkspaceMember.workspaceId')
-    .select(['WorkspaceMember.workspaceId as workspaceId', 'WorkspaceMember.role as role'])
+    .innerJoin('Workspace', 'Workspace.id', 'WorkspaceMember.workspaceId')
+    .select([
+      'WorkspaceMember.workspaceId as workspaceId',
+      'Workspace.name as workspaceName',
+      'WorkspaceMember.role as role',
+    ])
     .where('WorkspaceMember.userId', '=', userId)
     .where('AssistantSharing.assistantId', '=', assistantId)
     .execute()
   const seen = new Set<string>()
-  return rows.filter((r) => (seen.has(r.workspaceId) ? false : (seen.add(r.workspaceId), true)))
+  return rows
+    .filter(
+      (row) =>
+        row.workspaceId.trim() &&
+        row.workspaceName.trim() &&
+        Object.values(WorkspaceRole).includes(row.role)
+    )
+    .filter((row) => {
+      if (seen.has(row.workspaceId)) return false
+      seen.add(row.workspaceId)
+      return true
+    })
+    .map((row) => ({ ...row, workspaceName: row.workspaceName.trim() }))
 }
 
 /**
@@ -31,17 +57,36 @@ const computeMemberships = async (
  * Every field is independent and optional; failures never block the call.
  */
 export const buildMcpRequestMeta = async (
-  invokeParams: Pick<ToolInvokeParams, 'conversationId' | 'messages' | 'assistantId' | 'userId'>
+  invokeParams: Pick<
+    ToolInvokeParams,
+    'conversationId' | 'assistantId' | 'userId' | 'requestContext' | 'requestMeta'
+  >
 ): Promise<Record<string, unknown>> => {
-  const meta: Record<string, unknown> = {}
-  const { conversationId, messages, assistantId, userId } = invokeParams
+  const meta: Record<string, unknown> = { ...invokeParams.requestMeta }
+  for (const field of META_FIELDS) delete meta[`${META_PREFIX}${field}`]
+  const { assistantId } = invokeParams
+  const conversationId = invokeParams.requestContext?.conversationId ?? invokeParams.conversationId
+  const messageId = invokeParams.requestContext?.messageId
+  const userId = invokeParams.requestContext?.userId ?? invokeParams.userId
   if (conversationId) meta[`${META_PREFIX}conversationId`] = conversationId
-  const lastUserMessage = [...(messages ?? [])].reverse().find((m) => m.role === 'user')
-  if (lastUserMessage) meta[`${META_PREFIX}messageId`] = lastUserMessage.id
+  if (messageId) meta[`${META_PREFIX}messageId`] = messageId
   if (userId) {
     meta[`${META_PREFIX}userId`] = userId
     try {
-      meta[`${META_PREFIX}workspaceMemberships`] = await computeMemberships(assistantId, userId)
+      const user = await db
+        .selectFrom('User')
+        .select('name')
+        .where('id', '=', userId)
+        .executeTakeFirst()
+      if (user?.name.trim()) meta[`${META_PREFIX}userName`] = user.name.trim()
+    } catch (e) {
+      logger.warn('Failed computing MCP user name', e)
+    }
+    try {
+      if (assistantId) {
+        const memberships = await computeMemberships(assistantId, userId)
+        if (memberships.length > 0) meta[`${META_PREFIX}workspaceMemberships`] = memberships
+      }
     } catch (e) {
       logger.warn('Failed computing MCP workspace memberships', e)
     }

@@ -23,6 +23,7 @@ export interface ToolInvokeParams {
   userId: string
   conversationId?: string
   requestContext?: ToolRequestContext
+  requestMeta?: Record<string, unknown>
   rootOwner?: {
     type: 'CHAT' | 'USER' | 'ASSISTANT'
     id: string

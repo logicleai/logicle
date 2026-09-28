@@ -73,7 +73,14 @@ export class SubAssistantTool implements ToolImplementation {
           additionalProperties: false,
         },
         requireConfirm: false,
-        invoke: async ({ params, userId, conversationId, rootOwner, requestContext }) => {
+        invoke: async ({
+          params,
+          userId,
+          conversationId,
+          rootOwner,
+          requestContext,
+          requestMeta,
+        }) => {
           const assistantId = params.assistantId as string
           const input = params.input as string
           const attachmentIds = (params.attachments as Array<{ id: string }> | undefined) ?? []
@@ -145,6 +152,7 @@ export class SubAssistantTool implements ToolImplementation {
                 conversationId,
                 rootOwner,
                 requestContext,
+                requestMeta,
               }
             )
 
