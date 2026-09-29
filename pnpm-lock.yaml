@@ -509,6 +509,9 @@ importers:
       better-sqlite3:
         specifier: ^12.6.2
         version: 12.6.2
+      jsdom:
+        specifier: 25.0.1
+        version: 25.0.1(canvas@2.11.2(encoding@0.1.13))
       jszip:
         specifier: ^3.10.1
         version: 3.10.1

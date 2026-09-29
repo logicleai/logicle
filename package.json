@@ -217,6 +217,7 @@
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^3.2.4",
     "better-sqlite3": "^12.6.2",
+    "jsdom": "25.0.1",
     "jszip": "^3.10.1",
     "lint-staged": "14.0.1",
     "node-addon-api": "^8.6.0",
