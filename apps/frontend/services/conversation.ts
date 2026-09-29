@@ -11,7 +11,7 @@ export const isConversationListKey = (key: unknown): key is string =>
   (typeof key === 'string' && key.startsWith(`${conversationListKey}?`))
 
 export const mutateConversationList = async () => {
-  await globalMutate(isConversationListKey)
+  await globalMutate(isConversationListKey, undefined, { revalidate: false })
   await globalMutate(conversationListInfiniteKey)
 }
 

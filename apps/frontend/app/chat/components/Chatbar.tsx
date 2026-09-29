@@ -76,7 +76,6 @@ export const Chatbar = () => {
     },
     {
       revalidateFirstPage: false,
-      revalidateAll: true,
     }
   )
   const {
