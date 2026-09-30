@@ -14,7 +14,7 @@ const prefixAlias = (find: string, replacement: string) => ({
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['**/__tests__/**/*.{test,spec}.ts', '**/__tests__/**/*.ts'],
+    include: ['**/__tests__/**/*.{test,spec}.{ts,tsx}', '**/__tests__/**/*.ts'],
     env: {
       APP_URL: 'http://localhost:3000',
       DATABASE_URL: 'memory:',
@@ -31,6 +31,8 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      exactAlias('next/navigation', 'apps/frontend-vite/src/shims/nextNavigationShim.tsx'),
+      exactAlias('next/link', 'apps/frontend-vite/src/shims/nextLinkShim.tsx'),
       exactAlias('@/lib/fetch', 'apps/frontend/lib/fetch/index.ts'),
       prefixAlias('@/lib/fetch', 'apps/frontend/lib/fetch'),
       exactAlias('@/lib/authRedirect', 'apps/frontend/lib/authRedirect.ts'),

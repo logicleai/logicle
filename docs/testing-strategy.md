@@ -29,6 +29,13 @@ codebase's real branching logic — validation, transforms, request/response
 shaping, error classification — lives here and needs zero DB or network
 access to exercise.
 
+Frontend component tests can use Vitest's per-file `jsdom` environment when
+the behavior depends on rendered React state or client caches. Keep browser
+navigation and large-list behavior in Playwright; see
+`__tests__/chatTitleRename.test.tsx` and
+`e2e/chatbar-infinite-scroll.spec.ts` for the split. The coverage report still
+targets only `packages/core/src/**` and `apps/backend/lib/**`.
+
 ## What NOT to chase for coverage
 
 A large share of the lowest-covered files in the current report are not
@@ -83,9 +90,8 @@ cover with plain vitest unit tests — no DB, no network:
    unconfigured) and the try/catch-and-log-a-warning around the ingest call
    are pure branching worth covering with the SDK client mocked.
 5. `packages/core/src/bootstrapPlaceholders.ts` (0%, small) — DOM-dependent
-   (`readBootstrapJson` reads `document`), needs a `jsdom` environment via
-   `// @vitest-environment jsdom` (no existing test file uses that pragma
-   yet, so this is also the first one) — quick win once that's set up.
+   (`readBootstrapJson` reads `document`); use the existing `jsdom` test
+   environment via `// @vitest-environment jsdom`.
 6. `apps/backend/lib/router.ts` (~71%, branch coverage 50%) and
    `apps/backend/lib/logging.ts` (~35%, mixed — some pure formatting, some
    transport wiring) — partial gaps worth closing incrementally.
