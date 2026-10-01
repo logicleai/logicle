@@ -3,7 +3,7 @@ import { logger } from '@/lib/logging'
 import type { ToolInvokeParams } from '@/lib/chat/tools'
 import { WorkspaceRole } from '@/types/workspace'
 
-const META_PREFIX = 'custom/'
+const META_PREFIX = 'logicle/'
 const META_FIELDS = [
   'conversationId',
   'messageId',

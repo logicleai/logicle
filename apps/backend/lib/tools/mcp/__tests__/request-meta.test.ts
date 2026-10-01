@@ -70,11 +70,11 @@ describe('buildMcpRequestMeta', () => {
     })
 
     expect(result).toEqual({
-      'custom/conversationId': 'root-conversation',
-      'custom/messageId': 'root-message',
-      'custom/userId': 'user-1',
-      'custom/userName': 'Ada',
-      'custom/workspaceMemberships': [
+      'logicle/conversationId': 'root-conversation',
+      'logicle/messageId': 'root-message',
+      'logicle/userId': 'user-1',
+      'logicle/userName': 'Ada',
+      'logicle/workspaceMemberships': [
         { workspaceId: 'workspace-1', workspaceName: 'Engineering', role: WorkspaceRole.OWNER },
         { workspaceId: 'workspace-2', workspaceName: 'Support', role: WorkspaceRole.EDITOR },
       ],
@@ -96,10 +96,10 @@ describe('buildMcpRequestMeta', () => {
       assistantId: 'assistant-1',
       userId: 'user-1',
       requestContext: { userId: 'user-1' },
-      requestMeta: { traceId: 'trace-1', 'custom/messageId': 'stale-id' },
+      requestMeta: { traceId: 'trace-1', 'logicle/messageId': 'stale-id' },
     })
 
-    expect(result).toEqual({ traceId: 'trace-1', 'custom/userId': 'user-1' })
+    expect(result).toEqual({ traceId: 'trace-1', 'logicle/userId': 'user-1' })
   })
 
   it('does not look up users or memberships without a user ID', async () => {
@@ -109,7 +109,7 @@ describe('buildMcpRequestMeta', () => {
       requestContext: { conversationId: 'conversation-1' },
     })
 
-    expect(result).toEqual({ 'custom/conversationId': 'conversation-1' })
+    expect(result).toEqual({ 'logicle/conversationId': 'conversation-1' })
     expect(state.filters).toEqual([])
   })
 
@@ -119,9 +119,9 @@ describe('buildMcpRequestMeta', () => {
       { workspaceId: 'workspace-1', workspaceName: 'Engineering', role: WorkspaceRole.MEMBER },
     ]
     const withoutName = await buildMcpRequestMeta({ assistantId: 'assistant-1', userId: 'user-1' })
-    expect(withoutName['custom/userId']).toBe('user-1')
-    expect(withoutName['custom/userName']).toBeUndefined()
-    expect(withoutName['custom/workspaceMemberships']).toHaveLength(1)
+    expect(withoutName['logicle/userId']).toBe('user-1')
+    expect(withoutName['logicle/userName']).toBeUndefined()
+    expect(withoutName['logicle/workspaceMemberships']).toHaveLength(1)
 
     state.failUser = false
     state.names.set('user-1', 'Ada')
@@ -130,8 +130,8 @@ describe('buildMcpRequestMeta', () => {
       assistantId: 'assistant-1',
       userId: 'user-1',
     })
-    expect(withoutMemberships['custom/userName']).toBe('Ada')
-    expect(withoutMemberships['custom/workspaceMemberships']).toBeUndefined()
+    expect(withoutMemberships['logicle/userName']).toBe('Ada')
+    expect(withoutMemberships['logicle/workspaceMemberships']).toBeUndefined()
   })
 
   it('keeps user IDs isolated between concurrent calls', async () => {
@@ -143,9 +143,9 @@ describe('buildMcpRequestMeta', () => {
       buildMcpRequestMeta({ assistantId: 'assistant-1', userId: 'user-2' }),
     ])
 
-    expect(first['custom/userName']).toBe('Ada')
-    expect(second['custom/userName']).toBe('Grace')
-    expect(first['custom/userId']).toBe('user-1')
-    expect(second['custom/userId']).toBe('user-2')
+    expect(first['logicle/userName']).toBe('Ada')
+    expect(second['logicle/userName']).toBe('Grace')
+    expect(first['logicle/userId']).toBe('user-1')
+    expect(second['logicle/userId']).toBe('user-2')
   })
 })

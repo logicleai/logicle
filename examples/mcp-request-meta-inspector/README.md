@@ -32,15 +32,15 @@ It uses the MCP SDK already installed by this repository.
    returns a short confirmation; the actual metadata appears in the inspector
    terminal.
 
-The revised implementation sends `custom/conversationId`, `custom/messageId`,
-`custom/userId`, `custom/userName`, and `custom/workspaceMemberships` under
+The revised implementation sends `logicle/conversationId`, `logicle/messageId`,
+`logicle/userId`, `logicle/userName`, and `logicle/workspaceMemberships` under
 `_meta`. `argumentKeys` should be empty for this tool. A membership appears only
 when the assistant is shared with a workspace containing the current user;
 otherwise the membership field is omitted. Each entry includes the workspace
 ID, name, and the user's role.
 
 To test multiple messages, invoke the tool in two separate chat turns and
-compare `custom/messageId`. To test workspace scoping, share the assistant with
+compare `logicle/messageId`. To test workspace scoping, share the assistant with
 a workspace containing the current user and invoke it again. For the known
 sub-assistant gap, attach an assistant that has this tool as a sub-assistant,
 invoke it from the parent, and compare the reported message ID with the root

@@ -2,15 +2,15 @@
 
 Logicle adds request-scoped context to `params._meta` on MCP `tools/call`
 requests. The model does not see or generate these fields, and they are never
-placed in tool `arguments`. The current contract uses `custom/*` keys:
+placed in tool `arguments`. The current contract uses `logicle/*` keys:
 
 ```json
 {
-  "custom/conversationId": "conversation-id",
-  "custom/messageId": "originating-user-message-id",
-  "custom/userId": "user-id",
-  "custom/userName": "User name",
-  "custom/workspaceMemberships": [
+  "logicle/conversationId": "conversation-id",
+  "logicle/messageId": "originating-user-message-id",
+  "logicle/userId": "user-id",
+  "logicle/userName": "User name",
+  "logicle/workspaceMemberships": [
     {
       "workspaceId": "workspace-id",
       "workspaceName": "Workspace name",
@@ -40,6 +40,5 @@ These fields are client assertions, not credentials. MCP servers must validate
 IDs, names, membership roles, and their relationship to the requested
 operation independently. Unknown or missing metadata must not grant access.
 
-This contract replaces the initial `logicle/*` keys sent by the first
-implementation in PR #1186. Receivers that consumed those keys must migrate to
-`custom/*`.
+This contract retains the `logicle/*` namespace introduced in PR #1186 and
+extends it with user and workspace names.

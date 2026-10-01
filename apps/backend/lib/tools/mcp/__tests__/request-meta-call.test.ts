@@ -70,7 +70,7 @@ beforeEach(() => {
   })
   mocks.callTool.mockResolvedValue({ content: [{ type: 'text', text: 'ok' }] })
   mocks.buildMeta.mockImplementation(async (params: ToolInvokeParams) => ({
-    'custom/messageId': params.requestContext?.messageId,
+    'logicle/messageId': params.requestContext?.messageId,
   }))
   mocks.resolveOauth.mockResolvedValue({ status: 'ok', accessToken: 'test-token' })
 })
@@ -87,7 +87,7 @@ describe('MCP tools/call metadata', () => {
     expect(mocks.callTool).toHaveBeenCalledWith({
       name: 'inspect',
       arguments: { query: 'example' },
-      _meta: { 'custom/messageId': 'message-1' },
+      _meta: { 'logicle/messageId': 'message-1' },
     })
   })
 
@@ -111,8 +111,8 @@ describe('MCP tools/call metadata', () => {
     ])
 
     expect(mocks.resolveOauth).toHaveBeenCalled()
-    expect(mocks.callTool.mock.calls.map(([request]) => request._meta['custom/messageId'])).toEqual(
-      ['message-1', 'message-2']
-    )
+    expect(
+      mocks.callTool.mock.calls.map(([request]) => request._meta['logicle/messageId'])
+    ).toEqual(['message-1', 'message-2'])
   })
 })
