@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import assert from 'node:assert/strict'
 import WebSocket from 'ws'
 import { checkMcpRequestContext } from './mcp-request-context-integration'
 import type { ToolCallMessage } from '@/lib/satellite/types'
@@ -140,7 +141,18 @@ async function openSatelliteConnection(
           type: 'register',
           satelliteId,
           name: satelliteName,
-          tools: [{ name: 'echo', description: 'Echo input back' }],
+          tools: [
+            {
+              name: 'echo',
+              description: 'Echo input back',
+              inputSchema: {
+                type: 'object',
+                properties: { input: { type: 'string' } },
+                required: ['input'],
+                additionalProperties: false,
+              },
+            },
+          ],
         })
       )
     })
@@ -223,7 +235,7 @@ async function checkRegisteredSatelliteSharedChat(
   adminEmail: string,
   password: string
 ) {
-  console.log('Integration: registered Satellite tool call from a shared assistant')
+  console.log('Integration: registered Satellite chat and request metadata')
 
   const satelliteCreated = await request('POST', '/api/me/satellites', {
     expectedStatus: 201,
@@ -240,122 +252,180 @@ async function checkRegisteredSatelliteSharedChat(
     `Shared Satellite ${runId}`
   )
 
-  // Make the satellite public so this scenario tests the shared Satellite dispatch path,
-  // independently of the satellite visibility policy.
-  await request('PATCH', `/api/me/satellites/${satellite.id}`, {
-    expectedStatus: 200,
-    headers: jsonHeaders,
-    json: { sharing: { type: 'public' } },
-  })
+  try {
+    // Make the satellite public so this scenario tests the shared Satellite dispatch path,
+    // independently of the satellite visibility policy.
+    await request('PATCH', `/api/me/satellites/${satellite.id}`, {
+      expectedStatus: 200,
+      headers: jsonHeaders,
+      json: { sharing: { type: 'public' } },
+    })
 
-  const backendCreated = await request('POST', '/api/backends', {
-    expectedStatus: 201,
-    headers: jsonHeaders,
-    json: { providerType: 'mock', name: `Shared Satellite Backend ${runId}` },
-  })
-  const backendId = parseJson(backendCreated.text, '/api/backends POST (shared Satellite)')
-    .id as string
-  const assistantCreated = await request('POST', '/api/assistants', {
-    expectedStatus: 201,
-    headers: jsonHeaders,
-    json: {
-      backendId,
-      description: 'Integration test assistant with a registered shared Satellite',
-      model: 'mock-echo',
-      name: `Shared Satellite Assistant ${runId}`,
-      systemPrompt: 'Use the Satellite tool.',
-      temperature: 0,
-      tokenLimit: 4096,
-      reasoning_effort: null,
-      tags: [],
-      prompts: [],
-      tools: [],
-      satellites: [satellite.id],
-      files: [],
-      iconUri: null,
-    },
-  })
-  const assistantId = parseJson(assistantCreated.text, '/api/assistants POST (shared Satellite)')
-    .assistantId as string
-  await request('POST', `/api/assistants/${assistantId}/publish`, {
-    expectedStatus: 200,
-    headers: jsonHeaders,
-    json: {},
-  })
-  await request('POST', `/api/assistants/${assistantId}/sharing`, {
-    expectedStatus: 200,
-    headers: jsonHeaders,
-    json: [{ type: 'all' }],
-  })
-
-  const userEmail = `satellite-user-${runId}@example.com`
-  await request('POST', '/api/users', {
-    expectedStatus: 201,
-    headers: jsonHeaders,
-    json: {
-      name: 'Shared Satellite User',
-      email: userEmail,
-      password,
-      role: 'USER',
-      ssoUser: false,
-      preferences: '{}',
-      image: null,
-      properties: {},
-    },
-  })
-  await login(userEmail, password)
-
-  const conversationCreated = await request('POST', '/api/conversations', {
-    expectedStatus: 201,
-    headers: jsonHeaders,
-    json: { assistantId, name: 'Registered Satellite shared chat' },
-  })
-  const conversationId = parseJson(
-    conversationCreated.text,
-    '/api/conversations POST (shared Satellite)'
-  ).id as string
-  await request('POST', '/api/chat', {
-    expectedStatus: 200,
-    headers: { ...jsonHeaders, accept: 'text/event-stream' },
-    json: {
-      id: `satellite-msg-${runId}`,
-      conversationId,
-      parent: null,
-      role: 'user',
-      content: 'invoke the shared Satellite',
-      attachments: [],
-    },
-  })
-
-  const toolCall = await connection.waitForToolCall()
-  if (toolCall.method !== 'echo') {
-    throw new Error(`Expected Satellite method "echo", got "${toolCall.method}"`)
-  }
-  const messagesResponse = await request('GET', `/api/conversations/${conversationId}/messages`, {
-    expectedStatus: 200,
-    headers: sameOriginHeaders,
-  })
-  const messages = parseJson(
-    messagesResponse.text,
-    '/api/conversations/{id}/messages (shared Satellite)'
-  ) as any[]
-  const toolResult = [...messages]
-    .reverse()
-    .find(
-      (message) =>
-        message.role === 'tool' &&
-        message.parts?.some(
-          (part: any) =>
-            part.type === 'tool-result' &&
-            JSON.stringify(part.result).includes('integration satellite result')
-        )
+    const backendCreated = await request('POST', '/api/backends', {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: { providerType: 'mock', name: `Shared Satellite Backend ${runId}` },
+    })
+    const backendId = parseJson(backendCreated.text, '/api/backends POST (shared Satellite)')
+      .id as string
+    const assistantCreated = await request('POST', '/api/assistants', {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: {
+        backendId,
+        description: 'Integration test assistant with a registered shared Satellite',
+        model: 'mock-echo',
+        name: `Shared Satellite Assistant ${runId}`,
+        systemPrompt: 'Use the Satellite tool.',
+        temperature: 0,
+        tokenLimit: 4096,
+        reasoning_effort: null,
+        tags: [],
+        prompts: [],
+        tools: [],
+        satellites: [satellite.id],
+        files: [],
+        iconUri: null,
+      },
+    })
+    const assistantId = parseJson(assistantCreated.text, '/api/assistants POST (shared Satellite)')
+      .assistantId as string
+    await request('POST', `/api/assistants/${assistantId}/publish`, {
+      expectedStatus: 200,
+      headers: jsonHeaders,
+      json: {},
+    })
+    const userEmail = `satellite-user-${runId}@example.com`
+    const userName = 'Private Shared Satellite User'
+    const userCreated = await request('POST', '/api/users', {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: {
+        name: userName,
+        email: userEmail,
+        password,
+        role: 'USER',
+        ssoUser: false,
+        preferences: '{}',
+        image: null,
+        properties: {},
+      },
+    })
+    const userId = parseJson(userCreated.text, '/api/users POST (shared Satellite)').id as string
+    const workspaceNames = ['eligible', 'user-only', 'assistant-only'].map(
+      (scope) => `Private Satellite workspace ${scope} ${runId}`
     )
-  if (!toolResult) {
-    throw new Error(`Shared Satellite result was not persisted: ${JSON.stringify(messages)}`)
-  }
+    const workspaceIds: string[] = []
+    for (const name of workspaceNames) {
+      const workspace = await request('POST', '/api/workspaces', {
+        expectedStatus: 201,
+        headers: jsonHeaders,
+        json: { name },
+        timeoutMs: 10000,
+      })
+      workspaceIds.push(parseJson(workspace.text, '/api/workspaces POST (shared Satellite)').id)
+    }
+    // Exactly one workspace is both shared with this assistant and joined by the caller.
+    for (const [index, role] of [
+      [0, 'EDITOR'],
+      [1, 'MEMBER'],
+    ] as const) {
+      await request('POST', `/api/workspaces/${workspaceIds[index]}/members`, {
+        expectedStatus: 204,
+        headers: jsonHeaders,
+        json: [{ userId, role }],
+        timeoutMs: 10000,
+      })
+    }
+    await request('POST', `/api/assistants/${assistantId}/sharing`, {
+      expectedStatus: 200,
+      headers: jsonHeaders,
+      json: [0, 2].map((index) => ({
+        type: 'workspace',
+        workspaceId: workspaceIds[index],
+        workspaceName: workspaceNames[index],
+      })),
+      timeoutMs: 10000,
+    })
+    await login(userEmail, password)
 
-  await connection.close()
-  await login(adminEmail, password)
+    const conversationCreated = await request('POST', '/api/conversations', {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: { assistantId, name: 'Registered Satellite shared chat' },
+    })
+    const conversationId = parseJson(
+      conversationCreated.text,
+      '/api/conversations POST (shared Satellite)'
+    ).id as string
+    const messageId = `satellite-msg-${runId}`
+    const messageContent = 'Private shared Satellite message'
+    await request('POST', '/api/chat', {
+      expectedStatus: 200,
+      headers: { ...jsonHeaders, accept: 'text/event-stream' },
+      timeoutMs: 15000,
+      json: {
+        id: messageId,
+        conversationId,
+        parent: null,
+        role: 'user',
+        content: messageContent,
+        attachments: [],
+      },
+    })
+
+    const toolCall = await connection.waitForToolCall()
+    if (toolCall.method !== 'echo') {
+      throw new Error(`Expected Satellite method "echo", got "${toolCall.method}"`)
+    }
+    assert.deepEqual(toolCall.params, { input: 'mock' }, 'Satellite arguments changed')
+    const meta = toolCall._meta
+    assert(meta, 'Satellite tool call must include request metadata')
+    assert.deepEqual(
+      Object.fromEntries(Object.entries(meta).filter(([key]) => key.startsWith('logicle/'))),
+      {
+        'logicle/conversationId': conversationId,
+        'logicle/messageId': messageId,
+        'logicle/userId': userId,
+        'logicle/workspaceMemberships': [{ workspaceId: workspaceIds[0], role: 'EDITOR' }],
+      },
+      'Satellite metadata must use the chat caller and only the eligible workspace'
+    )
+    for (const privateValue of [userName, userEmail, password, messageContent, ...workspaceNames]) {
+      assert(
+        !JSON.stringify(meta).includes(privateValue),
+        'Private fixture value leaked into metadata'
+      )
+    }
+    const messagesResponse = await request('GET', `/api/conversations/${conversationId}/messages`, {
+      expectedStatus: 200,
+      headers: sameOriginHeaders,
+    })
+    const messages = parseJson(
+      messagesResponse.text,
+      '/api/conversations/{id}/messages (shared Satellite)'
+    ) as any[]
+    const toolResult = [...messages]
+      .reverse()
+      .find(
+        (message) =>
+          message.role === 'tool' &&
+          message.parts?.some(
+            (part: any) =>
+              part.type === 'tool-result' &&
+              JSON.stringify(part.result).includes('integration satellite result')
+          )
+      )
+    if (!toolResult) {
+      throw new Error('Shared Satellite result was not persisted')
+    }
+  } finally {
+    try {
+      await connection.close()
+    } finally {
+      await login(adminEmail, password)
+    }
+  }
 }
 
 async function main() {
