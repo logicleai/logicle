@@ -294,7 +294,8 @@ export function callSatelliteMethod(
   satelliteId: string,
   method: string,
   uiLink: ToolUILink,
-  params: unknown
+  params: unknown,
+  requestMeta?: Record<string, unknown>
 ): Promise<CallToolResult> {
   const conn = connections.get(satelliteId)
   if (!conn) {
@@ -307,6 +308,7 @@ export function callSatelliteMethod(
 
   const id = String(hub.nextCallId++)
   const msg: ToolCallMessage = { type: 'tool-call', id, method, params }
+  if (requestMeta && Object.keys(requestMeta).length > 0) msg._meta = requestMeta
   return new Promise((resolve, reject) => {
     conn.pendingCalls.set(id, { uiLink, resolve, reject })
 

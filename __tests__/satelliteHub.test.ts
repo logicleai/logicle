@@ -321,6 +321,30 @@ describe('close handling', () => {
 // ─── callSatelliteMethod ──────────────────────────────────────────────────────
 
 describe('callSatelliteMethod', () => {
+  test('keeps metadata separate across concurrent calls and omits it for legacy callers', async () => {
+    const ws = await connectRegisteredSatellite('sat-1', [{ name: 'fn' }])
+    ws.sent = []
+    const firstMeta = { 'logicle/userId': 'user-a', traceId: 'trace-a' }
+    const secondMeta = { 'logicle/userId': 'user-b' }
+    const calls = [
+      callSatelliteMethod('sat-1', 'fn', fakeUiLink as any, { arg: 1 }, firstMeta),
+      callSatelliteMethod('sat-1', 'fn', fakeUiLink as any, { arg: 2 }, secondMeta),
+      callSatelliteMethod('sat-1', 'fn', fakeUiLink as any, { arg: 3 }),
+      callSatelliteMethod('sat-1', 'fn', fakeUiLink as any, { arg: 4 }, {}),
+    ]
+    expect(ws.sent.map((message) => JSON.parse(message))).toEqual([
+      { type: 'tool-call', id: '1', method: 'fn', params: { arg: 1 }, _meta: firstMeta },
+      { type: 'tool-call', id: '2', method: 'fn', params: { arg: 2 }, _meta: secondMeta },
+      { type: 'tool-call', id: '3', method: 'fn', params: { arg: 3 } },
+      { type: 'tool-call', id: '4', method: 'fn', params: { arg: 4 } },
+    ])
+    for (const id of ['2', '1', '4', '3']) {
+      ws.emit('message', JSON.stringify({ type: 'tool-result', id, content: [] }))
+    }
+    await Promise.all(calls)
+  })
+
+
   test('throws when satellite is not connected', () => {
     expect(() => callSatelliteMethod('missing', 'fn', fakeUiLink as any, {})).toThrow(
       'Satellite "missing" is not connected'

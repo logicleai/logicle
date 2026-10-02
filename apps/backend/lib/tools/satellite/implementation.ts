@@ -12,6 +12,8 @@ import { LlmModel } from '@/lib/chat/models'
 import { saveFile } from '@/backend/lib/tools/file-output-normalization'
 import { normalizeMcpToolResult } from '@/backend/lib/tools/file-output-normalization'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
+import { buildMcpRequestMeta } from '../mcp/request-meta'
+import { callSatelliteMethod } from '@/lib/satellite/hub'
 
 const toToolResult = async (
   result: CallToolResult,
@@ -83,12 +85,13 @@ const createSatelliteToolFunction = (
     parameters: tool.inputSchema,
     invoke: async (invokeParams: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
       try {
-        const { callSatelliteMethod } = await import('@/lib/satellite/hub')
+        const requestMeta = await buildMcpRequestMeta(invokeParams)
         const result = await callSatelliteMethod(
           satelliteId,
           tool.name,
           invokeParams.uiLink,
-          invokeParams.params
+          invokeParams.params,
+          requestMeta
         )
         return await toToolResult(result, invokeParams)
       } catch (error) {

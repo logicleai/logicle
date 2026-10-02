@@ -1,7 +1,7 @@
 # MCP tool request context
 
 Logicle adds request-scoped context to `params._meta` on MCP `tools/call`
-requests. The model does not see or generate these fields, and they are never
+requests, both directly and through an updated `logicle-bridge` MCP relay. The model does not see or generate these fields, and they are never
 placed in tool `arguments`. The current contract uses `logicle/*` keys:
 
 ```json
@@ -133,19 +133,61 @@ can use a local stdio/SSE fixture without a deployed Logicle instance. The singl
 HTTP deployment scenario establishes the chat/auth/database/MCP wiring; it does
 not claim to exercise every transport or a complete OAuth authorization flow.
 
-### Bridge follow-up
+### Satellite and bridge propagation
 
-The satellite/bridge path currently has no metadata propagation. After the
-coordinated protocol change, cover forwarding, argument separation, missing
-metadata, concurrency, and compatibility in Logicle unit tests and Go tests.
-Add one representative Logicle → WebSocket → real bridge → MCP scenario to
-prove that separate wiring path. Do not expand it into another deployed edge
-case matrix. Until implemented, report bridge propagation as unsupported.
+Satellite tools use the same metadata builder as direct MCP calls. Logicle
+calculates root identity and memberships for the invoking assistant, then sends
+an optional top-level `_meta` on the WebSocket `tool-call` message. Satellite
+`params` remains the model-generated arguments:
+
+```json
+{
+  "type": "tool-call",
+  "id": "call-id",
+  "method": "tool-name",
+  "params": { "input": "tool argument" },
+  "_meta": {
+    "logicle/conversationId": "conversation-id",
+    "logicle/messageId": "originating-user-message-id",
+    "logicle/userId": "user-id"
+  }
+}
+```
+
+The bridge forwards this metadata unchanged into the upstream MCP
+`tools/call` request's `params._meta`, alongside `name` and `arguments`.
+This applies to both bridge MCP transports (stdio and HTTP/SSE), which share
+one request builder. No context is stored on the relay or connection, and
+initialization/discovery do not inherit it. Built-in filesystem and command
+handlers receive only tool arguments; metadata does not change their local
+permissions. An argument named `_meta` remains an ordinary argument.
+
+The additional field is optional and omitted when empty. Updated bridges
+accept calls from older Logicle servers without metadata. Older Go bridges
+ignore the new field, so calls still work but metadata propagation requires
+updating both repositories. The WebSocket subprotocol remains
+`logicle-satellite-v1`.
+
+Logicle unit tests cover metadata construction at satellite invocation,
+root identity, invoking-assistant membership queries, unrelated keys,
+argument separation, concurrent callers, and metadata-free messages. Bridge Go
+tests cover decoding/dispatch, relay forwarding, discovery exclusion,
+concurrent calls, missing/empty metadata, and unchanged local capability gates.
+
+The Logicle test suite does not require a bridge binary or a second checkout.
+Tests involving both projects belong in a dedicated integration repository.
+That suite should exercise Logicle → WebSocket → real bridge → MCP and inspect
+received MCP requests and returned results, including separate callers,
+a subsequent user turn, and a later call without metadata. A full deployed
+scenario should additionally establish chat, authentication, and membership
+database wiring. This cross-project suite has not been added.
 
 ### Completion criteria
 
 Require the focused unit suite, type checking, and the single deployed scenario
 in the SQLite baseline. Record which issue #310 criteria have unit coverage
 and which have deployment coverage; do not claim a full integration matrix for
-OAuth, confirmations, sub-assistants, or all transports. Bridge propagation has
-its own wiring gate after implementation.
+OAuth, confirmations, sub-assistants, or all transports. Bridge changes
+additionally require the bridge repository's Go tests. Report cross-project
+deployment coverage separately; the self-contained suites do not prove the
+complete Logicle-to-bridge deployment path.

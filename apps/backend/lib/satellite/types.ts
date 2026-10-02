@@ -27,6 +27,8 @@ export interface ToolCallMessage {
   id: string
   method: string
   params: unknown
+  /** Request metadata, separate from model-generated tool arguments. */
+  _meta?: Record<string, unknown>
 }
 
 export interface ToolResultMessage extends CallToolResult {
