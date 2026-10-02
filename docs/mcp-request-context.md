@@ -43,7 +43,7 @@ preserves the ID-only contract clarified in issue #310.
 
 ## Testing strategy
 
-This plan follows `docs/testing-strategy.md`: use Vitest for context and payload
+This coverage follows `docs/testing-strategy.md`: use Vitest for context and payload
 logic, and the deployed integration harness for authentication, database joins,
 and chat-to-tool wiring. No external LLM or new dependency is needed. Assertions
 must inspect requests received by an MCP server, rather than infer correctness
@@ -52,7 +52,8 @@ from the assistant's answer.
 ### Existing automated coverage
 
 - `chat/__tests__/toolRequestContext.test.ts` checks new-turn selection,
-  confirmation-response origin selection, and missing user messages.
+  confirmation-response origin selection, missing user messages, and independent
+  snapshots across successive turns.
 - `tools/mcp/__tests__/request-meta.test.ts` checks independent scalar fields,
   root identity precedence, all four roles, duplicate/invalid memberships,
   empty membership omission, lookup failure, ID-only output, removal of stale
@@ -66,26 +67,28 @@ from the assistant's answer.
   root context into child assistant construction. It does not prove a complete
   parent-to-child-to-MCP chat run.
 
-### Unit test additions
+### Additional unit coverage
 
-- Extend the invocation tests to overlap two users in different conversations
-  using a shared non-OAuth client. Delay one call to force interleaving and
+- Invocation tests overlap two users in different conversations
+  using a shared non-OAuth client. A delayed call forces interleaving; tests
   assert each call's complete metadata and unchanged arguments.
-- Assert no chat metadata reaches initialization, listing, ping, or the OAuth
-  resolver. Preserve unrelated tracing/provider keys on `tools/call`.
-- Check two tool calls from one turn retain its origin, while the next turn
-  changes `messageId`. Test nested child assistants and unchanged root identity
-  with different invoking assistant IDs.
-- Exercise retry snapshot stability while the mocked membership state changes
+- Tests assert no chat metadata reaches initialization, listing, ping, or the OAuth
+  resolver, and preserve unrelated tracing/provider keys on `tools/call`.
+- Tests check that two tool calls from one turn retain its origin, while the
+  next turn changes `messageId`. Nested child assistants retain root identity;
+  membership queries use each invoking assistant ID.
+- Tests exercise retry snapshot stability while the mocked membership state changes
   between attempts. A subsequent logical call must see the updated membership.
-- Verify missing/empty scalars and an all-invalid membership result omit their
-  fields. Treat any new discovered contract defect as a regression to fix.
+- Tests verify missing/empty scalars and an all-invalid membership result omit
+  their fields. Mock-model tests ensure MCP content results end the tool loop
+  for generated and streamed replies. A cache regression test checks that
+  client disposal cannot recursively delete the same entry when close events fire.
 
 ### One deployed integration scenario
 
-Add one authenticated chat-to-MCP scenario to
+One authenticated chat-to-MCP scenario runs in
 `apps/backend/scripts/integration-baseline.ts`, following the existing shared
-satellite chat scenario. Use the deployed backend and real database, the
+satellite chat scenario. It uses the deployed backend and real database, the
 existing mock LLM provider, and a real Streamable HTTP MCP fixture reachable
 from the backend container. The fixture captures requests privately and
 returns a constant response; no external service is needed.
@@ -104,10 +107,14 @@ returns a constant response; no external service is needed.
    unrelated SDK metadata.
 4. Verify the tool's constant result was persisted in the conversation,
    completing the request/result path. A missing call or result is a failure.
-5. Close the fixture and remove seeded resources/captures in `finally`.
-   Give all waits bounded timeouts.
+5. Close the fixture and remove seeded resources/captures in `finally`, with
+   bounded waits. The API may archive published assistants and retain their
+   referenced backend; those records disappear with the disposable database.
 
-Run this same scenario in the existing SQLite and PostgreSQL deployment jobs.
+CI runs this same scenario against SQLite and PostgreSQL deployments. For a
+container backend, set `MCP_INTEGRATION_HOST` to a hostname that reaches the
+test runner (CI uses `host.docker.internal`). The fixture binds an ephemeral
+port on the runner; with a host backend, the default is `127.0.0.1`.
 These are two database executions of one scenario, not separate behavioral
 matrices. Do not duplicate it in `smoke.ts` or add deployed scenarios for every
 edge case. The manual inspector remains a debugging aid.

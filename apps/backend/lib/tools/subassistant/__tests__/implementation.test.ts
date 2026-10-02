@@ -254,4 +254,34 @@ describe('invoke_assistant — ownership', () => {
 
     expect(mockBuild.mock.calls[0][5].requestMeta).toEqual({ traceId: 'trace-1' })
   })
+
+  test('retains root identity and metadata through two nested assistants', async () => {
+    setupSubAssistantRun([], 'done')
+    const finishRun = mockInvokeLlm.getMockImplementation()!
+    const requestContext = {
+      conversationId: 'root-chat',
+      messageId: 'root-message',
+      userId: 'user-1',
+    }
+    const requestMeta = { traceId: 'root-trace' }
+    mockInvokeLlm.mockImplementationOnce(async (childState: ChatState, sink) => {
+      const options = mockBuild.mock.calls[0][5]
+      await invokeAssistant(
+        invokeParams({
+          params: { assistantId: 'grandchild-assistant', input: 'nested input' },
+          requestContext: options.requestContext,
+          requestMeta: options.requestMeta,
+        })
+      )
+      await finishRun(childState, sink)
+    })
+
+    await invokeAssistant(invokeParams({ requestContext, requestMeta }))
+
+    expect(mockBuild).toHaveBeenCalledTimes(2)
+    for (const call of mockBuild.mock.calls) {
+      expect(call[5].requestContext).toEqual(requestContext)
+      expect(call[5].requestMeta).toEqual(requestMeta)
+    }
+  })
 })

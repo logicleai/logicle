@@ -27,6 +27,12 @@ function extractToolResultText(options: LanguageModelV3CallOptions): string | un
       const output = part.output
       if (output.type === 'text') return output.value
       if (output.type === 'json') return JSON.stringify(output.value)
+      if (output.type === 'content') {
+        return output.value
+          .filter((item) => item.type === 'text')
+          .map((item) => item.text)
+          .join('')
+      }
       return undefined
     }
   }

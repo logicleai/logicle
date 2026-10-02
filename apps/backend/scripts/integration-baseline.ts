@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import WebSocket from 'ws'
+import { checkMcpRequestContext } from './mcp-request-context-integration'
 import type { ToolCallMessage } from '@/lib/satellite/types'
 
 const cliArgs = process.argv.slice(2).filter((a) => a !== '--')
@@ -71,6 +72,7 @@ async function request(method: string, path: string, opts: RequestOptions = {}) 
     method,
     headers: allHeaders,
     body: payload,
+    signal: opts.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined,
   })
   setCookiesFromResponse(res.headers)
   const text = await res.text()
@@ -100,6 +102,7 @@ async function login(email, password) {
     expectedStatus: 204,
     headers: jsonHeaders,
     json: { email, password },
+    timeoutMs: 10000,
   })
 }
 
@@ -457,6 +460,8 @@ async function main() {
   }
 
   if (process.env.ALLOW_MOCK_PROVIDER === '1') {
+    await checkMcpRequestContext(request, login, runId, adminEmail, password)
+
     console.log('Integration: mock chat pipeline — message persistence and multi-turn')
 
     const mockBackendCreated = await request('POST', '/api/backends', {

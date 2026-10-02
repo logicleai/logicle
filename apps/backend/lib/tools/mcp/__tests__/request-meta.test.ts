@@ -159,4 +159,42 @@ describe('buildMcpRequestMeta', () => {
     expect(first).toEqual({ 'logicle/userId': 'user-1' })
     expect(second).toEqual({ 'logicle/userId': 'user-2' })
   })
+
+  it('omits empty scalars and a membership list containing only invalid entries', async () => {
+    state.memberships = [
+      { workspaceId: 'workspace-1', role: 'UNKNOWN' },
+      { workspaceId: '', role: WorkspaceRole.MEMBER },
+    ]
+    expect(
+      await buildMcpRequestMeta({
+        assistantId: 'assistant-1',
+        userId: '',
+        conversationId: '',
+        requestContext: { conversationId: '', messageId: '', userId: '' },
+      })
+    ).toEqual({})
+    expect(await buildMcpRequestMeta({ assistantId: 'assistant-1', userId: 'user-1' })).toEqual({
+      'logicle/userId': 'user-1',
+    })
+  })
+
+  it('scopes memberships to each invoking assistant while retaining the root user', async () => {
+    const requestContext = {
+      conversationId: 'root-chat',
+      messageId: 'root-message',
+      userId: 'root-user',
+    }
+    await buildMcpRequestMeta({ assistantId: 'parent', userId: 'other-user', requestContext })
+    await buildMcpRequestMeta({ assistantId: 'child', userId: 'other-user', requestContext })
+    expect(
+      state.filters
+        .filter((filter) => filter.column === 'AssistantSharing.assistantId')
+        .map((filter) => filter.value)
+    ).toEqual(['parent', 'child'])
+    expect(
+      state.filters
+        .filter((filter) => filter.column === 'WorkspaceMember.userId')
+        .map((filter) => filter.value)
+    ).toEqual(['root-user', 'root-user'])
+  })
 })

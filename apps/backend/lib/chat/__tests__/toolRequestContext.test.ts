@@ -34,4 +34,12 @@ describe('captureToolRequestContext', () => {
       userId: 'user-1',
     })
   })
+
+  it('captures a new origin after an approved turn without modifying the earlier snapshot', () => {
+    const history = [message('root', 'user'), message('approval', 'user-response')]
+    const previous = captureToolRequestContext(history, 'user-1', 'conversation-1')
+    history.push(message('next', 'user'))
+    expect(captureToolRequestContext(history, 'user-1', 'conversation-1').messageId).toBe('next')
+    expect(previous.messageId).toBe('root')
+  })
 })

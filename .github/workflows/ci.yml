@@ -282,39 +282,60 @@ jobs:
           set -euo pipefail
           trap 'status=$?; if [ "$status" -ne 0 ]; then echo "Baseline test failed; dumping container logs"; docker logs logicle-smoke || true; fi' EXIT
 
-          DATABASE_URL=file:///data/sqlite/logicle.sqlite
+          # The smoke job already populated `logicle`; baseline needs a fresh
+          # database so its first signup is the administrator.
+          node --input-type=module <<'NODE'
+          import pg from 'pg'
+          const client = new pg.Client({ connectionString: 'postgresql://admin:admin@127.0.0.1:5432/logicle' })
+          await client.connect()
+          try {
+            await client.query('CREATE DATABASE logicle_baseline')
+          } finally {
+            await client.end()
+          }
+          NODE
 
-          docker rm -f logicle-smoke || true
+          run_baseline() {
+            local name="$1"
+            local database_url="$2"
 
-          docker run -d \
-            --name logicle-smoke \
-            -p 3000:3000 \
-            -e APP_URL=http://localhost:3000 \
-            -e NEXTAUTH_SECRET=ci-smoke-only-session-secret \
-            -e DATABASE_URL="${DATABASE_URL}" \
-            -e ALLOW_MOCK_PROVIDER=1 \
-            -e ENABLE_APIKEYS=1 \
-            -e FILE_STORAGE_ENCRYPTION_ENABLE=1 \
-            -e FILE_STORAGE_ENCRYPTION_KEY=ci-smoke-only-not-a-secret \
-            -e FILE_STORAGE_LOCATION=/data/files \
-            "${SMOKE_IMAGE}"
+            echo "Running integration baseline against ${name}"
+            docker rm -f logicle-smoke || true
+            docker run -d \
+              --name logicle-smoke \
+              --add-host=host.docker.internal:host-gateway \
+              -p 3000:3000 \
+              -e APP_URL=http://localhost:3000 \
+              -e NEXTAUTH_SECRET=ci-smoke-only-session-secret \
+              -e DATABASE_URL="${database_url}" \
+              -e ALLOW_MOCK_PROVIDER=1 \
+              -e ENABLE_APIKEYS=1 \
+              -e FILE_STORAGE_ENCRYPTION_ENABLE=1 \
+              -e FILE_STORAGE_ENCRYPTION_KEY=ci-smoke-only-not-a-secret \
+              -e FILE_STORAGE_LOCATION=/data/files \
+              "${SMOKE_IMAGE}"
 
-          ready=0
-          for i in $(seq 1 20); do
-            if curl -fsS http://localhost:3000/api/health >/dev/null; then
-              ready=1
-              break
+            ready=0
+            for i in $(seq 1 20); do
+              if curl -fsS http://localhost:3000/api/health >/dev/null; then
+                ready=1
+                break
+              fi
+              sleep 1
+            done
+
+            if [ "${ready}" -ne 1 ]; then
+              echo "Baseline test failed: app did not become ready within 20 seconds (${name})"
+              docker logs logicle-smoke || true
+              exit 1
             fi
-            sleep 1
-          done
 
-          if [ "${ready}" -ne 1 ]; then
-            echo "Baseline test failed: app did not become ready within 20 seconds"
-            docker logs logicle-smoke || true
-            exit 1
-          fi
+            MCP_INTEGRATION_HOST=host.docker.internal \
+              node dist-scripts/integration-baseline.js "http://127.0.0.1:3000"
+          }
 
-          node dist-scripts/integration-baseline.js "http://127.0.0.1:3000"
+          run_baseline "sqlite" "file:///data/sqlite/logicle.sqlite"
+          run_baseline "postgres" "postgresql://admin:admin@host.docker.internal:5432/logicle_baseline"
 
       - name: Stop smoke container
         if: always()
