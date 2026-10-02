@@ -8,13 +8,13 @@ const META_FIELDS = [
   'conversationId',
   'messageId',
   'userId',
+  // Strip the previously emitted name even when supplied through requestMeta.
   'userName',
   'workspaceMemberships',
 ] as const
 
 export interface McpWorkspaceMembership {
   workspaceId: string
-  workspaceName: string
   role: WorkspaceRole
 }
 
@@ -27,29 +27,19 @@ const computeMemberships = async (
   const rows = await db
     .selectFrom('WorkspaceMember')
     .innerJoin('AssistantSharing', 'AssistantSharing.workspaceId', 'WorkspaceMember.workspaceId')
-    .innerJoin('Workspace', 'Workspace.id', 'WorkspaceMember.workspaceId')
-    .select([
-      'WorkspaceMember.workspaceId as workspaceId',
-      'Workspace.name as workspaceName',
-      'WorkspaceMember.role as role',
-    ])
+    .select(['WorkspaceMember.workspaceId as workspaceId', 'WorkspaceMember.role as role'])
     .where('WorkspaceMember.userId', '=', userId)
     .where('AssistantSharing.assistantId', '=', assistantId)
     .execute()
   const seen = new Set<string>()
   return rows
-    .filter(
-      (row) =>
-        row.workspaceId.trim() &&
-        row.workspaceName.trim() &&
-        Object.values(WorkspaceRole).includes(row.role)
-    )
+    .filter((row) => row.workspaceId.trim() && Object.values(WorkspaceRole).includes(row.role))
     .filter((row) => {
       if (seen.has(row.workspaceId)) return false
       seen.add(row.workspaceId)
       return true
     })
-    .map((row) => ({ ...row, workspaceName: row.workspaceName.trim() }))
+    .map(({ workspaceId, role }) => ({ workspaceId, role }))
 }
 
 /**
@@ -72,16 +62,6 @@ export const buildMcpRequestMeta = async (
   if (messageId) meta[`${META_PREFIX}messageId`] = messageId
   if (userId) {
     meta[`${META_PREFIX}userId`] = userId
-    try {
-      const user = await db
-        .selectFrom('User')
-        .select('name')
-        .where('id', '=', userId)
-        .executeTakeFirst()
-      if (user?.name.trim()) meta[`${META_PREFIX}userName`] = user.name.trim()
-    } catch (e) {
-      logger.warn('Failed computing MCP user name', e)
-    }
     try {
       if (assistantId) {
         const memberships = await computeMemberships(assistantId, userId)

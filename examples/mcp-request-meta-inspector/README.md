@@ -33,16 +33,16 @@ It uses the MCP SDK already installed by this repository.
    terminal.
 
 The revised implementation sends `logicle/conversationId`, `logicle/messageId`,
-`logicle/userId`, `logicle/userName`, and `logicle/workspaceMemberships` under
+`logicle/userId`, and `logicle/workspaceMemberships` under
 `_meta`. `argumentKeys` should be empty for this tool. A membership appears only
 when the assistant is shared with a workspace containing the current user;
 otherwise the membership field is omitted. Each entry includes the workspace
-ID, name, and the user's role.
+ID and the user's role. User and workspace names must be absent.
 
 To test multiple messages, invoke the tool in two separate chat turns and
 compare `logicle/messageId`. To test workspace scoping, share the assistant with
-a workspace containing the current user and invoke it again. For the known
-sub-assistant gap, attach an assistant that has this tool as a sub-assistant,
+a workspace containing the current user and invoke it again. To check
+sub-assistant propagation, attach an assistant that has this tool as a sub-assistant,
 invoke it from the parent, and compare the reported message ID with the root
 chat message ID.
 
