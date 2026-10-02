@@ -177,4 +177,44 @@ describe('EchoLanguageModel', () => {
       delta: 'Echo: what is the weather [tool result: sunny]',
     })
   })
+
+  test.each(['doGenerate', 'doStream'] as const)(
+    '%s answers after an MCP content result instead of repeatedly calling the tool',
+    async (method) => {
+      const model = new EchoLanguageModel()
+      const callOptions = options({
+        tools: [weatherTool],
+        prompt: [
+          ...userPrompt('weather'),
+          {
+            role: 'tool',
+            content: [
+              {
+                type: 'tool-result',
+                toolCallId: 'call-1',
+                toolName: 'get_weather',
+                output: { type: 'content', value: [{ type: 'text', text: 'sunny' }] },
+              },
+            ],
+          },
+        ],
+      })
+      if (method === 'doGenerate') {
+        const result = await model.doGenerate(callOptions)
+        expect(result.content).toEqual([
+          { type: 'text', text: 'Echo: weather [tool result: sunny]' },
+        ])
+        expect(result.finishReason.unified).toBe('stop')
+      } else {
+        const { stream } = await model.doStream(callOptions)
+        const parts = await collectStream(stream)
+        expect(parts).toContainEqual({
+          type: 'text-delta',
+          id: 'text-0',
+          delta: 'Echo: weather [tool result: sunny]',
+        })
+        expect(parts.some((part) => (part as { type: string }).type === 'tool-call')).toBe(false)
+      }
+    }
+  )
 })

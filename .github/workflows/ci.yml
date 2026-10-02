@@ -288,6 +288,7 @@ jobs:
 
           docker run -d \
             --name logicle-smoke \
+            --add-host=host.docker.internal:host-gateway \
             -p 3000:3000 \
             -e APP_URL=http://localhost:3000 \
             -e NEXTAUTH_SECRET=ci-smoke-only-session-secret \
@@ -314,7 +315,8 @@ jobs:
             exit 1
           fi
 
-          node dist-scripts/integration-baseline.js "http://127.0.0.1:3000"
+          MCP_INTEGRATION_HOST=host.docker.internal \
+            node dist-scripts/integration-baseline.js "http://127.0.0.1:3000"
 
       - name: Stop smoke container
         if: always()

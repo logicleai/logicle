@@ -49,7 +49,8 @@ const clientCache = new LRUCache<string, CacheItem>({
   max: clientCacheMaxItems,
   ttlAutopurge: false,
   updateAgeOnGet: true,
-  dispose: (value) => {
+  // Remove the entry before close() synchronously fires transport.onclose.
+  disposeAfter: (value) => {
     logger.info(`Disposing MCP client ${value.id}`)
     clearInterval(value.keepAlive)
     void value.client.close()

@@ -73,7 +73,14 @@ export class SubAssistantTool implements ToolImplementation {
           additionalProperties: false,
         },
         requireConfirm: false,
-        invoke: async ({ params, userId, conversationId, rootOwner }) => {
+        invoke: async ({
+          params,
+          userId,
+          conversationId,
+          rootOwner,
+          requestContext,
+          requestMeta,
+        }) => {
           const assistantId = params.assistantId as string
           const input = params.input as string
           const attachmentIds = (params.attachments as Array<{ id: string }> | undefined) ?? []
@@ -86,7 +93,10 @@ export class SubAssistantTool implements ToolImplementation {
 
             const assistantVersion = await getPublishedAssistantVersion(assistantId)
             if (!assistantVersion) {
-              return { type: 'error-text', value: `Sub-assistant "${label}" has no published version` }
+              return {
+                type: 'error-text',
+                value: `Sub-assistant "${label}" has no published version`,
+              }
             }
 
             const rawBackend = await db
@@ -131,15 +141,26 @@ export class SubAssistantTool implements ToolImplementation {
             // created by the sub-assistant's tools (e.g. generated images) are
             // stored as owned by the parent chat, not by the ephemeral
             // sub-conversation.
-            const assistant = await ChatAssistant.build(providerConfig, assistantParams, parameters, tools, files, {
-              user: userId,
-              conversationId,
-              rootOwner,
-            })
+            const assistant = await ChatAssistant.build(
+              providerConfig,
+              assistantParams,
+              parameters,
+              tools,
+              files,
+              {
+                user: userId,
+                conversationId,
+                rootOwner,
+                requestContext,
+                requestMeta,
+              }
+            )
 
             const accessibleAttachmentIds = (
               await Promise.all(
-                attachmentIds.map(async ({ id }) => ((await canAccessFile({ userId }, id)) ? id : null))
+                attachmentIds.map(async ({ id }) =>
+                  (await canAccessFile({ userId }, id)) ? id : null
+                )
               )
             ).filter((id): id is string => id != null)
             const attachments: dto.Attachment[] = (
@@ -167,9 +188,7 @@ export class SubAssistantTool implements ToolImplementation {
               return { type: 'error-text', value: 'Sub-assistant did not produce a response' }
             }
             const assistantMsg = lastMsg as dto.AssistantMessage
-            const errorPart = assistantMsg.parts.find(
-              (p): p is dto.ErrorPart => p.type === 'error'
-            )
+            const errorPart = assistantMsg.parts.find((p): p is dto.ErrorPart => p.type === 'error')
             if (errorPart) {
               return { type: 'error-text', value: errorPart.error }
             }
@@ -177,7 +196,13 @@ export class SubAssistantTool implements ToolImplementation {
               .filter((p): p is dto.TextPart => p.type === 'text')
               .map((p) => p.text)
               .join('')
-            type ContentFile = { type: 'file'; id: string; mimetype: string; name: string; size: number }
+            type ContentFile = {
+              type: 'file'
+              id: string
+              mimetype: string
+              name: string
+              size: number
+            }
             const generatedFiles = chatState.chatHistory
               .filter((m): m is dto.ToolMessage => m.role === 'tool')
               .flatMap((m) => m.parts)
@@ -199,7 +224,10 @@ export class SubAssistantTool implements ToolImplementation {
             return { type: 'text', value: textContent }
           } catch (e) {
             logger.error(`SubAssistantTool: error invoking "${label}"`, e)
-            return { type: 'error-text', value: (e as Error).message ?? 'Sub-assistant invocation failed' }
+            return {
+              type: 'error-text',
+              value: (e as Error).message ?? 'Sub-assistant invocation failed',
+            }
           }
         },
       },

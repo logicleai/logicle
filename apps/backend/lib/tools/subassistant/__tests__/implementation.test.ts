@@ -124,6 +124,8 @@ type InvokeParamsOverrides = {
   userId?: string
   conversationId?: string
   rootOwner?: { type: 'CHAT' | 'USER' | 'ASSISTANT'; id: string }
+  requestContext?: { conversationId?: string; messageId?: string; userId?: string }
+  requestMeta?: Record<string, unknown>
   toolCallId?: string
   toolName?: string
   assistantId?: string
@@ -157,13 +159,13 @@ beforeEach(async () => {
   mockBuild.mockResolvedValue({ invokeLlmAndProcessResponse: mockInvokeLlm })
 
   const { SubAssistantTool } = await import('../implementation')
-  const tool = new SubAssistantTool(
-    { name: 'invoke_assistant', id: 'tool-1' } as any,
-    [{ id: 'sub-assistant-id', name: 'ImageBot', description: 'generates images' }]
-  )
+  const tool = new SubAssistantTool({ name: 'invoke_assistant', id: 'tool-1' } as any, [
+    { id: 'sub-assistant-id', name: 'ImageBot', description: 'generates images' },
+  ])
   const fns = await tool.functions({} as any, {} as any)
   const fn = fns.invoke_assistant
-  if (!fn || fn.type === 'provider') throw new Error('invoke_assistant not found or not a function tool')
+  if (!fn || fn.type === 'provider')
+    throw new Error('invoke_assistant not found or not a function tool')
   invokeAssistant = (p) => fn.invoke(p as any)
 })
 
@@ -230,5 +232,56 @@ describe('invoke_assistant — ownership', () => {
 
     const buildOptions = mockBuild.mock.calls[0][5]
     expect(buildOptions.conversationId).toBe('parent-conv-id')
+  })
+
+  test('forwards the root request context instead of the synthetic child message', async () => {
+    setupSubAssistantRun([], 'done')
+    const requestContext = {
+      conversationId: 'parent-conv-id',
+      messageId: 'root-user-message',
+      userId: 'user-1',
+    }
+
+    await invokeAssistant(invokeParams({ requestContext }))
+
+    const buildOptions = mockBuild.mock.calls[0][5]
+    expect(buildOptions.requestContext).toEqual(requestContext)
+  })
+
+  test('forwards other per-request metadata to the child', async () => {
+    setupSubAssistantRun([], 'done')
+    await invokeAssistant(invokeParams({ requestMeta: { traceId: 'trace-1' } }))
+
+    expect(mockBuild.mock.calls[0][5].requestMeta).toEqual({ traceId: 'trace-1' })
+  })
+
+  test('retains root identity and metadata through two nested assistants', async () => {
+    setupSubAssistantRun([], 'done')
+    const finishRun = mockInvokeLlm.getMockImplementation()!
+    const requestContext = {
+      conversationId: 'root-chat',
+      messageId: 'root-message',
+      userId: 'user-1',
+    }
+    const requestMeta = { traceId: 'root-trace' }
+    mockInvokeLlm.mockImplementationOnce(async (childState: ChatState, sink) => {
+      const options = mockBuild.mock.calls[0][5]
+      await invokeAssistant(
+        invokeParams({
+          params: { assistantId: 'grandchild-assistant', input: 'nested input' },
+          requestContext: options.requestContext,
+          requestMeta: options.requestMeta,
+        })
+      )
+      await finishRun(childState, sink)
+    })
+
+    await invokeAssistant(invokeParams({ requestContext, requestMeta }))
+
+    expect(mockBuild).toHaveBeenCalledTimes(2)
+    for (const call of mockBuild.mock.calls) {
+      expect(call[5].requestContext).toEqual(requestContext)
+      expect(call[5].requestMeta).toEqual(requestMeta)
+    }
   })
 })
