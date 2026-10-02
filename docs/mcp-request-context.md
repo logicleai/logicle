@@ -81,74 +81,64 @@ from the assistant's answer.
 - Verify missing/empty scalars and an all-invalid membership result omit their
   fields. Treat any new discovered contract defect as a regression to fix.
 
-### Integration scenarios to implement
+### One deployed integration scenario
 
-Extend `apps/backend/scripts/integration-baseline.ts` with an MCP fixture that
-captures requests privately and returns a constant response. Use the existing
-mock provider to drive chat deterministically. Start a real SDK server on an
-ephemeral port and exercise Streamable HTTP and legacy SSE; for stdio, launch
-the fixture as a child process and write captures to a temporary file or a
-separate IPC channel, never protocol stdout. Use the same assertions for each
-transport. The manual inspector example is useful for debugging, but is not
-an automated integration gate.
+Add one authenticated chat-to-MCP scenario to
+`apps/backend/scripts/integration-baseline.ts`, following the existing shared
+satellite chat scenario. Use the deployed backend and real database, the
+existing mock LLM provider, and a real Streamable HTTP MCP fixture reachable
+from the backend container. The fixture captures requests privately and
+returns a constant response; no external service is needed.
 
-1. **Real database intersection:** create two users, a parent and child
-   assistant, and several workspaces. Include a user-only workspace, an
-   assistant-only workspace, a workspace shared with both assistants, and
-   distinct parent/child workspaces. Assign all four roles across eligible
-   fixtures. Derive the expected result from the seeded fixtures, and require
-   exact membership sets and roles; ordering need not be significant. Run
-   against SQLite and PostgreSQL deployments.
-2. **Wire contract and privacy:** capture `tools/call` and require the expected
-   IDs in `_meta`, unchanged tool arguments, and exactly `workspaceId` and
-   `role` per membership. Seed recognizable names, email, message text, and
-   credentials, and assert those values are absent from the application
-   metadata. Do not assert that OAuth credentials are absent from HTTP auth
-   headers, where they belong. Check non-tool MCP requests for absence of
-   `logicle/*` chat context.
-3. **Chat lifecycle:** send two messages in one chat, multiple tool calls in a
-   turn, and a call requiring confirmation. Require each call to retain its
-   originating message ID, with a new ID for the next user message. Execute a
-   parent-to-child-to-MCP turn: root chat/message/user IDs must survive, and
-   membership scope must match the child assistant.
-4. **Concurrent calls:** interleave two authenticated users and two chats
-   through the same configured MCP tool. Use barriers in the fixture to force
-   overlap and assert there is no identity or membership crossover.
-5. **Retry:** capture the first call and deliberately close the connection
-   before replying. Change the user's membership before releasing the retry,
-   and compare the application metadata across attempts. A later logical call
-   must reflect the change. Use barriers and bounded timeouts rather than sleeps.
-6. **OAuth:** use a local authorization-server fixture and actual token
-   resolution. Test distinct users, token refresh, and authorization followed
-   by resumed tool execution; require root identity to survive and verify that
-   authorization/token requests carry no chat context. Keep token captures
-   private and out of test output.
-7. **Compatibility and omission:** exercise an MCP handler that ignores
-   unknown metadata, a user with no eligible workspace, and partial context via
-   direct tool invocation. Valid calls must succeed, with unavailable fields
-   omitted rather than null or empty arrays.
+1. Create a user and three workspaces: one where the user is an `EDITOR` and
+   the assistant is shared, one where only the user belongs, and one where
+   only the assistant is shared. Create and publish an assistant with the
+   fixture's single MCP tool. Set recognizable user and workspace names.
+2. Log in as that user, create a conversation, and send one message with a
+   known ID through `/api/chat`. Let the mock model invoke the tool.
+3. Require a captured `tools/call` with the actual conversation, message, and
+   authenticated user IDs under `_meta`. Require exactly the eligible
+   workspace ID and `EDITOR` role, and unchanged tool arguments. Check that
+   names and other private fixture values are absent from application metadata,
+   and that initialization/listing requests contain no chat context. Allow
+   unrelated SDK metadata.
+4. Verify the tool's constant result was persisted in the conversation,
+   completing the request/result path. A missing call or result is a failure.
+5. Close the fixture and remove seeded resources/captures in `finally`.
+   Give all waits bounded timeouts.
 
-Keep fixtures isolated by run, close clients/servers and child processes in
-`finally`, remove temporary captures, and give every wait a bounded timeout.
-An integration run passes only when the captured requests match expectations;
-a missing tool call is a failure. Add one small authenticated chat-to-MCP
-scenario to `smoke.ts` for the CI wiring gate; keep the broader matrix in the
-integration baseline.
+Run this same scenario in the existing SQLite and PostgreSQL deployment jobs.
+These are two database executions of one scenario, not separate behavioral
+matrices. Do not duplicate it in `smoke.ts` or add deployed scenarios for every
+edge case. The manual inspector remains a debugging aid.
+
+### Keep the remaining coverage below the deployment layer
+
+Retries, concurrent callers, confirmation origin, nested assistants, omission,
+role validation, metadata merging, and OAuth resolver interactions belong in
+focused Vitest tests. Use mocked dependencies to force failures and precise
+interleavings. Extend the existing tests rather than reproduce these cases in
+full deployments.
+
+For transport-specific serialization concerns, add small real-SDK contract
+checks under Vitest only when there is a concrete uncovered risk. Such checks
+can use a local stdio/SSE fixture without a deployed Logicle instance. The single
+HTTP deployment scenario establishes the chat/auth/database/MCP wiring; it does
+not claim to exercise every transport or a complete OAuth authorization flow.
 
 ### Bridge follow-up
 
-The satellite/bridge path currently has no metadata propagation and cannot
-pass this contract. After the coordinated protocol change, add Go tests for
-metadata forwarding without moving it into arguments, plus a deployed
-Logicle → WebSocket → real bridge → MCP fixture scenario. Cover stdio and SSE,
-root identity, workspace scope, overlapping calls, reconnects, and compatibility
-with a bridge that does not support metadata. Metadata-dependent operations
-must fail safely when context is unavailable. Until those tests pass, report
-bridge coverage as unsupported rather than include it in a completion claim.
+The satellite/bridge path currently has no metadata propagation. After the
+coordinated protocol change, cover forwarding, argument separation, missing
+metadata, concurrency, and compatibility in Logicle unit tests and Go tests.
+Add one representative Logicle → WebSocket → real bridge → MCP scenario to
+prove that separate wiring path. Do not expand it into another deployed edge
+case matrix. Until implemented, report bridge propagation as unsupported.
 
 ### Completion criteria
 
-The direct MCP feature is verified when the unit suite, type checking, the
-real-transport matrix, and the SQLite/PostgreSQL chat integration scenarios all
-pass. Existing mocked tests alone do not satisfy issue #310's integration
-criteria. Bridge support is a separate completion gate after its implementation.
+Require the focused unit suite, type checking, and the single deployed scenario
+on SQLite and PostgreSQL. Record which issue #310 criteria have unit coverage
+and which have deployment coverage; do not claim a full integration matrix for
+OAuth, confirmations, sub-assistants, or all transports. Bridge propagation has
+its own wiring gate after implementation.
