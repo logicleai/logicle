@@ -12,19 +12,14 @@ It uses the MCP SDK already installed by this repository.
      mise exec -- pnpm exec tsx examples/mcp-request-meta-inspector/server.ts
    ```
 
-2. In another terminal, start your local Logicle instance with the example
-   provisioning file:
+2. In your running Logicle app, open **Admin → Tools** and create an MCP tool:
 
-   ```sh
-   MISE_CONFIG_FILE="$HOME/.config/mise/projects/logicle.toml" \
-     PROVISION_PATH="$PWD/examples/mcp-request-meta-inspector/provision.yaml" \
-     mise exec -- pnpm run dev
-   ```
+   - Name: **MCP request metadata inspector**
+   - URL: `http://127.0.0.1:8765/mcp`
+   - Authentication: **None**
 
-   If `PROVISION_PATH` already points to a directory of local provisioning
-   files, copy `provision.yaml` into that directory instead. The inspector URL
-   uses loopback, so Logicle and the inspector must run on the same host. If
-   Logicle runs in a container, use a URL reachable from that container.
+   The inspector binds to loopback, so run the Logicle backend directly on
+   the same host as the inspector.
 
 3. In Logicle, add **MCP request metadata inspector** to an assistant's Tools
    tab and publish it. Chat with that assistant as a signed-in user and ask it
