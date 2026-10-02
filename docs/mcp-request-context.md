@@ -111,13 +111,13 @@ returns a constant response; no external service is needed.
    bounded waits. The API may archive published assistants and retain their
    referenced backend; those records disappear with the disposable database.
 
-CI runs this same scenario against SQLite and PostgreSQL deployments. For a
+CI runs this scenario in the SQLite integration baseline. PostgreSQL remains
+covered by the existing smoke tests. For a
 container backend, set `MCP_INTEGRATION_HOST` to a hostname that reaches the
 test runner (CI uses `host.docker.internal`). The fixture binds an ephemeral
 port on the runner; with a host backend, the default is `127.0.0.1`.
-These are two database executions of one scenario, not separate behavioral
-matrices. Do not duplicate it in `smoke.ts` or add deployed scenarios for every
-edge case. The manual inspector remains a debugging aid.
+Do not duplicate the MCP scenario in `smoke.ts` or add deployed scenarios for
+every edge case. The manual inspector remains a debugging aid.
 
 ### Keep the remaining coverage below the deployment layer
 
@@ -145,7 +145,7 @@ case matrix. Until implemented, report bridge propagation as unsupported.
 ### Completion criteria
 
 Require the focused unit suite, type checking, and the single deployed scenario
-on SQLite and PostgreSQL. Record which issue #310 criteria have unit coverage
+in the SQLite baseline. Record which issue #310 criteria have unit coverage
 and which have deployment coverage; do not claim a full integration matrix for
 OAuth, confirmations, sub-assistants, or all transports. Bridge propagation has
 its own wiring gate after implementation.
