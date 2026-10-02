@@ -1,13 +1,17 @@
 import { createServer } from 'node:http'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  type CallToolRequest,
+} from '@modelcontextprotocol/sdk/types.js'
 
 const host = '127.0.0.1'
 const port = Number(process.env.MCP_INSPECTOR_PORT ?? 8765)
 let failNextCall = process.env.MCP_INSPECTOR_FAIL_ONCE === '1'
 
-const printCall = (request, outcome) => {
+const printCall = (request: CallToolRequest, outcome: 'forced_disconnect' | 'success') => {
   console.log(
     JSON.stringify(
       {
@@ -33,19 +37,20 @@ const httpServer = createServer(async (req, res) => {
     return
   }
 
-  let body
+  let body: unknown
   try {
-    const chunks = []
-    for await (const chunk of req) chunks.push(chunk)
+    const chunks: Buffer[] = []
+    for await (const chunk of req) chunks.push(Buffer.from(chunk))
     body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
   } catch {
     res.writeHead(400).end()
     return
   }
 
-  if (failNextCall && body.method === 'tools/call') {
+  const toolCall = CallToolRequestSchema.safeParse(body)
+  if (failNextCall && toolCall.success) {
     failNextCall = false
-    printCall(body, 'forced_disconnect')
+    printCall(toolCall.data, 'forced_disconnect')
     res.destroy()
     return
   }

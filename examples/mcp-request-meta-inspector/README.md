@@ -9,7 +9,7 @@ It uses the MCP SDK already installed by this repository.
 
    ```sh
    MISE_CONFIG_FILE="$HOME/.config/mise/projects/logicle.toml" \
-     mise exec -- pnpm exec node examples/mcp-request-meta-inspector/server.mjs
+     mise exec -- pnpm exec tsx examples/mcp-request-meta-inspector/server.ts
    ```
 
 2. In another terminal, start your local Logicle instance with the example
