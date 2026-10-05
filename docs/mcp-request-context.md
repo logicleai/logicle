@@ -1,7 +1,7 @@
 # MCP tool request context
 
 Logicle adds request-scoped context to `params._meta` on MCP `tools/call`
-requests, both directly and through an updated `logicle-bridge` MCP relay. The model does not see or generate these fields, and they are never
+requests. The model does not see or generate these fields, and they are never
 placed in tool `arguments`. The current contract uses `logicle/*` keys:
 
 ```json
@@ -87,9 +87,9 @@ from the assistant's answer.
 ### One deployed integration scenario
 
 One authenticated chat-to-MCP scenario runs in
-`apps/backend/scripts/integration-baseline.ts`, following the existing shared
-satellite chat scenario. It uses the deployed backend and real database, the
-existing mock LLM provider, and a real Streamable HTTP MCP fixture reachable
+`apps/backend/scripts/integration-baseline.ts`. It uses the deployed backend
+and real database, the existing mock LLM provider, and a real Streamable HTTP
+MCP fixture reachable
 from the backend container. The fixture captures requests privately and
 returns a constant response; no external service is needed.
 
@@ -133,88 +133,25 @@ can use a local stdio/SSE fixture without a deployed Logicle instance. The singl
 HTTP deployment scenario establishes the chat/auth/database/MCP wiring; it does
 not claim to exercise every transport or a complete OAuth authorization flow.
 
-### Satellite and bridge propagation
+### Metadata propagation and compatibility
 
-Satellite tools use the same metadata builder as direct MCP calls. Logicle
-calculates root identity and memberships for the invoking assistant, then sends
-an optional top-level `_meta` on the WebSocket `tool-call` message. Satellite
-`params` remains the model-generated arguments:
+When a tool call passes through an intermediary, the same metadata contract
+applies: preserve the originating conversation, message, and user identity,
+calculate memberships for the assistant directly invoking the tool, and keep
+metadata separate from arguments. Verify the MCP request received by the
+server, rather than relying on an intermediary's diagnostic summary.
 
-```json
-{
-  "type": "tool-call",
-  "id": "call-id",
-  "method": "tool-name",
-  "params": { "input": "tool argument" },
-  "_meta": {
-    "logicle/conversationId": "conversation-id",
-    "logicle/messageId": "originating-user-message-id",
-    "logicle/userId": "user-id"
-  }
-}
-```
-
-The bridge forwards this metadata unchanged into the upstream MCP
-`tools/call` request's `params._meta`, alongside `name` and `arguments`.
-This applies to both bridge MCP transports (stdio and HTTP/SSE), which share
-one request builder. No context is stored on the relay or connection, and
-initialization/discovery do not inherit it. Built-in filesystem and command
-handlers receive only tool arguments; metadata does not change their local
-permissions. An argument named `_meta` remains an ordinary argument.
-
-The additional field is optional and omitted when empty. Updated bridges
-accept calls from older Logicle servers without metadata. Older Go bridges
-ignore the new field, so calls still work but metadata propagation requires
-updating both repositories. The WebSocket subprotocol remains
-`logicle-satellite-v1`.
-
-Logicle unit tests cover metadata construction at satellite invocation,
-root identity, invoking-assistant membership queries, unrelated keys,
-argument separation, concurrent callers, and metadata-free messages. Bridge Go
-tests cover decoding/dispatch, relay forwarding, discovery exclusion,
-concurrent calls, missing/empty metadata, and unchanged local capability gates.
-
-The existing shared-satellite chat scenario in
-`apps/backend/scripts/integration-baseline.ts` also checks request metadata.
-A simulated satellite connects to the deployed backend over a real WebSocket
-using a satellite credential, registers an `echo` tool, captures `tool-call`,
-and returns a constant result. An authenticated user invokes the tool through
-`/api/chat` with the existing mock model. Assertions require the actual
-conversation, originating message, and caller IDs, exactly the eligible
-workspace membership with its `EDITOR` role, unchanged nonempty arguments,
-no private fixture values in metadata, and persistence of the returned result.
-The fixture includes a workspace joined only by the user and another shared
-only with the assistant to prove database intersection filtering. The caller
-is different from the satellite owner. This extends the existing scenario
-rather than adding a separate deployed edge-case matrix.
-
-Run the baseline against a fresh backend with `ALLOW_MOCK_PROVIDER=1` and
-`ENABLE_APIKEYS=1` enabled in both the backend and test runner:
-
-```bash
-ALLOW_MOCK_PROVIDER=1 ENABLE_APIKEYS=1 \
-  pnpm run test:integration -- http://localhost:3000
-```
-
-CI already enables these flags for its SQLite baseline. The simulated satellite
-is implemented in this repository; no bridge binary or second checkout is
-required. This proves deployed Logicle chat/auth/database/WebSocket wiring,
-while the Go bridge's downstream MCP forwarding belongs to its own tests.
-
-The Logicle test suite does not require a bridge binary or a second checkout.
-Tests involving both projects belong in a dedicated integration repository.
-That suite should exercise Logicle → WebSocket → real bridge → MCP and inspect
-received MCP requests and returned results, including separate callers,
-a subsequent user turn, and a later call without metadata. A full deployed
-scenario should additionally establish chat, authentication, and membership
-database wiring. This cross-project suite has not been added.
+Metadata is optional. Calls without it must continue to work, and consumers
+that ignore unknown metadata must continue to accept calls that include it.
+Compatibility checks should cover both cases, confirm unchanged arguments and
+returned results, and verify that subsequent calls do not inherit prior
+metadata. Metadata reaches the MCP server only when every intermediary
+supports forwarding it.
 
 ### Completion criteria
 
-Require the focused unit suite, type checking, and the direct-MCP and
-shared-satellite scenarios in the SQLite baseline. Record which issue #310 criteria have unit coverage
-and which have deployment coverage; do not claim a full integration matrix for
-OAuth, confirmations, sub-assistants, or all transports. Bridge changes
-additionally require the bridge repository's Go tests. Report cross-project
-deployment coverage separately; the self-contained suites do not prove the
-complete Logicle-to-bridge deployment path.
+Require the focused unit suite, type checking, and the metadata scenarios in
+the SQLite integration baseline. Record which issue #310 criteria have unit
+coverage and which have deployment coverage; do not claim a full integration
+matrix for OAuth, confirmations, sub-assistants, or all transports. Report
+verification through intermediaries separately from direct MCP coverage.
