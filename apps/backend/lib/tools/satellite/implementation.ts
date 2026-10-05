@@ -12,8 +12,6 @@ import { LlmModel } from '@/lib/chat/models'
 import { saveFile } from '@/backend/lib/tools/file-output-normalization'
 import { normalizeMcpToolResult } from '@/backend/lib/tools/file-output-normalization'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
-import { buildMcpRequestMeta } from '../mcp/request-meta'
-import { callSatelliteMethod } from '@/lib/satellite/hub'
 
 const toToolResult = async (
   result: CallToolResult,
@@ -78,13 +76,15 @@ const toToolResult = async (
 
 const createSatelliteToolFunction = (
   satelliteId: string,
-  tool: { name: string; description: string; inputSchema?: any }
+  tool: { name: string; description: string; inputSchema?: any },
+  callSatelliteMethod: typeof import('@/lib/satellite/hub').callSatelliteMethod
 ): ToolFunction => {
   return {
     description: tool.description,
     parameters: tool.inputSchema,
     invoke: async (invokeParams: ToolInvokeParams): Promise<dto.ToolCallResultOutput> => {
       try {
+        const { buildMcpRequestMeta } = await import('../mcp/request-meta')
         const requestMeta = await buildMcpRequestMeta(invokeParams)
         const result = await callSatelliteMethod(
           satelliteId,
@@ -133,14 +133,17 @@ export class SatelliteTool implements ToolImplementation {
   supportedMedia = []
 
   functions = async (_model: LlmModel, _context: ToolFunctionContext): Promise<ToolFunctions> => {
-    const { connections } = await import('@/lib/satellite/hub')
+    const { connections, callSatelliteMethod } = await import('@/lib/satellite/hub')
     const conn = connections.get(this.satelliteId)
     if (!conn) {
       throw new UserVisibleError(`Satellite "${this.toolParams.name}" is currently offline`)
     }
 
     return Object.fromEntries(
-      conn.tools.map((tool) => [tool.name, createSatelliteToolFunction(this.satelliteId, tool)])
+      conn.tools.map((tool) => [
+        tool.name,
+        createSatelliteToolFunction(this.satelliteId, tool, callSatelliteMethod),
+      ])
     )
   }
 }
