@@ -87,9 +87,9 @@ from the assistant's answer.
 ### One deployed integration scenario
 
 One authenticated chat-to-MCP scenario runs in
-`apps/backend/scripts/integration-baseline.ts`, following the existing shared
-satellite chat scenario. It uses the deployed backend and real database, the
-existing mock LLM provider, and a real Streamable HTTP MCP fixture reachable
+`apps/backend/scripts/integration-baseline.ts`. It uses the deployed backend
+and real database, the existing mock LLM provider, and a real Streamable HTTP
+MCP fixture reachable
 from the backend container. The fixture captures requests privately and
 returns a constant response; no external service is needed.
 
@@ -133,19 +133,25 @@ can use a local stdio/SSE fixture without a deployed Logicle instance. The singl
 HTTP deployment scenario establishes the chat/auth/database/MCP wiring; it does
 not claim to exercise every transport or a complete OAuth authorization flow.
 
-### Bridge follow-up
+### Metadata propagation and compatibility
 
-The satellite/bridge path currently has no metadata propagation. After the
-coordinated protocol change, cover forwarding, argument separation, missing
-metadata, concurrency, and compatibility in Logicle unit tests and Go tests.
-Add one representative Logicle → WebSocket → real bridge → MCP scenario to
-prove that separate wiring path. Do not expand it into another deployed edge
-case matrix. Until implemented, report bridge propagation as unsupported.
+When a tool call passes through an intermediary, the same metadata contract
+applies: preserve the originating conversation, message, and user identity,
+calculate memberships for the assistant directly invoking the tool, and keep
+metadata separate from arguments. Verify the MCP request received by the
+server, rather than relying on an intermediary's diagnostic summary.
+
+Metadata is optional. Calls without it must continue to work, and consumers
+that ignore unknown metadata must continue to accept calls that include it.
+Compatibility checks should cover both cases, confirm unchanged arguments and
+returned results, and verify that subsequent calls do not inherit prior
+metadata. Metadata reaches the MCP server only when every intermediary
+supports forwarding it.
 
 ### Completion criteria
 
-Require the focused unit suite, type checking, and the single deployed scenario
-in the SQLite baseline. Record which issue #310 criteria have unit coverage
-and which have deployment coverage; do not claim a full integration matrix for
-OAuth, confirmations, sub-assistants, or all transports. Bridge propagation has
-its own wiring gate after implementation.
+Require the focused unit suite, type checking, and the metadata scenarios in
+the SQLite integration baseline. Record which issue #310 criteria have unit
+coverage and which have deployment coverage; do not claim a full integration
+matrix for OAuth, confirmations, sub-assistants, or all transports. Report
+verification through intermediaries separately from direct MCP coverage.
