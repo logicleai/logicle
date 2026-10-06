@@ -134,7 +134,7 @@ export function Overview({ query, onRangeSelect }: OverviewProps) {
             fillOpacity={0.18}
           />
         ) : null}
-        <Bar dataKey="total" fill={barColor} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="total" fill={barColor} />
       </BarChart>
       </ResponsiveContainer>
     </div>

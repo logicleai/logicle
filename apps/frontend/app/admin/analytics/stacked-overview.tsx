@@ -168,14 +168,13 @@ export function StackedOverview({
               fillOpacity={0.18}
             />
           ) : null}
-          {series.map(([id, color], index) => (
+          {series.map(([id, color]) => (
             <Bar
               key={id}
               dataKey={id}
               stackId="stack"
               fill={color}
               name={nameMap.get(id) ?? id}
-              radius={index === series.length - 1 ? [4, 4, 0, 0] : undefined}
             />
           ))}
           <Bar
@@ -183,7 +182,6 @@ export function StackedOverview({
             stackId="stack"
             fill={OTHER_COLOR}
             name={t('other')}
-            radius={series.length === 0 ? [4, 4, 0, 0] : undefined}
           />
         </BarChart>
       </ResponsiveContainer>
