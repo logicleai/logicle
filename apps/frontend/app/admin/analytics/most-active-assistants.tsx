@@ -18,7 +18,7 @@ export function MostActiveAssistants({ className, items, colorMap }: Params) {
           return (
             <div className="flex items-center" key={id || item.name}>
               <div
-                className="h-4 w-4 shrink-0 rounded-sm"
+                className="h-4 w-4 shrink-0"
                 style={{ backgroundColor: color }}
               />
               <div className="ml-4 space-y-1">

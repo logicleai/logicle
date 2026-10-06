@@ -1,3 +1,5 @@
+// TODO: Consider deleting this file; Overview appears unused since StackedOverview
+// replaced it in AnalyticsPage on 2026-03-23 (PR #808).
 import { useSWRJson } from '@/hooks/swr'
 import { AnalyticsUsageHistogram } from '@/types/dto'
 import React from 'react'
@@ -134,7 +136,7 @@ export function Overview({ query, onRangeSelect }: OverviewProps) {
             fillOpacity={0.18}
           />
         ) : null}
-        <Bar dataKey="total" fill={barColor} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="total" fill={barColor} />
       </BarChart>
       </ResponsiveContainer>
     </div>
