@@ -1,3 +1,5 @@
+// TODO: Consider deleting this file; Overview appears unused since StackedOverview
+// replaced it in AnalyticsPage on 2026-03-23 (PR #808).
 import { useSWRJson } from '@/hooks/swr'
 import { AnalyticsUsageHistogram } from '@/types/dto'
 import React from 'react'
