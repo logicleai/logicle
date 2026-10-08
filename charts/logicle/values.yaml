@@ -58,6 +58,11 @@ provisioning:
 # Storage backend for uploaded files: "pvc" or "s3"
 storage:
   type: "pvc"
+  # Keep this key stable: it is also needed to read existing encrypted blobs.
+  encryption:
+    enabled: false
+    provider: "aead"
+    key: ""
   pvc:
     persistentVolumeClaim:
       existingClaim: ""
