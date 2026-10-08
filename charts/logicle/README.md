@@ -32,3 +32,21 @@ helm install logicle-ee-mytenant oci://ghcr.io/logicleai/logicle \
   --set database.password=<db-password> \
   --set config.NEXTAUTH_SECRET=<random-secret>
 ```
+
+## File encryption
+
+Application-level file encryption is configured under `storage.encryption`:
+
+```yaml
+storage:
+  encryption:
+    enabled: true
+    provider: aead
+    key: <tenant-specific-secret>
+```
+
+The chart passes the switch and provider through the ConfigMap and stores the
+key in the Secret. A nonempty key is required when encryption is enabled.
+Preserve the existing tenant key when upgrading: changing or removing it makes
+existing encrypted blobs unreadable. Enabling encryption does not automatically
+rewrite existing plaintext blobs.
