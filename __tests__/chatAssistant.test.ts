@@ -58,7 +58,7 @@ vi.mock('ai', async (importOriginal) => {
 vi.mock('@/lib/env', () => ({
   default: {
     knowledge: { sendInPrompt: false },
-    chat: { autoSummary: { enable: false, useChatBackend: false, maxLength: 500 }, maxOutputTokens: undefined },
+    chat: { autoSummary: { enable: false, useChatBackend: false, maxLength: 500 }, maxOutputTokens: undefined, maxToolIterations: 30 },
     dumpLlmConversation: false,
     fileStorage: { encryptFiles: false },
     tools: { prefixFunctionNames: true },
@@ -824,6 +824,39 @@ describe('ChatAssistant.findReasonableSummarizationBackend', () => {
 // ============================================================
 
 describe('invokeLlmAndProcessResponse', () => {
+  test('stops at the configured round limit and retains parallel tool results', async () => {
+    const { default: env } = await import('@/lib/env')
+    const previousLimit = env.chat.maxToolIterations
+    env.chat.maxToolIterations = 2
+    try {
+      const assistant = makeChatAssistant()
+      Object.assign(assistant, { functionToolIdMap: new Map() })
+      const invokeLlmSpy = vi.spyOn(assistant, 'invokeLlm').mockImplementation(async () => ({
+        fullStream: (async function* () {
+          // Unknown calls get synthetic results and still require another model round.
+          // Multiple calls in a round must not each consume an iteration.
+          for (const id of ['first', 'second']) {
+            yield { type: 'tool-call', toolCallId: id, toolName: 'unknown', input: {} }
+          }
+          yield { type: 'finish', totalUsage: { totalTokens: 0, inputTokens: 0, outputTokens: 0 } }
+        })(),
+      }) as any)
+      const chatState = new ChatState([makeUserMsg('m1')])
+
+      await expect(
+        assistant.invokeLlmAndProcessResponse(chatState, { enqueue: vi.fn() })
+      ).rejects.toThrow('Iteration count exceeded')
+
+      expect(invokeLlmSpy).toHaveBeenCalledTimes(2)
+      expect(chatState.chatHistory.map((message) => message.role)).toEqual([
+        'user', 'assistant', 'tool', 'assistant', 'tool',
+      ])
+      expect(chatState.getLastMessageAssert<dto.ToolMessage>('tool').parts).toHaveLength(2)
+    } finally {
+      env.chat.maxToolIterations = previousLimit
+    }
+  })
+
   // A fake stream that immediately finishes without producing any content.
   // Used to stub invokeLlm so tests don't need to wire up the full LLM chain.
   const makeFakeFinishStream = () => ({

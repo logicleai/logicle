@@ -3,6 +3,15 @@ function parseOptionalInt(text?: string) {
   return parseInt(text, 10)
 }
 
+function parseMaxToolIterations(text?: string) {
+  if (text === undefined) return 30
+  const value = Number(text)
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    throw new Error('CHAT_MAX_TOOL_ITERATIONS must be a positive integer')
+  }
+  return value
+}
+
 function parseOptionalFloat(text?: string) {
   if (text === undefined) return undefined
   const value = parseFloat(text)
@@ -146,6 +155,8 @@ const env = {
     enableShowToolResult: process.env.ENABLE_SHOW_TOOL_RESULT !== '0',
     enableTreeNavigation: process.env.ENABLE_CHAT_TREE_NAVIGATION === '1',
     disableParallelToolCalls: process.env.ENABLE_PARALLEL_TOOL_CALLS === '0',
+    // Limits model/tool rounds, not individual calls within a parallel batch.
+    maxToolIterations: parseMaxToolIterations(process.env.CHAT_MAX_TOOL_ITERATIONS),
     contextCompressionTriggerTokens:
       parseOptionalInt(process.env.CHAT_CONTEXT_COMPRESSION_TRIGGER_TOKENS) ?? 6000,
     autoSummary: {
