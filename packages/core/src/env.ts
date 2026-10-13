@@ -4,10 +4,14 @@ function parseOptionalInt(text?: string) {
 }
 
 function parseMaxToolIterations(text?: string) {
-  if (text === undefined) return 30
+  const defaultValue = 30
+  if (text === undefined) return defaultValue
   const value = Number(text)
   if (!Number.isSafeInteger(value) || value <= 0) {
-    throw new Error('CHAT_MAX_TOOL_ITERATIONS must be a positive integer')
+    console.warn(
+      `CHAT_MAX_TOOL_ITERATIONS must be a positive integer; using default ${defaultValue}`
+    )
+    return defaultValue
   }
   return value
 }
