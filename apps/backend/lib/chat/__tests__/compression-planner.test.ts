@@ -222,6 +222,44 @@ async function compress(
 }
 
 describe('planMessageCompression', () => {
+  test('step-limit continuations preserve the original turn under every preset', () => {
+    const messages = makeGeneratedDocxHistory().slice(0, 3)
+    const addContinuation = (id: string) => {
+      messages.push(
+        {
+          ...base,
+          id,
+          role: 'user-request',
+          parent: messages.at(-1)!.id,
+          request: { type: 'tool-step-limit', maxIterations: 30 },
+        },
+        { ...base, id: `${id}-response`, role: 'user-response', parent: id, allow: true }
+      )
+    }
+    addContinuation('pause-1')
+    addContinuation('pause-2')
+    for (const preset of ['conservative', 'aggressive'] as const) {
+      expect(
+        planMessageCompression(messages, preset).every(
+          (decision) =>
+            decision.policy === 'full' && decision.reason === 'current turn is never compressed'
+        )
+      ).toBe(true)
+      expect(resolveCompressionUserQuery(messages)).toBe('Puoi generare un file word')
+    }
+    messages.push({ ...base, id: 'next-user', role: 'user', content: 'Next task', attachments: [] })
+    const keptRecent = planMessageCompression(messages, 'aggressive', { keepRecentTurns: 1 })
+    expect(keptRecent.find((decision) => decision.messageId === 't-docx')).toMatchObject({
+      policy: 'full',
+      reason: 'recent turn kept full',
+    })
+    expect(
+      planMessageCompression(messages, 'aggressive').find(
+        (decision) => decision.messageId === 't-docx'
+      )?.policy
+    ).toBe('summary')
+  })
+
   test('keeps the current turn full and marks historical tool result for summary', () => {
     const decisions = planMessageCompression(makeGeneratedDocxHistory(), 'conservative')
     const byId = new Map(decisions.map((d) => [d.messageId, d]))

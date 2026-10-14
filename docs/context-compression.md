@@ -191,7 +191,10 @@ token-budget truncation in `truncateChat`, or advising the user to start a fresh
 ## Current Turn Is Never Compressed
 
 The **current turn** is the last `user`/`user-response` message and everything sent after it
-(assistant text, tool calls, tool results). Every message in the current turn always gets policy
+(assistant text, tool calls, tool results), excluding responses to `tool-step-limit` requests
+as turn boundaries. Continuing after the step limit stays in the originating turn, so its
+previous tool results and attachments remain full across repeated continuations.
+Every message in the current turn always gets policy
 `full` — this is a hard invariant enforced by `planMessageCompression`, not a preference that a
 preset can override. `aggressive` compacts historical messages more eagerly (see below); it never
 reaches into the current turn.
@@ -208,7 +211,8 @@ reaches into the current turn.
 ```
 
 A message stops being "current turn" as soon as a later `user`/`user-response` message exists —
-from that point on, it is eligible for summarization on the next prompt build.
+except a step-limit continuation. From that point on, it is eligible for summarization on the
+next prompt build.
 
 ## The Decision: `planMessageCompression`
 

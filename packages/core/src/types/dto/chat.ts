@@ -192,10 +192,16 @@ export type ToolCallAuthorizationRequestMultiple = {
   message?: string
 }
 
+export type ToolStepLimitRequest = {
+  type: 'tool-step-limit'
+  maxIterations: number
+}
+
 export type UserRequest =
   | McpOAuthUserRequest
   | ToolCallAuthorizationRequest
   | ToolCallAuthorizationRequestMultiple
+  | ToolStepLimitRequest
 
 export type MessageRole =
   | 'user'

@@ -28,6 +28,7 @@ import { type SimpleSession } from '@/types/session'
 import { type Usage } from '@/backend/lib/chat/usage'
 import { warmCompressionCache } from '@/backend/lib/chat/compression-planner'
 import { captureToolRequestContext } from '@/backend/lib/chat/toolRequestContext'
+import { isToolStepLimitResponse } from '@/lib/chat/continuation'
 
 type StartRunResult =
   | {
@@ -145,12 +146,25 @@ export const startServerChatRun = async ({
 
   const { run, abortController } = created
   const dbMessages = await getMessages(userMessage.conversationId)
+  if (userMessage.role === 'user-response') {
+    const parent = dbMessages.find((message) => message.id === userMessage.parent)
+    const invalidRequest = parent?.role !== 'user-request' || typeof userMessage.allow !== 'boolean'
+    const alreadyResolved =
+      isToolStepLimitResponse(userMessage, parent) &&
+      dbMessages.some((message) => message.parent === parent!.id)
+    if (invalidRequest || alreadyResolved) {
+      // The active-run reservation serializes validation and saving across tabs.
+      finalizeChatRun({ runId: run.id, status: 'failed' })
+      return {
+        ok: false,
+        status: alreadyResolved ? 409 : 400,
+        message: alreadyResolved
+          ? 'This continuation request has already been resolved'
+          : 'Response does not target a valid pending request',
+      }
+    }
+  }
   const linearThread = extractLinearConversation(dbMessages, userMessage)
-  const availableTools = await availableToolsForAssistantVersion(
-    assistant.assistantVersionId,
-    assistant.model,
-    { userId: session.userId }
-  )
 
   const updateChatTitle = async (title: string) => {
     await db
@@ -172,16 +186,6 @@ export const startServerChatRun = async ({
     warmIfEnabled(message)
   }
 
-  const files = [
-    ...(await assistantVersionFiles(assistant.assistantVersionId)),
-    ...availableTools.flatMap((t) => t.knowledge ?? []),
-  ]
-  const providerConfig = {
-    providerType: backend.providerType,
-    provisioned: backend.provisioned,
-    ...JSON.parse(backend.configuration),
-  }
-
   try {
     await saveAndAuditMessage(userMessage)
   } catch (error) {
@@ -191,6 +195,11 @@ export const startServerChatRun = async ({
       error: error instanceof Error ? error.message : String(error),
     })
     throw error
+  }
+
+  if (isToolStepLimitResponse(userMessage, linearThread.at(-2)) && !userMessage.allow) {
+    finalizeChatRun({ runId: run.id, status: 'stopped' })
+    return { ok: true, run: getChatRunById(run.id) ?? run }
   }
 
   const publishQueuedEvents = () => {
@@ -226,6 +235,20 @@ export const startServerChatRun = async ({
 
   const execute = async () => {
     try {
+      const availableTools = await availableToolsForAssistantVersion(
+        assistant.assistantVersionId,
+        assistant.model,
+        { userId: session.userId }
+      )
+      const files = [
+        ...(await assistantVersionFiles(assistant.assistantVersionId)),
+        ...availableTools.flatMap((t) => t.knowledge ?? []),
+      ]
+      const providerConfig = {
+        providerType: backend.providerType,
+        provisioned: backend.provisioned,
+        ...JSON.parse(backend.configuration),
+      }
       let resolvedProviderConfig = providerConfig
       if (
         'apiKey' in resolvedProviderConfig &&
@@ -265,6 +288,7 @@ export const startServerChatRun = async ({
           ),
           userLanguage: acceptLanguageHeader ?? undefined,
           abortSignal: abortController.signal,
+          requestContinuationOnStepLimit: true,
         }
       )
 

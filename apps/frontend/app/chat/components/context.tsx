@@ -13,6 +13,7 @@ export interface SendMessageParams {
       }
     | { role: 'user-response'; allow: boolean }
   repeating?: dto.UserMessage
+  requestId?: string
   conversation?: ConversationWithMessages
 }
 

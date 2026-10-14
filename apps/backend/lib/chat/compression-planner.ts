@@ -1,4 +1,5 @@
 import * as dto from '@/types/dto'
+import { isToolStepLimitResponse } from '@/lib/chat/continuation'
 import type { FileDbRow } from '@/backend/models/file'
 import env from '@/lib/env'
 import { logger } from '@/lib/logging'
@@ -223,20 +224,12 @@ function compressOnce<T>(messageId: string, build: () => Promise<T>): Promise<T>
   return promise
 }
 
-function findCurrentTurnUserMessageId(messages: dto.Message[]): string | undefined {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const role = messages[i]!.role
-    if (role === 'user' || role === 'user-response') return messages[i]!.id
-  }
-  return undefined
-}
-
 /**
  * Deterministic planner: decides, per message, whether the prompt builder should use the
  * message's `full` persisted content or a `summary` representation.
  *
- * Invariant: every message belonging to the current turn (the last user/user-response message and
- * everything after it) is always `full`, for every preset — see "Current Turn Is Never Compressed"
+ * Invariant: every message belonging to the current turn (including step-limit continuations)
+ * is always `full`, for every preset — see "Current Turn Is Never Compressed"
  * in docs/context-compression.md.
  *
  * Does not read or write any DB rows itself — `applyCompressionPlan` handles that when actually
@@ -254,13 +247,15 @@ export function planMessageCompression(
   preset: dto.ContextCompressionPreset,
   options: { keepRecentTurns?: number } = {}
 ): dto.MessageCompressionDecision[] {
-  const currentTurnUserMessageId = findCurrentTurnUserMessageId(messages)
+  const messagesById = new Map(messages.map((message) => [message.id, message]))
+  const isTurnStart = (message: dto.Message) =>
+    message.role === 'user' ||
+    (message.role === 'user-response' &&
+      !isToolStepLimitResponse(message, messagesById.get(message.parent ?? '')))
+  const turnStartMessages = messages.filter(isTurnStart)
+  const currentTurnUserMessageId = turnStartMessages.at(-1)?.id
   const keepRecentTurns = Math.max(0, Math.floor(options.keepRecentTurns ?? 0))
-  const historicalTurnIds = messages
-    .filter(
-      (message): message is dto.UserMessage | dto.UserResponseMessage =>
-        message.role === 'user' || message.role === 'user-response'
-    )
+  const historicalTurnIds = turnStartMessages
     .map((message) => message.id)
     .filter((id) => id !== currentTurnUserMessageId)
   const recentTurnIds = new Set(
@@ -273,7 +268,7 @@ export function planMessageCompression(
   let activeTurnUserMessageId: string | undefined
 
   for (const message of messages) {
-    if (message.role === 'user' || message.role === 'user-response') {
+    if (isTurnStart(message)) {
       activeTurnUserMessageId = message.id
     }
     const isCurrentTurn = activeTurnUserMessageId === currentTurnUserMessageId

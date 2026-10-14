@@ -824,6 +824,136 @@ describe('ChatAssistant.findReasonableSummarizationBackend', () => {
 // ============================================================
 
 describe('invokeLlmAndProcessResponse', () => {
+  test('persists a step-limit request and continues repeatedly without replaying tools', async () => {
+    const { default: env } = await import('@/lib/env')
+    const previousLimit = env.chat.maxToolIterations
+    env.chat.maxToolIterations = 2
+    const saved: dto.Message[] = []
+    const events: dto.TextStreamPart[] = []
+    const sink = { enqueue: (part: dto.TextStreamPart) => events.push(part) }
+    const tool = vi.fn().mockResolvedValue({ type: 'text', value: 'saved tool result' })
+    let round = 0
+    const modelHistories: dto.Message[][] = []
+    const buildAssistant = () => {
+      const assistant = makeChatAssistant({
+        functions: { work: { description: 'Work', invoke: tool } },
+        saveMessage: async (message) => {
+          saved.push(structuredClone(message))
+        },
+      })
+      Object.assign(assistant, {
+        options: { user: 'u1', requestContinuationOnStepLimit: true },
+        functionToolIdMap: new Map(),
+      })
+      vi.spyOn(assistant, 'invokeLlm').mockImplementation(async (history) => {
+        modelHistories.push(structuredClone(history))
+        const currentRound = ++round
+        return {
+          fullStream: (async function* () {
+            if (currentRound <= 4) {
+              for (const parallelCall of [1, 2]) {
+                yield {
+                  type: 'tool-call',
+                  toolCallId: `${currentRound}-${parallelCall}`,
+                  toolName: 'work',
+                  input: { round: currentRound },
+                }
+              }
+            } else {
+              yield { type: 'text-start' }
+              yield { type: 'text-delta', text: 'Done' }
+            }
+            yield {
+              type: 'finish',
+              finishReason: currentRound <= 4 ? 'tool-calls' : 'stop',
+              totalUsage: { totalTokens: 0, inputTokens: 0, outputTokens: 0 },
+            }
+          })(),
+        } as any
+      })
+      return assistant
+    }
+    try {
+      saved.push(makeUserMsg())
+      await buildAssistant().processUserMessageWithSink(structuredClone(saved), sink)
+      expect(round).toBe(2)
+      expect(tool).toHaveBeenCalledTimes(4)
+      const firstPause = saved.at(-1) as dto.UserRequestMessage
+      expect(firstPause.request).toEqual({ type: 'tool-step-limit', maxIterations: 2 })
+      expect(firstPause.parent).toBe(saved.at(-2)!.id)
+      const originalMessages = structuredClone(saved)
+
+      for (const responseId of ['continue-1', 'continue-2']) {
+        const request = saved.at(-1)!
+        saved.push({
+          id: responseId,
+          role: 'user-response',
+          allow: true,
+          parent: request.id,
+          conversationId: 'c1',
+          sentAt: new Date().toISOString(),
+        })
+        // A fresh assistant and history snapshot simulate continuing after a reload.
+        await buildAssistant().processUserMessageWithSink(structuredClone(saved), sink)
+      }
+
+      expect(round).toBe(5)
+      expect(tool).toHaveBeenCalledTimes(8)
+      expect(saved.slice(0, originalMessages.length)).toEqual(originalMessages)
+      expect(saved.filter((message) => message.role === 'user-request')).toHaveLength(2)
+      expect(saved.at(-1)).toMatchObject({
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Done' }],
+      })
+      expect(
+        events.filter((event) => event.type === 'part' && event.part.type === 'error')
+      ).toEqual([])
+      // Control messages are not model prompts; the final result of the previous batch remains.
+      const projected = await buildAssistant().computeLlmMessages(modelHistories[2]!)
+      expect(projected.filter((message) => message.role === 'user')).toHaveLength(1)
+      expect(projected.at(-1)).toMatchObject({
+        role: 'tool',
+        content: [
+          expect.objectContaining({
+            toolCallId: '2-1',
+            output: { type: 'text', value: 'saved tool result' },
+          }),
+          expect.objectContaining({
+            toolCallId: '2-2',
+            output: { type: 'text', value: 'saved tool result' },
+          }),
+        ],
+      })
+    } finally {
+      env.chat.maxToolIterations = previousLimit
+    }
+  })
+
+  test('aborting a step-limit request makes no model or tool calls', async () => {
+    const assistant = makeChatAssistant()
+    const invoke = vi.spyOn(assistant, 'invokeLlm')
+    const sink = { enqueue: vi.fn() }
+    const user = makeUserMsg()
+    const request: dto.UserRequestMessage = {
+      ...user,
+      id: 'pause',
+      role: 'user-request',
+      parent: user.id,
+      request: { type: 'tool-step-limit', maxIterations: 30 },
+    }
+    await assistant.processUserMessageWithSink(
+      [
+        user,
+        request,
+        { ...user, id: 'abort', role: 'user-response', parent: request.id, allow: false },
+      ],
+      sink
+    )
+    expect(invoke).not.toHaveBeenCalled()
+    expect(assistant.saveMessage).not.toHaveBeenCalled()
+    expect(sink.enqueue).not.toHaveBeenCalled()
+  })
+
   test('stops at the configured round limit and retains parallel tool results', async () => {
     const { default: env } = await import('@/lib/env')
     const previousLimit = env.chat.maxToolIterations
