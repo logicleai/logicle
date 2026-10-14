@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { ToolMessage } from './ToolMessage'
 import { useSWRConfig } from 'swr'
+import { ToolStepLimitMessage } from './ToolStepLimitMessage'
 
 const AuthorizeMessage = ({
   message,
@@ -217,6 +218,9 @@ export const AssistantGroupMessage = ({
         ></AssistantMessage>
       )
     case 'user-request':
+      if (isLastMessage && message.request?.type === 'tool-step-limit') {
+        return <ToolStepLimitMessage message={message} />
+      }
       if (isLastMessage)
         return (
           <AuthorizeMessage

@@ -95,10 +95,12 @@ export const AssistantPreview = ({ assistant, className, sendDisabled }: Props) 
     })
   }
 
-  const handleSend = async ({ msg, repeating }: SendMessageParams) => {
+  const handleSend = async ({ msg, repeating, requestId }: SendMessageParams) => {
     const userMsgId = nanoid()
     let parentMsgId: string | null = null
-    if (repeating) {
+    if (msg.role === 'user-response' && requestId) {
+      parentMsgId = requestId
+    } else if (repeating) {
       parentMsgId = repeating.parent
     } else if (conversation.messages.length !== 0) {
       parentMsgId = conversation.messages[conversation.messages.length - 1].id

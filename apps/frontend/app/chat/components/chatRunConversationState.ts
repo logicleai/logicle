@@ -1,6 +1,7 @@
 import { ConversationWithMessages } from '@/lib/chat/types'
 import { applyStreamPartToMessages } from '@/lib/chat/streamApply'
 import * as dto from '@/types/dto'
+import { isToolStepLimitResponse } from '@/lib/chat/continuation'
 
 export const THINKING_PLACEHOLDER_ID = '__thinking_placeholder__'
 
@@ -73,4 +74,21 @@ export const applyChatRunFailureToConversation = ({
       },
     ],
   }
+}
+
+/** A declined continuation intentionally finishes without an assistant message. */
+export const finishChatRunConversation = (
+  conversation: ConversationWithMessages,
+  stopRequested: boolean | undefined,
+  error: string
+): ConversationWithMessages => {
+  const cleaned = removePlaceholderIfPresent(conversation)
+  if (cleaned === conversation) return conversation
+  const lastMessage = cleaned.messages.at(-1)
+  const parent = cleaned.messages.find((message) => message.id === lastMessage?.parent)
+  const continuationAborted =
+    lastMessage && isToolStepLimitResponse(lastMessage, parent) && !lastMessage.allow
+  return stopRequested || continuationAborted
+    ? cleaned
+    : applyChatRunFailureToConversation({ conversation, error })
 }

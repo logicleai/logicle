@@ -38,7 +38,7 @@ import { maintainChatRunSubscription } from './chatRunSubscription'
 import {
   applyChatRunEventToConversation,
   applyChatRunFailureToConversation,
-  removePlaceholderIfPresent,
+  finishChatRunConversation,
   THINKING_PLACEHOLDER_ID,
 } from './chatRunConversationState'
 
@@ -259,19 +259,13 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
             machineState.stopRequested
           const currentConversation = selectedConversationRef.current
           if (currentConversation?.id === conversationId) {
-            const cleaned = removePlaceholderIfPresent(currentConversation)
+            const cleaned = finishChatRunConversation(
+              currentConversation,
+              stopRequested,
+              t('chat-response-failure')
+            )
             if (cleaned !== currentConversation) {
-              // The run finished without ever producing an assistant message.
-              // Unless the user stopped it, that's a failure the backend could
-              // not report: show it instead of silently dropping the placeholder.
-              setSelectedConversationState(
-                stopRequested
-                  ? cleaned
-                  : applyChatRunFailureToConversation({
-                      conversation: currentConversation,
-                      error: t('chat-response-failure'),
-                    })
-              )
+              setSelectedConversationState(cleaned)
             }
           }
           setChatRunMachineState(
@@ -418,12 +412,15 @@ export const ChatPageContextProvider: FC<Props> = ({ children }) => {
     }
   }
 
-  const sendMessage = async ({ msg, repeating, conversation }: SendMessageParams) => {
+  const sendMessage = async ({ msg, repeating, conversation, requestId }: SendMessageParams) => {
+    if (msg.role === 'user-response' && chatRunMachineRef.current.state !== 'idle') return
     setSideBarContent(undefined)
     let parent: string | null = null
     conversation = conversation ?? selectedConversationRef.current
     if (!conversation) {
       return
+    } else if (msg.role === 'user-response' && requestId) {
+      parent = requestId
     } else if (repeating) {
       parent = repeating.parent
     } else if (conversation.targetLeaf) {
