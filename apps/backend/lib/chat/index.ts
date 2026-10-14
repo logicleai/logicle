@@ -1150,7 +1150,9 @@ export class ChatAssistant {
     let iterationCount = 0
     let complete = false
     while (!complete) {
-      if (iterationCount++ === 10) throw new Error('Iteration count exceeded')
+      if (iterationCount++ >= env.chat.maxToolIterations) {
+        throw new Error('Iteration count exceeded')
+      }
       this.throwIfAborted()
 
       const historySnapshot = chatState.chatHistory
