@@ -131,6 +131,8 @@ interface Options {
   debug?: boolean
   abortSignal?: AbortSignal
   disableAutoSummary?: boolean
+  /** Interactive callers can persist a continuation request instead of failing at the limit. */
+  requestContinuationOnStepLimit?: boolean
 }
 
 export class ChatAbortedError extends Error {
@@ -763,6 +765,12 @@ export class ChatAssistant {
           throw new Error('Parent message is not a user-request')
         }
         const request = userRequestMessage.request
+        if (request.type === 'tool-step-limit') {
+          if (userMessage.allow) {
+            await this.invokeLlmAndProcessResponse(chatState, clientSink)
+          }
+          return
+        }
         if (request.type === 'mcp-oauth') {
           const pendingAction = request.pendingAction
           if (pendingAction) {
@@ -1150,10 +1158,21 @@ export class ChatAssistant {
     let iterationCount = 0
     let complete = false
     while (!complete) {
-      if (iterationCount++ >= env.chat.maxToolIterations) {
-        throw new Error('Iteration count exceeded')
-      }
       this.throwIfAborted()
+      if (iterationCount++ >= env.chat.maxToolIterations) {
+        if (!this.options.requestContinuationOnStepLimit) {
+          throw new Error('Iteration count exceeded')
+        }
+        const continuationRequest = chatState.appendMessage(
+          chatState.createUserRequestMsg({
+            type: 'tool-step-limit',
+            maxIterations: env.chat.maxToolIterations,
+          })
+        )
+        await this.saveMessage(continuationRequest)
+        clientSink.enqueue({ type: 'message', msg: continuationRequest })
+        break
+      }
 
       const historySnapshot = chatState.chatHistory
       const assistantResponse = chatState.appendMessage(chatState.createEmptyAssistantMsg())

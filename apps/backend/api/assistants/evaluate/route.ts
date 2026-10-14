@@ -74,6 +74,7 @@ export const POST = operation({
         conversationId,
         rootOwner: { type: 'USER', id: session.userId },
         disableAutoSummary: true,
+        requestContinuationOnStepLimit: true,
       }
     )
 
