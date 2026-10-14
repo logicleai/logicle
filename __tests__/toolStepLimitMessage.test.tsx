@@ -65,13 +65,13 @@ afterEach(async () => {
 test.each([true, false])('responds to the exact pending request (continue=%s)', async (allow) => {
   await render()
   expect(container.querySelector('[role="status"]')?.textContent).toContain(
-    'chat-tool-step-limit-title'
+    'chat-tool-step-limit-description'
   )
   expect(container.textContent).toContain('chat-tool-step-limit-description')
   const buttons = container.querySelectorAll('button')
   expect([...buttons].map((button) => button.textContent)).toEqual([
     'continue',
-    'chat-tool-step-limit-abort',
+    'chat-tool-step-limit-stop',
   ])
   expect(container.textContent).not.toContain('retry')
   await act(async () => buttons[allow ? 0 : 1]!.click())
