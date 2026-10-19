@@ -50,3 +50,32 @@ key in the Secret. A nonempty key is required when encryption is enabled.
 Preserve the existing tenant key when upgrading: changing or removing it makes
 existing encrypted blobs unreadable. Enabling encryption does not automatically
 rewrite existing plaintext blobs.
+
+### Encrypt existing plaintext files
+
+The image includes an operator-invoked utility, ported from the `0.35.x` line:
+
+```sh
+node dist-reencrypt/reencrypt-file-blobs.js
+node dist-reencrypt/reencrypt-file-blobs.js --apply --limit 100
+node dist-reencrypt/reencrypt-file-blobs.js --apply --continue-on-error
+```
+
+Run it inside the application container with the tenant's database and storage
+configuration. Without `--apply`, it only reports the count and total bytes of
+plaintext `FileBlob` rows; it does not change storage or create its ledger.
+Apply mode currently requires PostgreSQL, `FILE_STORAGE_ENCRYPTION_PROVIDER=aead`,
+and a nonempty `FILE_STORAGE_ENCRYPTION_KEY`. Preserve the tenant's existing key.
+Take a database and object-store backup and pause application writes for the run.
+The utility holds each file's plaintext and verification buffers in memory.
+
+Each rewrite writes to a new object, reads it back without the storage cache,
+and verifies its size and SHA-256 before updating `FileBlob` and associated
+`File` paths in a transaction. It deletes the old object only after the switch
+and only when no `FileBlob` still references it. An operator-created
+`FileBlobEncryptionRewrite` ledger lets subsequent runs resume interrupted work
+and retry pending cleanup; the command never runs at application startup.
+
+`--limit` caps newly selected blobs after pending ledger work has been resumed.
+`--continue-on-error` logs individual failures and continues with other blobs;
+review those errors and rerun until the dry run reports no plaintext backlog.

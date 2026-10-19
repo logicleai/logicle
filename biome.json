@@ -9,6 +9,7 @@
       "!**/dist",
       "!**/dist-server",
       "!**/dist-scripts",
+      "!**/dist-reencrypt",
       "!**/coverage",
       "!**/vendor",
       "!**/pdf2md",

@@ -65,6 +65,9 @@ RUN if [ -n "${APP_VERSION}" ]; then \
 # needs real node_modules at runtime.
 RUN NODE_ENV=production pnpm build
 
+# Build the operator-invoked plaintext-to-AEAD rewrite utility; never run at startup.
+RUN pnpm exec tsup --config tsup.reencrypt.config.js
+
 # apps/backend is its own workspace package (apps/backend/package.json)
 # declaring only what backend code — plus packages/core and
 # packages/file-analyzer, pulled in via tsconfig path aliases and inlined by
@@ -187,6 +190,7 @@ RUN mkdir -p /data/sqlite /data/files \
 # dist-server (see apps/backend/lib/staticFrontendVite.ts).
 COPY --from=builder /app/apps/frontend-vite/dist ./apps/frontend-vite/dist
 COPY --from=builder /app/dist-server ./dist-server
+COPY --from=builder /app/dist-reencrypt ./dist-reencrypt
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/deploy-backend/node_modules ./node_modules
 COPY --from=file-analyzer /mcp-file-analyzer /usr/local/bin/mcp-file-analyzer
