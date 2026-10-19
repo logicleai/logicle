@@ -111,6 +111,17 @@ const buildWellKnownUrl = (issuer: string, suffix: string) => {
   return url.toString()
 }
 
+const buildOidcConfigurationUrl = (issuer: string) => {
+  const url = new URL(issuer)
+  const path = url.pathname.replace(/\/$/, '')
+  url.pathname = path
+    ? `${path}/.well-known/openid-configuration`
+    : '/.well-known/openid-configuration'
+  url.search = ''
+  url.hash = ''
+  return url.toString()
+}
+
 const discoverAuthorizationServerMetadata = async (
   issuer: string
 ): Promise<AuthorizationServerMetadata | null> => {
@@ -120,7 +131,9 @@ const discoverAuthorizationServerMetadata = async (
   } catch {
     // try OIDC discovery
   }
-  const oidcUrl = buildWellKnownUrl(issuer, 'openid-configuration')
+  // OIDC discovery keeps the issuer path before /.well-known. This matters
+  // for issuers such as Microsoft's `.../organizations/v2.0` endpoint.
+  const oidcUrl = buildOidcConfigurationUrl(issuer)
   try {
     return await fetchJson<AuthorizationServerMetadata>(oidcUrl)
   } catch {

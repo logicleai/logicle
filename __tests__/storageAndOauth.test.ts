@@ -16,6 +16,7 @@ afterEach(() => {
   process.env.APP_URL = originalAppUrl
   process.env.NEXTAUTH_SECRET = originalNextAuthSecret
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('apps/backend/lib/storage/FsStorage', () => {
@@ -55,7 +56,9 @@ describe('apps/backend/lib/storage/FsStorage', () => {
       },
     })
 
-    await expect(storage.writeStream(filePath, failingStream, null)).rejects.toThrow('stream exploded')
+    await expect(storage.writeStream(filePath, failingStream, null)).rejects.toThrow(
+      'stream exploded'
+    )
     await expect(fs.stat(path.join(tempDir, filePath))).rejects.toThrow()
 
     await fs.rm(tempDir, { recursive: true, force: true })
@@ -170,6 +173,80 @@ describe('apps/backend/lib/tools/mcp/oauth', () => {
     expect(url.searchParams.get('code_challenge_method')).toBe('S256')
     expect(url.searchParams.get('scope')).toBe('read write')
     expect(url.searchParams.get('resource')).toBe('https://resource.example.com')
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      'https://server.example.com/.well-known/oauth-protected-resource/mcp',
+      'https://issuer.example.com/.well-known/oauth-authorization-server',
+    ])
+  })
+
+  test.each([
+    {
+      issuer: 'https://login.microsoftonline.com/organizations/v2.0',
+      oauthUrl:
+        'https://login.microsoftonline.com/.well-known/oauth-authorization-server/organizations/v2.0',
+      oidcUrl:
+        'https://login.microsoftonline.com/organizations/v2.0/.well-known/openid-configuration',
+    },
+    {
+      issuer: 'https://login.microsoftonline.com/organizations/v2.0/',
+      oauthUrl:
+        'https://login.microsoftonline.com/.well-known/oauth-authorization-server/organizations/v2.0',
+      oidcUrl:
+        'https://login.microsoftonline.com/organizations/v2.0/.well-known/openid-configuration',
+    },
+    {
+      issuer: 'https://issuer.example.com',
+      oauthUrl: 'https://issuer.example.com/.well-known/oauth-authorization-server',
+      oidcUrl: 'https://issuer.example.com/.well-known/openid-configuration',
+    },
+  ])('falls back to OIDC discovery for $issuer', async ({ issuer, oauthUrl, oidcUrl }) => {
+    const authorizationEndpoint =
+      'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize'
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url === 'https://server.example.com/.well-known/oauth-protected-resource/mcp') {
+        return Response.json({
+          resource: 'https://server.example.com/mcp',
+          authorization_servers: [issuer],
+          scopes_supported: ['read'],
+        })
+      }
+      if (url === oidcUrl) {
+        return Response.json({
+          authorization_endpoint: authorizationEndpoint,
+          token_endpoint: 'https://login.microsoftonline.com/organizations/oauth2/v2.0/token',
+        })
+      }
+      return new Response(null, { status: 404 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { buildMcpOAuthAuthorizeUrl } = await import('@/backend/lib/tools/mcp/oauth')
+    const result = await buildMcpOAuthAuthorizeUrl(
+      'state-123',
+      {
+        type: 'oauth',
+        clientId: 'client-123',
+        preferTopLevelNavigation: false,
+        activationMode: 'preflight',
+      },
+      'tool-1',
+      'challenge-abc',
+      'https://server.example.com/mcp'
+    )
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      'https://server.example.com/.well-known/oauth-protected-resource/mcp',
+      oauthUrl,
+      oidcUrl,
+    ])
+    const url = new URL(result.url)
+    expect(url.origin + url.pathname).toBe(authorizationEndpoint)
+    expect(url.searchParams.get('client_id')).toBe('client-123')
+    expect(url.searchParams.get('state')).toBe('state-123')
+    expect(url.searchParams.get('code_challenge')).toBe('challenge-abc')
+    expect(url.searchParams.get('scope')).toBe('read')
+    expect(url.searchParams.get('resource')).toBe('https://server.example.com/mcp')
+    expect(url.searchParams.get('redirect_uri')).toBe(result.redirectUri)
   })
 
   test('resolveMcpOAuthToken refreshes expired tokens and persists the refreshed value', async () => {
