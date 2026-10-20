@@ -163,6 +163,7 @@ dist-server
 # production
 /build
 /dist-scripts
+/dist-reencrypt
 /dist-server
 
 # misc

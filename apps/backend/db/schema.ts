@@ -133,6 +133,17 @@ export interface FileBlob {
   createdAt: string
 }
 
+// Operator-created ledger; not part of automatic application migrations.
+export interface FileBlobEncryptionRewrite {
+  fileBlobId: string
+  oldPath: string
+  newPath: string
+  status: 'prepared' | 'committed' | 'deleted'
+  lastError: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface FileAnalysis {
   fileId: string
   kind: string
@@ -451,6 +462,7 @@ export interface DB {
   ConversationSharing: ConversationSharing
   File: File
   FileBlob: FileBlob
+  FileBlobEncryptionRewrite: FileBlobEncryptionRewrite
   FileAnalysis: FileAnalysis
   IdpConnection: IdpConnection
   Image: Image
