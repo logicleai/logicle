@@ -10,6 +10,7 @@ import { Column, SimpleTable } from '@/components/ui/tables'
 import {
   IconCopy,
   IconEdit,
+  IconLoader2,
   IconPencilExclamation,
   IconThumbDown,
   IconThumbUp,
@@ -25,6 +26,7 @@ import { useConfirmationContext } from '@/components/providers/confirmationConte
 import { Action, ActionList } from '@/components/ui/actionlist'
 import { SearchBarWithButtonsOnRight } from '@/components/app/SearchBarWithButtons'
 import { useState } from 'react'
+import { useDuplicateAssistant } from '@/hooks/useDuplicateAssistant'
 import { Badge } from '@/components/ui/badge'
 import { AssistantAvatar } from '@/components/app/Avatars'
 import { canDeleteAssistant, canEditAssistant } from '@/lib/rbac'
@@ -44,6 +46,7 @@ const MyAssistantPage = () => {
   const profile = useUserProfile()
   const modalContext = useConfirmationContext()
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const { duplicateAssistant, duplicatingAssistantId } = useDuplicateAssistant()
 
   const {
     data: assistants,
@@ -111,15 +114,7 @@ const MyAssistantPage = () => {
   }
 
   async function onDuplicate(assistant: dto.UserAssistant) {
-    const assistantUrl = `/api/assistants/${assistant.id}/clone`
-    const response = await post<dto.AssistantWithOwner>(assistantUrl)
-    if (response.error) {
-      toast.error(response.error.message)
-      return
-    }
-    await mutate(`/api/assistants`)
-    await mutate('/api/me/profile') // Let the chat know that there are new assistants!
-    router.push(`/assistants/${response.data.id}`)
+    await duplicateAssistant(assistant.id)
   }
 
   async function onDelete(assistant: dto.UserAssistant) {
@@ -239,11 +234,12 @@ const MyAssistantPage = () => {
             text={t('edit')}
           />
           <Action
-            icon={IconCopy}
+            icon={duplicatingAssistantId === assistant.id ? IconLoader2 : IconCopy}
+            disabled={duplicatingAssistantId !== null}
             onClick={async () => {
               await onDuplicate(assistant)
             }}
-            text={t('duplicate')}
+            text={t(duplicatingAssistantId === assistant.id ? 'loading' : 'duplicate')}
           />
           <Action
             icon={IconTrash}
