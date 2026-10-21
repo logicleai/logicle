@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "pnpm": {
     "patchedDependencies": {
-      "@libpdf/core@0.2.12": "patches/@libpdf__core@0.2.12.patch"
+      "@libpdf/core@0.5.3": "patches/@libpdf__core@0.5.3.patch"
     },
     "overrides": {
       "@codemirror/state": "6.6.0",
@@ -71,7 +71,7 @@
     "@google/genai": "^1.52.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
-    "@libpdf/core": "^0.2.12",
+    "@libpdf/core": "0.5.3",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@mjackson/headers": "^0.10.0",
     "@mjackson/multipart-parser": "^0.7.0",
