@@ -224,8 +224,16 @@ const MyAssistantPage = () => {
     {
       name: t('table-column-actions'),
       thClass: 'w-[8em]',
-      renderer: (assistant: dto.UserAssistant) => (
-        <ActionList>
+      renderer: (assistant: dto.UserAssistant) => duplicatingAssistantId === assistant.id ? (
+        <span
+          role="status"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground"
+        >
+          <IconLoader2 size={16} className="animate-spin shrink-0" aria-hidden="true" />
+          {t('duplicating')}
+        </span>
+      ) : (
+        <ActionList disabled={duplicatingAssistantId !== null}>
           <Action
             icon={IconEdit}
             onClick={async () => {
@@ -234,12 +242,12 @@ const MyAssistantPage = () => {
             text={t('edit')}
           />
           <Action
-            icon={duplicatingAssistantId === assistant.id ? IconLoader2 : IconCopy}
+            icon={IconCopy}
             disabled={duplicatingAssistantId !== null}
             onClick={async () => {
               await onDuplicate(assistant)
             }}
-            text={t(duplicatingAssistantId === assistant.id ? 'loading' : 'duplicate')}
+            text={t('duplicate')}
           />
           <Action
             icon={IconTrash}
