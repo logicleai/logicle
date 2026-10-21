@@ -11,18 +11,19 @@ import {
   IconChevronDown,
   IconCopy,
   IconInfoCircle,
+  IconLoader2,
   IconPinned,
   IconPinnedOff,
   IconSettings,
 } from '@tabler/icons-react'
-import { patch, post } from '@/lib/fetch'
+import { patch } from '@/lib/fetch'
 import { mutate } from 'swr'
 import { useTranslation } from 'react-i18next'
 import { useRouter } from 'next/navigation'
 import { FC, useState } from 'react'
 import * as dto from '@/types/dto'
 import { AssistantDetailsDialog } from '@/components/app/AssistantDetailsDialog'
-import toast from 'react-hot-toast'
+import { useDuplicateAssistant } from '@/hooks/useDuplicateAssistant'
 import { canEditAssistant } from '@/lib/rbac'
 import { useEnvironment } from '@/app/context/environmentProvider'
 import { useLayoutConfig } from '@/components/providers/layoutconfigContext'
@@ -38,6 +39,7 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
   const environment = useEnvironment()
   const { isMobile } = useLayoutConfig()
   const [showDetailsDialog, setShowDetailsDialog] = useState<boolean>(false)
+  const { duplicateAssistant, duplicatingAssistantId } = useDuplicateAssistant()
   const isAssistantMine = () => {
     return userProfile && canEditAssistant(assistant, userProfile?.id, userProfile.workspaces || [])
   }
@@ -51,15 +53,7 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
   }
 
   async function onCloneAssistant() {
-    const assistantUrl = `/api/assistants/${assistant.id}/clone`
-    const response = await post<dto.AssistantWithOwner>(assistantUrl)
-    if (response.error) {
-      toast.error(response.error.message)
-      return
-    }
-    await mutate(`/api/assistants`)
-    await mutate('/api/me/profile') // Let the chat know that there are new assistants!
-    router.push(`/assistants/${response.data.id}`)
+    await duplicateAssistant(assistant.id)
   }
 
   async function onTogglePinned() {
@@ -70,6 +64,21 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
     await mutate(apiPath)
     await mutate(`/api/me/profile`)
   }
+
+  if (duplicatingAssistantId !== null) {
+    return (
+      <div
+        role="status"
+        title={assistant.name}
+        className="inline-flex max-w-[45vw] min-w-0 items-center gap-2 px-1 py-1"
+      >
+        <AssistantAvatar assistant={assistant} />
+        <IconLoader2 size={16} className="animate-spin shrink-0" aria-hidden="true" />
+        <h3 className="truncate py-2">{t('duplicating')}</h3>
+      </div>
+    )
+  }
+
   return (
     <>
       <DropdownMenu>

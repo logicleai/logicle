@@ -7,7 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from './dropdown-menu'
-import { ReactElement } from 'react'
+import { ReactElement, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export interface ActionProps {
@@ -36,17 +36,23 @@ export const Action = (props: ActionProps) => {
 
 export interface ActionListProps {
   children?: ReactElement<typeof Action | any>[] | ReactElement<typeof Action | false>
+  disabled?: boolean
 }
 
-export const ActionList = ({ children }: ActionListProps) => {
+export const ActionList = ({ children, disabled = false }: ActionListProps) => {
   const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (disabled) setOpen(false)
+  }, [disabled])
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open && !disabled} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className="px-1 py-1 opacity-50"
+          disabled={disabled}
+          className="px-1 py-1 opacity-50 disabled:!opacity-20"
           aria-label={t('action')}
           title={t('action')}
         >
