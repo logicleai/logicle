@@ -73,10 +73,8 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
         className="inline-flex max-w-[45vw] min-w-0 items-center gap-2 px-1 py-1"
       >
         <AssistantAvatar assistant={assistant} />
-        <span className="inline-flex min-w-0 items-center gap-2 py-2">
-          <IconLoader2 size={16} className="animate-spin shrink-0" aria-hidden="true" />
-          <span className="truncate">{t('duplicating')}</span>
-        </span>
+        <IconLoader2 size={16} className="animate-spin shrink-0" aria-hidden="true" />
+        <h3 className="truncate py-2">{t('duplicating')}</h3>
       </div>
     )
   }
