@@ -303,6 +303,7 @@
   "file-analysis-spreadsheet-summary": "{{sheetCount}} sheets",
   "file-analysis-word-summary": "{{textCharCount}} text characters",
   "duplicate": "Duplicate",
+  "duplicating": "Duplicating…",
   "edit": "Edit",
   "edit-and-send-message": "Edit and send message",
   "edit-message": "Edit message",

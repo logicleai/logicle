@@ -49,6 +49,12 @@ interface LocalConfirmationDialogState {
 }
 const AssistantPage = () => {
   const id = useUrlSegment(1)
+  // Runtime URL changes can reuse this page. Each assistant must own its callbacks,
+  // form state, pending autosave, and in-flight requests independently.
+  return <AssistantEditor key={id} id={id} />
+}
+
+const AssistantEditor = ({ id }: { id: string }) => {
   const { t } = useTranslation()
   const assistantUrl = `/api/assistants/${id}`
   const firePublish = useRef<(() => void) | undefined>(undefined)
@@ -74,9 +80,13 @@ const AssistantPage = () => {
   const saveController = useRef<AbortController | null>(null)
 
   const loadDraftAndPublishedBaseline = useCallback(
-    async (options?: { fullLoad?: boolean }): Promise<dto.AssistantDraft | undefined> => {
+    async (options?: {
+      fullLoad?: boolean
+      signal?: AbortSignal
+    }): Promise<dto.AssistantDraft | undefined> => {
       if (options?.fullLoad) setIsLoading(true)
       const draftResponse = await get<dto.AssistantDraft>(assistantUrl)
+      if (options?.signal?.aborted) return undefined
 
       if (draftResponse.error) {
         setError(draftResponse.error)
@@ -97,13 +107,12 @@ const AssistantPage = () => {
   )
 
   useEffect(() => {
-    let cancelled = false
+    const controller = new AbortController()
     void (async () => {
-      const loaded = await loadDraftAndPublishedBaseline({ fullLoad: true })
-      if (cancelled || !loaded) return
+      await loadDraftAndPublishedBaseline({ fullLoad: true, signal: controller.signal })
     })()
     return () => {
-      cancelled = true
+      controller.abort()
     }
   }, [loadDraftAndPublishedBaseline])
 
@@ -173,7 +182,7 @@ const AssistantPage = () => {
     }
   }, [])
 
-  const onChange = useCallback((values: dto.UpdateableAssistantDraft) => {
+  const onChange = (values: dto.UpdateableAssistantDraft) => {
     setAssistant((prev) => {
       if (!prev) {
         console.error("No assistant yet, can't handle onChange")
@@ -187,7 +196,7 @@ const AssistantPage = () => {
       scheduleAutoSave(nextAssistant)
       return nextAssistant
     })
-  }, [])
+  }
 
   const onPublish = useCallback(async (values: dto.UpdateableAssistantDraft) => {
     const currentAssistant = assistant
@@ -310,6 +319,8 @@ const AssistantPage = () => {
 
   async function doSubmit(values: dto.UpdateableAssistantDraft): Promise<boolean> {
     abortPendingSave()
+    const controller = new AbortController()
+    saveController.current = controller
     setSaving(true)
     try {
       let assistantPatch: dto.UpdateableAssistantDraft = values
@@ -326,8 +337,6 @@ const AssistantPage = () => {
         }
       }
 
-      const controller = new AbortController()
-      saveController.current = controller
       const response = await patchWithSignal(
         assistantUrl,
         {
@@ -339,22 +348,23 @@ const AssistantPage = () => {
         },
         controller.signal
       )
+      if (controller.signal.aborted) return false
       if (response.error) {
         toast.error(response.error.message)
         return false
       }
-      await loadDraftAndPublishedBaseline()
-      return true
+      await loadDraftAndPublishedBaseline({ signal: controller.signal })
+      return !controller.signal.aborted
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         return false
       }
       throw error
     } finally {
-      if (saveController.current) {
+      if (saveController.current === controller) {
         saveController.current = null
+        setSaving(false)
       }
-      setSaving(false)
     }
   }
 
