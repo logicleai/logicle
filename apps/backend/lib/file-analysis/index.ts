@@ -11,7 +11,8 @@ import type * as dto from '@/types/dto/file-analysis'
 import type { AnalyzerPayload } from '@logicle/file-analyzer'
 import { getFileAnalyzerRuntime } from '@/lib/file-analysis/runtime'
 
-export const fileAnalyzerVersion = 1
+// Recompute cached results (including failures) after the libpdf decoder upgrade.
+export const fileAnalyzerVersion = 2
 
 export type ReadyFileAnalysis = dto.FileAnalysis & {
   status: 'ready'

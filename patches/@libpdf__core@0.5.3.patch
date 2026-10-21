@@ -1,0 +1,139 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -1963,10 +1963,10 @@
+ 	* @returns Decoded data
+ 	* @throws {Error} if a filter fails or is unknown
+ 	*/
+-	getDecodedData() {
+-		const filterEntry = this.get("Filter");
++	getDecodedData(resolve) {
++		const filterEntry = this.get("Filter", resolve);
+ 		if (!filterEntry) return this._data;
+-		const filterSpecs = this.buildFilterSpecs(filterEntry);
++		const filterSpecs = this.buildFilterSpecs(filterEntry, resolve);
+ 		if (filterSpecs.length === 0) return this._data;
+ 		return FilterPipeline.decode(this._data, filterSpecs);
+ 	}
+@@ -1995,16 +1995,24 @@
+ 	/**
+ 	* Build filter specs from /Filter and /DecodeParms entries.
+ 	*/
+-	buildFilterSpecs(filterEntry) {
++	buildFilterSpecs(filterEntry, resolve) {
+ 		const filters = [];
+ 		const params = [];
+ 		if (filterEntry instanceof PdfName) filters.push(filterEntry);
+ 		else if (filterEntry instanceof PdfArray) {
+-			for (const item of filterEntry) if (item instanceof PdfName) filters.push(item);
+-		}
+-		const parmsEntry = this.get("DecodeParms");
++			for (let i = 0; i < filterEntry.length; i++) {
++				const item = filterEntry.at(i, resolve);
++				if (item instanceof PdfName) filters.push(item);
++			}
++		}
++		const parmsEntry = this.get("DecodeParms", resolve);
+ 		if (parmsEntry instanceof PdfDict) params.push(parmsEntry);
+-		else if (parmsEntry instanceof PdfArray) for (const item of parmsEntry) if (item instanceof PdfDict) params.push(item);
++		else if (parmsEntry instanceof PdfArray) {
++			for (let i = 0; i < parmsEntry.length; i++) {
++				const item = parmsEntry.at(i, resolve);
++				params.push(item instanceof PdfDict ? item : null);
++			}
++		}
+ 		else params.push(null);
+ 		return filters.map((filter, i) => ({
+ 			name: filter.value,
+@@ -20283,12 +20291,32 @@
+ 	readString() {
+ 		this.position++;
+ 		let result = "";
+-		while (this.position < this.data.length && this.data[this.position] !== 41) {
+-			result += String.fromCharCode(this.data[this.position]);
+-			this.position++;
+-		}
+-		this.position++;
+-		return result;
++		let depth = 1;
++		while (this.position < this.data.length) {
++			let byte = this.data[this.position++];
++			if (byte === 92) {
++				if (this.position >= this.data.length) break;
++				byte = this.data[this.position++];
++				if (byte === 13 || byte === 10) {
++					if (byte === 13 && this.data[this.position] === 10) this.position++;
++					continue;
++				}
++				const escaped = { 110: 10, 114: 13, 116: 9, 98: 8, 102: 12 };
++				if (byte >= 48 && byte <= 55) {
++					let value = byte - 48;
++					for (let i = 0; i < 2; i++) {
++						const next = this.data[this.position];
++						if (next < 48 || next > 55 || next === undefined) break;
++						value = value * 8 + next - 48;
++						this.position++;
++					}
++					byte = value & 255;
++				} else byte = escaped[byte] ?? byte;
++			} else if (byte === 40) depth++;
++			else if (byte === 41 && --depth === 0) return result;
++			result += String.fromCharCode(byte);
++		}
++		throw new Error("Unterminated CMap literal string");
+ 	}
+ 	readEndDictOrHex() {
+ 		if (this.position + 1 < this.data.length && this.data[this.position + 1] === 62) {
+@@ -20383,6 +20411,7 @@
+ 			op += String.fromCharCode(ch);
+ 			this.position++;
+ 		}
++		if (op.length === 0) throw new Error("Unexpected CMap token delimiter");
+ 		return {
+ 			type: "operator",
+ 			op
+@@ -27215,7 +27244,7 @@
+ 		if (stream.getName("Subtype", this.resolve)?.value !== "Form") return null;
+ 		let content;
+ 		try {
+-			content = stream.getDecodedData();
++			content = stream.getDecodedData(this.resolve);
+ 		} catch {
+ 			return null;
+ 		}
+@@ -27234,7 +27263,7 @@
+ 		const stream = fontDict.get("ToUnicode", this.resolve);
+ 		if (!(stream instanceof PdfStream)) return null;
+ 		try {
+-			return parseToUnicode(stream.getDecodedData());
++			return parseToUnicode(stream.getDecodedData(this.resolve));
+ 		} catch {
+ 			return null;
+ 		}
+@@ -29258,12 +29287,12 @@
+ 	getContentBytes() {
+ 		const contents = this.dict.get("Contents", this.ctx.resolve.bind(this.ctx));
+ 		if (!contents) return new Uint8Array(0);
+-		if (contents instanceof PdfStream) return contents.getDecodedData();
++		if (contents instanceof PdfStream) return contents.getDecodedData(this.ctx.resolve.bind(this.ctx));
+ 		if (contents instanceof PdfArray) {
+ 			const chunks = [];
+ 			for (let i = 0; i < contents.length; i++) {
+ 				const item = contents.at(i, this.ctx.resolve.bind(this.ctx));
+-				if (item instanceof PdfStream) chunks.push(item.getDecodedData());
++				if (item instanceof PdfStream) chunks.push(item.getDecodedData(this.ctx.resolve.bind(this.ctx)));
+ 			}
+ 			return this.concatenateChunks(chunks);
+ 		}
+diff --git a/dist/index.d.mts b/dist/index.d.mts
+--- a/dist/index.d.mts
++++ b/dist/index.d.mts
+@@ -510,7 +510,7 @@
+    * @returns Decoded data
+    * @throws {Error} if a filter fails or is unknown
+    */
+-  getDecodedData(): Uint8Array;
++  getDecodedData(resolve?: RefResolver): Uint8Array;
+   /**
+    * Get the encoded (compressed) stream data.
+    *
