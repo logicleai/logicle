@@ -16,7 +16,7 @@
     "@aws-sdk/lib-storage": "^3.1044.0",
     "@google/genai": "^1.52.0",
     "@google/generative-ai": "^0.24.1",
-    "@libpdf/core": "^0.2.12",
+    "@libpdf/core": "0.5.3",
     "@mjackson/headers": "^0.10.0",
     "@mjackson/multipart-parser": "^0.7.0",
     "@modelcontextprotocol/sdk": "^1.29.0",

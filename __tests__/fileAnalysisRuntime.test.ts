@@ -59,7 +59,7 @@ const readyAnalysis: dto.FileAnalysis = {
   fileId: fileEntry.id,
   kind: 'pdf',
   status: 'ready',
-  analyzerVersion: 1,
+  analyzerVersion: 2,
   payload: {
     kind: 'pdf',
     mimeType: 'application/pdf',
@@ -70,7 +70,7 @@ const readyAnalysis: dto.FileAnalysis = {
     hasExtractableText: true,
     imagePageCount: 0,
     contentMode: 'text',
-    extractedTextPath: 'files/example.pdf.analysis-v1.txt',
+    extractedTextPath: 'files/example.pdf.analysis-v2.txt',
   },
   error: null,
   createdAt: new Date().toISOString(),
@@ -130,6 +130,27 @@ describe('fileAnalysis runtime helpers', () => {
     const { ensureFileAnalysisForFile } = await import('@/lib/file-analysis')
     await expect(ensureFileAnalysisForFile(fileEntry as any)).resolves.toEqual(readyAnalysis)
   })
+
+  test.each(['ready', 'failed'] as const)(
+    'retries version-1 %s analyses with the upgraded analyzer',
+    async (status) => {
+      const mod = await import('@/lib/file-analysis')
+      const submit = vi.spyOn(mod.fileAnalysisRuntime, 'submit').mockResolvedValue()
+      const oldAnalysis = {
+        ...readyAnalysis,
+        status,
+        analyzerVersion: 1,
+        payload: status === 'failed' ? null : readyAnalysis.payload,
+        error: status === 'failed' ? 'Previous PDF parser exhausted its heap' : null,
+      }
+      for (const ensure of [mod.ensureFileAnalysis, mod.ensureFileAnalysisForFile]) {
+        getFileAnalysis.mockResolvedValueOnce(oldAnalysis).mockResolvedValueOnce(readyAnalysis)
+        await expect(ensure(fileEntry as any)).resolves.toEqual(readyAnalysis)
+      }
+      expect(submit).toHaveBeenCalledTimes(2)
+      expect(submit).toHaveBeenCalledWith(fileEntry.id)
+    }
+  )
 
   test('ensureFileAnalysisForFile throws on stale completed analysis after waiting', async () => {
     getFileAnalysis.mockResolvedValueOnce(undefined).mockResolvedValueOnce({
@@ -245,7 +266,7 @@ describe('fileAnalysis runtime helpers', () => {
       expectedSizeBytes: fileEntry.size,
     })
     expect(writeBuffer).toHaveBeenCalledWith(
-      `${fileEntry.path}.analysis-v1.txt`,
+      `${fileEntry.path}.analysis-v2.txt`,
       Buffer.from('hello world', 'utf-8'),
       null
     )
@@ -253,9 +274,9 @@ describe('fileAnalysis runtime helpers', () => {
       fileEntry.id,
       expect.objectContaining({
         kind: 'pdf',
-        extractedTextPath: `${fileEntry.path}.analysis-v1.txt`,
+        extractedTextPath: `${fileEntry.path}.analysis-v2.txt`,
       }),
-      1
+      2
     )
   })
 
@@ -269,7 +290,7 @@ describe('fileAnalysis runtime helpers', () => {
     expect(failFileAnalysis).toHaveBeenCalledWith(
       fileEntry.id,
       'unknown',
-      1,
+      2,
       'File not ready (fileBlobId=missing)'
     )
   })
@@ -283,7 +304,7 @@ describe('fileAnalysis runtime helpers', () => {
     expect(failFileAnalysis).toHaveBeenCalledWith(
       fileEntry.id,
       'unknown',
-      1,
+      2,
       'File not ready (fileBlobId=missing)'
     )
   })
@@ -326,7 +347,7 @@ describe('fileAnalysis runtime helpers', () => {
     expect(completeFileAnalysis).toHaveBeenCalledWith(
       'file-b',
       expect.objectContaining({ kind: 'pdf', extractedTextPath: null }),
-      1
+      2
     )
   })
 
@@ -340,7 +361,7 @@ describe('fileAnalysis runtime helpers', () => {
     const { fileAnalysisRuntime } = await import('@/lib/file-analysis')
     await fileAnalysisRuntime.submit(fileEntry.id)
 
-    expect(failFileAnalysis).toHaveBeenCalledWith(fileEntry.id, 'pdf', 1, 'analysis boom')
+    expect(failFileAnalysis).toHaveBeenCalledWith(fileEntry.id, 'pdf', 2, 'analysis boom')
     expect(error).toHaveBeenCalledWith(
       'File analysis runtime: failed to persist failure',
       expect.objectContaining({ error: 'persist boom' })
