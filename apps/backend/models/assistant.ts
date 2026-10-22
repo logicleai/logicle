@@ -7,12 +7,8 @@ import { filterVisibleSatelliteIds } from './satellite'
 import { Expression, SqlBool, SqliteAdapter, sql } from 'kysely'
 import { getOrCreateImageFromDataUri } from './images'
 import { getBackendsWithModels } from './backend'
-import { listUserSecretStatuses } from './userSecrets'
-import {
-  isUserProvidedApiKey,
-  MCP_OAUTH_SECRET_TYPE,
-  USER_SECRET_TYPE,
-} from '@/lib/userSecrets/constants'
+import { listUsableMcpOAuthContexts, listUserSecretStatuses } from './userSecrets'
+import { isUserProvidedApiKey, USER_SECRET_TYPE } from '@/lib/userSecrets/constants'
 import { getMcpToolAvailability } from '@/lib/tools/schemas'
 
 export function parseContextCompression(raw: string | null | undefined): dto.ContextCompressionConfig {
@@ -357,11 +353,7 @@ export const getUserAssistants = async (
       .filter((status) => status.readable && status.type === USER_SECRET_TYPE)
       .map((status) => status.context)
   )
-  const readableMcpContexts = new Set(
-    secretStatuses
-      .filter((status) => status.readable && status.type === MCP_OAUTH_SECRET_TYPE)
-      .map((status) => status.context)
-  )
+  const readableMcpContexts = await listUsableMcpOAuthContexts(userId)
   const sharingPerAssistant = await assistantsSharingData(assistants.map((a) => a.assistantId))
   const tools = await db
     .selectFrom('AssistantVersionToolAssociation')
