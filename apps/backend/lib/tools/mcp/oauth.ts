@@ -21,6 +21,7 @@ type ProtectedResourceMetadata = {
 type AuthorizationServerMetadata = {
   authorization_endpoint?: string
   token_endpoint?: string
+  scopes_supported?: string[]
 }
 
 type OAuthClientConfig = {
@@ -62,6 +63,10 @@ const isTokenExpired = (token: McpOAuthTokenSet) => {
   if (Number.isNaN(expiresAt)) return false
   return Date.now() + 60_000 >= expiresAt
 }
+
+// A stored token set is usable if the access token is still valid or can be refreshed.
+export const isMcpOAuthTokenUsable = (token: McpOAuthTokenSet) =>
+  !!token.access_token && (!isTokenExpired(token) || !!token.refresh_token)
 
 const resolveOAuthClient = async (
   auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
@@ -173,11 +178,18 @@ const resolveAuthorizationServer = async (
   for (const issuer of authorizationServers) {
     const serverMetadata = await discoverAuthorizationServerMetadata(issuer)
     if (serverMetadata?.authorization_endpoint && serverMetadata?.token_endpoint) {
+      // Without offline_access some authorization servers (e.g. Entra) do not issue a
+      // refresh token, so the connection would stop working when the access token expires.
+      const scopes = resourceMetadata?.scopes_supported
+      const requestOfflineAccess =
+        !!scopes?.length &&
+        !scopes.includes('offline_access') &&
+        !!serverMetadata.scopes_supported?.includes('offline_access')
       return {
         authorizationUrl: serverMetadata.authorization_endpoint,
         tokenUrl: serverMetadata.token_endpoint,
         resource: resourceMetadata?.resource,
-        scopes: resourceMetadata?.scopes_supported,
+        scopes: requestOfflineAccess ? [...scopes, 'offline_access'] : scopes,
       }
     }
   }
