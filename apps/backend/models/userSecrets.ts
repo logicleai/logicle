@@ -90,6 +90,19 @@ export const upsertUserSecret = async (
   return stored
 }
 
+export const deleteUserSecretByContext = async (
+  userId: string,
+  context: string,
+  type: UserSecretType
+) => {
+  await db
+    .deleteFrom('UserSecret')
+    .where('userId', '=', userId)
+    .where('context', '=', context)
+    .where('type', '=', type)
+    .execute()
+}
+
 export const deleteUserSecretById = async (userId: string, id: string) => {
   const result = await db
     .deleteFrom('UserSecret')

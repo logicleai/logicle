@@ -12,6 +12,17 @@ export type McpOAuthTokenSet = {
   expires_at?: string
 }
 
+export class McpOAuthTokenError extends Error {
+  // permanent: the authorization server rejected the grant, retrying cannot help
+  constructor(
+    message: string,
+    readonly permanent: boolean
+  ) {
+    super(message)
+    this.name = 'McpOAuthTokenError'
+  }
+}
+
 type ProtectedResourceMetadata = {
   resource?: string
   authorization_servers?: string[]
@@ -214,14 +225,19 @@ const tokenRequest = async (
     body.set('resource', resource)
   }
 
-  const response = await fetch(tokenUrl, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded',
-      accept: 'application/json',
-    },
-    body,
-  })
+  let response: Response
+  try {
+    response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        accept: 'application/json',
+      },
+      body,
+    })
+  } catch (err) {
+    throw new McpOAuthTokenError(err instanceof Error ? err.message : 'OAuth request failed', false)
+  }
   const contentType = response.headers.get('content-type') ?? ''
   const rawText = await response.text()
   const json = (() => {
@@ -244,12 +260,13 @@ const tokenRequest = async (
         : typeof json.error === 'string'
         ? json.error
         : `OAuth token request failed (${response.status})`
-    throw new Error(message)
+    const rejected = response.status >= 400 && response.status < 500
+    throw new McpOAuthTokenError(message, rejected && ![408, 429].includes(response.status))
   }
   if (typeof json.error === 'string') {
     const errorDescription =
       typeof json.error_description === 'string' ? json.error_description : json.error
-    throw new Error(errorDescription)
+    throw new McpOAuthTokenError(errorDescription, true)
   }
   const normalized = normalizeTokenSet(json)
   if (!normalized.access_token) {
@@ -286,7 +303,8 @@ export const refreshMcpOAuthToken = async (
   auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
   refreshToken: string,
   toolId: string,
-  serverUrl: string
+  serverUrl: string,
+  scope?: string
 ) => {
   const resolved = await resolveAuthorizationServer(serverUrl)
   const client = await resolveOAuthClient(auth, toolId, serverUrl)
@@ -294,6 +312,7 @@ export const refreshMcpOAuthToken = async (
     {
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
+      ...(scope ? { scope } : {}),
     },
     resolved.tokenUrl,
     resolved.resource,
@@ -308,9 +327,15 @@ export const resolveMcpOAuthToken = async (
   auth: Extract<McpPluginAuthentication, { type: 'oauth' }>,
   serverUrl: string
 ): Promise<
-  { status: 'ok'; accessToken: string } | { status: 'missing' } | { status: 'unreadable' }
+  | { status: 'ok'; accessToken: string }
+  | { status: 'missing' }
+  | { status: 'unreadable' }
+  // refresh failed for a transient reason: credentials may still be valid, do not ask to reconnect
+  | { status: 'unavailable' }
 > => {
-  const { getUserSecretValue, upsertUserSecret } = await import('@/models/userSecrets')
+  const { getUserSecretValue, upsertUserSecret, deleteUserSecretByContext } = await import(
+    '@/models/userSecrets'
+  )
   const resolution = await getUserSecretValue(userId, toolId, MCP_OAUTH_SECRET_TYPE)
   if (resolution.status !== 'ok') {
     return resolution.status === 'unreadable' ? { status: 'unreadable' } : { status: 'missing' }
@@ -329,17 +354,32 @@ export const resolveMcpOAuthToken = async (
       return { status: 'missing' }
     }
     try {
-      const refreshed = await refreshMcpOAuthToken(auth, tokenSet.refresh_token, toolId, serverUrl)
+      const refreshed = await refreshMcpOAuthToken(
+        auth,
+        tokenSet.refresh_token,
+        toolId,
+        serverUrl,
+        tokenSet.scope
+      )
       await upsertUserSecret(
         userId,
         toolId,
         MCP_OAUTH_SECRET_TYPE,
         `MCP OAuth (${toolName})`,
-        JSON.stringify(refreshed)
+        // servers may omit the refresh token on refresh: keep the one we have
+        JSON.stringify({
+          ...refreshed,
+          refresh_token: refreshed.refresh_token ?? tokenSet.refresh_token,
+        })
       )
       return { status: 'ok', accessToken: refreshed.access_token }
-    } catch {
-      return { status: 'missing' }
+    } catch (err) {
+      if (err instanceof McpOAuthTokenError && err.permanent) {
+        // The grant is dead: drop it so the user is asked to connect again
+        await deleteUserSecretByContext(userId, toolId, MCP_OAUTH_SECRET_TYPE)
+        return { status: 'missing' }
+      }
+      return { status: 'unavailable' }
     }
   }
   return { status: 'ok', accessToken: tokenSet.access_token }

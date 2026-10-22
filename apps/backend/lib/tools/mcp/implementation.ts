@@ -300,6 +300,8 @@ async function convertMcpSpecToToolFunctions(
               value:
                 resolution.status === 'unreadable'
                   ? 'Stored MCP credentials are unreadable. Please re-enable the tool.'
+                  : resolution.status === 'unavailable'
+                  ? 'MCP authorization server is temporarily unavailable. Please retry.'
                   : 'MCP credentials missing or expired. Please enable the tool.',
             }
           }
@@ -436,7 +438,8 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
         resolution = { status: 'missing' }
       }
     }
-    if (resolution.status === 'ok') return null
+    // Transient refresh failure: credentials may still be valid, do not ask to reconnect
+    if (resolution.status === 'ok' || resolution.status === 'unavailable') return null
     return {
       type: 'mcp-oauth',
       toolId: this.toolParams.id,
@@ -485,6 +488,9 @@ export class McpPlugin extends McpInterface implements ToolImplementation {
           this.config.authentication,
           this.config.url
         )
+        if (resolution.status === 'unavailable') {
+          throw new Error('MCP authorization server is temporarily unavailable, please retry')
+        }
         if (resolution.status !== 'ok') {
           return {
             type: 'mcp-oauth',
