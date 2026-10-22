@@ -295,10 +295,12 @@ describe('apps/backend/lib/tools/mcp/oauth', () => {
       }),
     })
     const upsertUserSecret = vi.fn().mockResolvedValue(undefined)
+    const deleteUserSecretByContext = vi.fn().mockResolvedValue(undefined)
 
     vi.doMock('@/models/userSecrets', () => ({
       getUserSecretValue,
       upsertUserSecret,
+      deleteUserSecretByContext,
     }))
     vi.stubGlobal('fetch', fetchMock as any)
 
@@ -329,5 +331,6 @@ describe('apps/backend/lib/tools/mcp/oauth', () => {
       'MCP OAuth (Test MCP)',
       expect.stringContaining('"access_token":"fresh-token"')
     )
+    expect(deleteUserSecretByContext).not.toHaveBeenCalled()
   })
 })

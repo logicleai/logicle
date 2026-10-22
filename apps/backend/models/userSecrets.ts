@@ -6,7 +6,8 @@ import {
   UserSecretMissingKeyError,
   UserSecretUnreadableError,
 } from '@/lib/userSecrets'
-import { UserSecretType } from '@/lib/userSecrets/constants'
+import { MCP_OAUTH_SECRET_TYPE, UserSecretType } from '@/lib/userSecrets/constants'
+import { isMcpOAuthTokenUsable, McpOAuthTokenSet } from '@/backend/lib/tools/mcp/oauth'
 
 export interface UserSecretStatus {
   id: string
@@ -87,6 +88,19 @@ export const upsertUserSecret = async (
     throw new Error('Secret upsert failed')
   }
   return stored
+}
+
+export const deleteUserSecretByContext = async (
+  userId: string,
+  context: string,
+  type: UserSecretType
+) => {
+  await db
+    .deleteFrom('UserSecret')
+    .where('userId', '=', userId)
+    .where('context', '=', context)
+    .where('type', '=', type)
+    .execute()
 }
 
 export const deleteUserSecretById = async (userId: string, id: string) => {
@@ -176,4 +190,23 @@ export const listUserSecretStatuses = async (
       throw error
     }
   })
+}
+
+export const listUsableMcpOAuthContexts = async (userId: string): Promise<Set<string>> => {
+  const secrets = await db
+    .selectFrom('UserSecret')
+    .select(['context', 'value'])
+    .where('userId', '=', userId)
+    .where('type', '=', MCP_OAUTH_SECRET_TYPE)
+    .execute()
+  const contexts = new Set<string>()
+  for (const secret of secrets) {
+    try {
+      const token = JSON.parse(decryptUserSecret(secret.value)) as McpOAuthTokenSet
+      if (isMcpOAuthTokenUsable(token)) contexts.add(secret.context)
+    } catch {
+      // unreadable or malformed: not usable
+    }
+  }
+  return contexts
 }
