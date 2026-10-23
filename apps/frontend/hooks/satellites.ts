@@ -16,7 +16,9 @@ export function useSatellites() {
         throw new Error(response.error.message)
       }
       return response.data as dto.SatelliteListItem[]
-    }
+    },
+    // Shared connections publish live events to their owner; periodically refresh recipients too.
+    { refreshInterval: 15000 }
   )
 
   useEffect(() => {
@@ -70,16 +72,13 @@ export function useSatellites() {
 }
 
 export function useAdminSatellites() {
-  const { data, error, isLoading, mutate } = useSWR(
-    ADMIN_SATELLITES_URL,
-    async (url) => {
-      const response = await get(url)
-      if (response.error) {
-        throw new Error(response.error.message)
-      }
-      return response.data as dto.SatelliteListItem[]
+  const { data, error, isLoading, mutate } = useSWR(ADMIN_SATELLITES_URL, async (url) => {
+    const response = await get(url)
+    if (response.error) {
+      throw new Error(response.error.message)
     }
-  )
+    return response.data as dto.SatelliteListItem[]
+  })
 
   return {
     data: data || [],

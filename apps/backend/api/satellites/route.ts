@@ -25,6 +25,7 @@ export const GET = operation({
       kind: 'registered' as const,
       connected: connectionsById.has(satellite.id),
       ownerName: userNameById.get(satellite.userId) ?? null,
+      canManage: true,
       createdAt: satellite.createdAt,
       updatedAt: satellite.updatedAt,
     }))
@@ -37,6 +38,7 @@ export const GET = operation({
         kind: 'ephemeral' as const,
         connected: true,
         ownerName: userNameById.get(conn.userId) ?? null,
+        canManage: false,
         createdAt: conn.connectedAt.toISOString(),
         updatedAt: conn.connectedAt.toISOString(),
       }))

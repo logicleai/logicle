@@ -1,5 +1,9 @@
 # Logicle Satellite
 
+A standalone Go bridge for MCP Streamable HTTP servers is available in
+[`tools/satellite-client`](tools/satellite-client/README.md). It supports Bearer
+authentication and runs on a machine that can reach both Logicle and the MCP server.
+
 A **satellite** is an external process that connects to the Logicle backend over a persistent WebSocket and exposes a set of tools that the LLM can invoke during a chat. Satellites are the mechanism for running arbitrary code — data pipelines, local CLI tools, proprietary integrations — without embedding that code into the Logicle server itself.
 
 ---

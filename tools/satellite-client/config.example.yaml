@@ -1,0 +1,10 @@
+logicle:
+  url: "wss://logicle.example/api/rpc"
+  credential: "satellite-id.replace-with-your-secret"
+
+mcp:
+  url: "https://product.example/mcp"
+  bearer_token: "replace-with-your-mcp-token"
+
+# Optional; defaults to 2m.
+timeout: "2m"
