@@ -126,7 +126,7 @@ const MySatellitesPage = () => {
                     {satellite.connected ? `● ${t('connected')}` : `○ ${t('disconnected')}`}
                   </span>
                 </div>
-                {satellite.kind === 'registered' && (
+                {satellite.kind === 'registered' && satellite.canManage && (
                   <ActionList>
                     <Action
                       icon={IconPencil}
