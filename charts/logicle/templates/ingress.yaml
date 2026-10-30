@@ -1,6 +1,11 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "logicle.fullname" . -}}
 {{- $fqdn := .Values.config.fqdn -}}
+{{- /* Keep nginx's body limit above the app's attachment limit (bytes), or large uploads get a 413 */ -}}
+{{- $proxyBodySizeMiB := 256 -}}
+{{- with .Values.config.CHAT_ATTACHMENTS_MAX_SIZE }}
+{{- $proxyBodySizeMiB = max 256 (add (div (add (int64 .) 1048575) 1048576) 1) -}}
+{{- end }}
 {{- if and .Values.ingress.ingressClass (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.ingressClass}}
@@ -21,7 +26,7 @@ metadata:
   {{- if .Values.config.useHttps }}
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt"
-    nginx.ingress.kubernetes.io/proxy-body-size: 256m
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ $proxyBodySizeMiB }}m
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
   {{- end }}
