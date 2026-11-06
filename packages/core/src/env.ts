@@ -214,6 +214,7 @@ const env = {
   },
   fileAnalysis: {
     waitMs: parseOptionalInt(process.env.FILE_ANALYSIS_WAIT_MS) ?? 10_000,
+    timeoutMs: Number(process.env.FILE_ANALYSIS_TIMEOUT_MS ?? 300_000),
   },
   fileOrphanCleanup: {
     mode: parseCleanupMode(process.env.FILE_ORPHAN_CLEANUP_MODE),
