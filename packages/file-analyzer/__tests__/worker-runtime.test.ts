@@ -110,37 +110,32 @@ describe('file analyzer worker recovery', () => {
   it.each([
     [300_000, 1],
     [1234, 0],
-  ])(
-    'terminates after %i ms and recovers after exit code %i',
-    async (timeoutMs, exitCode) => {
-      const runtime =
-        timeoutMs === 300_000 ? new WorkerRuntime() : new WorkerRuntime(undefined, timeoutMs)
-      const request = analyze(runtime)
-      const settled = vi.fn()
-      void request.then(settled, settled)
-      const failed = expect(request).rejects.toThrow(
-        `File analysis timed out after ${timeoutMs} ms`
-      )
+  ])('terminates after %i ms and recovers after exit code %i', async (timeoutMs, exitCode) => {
+    const runtime =
+      timeoutMs === 300_000 ? new WorkerRuntime() : new WorkerRuntime(undefined, timeoutMs)
+    const request = analyze(runtime)
+    const settled = vi.fn()
+    void request.then(settled, settled)
+    const failed = expect(request).rejects.toThrow(`File analysis timed out after ${timeoutMs} ms`)
 
-      vi.advanceTimersByTime(timeoutMs - 1)
-      expect(workers[0].terminate).not.toHaveBeenCalled()
-      vi.advanceTimersByTime(1)
-      expect(workers[0].terminate).toHaveBeenCalledTimes(1)
-      // A result arriving after the deadline must not turn the timeout into success.
-      respond(workers[0])
-      await Promise.resolve()
-      expect(settled).not.toHaveBeenCalled()
-      expect(workers).toHaveLength(1)
+    vi.advanceTimersByTime(timeoutMs - 1)
+    expect(workers[0].terminate).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    expect(workers[0].terminate).toHaveBeenCalledTimes(1)
+    // A result arriving after the deadline must not turn the timeout into success.
+    respond(workers[0])
+    await Promise.resolve()
+    expect(settled).not.toHaveBeenCalled()
+    expect(workers).toHaveLength(1)
 
-      workers[0].emit('exit', exitCode)
-      await failed
-      expect(vi.getTimerCount()).toBe(0)
-      const next = analyze(runtime)
-      respond(workers[1])
-      await expect(next).resolves.toEqual(payload)
-      expect(workers[1].postMessage).toHaveBeenCalledTimes(1)
-    }
-  )
+    workers[0].emit('exit', exitCode)
+    await failed
+    expect(vi.getTimerCount()).toBe(0)
+    const next = analyze(runtime)
+    respond(workers[1])
+    await expect(next).resolves.toEqual(payload)
+    expect(workers[1].postMessage).toHaveBeenCalledTimes(1)
+  })
 
   it('cancels a completed request deadline without affecting subsequent work', async () => {
     const runtime = new WorkerRuntime(undefined, 1000)
@@ -200,8 +195,28 @@ describe('file analyzer worker recovery', () => {
     await expect(next).resolves.toEqual(payload)
   })
 
-  it.each([0, -1, NaN, Infinity, 1.5, 2_147_483_648])('rejects invalid timeout %s', (timeoutMs) => {
-    expect(() => new WorkerRuntime(undefined, timeoutMs)).toThrow('FILE_ANALYSIS_TIMEOUT_MS')
-    expect(createWorker).not.toHaveBeenCalled()
-  })
+  it.each([0, -1, NaN, Infinity, 1.5, 2_147_483_648])(
+    'warns and uses five minutes for invalid timeout %s',
+    async (timeoutMs) => {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+      const runtime = new WorkerRuntime(logger, timeoutMs)
+      expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
+        'Invalid FILE_ANALYSIS_TIMEOUT_MS; using default 300000 ms',
+        { timeoutMs: String(timeoutMs) }
+      )
+      expect(logger.info).toHaveBeenCalledWith(
+        'Starting file analyzer worker',
+        expect.objectContaining({ timeoutMs: 300_000 })
+      )
+      const failed = expect(analyze(runtime)).rejects.toThrow(
+        'File analysis timed out after 300000 ms'
+      )
+      vi.advanceTimersByTime(299_999)
+      expect(workers[0].terminate).not.toHaveBeenCalled()
+      vi.advanceTimersByTime(1)
+      expect(workers[0].terminate).toHaveBeenCalledTimes(1)
+      workers[0].emit('exit', 1)
+      await failed
+    }
+  )
 })

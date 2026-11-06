@@ -17,4 +17,4 @@ The following table outlines all available environment settings in Logicle:
 | DATABASE_URL          | The database connection URL. For Docker, refer to `docker-compose.yml`.     | `file:///data/sqlite/logicle.sqlite`|
 | FILE_STORAGE_LOCATION | The location for storing files on the server.                               | `/data/files`   |
 | FILE_ANALYSIS_WAIT_MS | How long the file analysis endpoint waits for analysis before returning.    | `10000`         |
-| `FILE_ANALYSIS_TIMEOUT_MS` | Maximum execution time per analysis in milliseconds before terminating the worker and failing the file. Must be an integer between `1` and `2147483647`. | `300000` |
+| `FILE_ANALYSIS_TIMEOUT_MS` | Maximum execution time per analysis in milliseconds before terminating the worker and failing the file. Valid values are integers between `1` and `2147483647`. Invalid values log a warning and fall back to the default. | `300000` |

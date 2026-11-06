@@ -23,6 +23,8 @@ type WorkerState = {
   failure?: Error
 }
 
+const defaultTimeoutMs = 300_000
+
 export class WorkerRuntime implements FileAnalyzerRuntime {
   private state?: WorkerState
   private nextId = 1
@@ -52,11 +54,14 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
 
   constructor(
     private logger?: WorkerLogger,
-    private readonly timeoutMs = 300_000
+    private readonly timeoutMs = defaultTimeoutMs
   ) {
     // Node clamps invalid or overflowing timer delays to 1 ms.
     if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 2_147_483_647) {
-      throw new Error('FILE_ANALYSIS_TIMEOUT_MS must be an integer between 1 and 2147483647')
+      this.log('warn', `Invalid FILE_ANALYSIS_TIMEOUT_MS; using default ${defaultTimeoutMs} ms`, {
+        timeoutMs: String(timeoutMs),
+      })
+      this.timeoutMs = defaultTimeoutMs
     }
     this.startWorker()
   }
@@ -69,7 +74,11 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
     const scriptPath = this.resolveWorkerScriptPath(isDev)
     const execArgv = isDev ? ['--import', 'tsx'] : []
 
-    this.log('info', 'Starting file analyzer worker', { isDev, scriptPath })
+    this.log('info', 'Starting file analyzer worker', {
+      isDev,
+      scriptPath,
+      timeoutMs: this.timeoutMs,
+    })
     const state: WorkerState = {
       worker: new Worker(scriptPath, { execArgv, name: 'file-analyzer' }),
       pending: new Map(),
