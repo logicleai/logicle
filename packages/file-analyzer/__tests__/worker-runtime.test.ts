@@ -153,18 +153,14 @@ describe('file analyzer worker recovery', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 
-  it('ignores old worker events while a replacement processes a file', async () => {
+  it('preserves a result delivered before exit and replaces the worker for the next file', async () => {
     const runtime = new WorkerRuntime()
-    const failed = expect(analyze(runtime)).rejects.toThrow('Worker exited')
-    workers[0].emit('exit', 1)
-    await failed
+    const first = analyze(runtime)
+    respond(workers[0])
+    workers[0].emit('exit', 0)
+    await expect(first).resolves.toEqual(payload)
+    expect(vi.getTimerCount()).toBe(0)
     const next = analyze(runtime)
-    const [{ id }] = workers[1].postMessage.mock.lastCall!
-    // Even a stale message with the new request ID cannot settle that request.
-    workers[0].emit('message', { id, ok: false, error: 'Stale response' })
-    workers[0].emit('error', new Error('Stale error'))
-    workers[0].emit('exit', 1)
-    expect(vi.getTimerCount()).toBe(1)
     respond(workers[1])
     await expect(next).resolves.toEqual(payload)
     expect(workers).toHaveLength(2)

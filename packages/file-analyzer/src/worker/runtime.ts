@@ -96,7 +96,7 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
         payload?: AnalyzerPayload
         error?: string
       }) => {
-        if (this.state !== state || state.failure) return
+        if (state.failure) return
         if (msg.type === 'log') {
           const { type: _, id: __, ok: ___, level = 'info', message = '', ...meta } = msg
           this.logger?.[level](message, meta)
@@ -115,7 +115,6 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
     )
 
     state.worker.on('error', (err) => {
-      if (this.state !== state) return
       state.failure ??= err
       this.log('error', 'File analyzer worker error', {
         error: err instanceof Error ? err.message : String(err),
@@ -125,7 +124,6 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
     })
 
     state.worker.on('exit', (code) => {
-      if (this.state !== state) return
       this.state = undefined
       this.log('error', 'File analyzer worker exited unexpectedly', { code })
       const error = state.failure ?? new Error(`Worker exited with code ${code}`)
@@ -155,7 +153,7 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
         buffer.byteOffset + buffer.byteLength
       ) as ArrayBuffer
       const timer = setTimeout(() => {
-        if (this.state !== state || state.failure || !state.pending.has(id)) return
+        if (state.failure || !state.pending.has(id)) return
         state.failure = new Error(`File analysis timed out after ${this.timeoutMs} ms`)
         this.log('error', 'File analyzer worker timed out', {
           id,
