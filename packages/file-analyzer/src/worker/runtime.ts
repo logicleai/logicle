@@ -96,6 +96,7 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
         payload?: AnalyzerPayload
         error?: string
       }) => {
+        // Ignore results arriving after a failure while the worker is terminating.
         if (state.failure) return
         if (msg.type === 'log') {
           const { type: _, id: __, ok: ___, level = 'info', message = '', ...meta } = msg
@@ -119,14 +120,14 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
       this.log('error', 'File analyzer worker error', {
         error: err instanceof Error ? err.message : String(err),
       })
-      // Worker errors are followed by exit. Settle requests there so the queue
-      // cannot advance until this thread has actually stopped.
     })
 
     state.worker.on('exit', (code) => {
       this.state = undefined
       this.log('error', 'File analyzer worker exited unexpectedly', { code })
       const error = state.failure ?? new Error(`Worker exited with code ${code}`)
+      // Reject unfinished requests only after the worker has stopped, so the
+      // queue cannot advance while it is still terminating.
       for (const { reject, timer } of state.pending.values()) {
         clearTimeout(timer)
         reject(error)
@@ -160,7 +161,7 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
           mimeType,
           timeoutMs: this.timeoutMs,
         })
-        // Reject on exit, including code 0, and ignore responses during termination.
+        // Stop the worker; the exit handler will reject the request.
         void state.worker.terminate().catch((error) => {
           this.log('error', 'Failed to terminate file analyzer worker', {
             error: error instanceof Error ? error.message : String(error),
