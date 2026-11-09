@@ -35,7 +35,7 @@ export async function bootstrapBackendRuntime() {
   console.info('Running provisioning')
   await provision()
 
-  setFileAnalyzerRuntime(new WorkerRuntime(getLogger()))
+  setFileAnalyzerRuntime(new WorkerRuntime(getLogger(), env.fileAnalysis.timeoutMs))
   setTokenizerWorker(new TokenizerWorkerRuntime())
   console.info('[PgpS2kWorkerRuntime] Initializing')
   setPgpS2kWorker(new PgpS2kWorkerRuntime())

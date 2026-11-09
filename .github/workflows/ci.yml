@@ -278,6 +278,8 @@ jobs:
           run_smoke "postgres" "postgresql://admin:admin@host.docker.internal:5432/logicle"
 
       - name: Run integration baseline checks
+        env:
+          INTEGRATION_INSPECTOR_URL: http://127.0.0.1:9229
         run: |
           set -euo pipefail
           trap 'status=$?; if [ "$status" -ne 0 ]; then echo "Baseline test failed; dumping container logs"; docker logs logicle-smoke || true; fi' EXIT
@@ -290,6 +292,7 @@ jobs:
             --name logicle-smoke \
             --add-host=host.docker.internal:host-gateway \
             -p 3000:3000 \
+            -p 127.0.0.1:9229:9229 \
             -e APP_URL=http://localhost:3000 \
             -e NEXTAUTH_SECRET=ci-smoke-only-session-secret \
             -e DATABASE_URL="${DATABASE_URL}" \
@@ -298,7 +301,7 @@ jobs:
             -e FILE_STORAGE_ENCRYPTION_ENABLE=1 \
             -e FILE_STORAGE_ENCRYPTION_KEY=ci-smoke-only-not-a-secret \
             -e FILE_STORAGE_LOCATION=/data/files \
-            "${SMOKE_IMAGE}"
+            "${SMOKE_IMAGE}" node --inspect=0.0.0.0:9229 --enable-source-maps dist-server/server.js
 
           ready=0
           for i in $(seq 1 20); do
