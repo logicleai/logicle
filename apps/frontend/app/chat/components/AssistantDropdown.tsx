@@ -96,7 +96,7 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
             </div>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="" sideOffset={5}>
+        <DropdownMenuContent align="end" sideOffset={5}>
           <DropdownMenuButton
             icon={assistant.pinned ? IconPinnedOff : IconPinned}
             onClick={onTogglePinned}
