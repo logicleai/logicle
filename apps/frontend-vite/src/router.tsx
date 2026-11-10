@@ -105,6 +105,9 @@ export const router = createBrowserRouter([
         ],
       },
 
+      // Shared conversations are part of the chat experience on every viewport.
+      { path: 'share/:shareId', ...page(() => import('@/app/share/[shareId]/PageClient')) },
+
       {
         element: <MobileChatOnlyRoute />,
         children: [
@@ -125,7 +128,6 @@ export const router = createBrowserRouter([
             path: 'assistants/:id/history',
             ...page(() => import('@/app/assistants/[id]/history/PageClient')),
           },
-          { path: 'share/:shareId', ...page(() => import('@/app/share/[shareId]/PageClient')) },
           { path: 'internals/palette', ...page(() => import('@/app/internals/palette/page')) },
           {
             path: 'internals/styleguide',
