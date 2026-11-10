@@ -158,7 +158,11 @@ export function StackedOverview({
             tickFormatter={(value) => `${value}`}
           />
           {selectionStart == null ? (
-            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
+            <Tooltip
+              cursor={{ fill: 'hsl(var(--muted))' }}
+              contentStyle={{ maxWidth: 'min(24rem, 80vw)', overflowWrap: 'anywhere' }}
+              itemStyle={{ whiteSpace: 'normal' }}
+            />
           ) : null}
           {shade?.x1 && shade?.x2 ? (
             <ReferenceArea

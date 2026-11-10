@@ -417,10 +417,12 @@ const AnalyticsPage = () => {
               <Button
                 variant="outline"
                 size="body1"
-                className="justify-between gap-3 min-w-[220px]"
+                className="justify-between gap-3 min-w-0 w-[220px] max-w-full"
               >
-                <span>{assistantsLabel}</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <span className="truncate" title={assistantsLabel}>
+                  {assistantsLabel}
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72 p-0" align="end">
