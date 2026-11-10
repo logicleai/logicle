@@ -6,6 +6,17 @@ afterEach(() => {
   vi.resetModules()
 })
 
+describe('FILE_ANALYSIS_TIMEOUT_MS', () => {
+  it.each([
+    [undefined, 300_000],
+    ['600000', 600_000],
+  ])('loads %s as %i ms', async (value, expected) => {
+    vi.stubEnv('FILE_ANALYSIS_TIMEOUT_MS', value)
+    vi.resetModules()
+    expect((await import('../env')).default.fileAnalysis.timeoutMs).toBe(expected)
+  })
+})
+
 describe('CHAT_MAX_TOOL_ITERATIONS', () => {
   const loadLimit = async (value: string | undefined) => {
     vi.stubEnv('CHAT_MAX_TOOL_ITERATIONS', value)

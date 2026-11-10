@@ -10,7 +10,7 @@ prioritized backlog for closing gaps in the "should be unit tested" bucket.
 
 **`apps/backend/scripts/smoke.ts`** (run in CI on every push, against a real
 Docker deployment, both sqlite and postgres) and
-**`apps/backend/scripts/integration-baseline.ts`** (main/dispatch only) exist
+**`apps/backend/scripts/integration-baseline.ts`** (also run in CI) exist
 to prove that routes, auth, DB persistence, and cross-module side effects
 actually wire together end-to-end. `providerType: 'mock'` (`EchoLanguageModel`,
 gated behind `ALLOW_MOCK_PROVIDER`) stands in for a real LLM so the chat
@@ -20,6 +20,19 @@ side-effects that span tables (e.g. file ownership reassignment), and
 wiring between routes and the modules behind them. Do not use it to chase
 statement coverage — every extra smoke scenario costs a full server
 build+boot cycle to iterate on, versus milliseconds for a unit test.
+
+The baseline suite includes a real file-analysis worker recovery scenario when
+`INTEGRATION_INSPECTOR_URL` points to the disposable backend's Node inspector
+(for example, `http://127.0.0.1:9229`). It uses the inspector to terminate the
+worker with an analysis pending, checks that analysis fails, then uploads a
+second PDF and checks it becomes ready. Fault injection is confined to the test
+runner; the application has no worker-kill endpoint or test control messages.
+CI enables the inspector only for the baseline container and publishes its port
+on host loopback. For local runs, start a disposable backend with
+`--inspect=127.0.0.1:9229` and run
+`INTEGRATION_INSPECTOR_URL=http://127.0.0.1:9229 pnpm run test:integration -- http://127.0.0.1:3000`.
+Without that variable, the suite explicitly reports the recovery scenario as
+skipped. Never target a shared backend: this scenario intentionally kills a worker.
 
 **`vitest` unit/integration tests under `__tests__/` and
 `**/__tests__/`** (run via `npm run test:coverage`, coverage scoped to

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import { performance } from 'node:perf_hooks'
 import WebSocket from 'ws'
 import { checkMcpRequestContext } from './mcp-request-context-integration'
 import type { ToolCallMessage } from '@/lib/satellite/types'
@@ -105,6 +107,137 @@ async function login(email, password) {
     json: { email, password },
     timeoutMs: 10000,
   })
+}
+
+// Only the integration backend is launched with an inspector. Fault injection
+// stays in the test runner, with no control messages or kill endpoints in the app.
+async function evaluateInBackend(inspectorUrl: string, expression: string): Promise<void> {
+  const response = await fetch(new URL('/json/list', inspectorUrl), {
+    signal: AbortSignal.timeout(5000),
+  })
+  assert.equal(response.status, 200, 'Inspector discovery failed')
+  const targets = (await response.json()) as { webSocketDebuggerUrl?: string }[]
+  assert.equal(targets.length, 1, 'Expected one integration backend inspector target')
+  assert.ok(targets[0]?.webSocketDebuggerUrl, 'Missing inspector WebSocket URL')
+  const socket = new WebSocket(targets[0].webSocketDebuggerUrl)
+  await new Promise<void>((resolve, reject) => {
+    let settled = false
+    const finish = (error?: Error) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      if (socket.readyState === WebSocket.OPEN) socket.close()
+      else socket.terminate()
+      if (error) reject(error)
+      else resolve()
+    }
+    const timer = setTimeout(() => finish(new Error('Inspector evaluation timed out')), 5000)
+    socket.once('error', finish)
+    socket.once('close', () => finish(new Error('Inspector closed before replying')))
+    socket.once('open', () => {
+      socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression } }))
+    })
+    socket.on('message', (data) => {
+      const message = JSON.parse(data.toString())
+      if (message.id !== 1) return
+      if (message.error || message.result?.exceptionDetails) {
+        finish(
+          new Error(
+            `Inspector evaluation failed: ${JSON.stringify(
+              message.error ?? message.result.exceptionDetails
+            )}`
+          )
+        )
+      } else {
+        finish()
+      }
+    })
+  })
+}
+
+async function checkFileAnalysisWorkerRecovery(runId: string, inspectorUrl: string) {
+  console.log('Integration: PDF analysis recovers after worker termination')
+  const startedAt = performance.now()
+  const pdf = await readFile(new URL('./data/basic-text.pdf', import.meta.url))
+  const restoreExpression = `globalThis[Symbol.for('logicle.integration.restoreFileAnalyzer')]?.()`
+  const upload = async (label: string) => {
+    const created = await request('POST', '/api/files', {
+      expectedStatus: 201,
+      headers: jsonHeaders,
+      json: {
+        name: `integration-${runId}-${label}.pdf`,
+        type: 'application/pdf',
+        size: pdf.byteLength,
+      },
+      timeoutMs: 10000,
+    })
+    const fileId = parseJson(created.text, 'Create recovery PDF').id as string
+    await request('PUT', `/api/files/${fileId}/content`, {
+      expectedStatus: 204,
+      headers: { ...sameOriginHeaders, 'content-type': 'application/pdf' },
+      body: new Uint8Array(pdf),
+      timeoutMs: 10000,
+    })
+    return fileId
+  }
+  const analysis = async (fileId: string) => {
+    const deadline = Date.now() + 30000
+    while (Date.now() < deadline) {
+      const result = await request('GET', `/api/files/${fileId}/analysis`, {
+        headers: sameOriginHeaders,
+        timeoutMs: Math.min(15000, deadline - Date.now()),
+      })
+      const value = parseJson(result.text, 'Recovery PDF analysis')
+      if (value.status === 'ready' || value.status === 'failed') return value
+      // The endpoint already waits for analysis; no additional polling delay.
+    }
+    throw new Error('PDF analysis did not finish after worker termination')
+  }
+
+  try {
+    await evaluateInBackend(
+      inspectorUrl,
+      `{
+      const Worker = process.getBuiltinModule('node:worker_threads').Worker;
+      const key = Symbol.for('logicle.integration.restoreFileAnalyzer');
+      if (globalThis[key]) throw new Error('Worker fault injection already armed');
+      const original = Worker.prototype.postMessage;
+      globalThis[key] = () => {
+        Worker.prototype.postMessage = original;
+        delete globalThis[key];
+      };
+      Worker.prototype.postMessage = function(message, ...args) {
+        if (message?.mimeType === 'application/pdf' && message.buffer instanceof ArrayBuffer) {
+          globalThis[key]();
+          // The runtime registered its pending request before calling postMessage.
+          // Terminate before delivery so a fast PDF cannot win the race.
+          void this.terminate();
+        }
+        return Reflect.apply(original, this, [message, ...args]);
+      };
+    }`
+    )
+    const failedFileId = await upload('terminated')
+    const failed = await analysis(failedFileId)
+    assert.equal(failed.status, 'failed', 'The terminated analysis must fail')
+    assert.match(failed.error ?? '', /Worker exited with code 1/)
+
+    const recoveredFileId = await upload('recovered')
+    const recovered = await analysis(recoveredFileId)
+    assert.equal(recovered.status, 'ready', 'The next PDF must finish on a replacement worker')
+    assert.equal(recovered.payload?.kind, 'pdf')
+    assert.ok(recovered.payload.pageCount >= 1, 'Expected a valid PDF page count')
+    assert.equal(
+      (await analysis(failedFileId)).status,
+      'failed',
+      'Failed files must not be retried'
+    )
+    console.log(
+      `Integration: worker recovery passed (${(performance.now() - startedAt).toFixed(1)} ms)`
+    )
+  } finally {
+    await evaluateInBackend(inspectorUrl, restoreExpression)
+  }
 }
 
 /**
@@ -767,6 +900,12 @@ async function main() {
     body: 'second upload attempt',
     allowStatus: [400],
   })
+
+  if (process.env.INTEGRATION_INSPECTOR_URL) {
+    await checkFileAnalysisWorkerRecovery(runId, process.env.INTEGRATION_INSPECTOR_URL)
+  } else {
+    console.log('Integration: worker recovery skipped (set INTEGRATION_INSPECTOR_URL to enable)')
+  }
 
   console.log('Integration: a second user cannot read or write another user-owned file')
   const secondUserEmail = `user2-${runId}@example.com`
