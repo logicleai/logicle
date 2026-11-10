@@ -70,7 +70,7 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
       <div
         role="status"
         title={assistant.name}
-        className="inline-flex max-w-[45vw] min-w-0 items-center gap-2 px-1 py-1"
+        className="inline-flex max-w-full sm:max-w-[45vw] min-w-0 items-center gap-2 px-1 py-1"
       >
         <AssistantAvatar assistant={assistant} />
         <IconLoader2 size={16} className="animate-spin shrink-0" aria-hidden="true" />
@@ -83,9 +83,14 @@ export const AssistantDropdown: FC<Props> = ({ assistant }) => {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="small" className="max-w-[45vw] px-1 py-1">
+          <Button
+            variant="ghost"
+            size="small"
+            className="min-w-0 max-w-full sm:max-w-[45vw] px-1 py-1"
+            title={assistant.name}
+          >
             <div className="flex min-w-0 flex-row items-center gap-2">
-              <AssistantAvatar assistant={assistant} />
+              <AssistantAvatar className="shrink-0" assistant={assistant} />
               <h3 className="truncate py-2">{assistant?.name ?? ''}</h3>
               <IconChevronDown className="shrink-0" size="16" color="gray"></IconChevronDown>
             </div>
