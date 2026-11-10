@@ -435,14 +435,16 @@ const AssistantEditor = ({ id }: { id: string }) => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex justify-between items-center bg-muted p-2">
-        <div className="flex justify-center items-center">
-          <button type="button" title={t('back')} onClick={router.back}>
+      <div className="flex justify-between items-center gap-3 bg-muted p-2">
+        <div className="flex min-w-0 flex-1 items-center">
+          <button className="shrink-0" type="button" title={t('back')} onClick={router.back}>
             <IconArrowLeft></IconArrowLeft>
           </button>
-          <h1>{`${t('assistant')} ${assistant.name}`}</h1>
+          <h1 className="truncate" title={assistant.name}>
+            {`${t('assistant')} ${assistant.name}`}
+          </h1>
         </div>
-        <div className="flex gap-3 items-center">
+        <div className="flex shrink-0 gap-3 items-center">
           {assistant.pendingChanges ? (
             <TooltipProvider delayDuration={150}>
               <Tooltip
