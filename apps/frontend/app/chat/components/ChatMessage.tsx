@@ -147,11 +147,15 @@ export const ToolCall = ({
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1" style={{ border: 'none' }}>
-        <AccordionTrigger className="py-1" showChevron={false}>
-          <div className="flex flex-horz items-center gap-2">
-            <div className="text-sm">{triggerLabel}</div>
+        <AccordionTrigger className="min-w-0 py-1" showChevron={false}>
+          <div className="flex min-w-0 flex-horz items-center gap-2">
+            <div className="truncate text-sm" title={triggerLabel}>
+              {triggerLabel}
+            </div>
             {status === 'running' && (
-              <RotatingLines height="16" width="16" strokeColor="gray"></RotatingLines>
+              <span className="shrink-0">
+                <RotatingLines height="16" width="16" strokeColor="gray"></RotatingLines>
+              </span>
             )}
           </div>
         </AccordionTrigger>
