@@ -149,8 +149,10 @@ const MyAssistantPage = () => {
     {
       name: t('description'),
       renderer: (assistant: dto.UserAssistant) => (
-        <div className="flex flex-col flex-1 h-full">
-          <div className="font-bold">{assistant.name}</div>
+        <div className="flex min-w-0 flex-col flex-1 h-full">
+          <div className="font-bold truncate" title={assistant.name}>
+            {assistant.name}
+          </div>
           <div className="opacity-50 overflow-hidden text-ellipsis line-clamp-2">
             {assistant.description}
           </div>

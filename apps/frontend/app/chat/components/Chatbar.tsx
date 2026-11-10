@@ -267,7 +267,8 @@ export const Chatbar = () => {
                 <AssistantAvatar className="shrink-0" assistant={assistant} />
                 <div
                   key={assistant.id}
-                  className="flex-1 min-w-0 text-left overflow-hidden text-ellipsis px-2"
+                  className="flex-1 min-w-0 text-left truncate px-2"
+                  title={assistant.name}
                 >
                   {assistant.name}
                 </div>

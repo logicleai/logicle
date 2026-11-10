@@ -209,7 +209,9 @@ const SelectAssistantPage = () => {
                             assistant={assistant}
                           />
                           <span className="flex flex-col flex-1 h-full overflow-hidden">
-                            <span className="font-bold truncate">{assistant.name}</span>
+                            <span className="font-bold truncate" title={assistant.name}>
+                              {assistant.name}
+                            </span>
                             <span className="opacity-50 overflow-hidden text-ellipsis line-clamp-2 leading-[1.2rem] h-[2.4rem]">
                               {assistant.description}
                             </span>
