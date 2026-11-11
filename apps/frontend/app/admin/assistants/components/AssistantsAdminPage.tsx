@@ -60,10 +60,14 @@ export const AssistantsAdminPage = () => {
       name: t('table-column-name'),
       renderer: (assistant: dto.AssistantWithOwner) => {
         return (
-          <div className="flex flex-horz gap-2 items-center">
+          <div className="flex min-w-0 flex-horz gap-2 items-center">
             <AssistantAvatar className="shrink-0" size="default" assistant={assistant} />
-            <span>{assistant.name}</span>
-            {assistant.hidden && <Badge variant="secondary">{t('hidden-assistant')}</Badge>}
+            <span className="min-w-0 truncate" title={assistant.name}>
+              {assistant.name}
+            </span>
+            {assistant.hidden && (
+              <Badge className="shrink-0" variant="secondary">{t('hidden-assistant')}</Badge>
+            )}
           </div>
         )
       },
@@ -138,7 +142,7 @@ export const AssistantsAdminPage = () => {
       }
     >
       <SimpleTable
-        className="flex-1 text-body1"
+        className="flex-1 text-body1 table-fixed [overflow-wrap:anywhere]"
         columns={columns}
         rows={(assistants ?? []).filter((a) => {
           if (searchTerm.trim().length === 0) return 1

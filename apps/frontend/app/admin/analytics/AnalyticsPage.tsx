@@ -417,10 +417,12 @@ const AnalyticsPage = () => {
               <Button
                 variant="outline"
                 size="body1"
-                className="justify-between gap-3 min-w-[220px]"
+                className="justify-between gap-3 min-w-0 w-[220px] max-w-full"
               >
-                <span>{assistantsLabel}</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <span className="truncate" title={assistantsLabel}>
+                  {assistantsLabel}
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72 p-0" align="end">
@@ -455,13 +457,15 @@ const AnalyticsPage = () => {
                           }}
                         >
                           <span
-                            className={`mr-2 inline-flex h-4 w-4 items-center justify-center rounded border ${
+                            className={`mr-2 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
                               selected ? 'border-primary bg-primary text-primary-foreground' : ''
                             }`}
                           >
                             {selected ? '✓' : ''}
                           </span>
-                          <span className="truncate">{assistant.name}</span>
+                          <span className="min-w-0 flex-1 truncate" title={assistant.name}>
+                            {assistant.name}
+                          </span>
                         </CommandItem>
                       )
                     })}

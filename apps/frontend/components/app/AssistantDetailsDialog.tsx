@@ -26,16 +26,18 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[50em] h-[55vh] flex flex-col overflow-hidden">
-        <DialogHeader className="border-b mb-2 pb-2">
-          <DialogTitle>{assistant.name}</DialogTitle>
+        <DialogHeader className="min-w-0 shrink-0 border-b mb-2 pb-2 pr-6">
+          <DialogTitle className="truncate" title={assistant.name}>
+            {assistant.name}
+          </DialogTitle>
         </DialogHeader>
         <Tabs
           orientation="vertical"
-          className="flex flex-horz flex-1 gap-3 h-0 justify-stretch"
+          className="flex min-w-0 flex-horz flex-1 gap-3 h-0 justify-stretch"
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as TabId)}
         >
-          <TabsList direction="vertical" className="border-r">
+          <TabsList direction="vertical" className="shrink-0 border-r">
             {tabs.map((tabId) => {
               return (
                 <TabsTrigger key={tabId} value={tabId}>
@@ -44,11 +46,11 @@ export const AssistantDetailsDialog = ({ assistant, onClose }: Props) => {
               )
             })}
           </TabsList>
-          <ScrollArea className="overflow-hidden scroll-workaround flex-1 pr-4">
+          <ScrollArea className="min-w-0 overflow-hidden scroll-workaround flex-1 pr-4">
             <TabsContent value="details" className="whitespace-pre">
               <PropList>
                 <Prop label={t('name')} wrap={true}>
-                  {assistant.name}
+                  <span className="break-all">{assistant.name}</span>
                 </Prop>
                 <Prop label={t('description')} wrap={true}>
                   {assistant.description}

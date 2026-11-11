@@ -160,10 +160,13 @@ export const ToolsTabPanel = ({ form, visible, className, assistantId }: ToolsTa
                           key={a.id}
                           className="flex flex-row items-center space-y-0 border p-3"
                         >
-                          <div className="flex-1">
-                            <div className="flex-1">{a.name}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate" title={a.name}>
+                              {a.name}
+                            </div>
                           </div>
                           <Button
+                            className="shrink-0"
                             disabled={field.disabled}
                             onClick={() => {
                               form.setValue(

@@ -17,7 +17,10 @@ export const UsageTabPanel = ({ visible, className, assistantId }: Props) => {
   )
 
   return (
-    <ScrollArea className={className} style={{ display: visible ? undefined : 'none' }}>
+    <ScrollArea
+      className={`${className} scroll-workaround`}
+      style={{ display: visible ? undefined : 'none' }}
+    >
       <div className="flex flex-col gap-3 pr-2">
         {parents && parents.length === 0 && (
           <p className="text-muted-foreground text-sm">{t('assistant-usage-empty')}</p>
@@ -27,8 +30,8 @@ export const UsageTabPanel = ({ visible, className, assistantId }: Props) => {
             <p className="text-muted-foreground text-sm">{t('assistant-usage-used-by')}</p>
             <ul className="flex flex-col gap-2">
               {parents.map((parent) => (
-                <li key={parent.id}>
-                  <Link href={`/assistants/${parent.id}`} native>
+                <li key={parent.id} title={parent.name}>
+                  <Link href={`/assistants/${parent.id}`} className="!block truncate" native>
                     {parent.name}
                   </Link>
                 </li>

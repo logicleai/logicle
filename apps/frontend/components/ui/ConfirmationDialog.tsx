@@ -43,10 +43,12 @@ const ConfirmationDialog = ({
 
   return (
     <AlertDialog open={true}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto [overflow-wrap:anywhere]">
         {icon && <div className="mx-auto"></div>}
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
+        <AlertDialogHeader className="min-w-0">
+          <AlertDialogTitle className="line-clamp-2 break-all" title={title}>
+            {title}
+          </AlertDialogTitle>
         </AlertDialogHeader>
         {children}
         <AlertDialogFooter>
