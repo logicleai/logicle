@@ -457,13 +457,15 @@ const AnalyticsPage = () => {
                           }}
                         >
                           <span
-                            className={`mr-2 inline-flex h-4 w-4 items-center justify-center rounded border ${
+                            className={`mr-2 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
                               selected ? 'border-primary bg-primary text-primary-foreground' : ''
                             }`}
                           >
                             {selected ? '✓' : ''}
                           </span>
-                          <span className="truncate">{assistant.name}</span>
+                          <span className="min-w-0 flex-1 truncate" title={assistant.name}>
+                            {assistant.name}
+                          </span>
                         </CommandItem>
                       )
                     })}
