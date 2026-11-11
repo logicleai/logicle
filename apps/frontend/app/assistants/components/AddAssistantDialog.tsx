@@ -32,7 +32,11 @@ export const AddAssistantDialog = ({ onClose, onAddAssistants, candidates }: Pro
       : candidates.filter((a) => a.name.toLocaleLowerCase().includes(searchTermLowerCase))
 
   const columns = [
-    column(t('table-column-name'), (a: dto.UserAssistant) => <span>{a.name}</span>),
+    column(t('table-column-name'), (a: dto.UserAssistant) => (
+      <span className="block max-w-[min(20rem,40vw)] truncate" title={a.name}>
+        {a.name}
+      </span>
+    )),
     column(t('description'), (a: dto.UserAssistant) => (
       <span className="text-muted-foreground truncate block max-w-xs">{a.description}</span>
     )),

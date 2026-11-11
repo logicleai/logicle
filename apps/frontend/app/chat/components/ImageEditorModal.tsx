@@ -72,13 +72,15 @@ export const ImageEditorModal: FC<Props> = ({ attachment, assistants, onClose, o
               {assistants?.length && (
                 <>
                   <Select value={assistantId} onValueChange={setAssistantId}>
-                    <SelectTrigger className="h-auto w-auto shrink-0 border-0 bg-transparent p-0 text-body2 text-muted-foreground shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:ml-1">
+                    <SelectTrigger className="h-auto w-auto min-w-0 max-w-[40%] shrink-0 border-0 bg-transparent p-0 text-body2 text-muted-foreground shadow-none focus:ring-0 focus:ring-offset-0 [&>span]:min-w-0 [&>span]:truncate [&>svg]:ml-1 [&>svg]:shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {assistants.map((a) => (
                         <SelectItem key={a.id} value={a.id}>
-                          {a.name}
+                          <span className="block max-w-[min(20rem,60vw)] truncate" title={a.name}>
+                            {a.name}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>

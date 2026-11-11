@@ -21,10 +21,15 @@ export function MostActiveAssistants({ className, items, colorMap }: Params) {
                 className="h-4 w-4 shrink-0"
                 style={{ backgroundColor: color }}
               />
-              <div className="ml-4 space-y-1">
-                <p className="text-sm font-medium leading-none">{item.name ?? item.assistantId}</p>
+              <div className="ml-4 mr-2 min-w-0 space-y-1">
+                <p
+                  className="truncate text-sm font-medium leading-none"
+                  title={item.name ?? item.assistantId ?? undefined}
+                >
+                  {item.name ?? item.assistantId}
+                </p>
               </div>
-              <div className="ml-auto font-medium">{item.messages}</div>
+              <div className="ml-auto shrink-0 font-medium">{item.messages}</div>
             </div>
           )
         })}
