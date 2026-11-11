@@ -162,7 +162,7 @@ export function StackedOverview({
               cursor={{ fill: 'hsl(var(--muted))' }}
               contentStyle={{ maxWidth: 'min(24rem, 80vw)', overflowWrap: 'anywhere' }}
               itemStyle={{ display: 'flex', alignItems: 'flex-start', whiteSpace: 'normal' }}
-              wrapperClassName="[&_.recharts-tooltip-item-name]:min-w-0 [&_.recharts-tooltip-item-name]:flex-1 [&_.recharts-tooltip-item-name]:line-clamp-2 [&_.recharts-tooltip-item-name]:break-all [&_.recharts-tooltip-item-separator]:shrink-0 [&_.recharts-tooltip-item-separator]:whitespace-pre [&_.recharts-tooltip-item-value]:shrink-0 [&_.recharts-tooltip-item-value]:whitespace-nowrap"
+              wrapperClassName="[&_.recharts-tooltip-item-name]:min-w-0 [&_.recharts-tooltip-item-name]:flex-1 [&_.recharts-tooltip-item-name]:truncate [&_.recharts-tooltip-item-separator]:shrink-0 [&_.recharts-tooltip-item-separator]:whitespace-pre [&_.recharts-tooltip-item-value]:shrink-0 [&_.recharts-tooltip-item-value]:whitespace-nowrap"
             />
           ) : null}
           {shade?.x1 && shade?.x2 ? (
