@@ -29,7 +29,7 @@ export const WorkspaceAssistants = ({ workspaceId }: { workspaceId: string }) =>
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
       ></SearchBarWithButtonsOnRight>
-      <Table>
+      <Table className="table-fixed [overflow-wrap:anywhere]">
         <TableHeader>
           <TableRow>
             <TableHead>{t('name')}</TableHead>
@@ -48,8 +48,10 @@ export const WorkspaceAssistants = ({ workspaceId }: { workspaceId: string }) =>
                 <TableRow key={assistant.id}>
                   <TableCell>
                     <div className="flex items-center justify-start space-x-2">
-                      <AssistantAvatar assistant={assistant} />
-                      <span className="flex-1 min-width:0px">{assistant.name}</span>
+                      <AssistantAvatar className="shrink-0" assistant={assistant} />
+                      <span className="flex-1 min-w-0 truncate" title={assistant.name}>
+                        {assistant.name}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
