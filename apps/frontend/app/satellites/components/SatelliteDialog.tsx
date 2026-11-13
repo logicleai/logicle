@@ -4,11 +4,18 @@ import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { post, patch } from '@/lib/fetch'
 import { mutateSatellites, mutateAdminSatellites } from '@/hooks/satellites'
 import * as dto from '@/types/dto'
+import { SatelliteSharingFields } from './SatelliteSharingFields'
 import { SatelliteSecretDialog } from './SatelliteSecretDialog'
 
 type Props = {
@@ -23,6 +30,7 @@ export const SatelliteDialog = ({ mode, scope = 'me', satellite, onClose, onSave
   const { t } = useTranslation()
   const nameId = useId()
   const [name, setName] = useState(satellite?.name ?? '')
+  const [sharing, setSharing] = useState<dto.Sharing2>({ type: 'private' })
   const [loading, setLoading] = useState(false)
   const [createdSatellite, setCreatedSatellite] = useState<dto.Satellite | null>(null)
 
@@ -38,7 +46,7 @@ export const SatelliteDialog = ({ mode, scope = 'me', satellite, onClose, onSave
     try {
       const response =
         mode === 'create'
-          ? await post<dto.Satellite>('/api/me/satellites', { name: trimmedName })
+          ? await post<dto.Satellite>('/api/me/satellites', { name: trimmedName, sharing })
           : await patch<dto.Satellite>(
               `${scope === 'admin' ? '/api/satellites' : '/api/me/satellites'}/${satellite?.id}`,
               { name: trimmedName }
@@ -98,12 +106,25 @@ export const SatelliteDialog = ({ mode, scope = 'me', satellite, onClose, onSave
               autoFocus
             />
           </div>
+          {mode === 'create' && (
+            <SatelliteSharingFields sharing={sharing} onChange={setSharing} disabled={loading} />
+          )}
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
               {t('cancel')}
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? t(mode === 'create' ? 'creating' : 'saving') : t(mode === 'create' ? 'create' : 'save')}
+            <Button
+              type="submit"
+              disabled={
+                loading ||
+                (mode === 'create' &&
+                  sharing.type === 'workspace' &&
+                  sharing.workspaces.length === 0)
+              }
+            >
+              {loading
+                ? t(mode === 'create' ? 'creating' : 'saving')
+                : t(mode === 'create' ? 'create' : 'save')}
             </Button>
           </DialogFooter>
         </form>

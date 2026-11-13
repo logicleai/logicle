@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Prop, PropList } from '@/components/ui/proplist'
+import { useUserProfile } from '@/components/providers/userProfileContext'
 import { useSatellite } from '@/hooks/satellites'
 import { AdminPage } from '@/app/admin/components/AdminPage'
 import { SatelliteDialog } from '../components/SatelliteDialog'
@@ -12,8 +13,10 @@ import { useUrlSegment } from '@/hooks/useUrlSegment'
 
 const SatelliteDetail = () => {
   const { t } = useTranslation()
+  const profile = useUserProfile()
   const satelliteId = useUrlSegment(1)
   const { data: satellite, isLoading, mutate } = useSatellite(satelliteId)
+  const canManage = !!satellite && satellite.userId === profile?.id
   const [renamingSatellite, setRenamingSatellite] = useState(false)
   const [sharingSatellite, setSharingSatellite] = useState(false)
 
@@ -26,14 +29,16 @@ const SatelliteDetail = () => {
       isLoading={isLoading}
       title={satellite?.name ?? ''}
       headerActions={
-        <>
-          <Button variant="secondary" onClick={() => setSharingSatellite(true)}>
-            {t('sharing')}
-          </Button>
-          <Button variant="secondary" onClick={() => setRenamingSatellite(true)}>
-            {t('rename')}
-          </Button>
-        </>
+        canManage ? (
+          <>
+            <Button variant="secondary" onClick={() => setSharingSatellite(true)}>
+              {t('sharing')}
+            </Button>
+            <Button variant="secondary" onClick={() => setRenamingSatellite(true)}>
+              {t('rename')}
+            </Button>
+          </>
+        ) : null
       }
     >
       {satellite && (
@@ -46,12 +51,10 @@ const SatelliteDetail = () => {
               <Prop label={t('id')}>
                 <code className="bg-muted px-2 py-1 rounded text-xs">{satellite.id}</code>
               </Prop>
-              <Prop label={t('created')}>
-                {new Date(satellite.createdAt).toLocaleDateString()}
-              </Prop>
+              <Prop label={t('created')}>{new Date(satellite.createdAt).toLocaleDateString()}</Prop>
             </PropList>
           </Card>
-          {renamingSatellite && (
+          {canManage && renamingSatellite && (
             <SatelliteDialog
               mode="rename"
               satellite={satellite}
@@ -59,7 +62,7 @@ const SatelliteDetail = () => {
               onSaved={(updated) => mutate(updated, { revalidate: false })}
             />
           )}
-          {sharingSatellite && (
+          {canManage && sharingSatellite && (
             <SatelliteSharingDialog
               satellite={satellite}
               onClose={() => setSharingSatellite(false)}

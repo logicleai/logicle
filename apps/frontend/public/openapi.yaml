@@ -2512,6 +2512,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Satellite"
+        "403":
+          $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
       parameters:
@@ -2561,8 +2563,7 @@ paths:
   /api/me/satellites:
     get:
       summary: List my satellites
-      description: Fetch all satellites owned by the current user, merged with live
-        connection state.
+      description: Fetch owned and shared satellites, merged with live connection state.
       responses:
         "200":
           description: Response
@@ -2584,6 +2585,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Satellite"
+        "403":
+          $ref: "#/components/responses/Error"
       security:
         - bearerAuth: []
       requestBody:
@@ -2595,6 +2598,8 @@ paths:
               properties:
                 name:
                   type: string
+                sharing:
+                  $ref: "#/components/schemas/ToolSharing"
               required:
                 - name
               additionalProperties: false
@@ -6423,6 +6428,8 @@ components:
           anyOf:
             - type: string
             - type: "null"
+        canManage:
+          type: boolean
         createdAt:
           anyOf:
             - type: string
@@ -6441,6 +6448,7 @@ components:
         - kind
         - connected
         - ownerName
+        - canManage
         - createdAt
         - updatedAt
       additionalProperties: false

@@ -2,6 +2,7 @@ import { db } from 'db/database'
 import * as dto from '@/types/dto'
 import * as schema from '@/db/schema'
 import { nanoid } from 'nanoid'
+import { getUserWorkspaceMemberships } from './user'
 import { hashPassword } from '@/lib/auth/password'
 import {
   createPermissionTargetAnd,
@@ -13,9 +14,11 @@ import {
   type PermissionTargetAccessPrincipal,
 } from './permissionTarget'
 
-const dbToDto = async (satellite: schema.Satellite): Promise<dto.Satellite> => {
-  const sharing = await getPermissionTargetsSharing([satellitePermissionTarget(satellite.id)])
-  return {
+const satellitesToDtos = async (satellites: schema.Satellite[]): Promise<dto.Satellite[]> => {
+  const sharing = await getPermissionTargetsSharing(
+    satellites.map((satellite) => satellitePermissionTarget(satellite.id))
+  )
+  return satellites.map((satellite) => ({
     id: satellite.id,
     name: satellite.name,
     userId: satellite.userId,
@@ -23,7 +26,7 @@ const dbToDto = async (satellite: schema.Satellite): Promise<dto.Satellite> => {
     sharing: sharing.get(satellite.id) ?? { type: 'private' },
     createdAt: satellite.createdAt,
     updatedAt: satellite.updatedAt,
-  }
+  }))
 }
 
 export const getSatellite = async (id: string): Promise<dto.Satellite | undefined> => {
@@ -32,12 +35,12 @@ export const getSatellite = async (id: string): Promise<dto.Satellite | undefine
     .selectAll()
     .where('id', '=', id)
     .executeTakeFirst()
-  return result ? await dbToDto(result) : undefined
+  return result ? (await satellitesToDtos([result]))[0] : undefined
 }
 
 export const getAllSatellites = async (): Promise<dto.Satellite[]> => {
   const result = await db.selectFrom('Satellite').selectAll().orderBy('createdAt', 'desc').execute()
-  return await Promise.all(result.map(dbToDto))
+  return await satellitesToDtos(result)
 }
 
 export const getUserSatellites = async (userId: string): Promise<dto.Satellite[]> => {
@@ -47,7 +50,43 @@ export const getUserSatellites = async (userId: string): Promise<dto.Satellite[]
     .where('userId', '=', userId)
     .orderBy('createdAt', 'desc')
     .execute()
-  return await Promise.all(result.map(dbToDto))
+  return await satellitesToDtos(result)
+}
+
+/** Includes shared satellites without granting their recipients management rights. */
+export const getVisibleSatellites = async (
+  principal: PermissionTargetAccessPrincipal
+): Promise<dto.Satellite[]> => {
+  const satellites = await db
+    .selectFrom('Satellite')
+    .selectAll()
+    .orderBy('createdAt', 'desc')
+    .execute()
+  const visible = await filterVisiblePermissionTargetKeys(
+    principal,
+    satellites.map((satellite) => satellitePermissionTarget(satellite.id, satellite.userId))
+  )
+  return satellitesToDtos(satellites.filter((satellite) => visible.has(satellite.id)))
+}
+
+/** Keep the API's sharing permissions aligned with the sharing selector. */
+export const canSetSatelliteSharing = async (
+  principal: PermissionTargetAccessPrincipal,
+  sharing: dto.Sharing2
+): Promise<boolean> => {
+  if (principal.userRole === dto.UserRole.ADMIN) return true
+  if (sharing.type === 'private') return true
+  if (sharing.type === 'public') return false
+  const memberships = await getUserWorkspaceMemberships(principal.userId)
+  return (
+    sharing.workspaces.length > 0 &&
+    sharing.workspaces.every((workspaceId) =>
+      memberships.some(
+        (membership) =>
+          membership.id === workspaceId && ['OWNER', 'ADMIN', 'EDITOR'].includes(membership.role)
+      )
+    )
+  )
 }
 
 export const createSatellite = async (
@@ -59,7 +98,7 @@ export const createSatellite = async (
   const secret = nanoid()
   await createPermissionTargetAnd(
     satellitePermissionTarget(id, userId),
-    { type: 'private' },
+    data.sharing ?? { type: 'private' },
     async (trx) => {
       return await trx
         .insertInto('Satellite')
