@@ -47,6 +47,24 @@ describe('cachingExtractor', () => {
     expect(mockOcr).toHaveBeenCalledWith(fileEntry, undefined)
   })
 
+  test('stops fallback after a persisted spreadsheet budget failure', async () => {
+    const { ensureFileAnalysisForFile } = await import('@/lib/file-analysis')
+    const { storage } = await import('@/lib/storage')
+    const { spreadsheetLimitMessage } = await import('@/lib/spreadsheet-budget')
+    vi.mocked(ensureFileAnalysisForFile).mockResolvedValueOnce({
+      kind: 'spreadsheet',
+      status: 'failed',
+      error: `${spreadsheetLimitMessage}: too many cell positions`,
+    } as any)
+    vi.mocked(storage.readBuffer).mockClear()
+    mockOcr.mockClear()
+    await expect(
+      cachingExtractor.extractFromFile({ path: 'large.xlsx' } as any)
+    ).resolves.toBeUndefined()
+    expect(storage.readBuffer).not.toHaveBeenCalled()
+    expect(mockOcr).not.toHaveBeenCalled()
+  })
+
   test('uses OCR after a scanned PDF has no extractable text', async () => {
     const analysis = {
       status: 'ready',
