@@ -47,22 +47,36 @@ describe('cachingExtractor', () => {
     expect(mockOcr).toHaveBeenCalledWith(fileEntry, undefined)
   })
 
-  test('stops fallback after a persisted spreadsheet budget failure', async () => {
+  test.each([
+    'Spreadsheet extraction limit exceeded: too many cell positions',
+    'File analysis timed out after 12500 ms',
+  ])('stops fallback after a persisted spreadsheet failure: %s', async (error) => {
     const { ensureFileAnalysisForFile } = await import('@/lib/file-analysis')
     const { storage } = await import('@/lib/storage')
-    const { spreadsheetLimitMessage } = await import('@/lib/spreadsheet-budget')
     vi.mocked(ensureFileAnalysisForFile).mockResolvedValueOnce({
       kind: 'spreadsheet',
       status: 'failed',
-      error: `${spreadsheetLimitMessage}: too many cell positions`,
+      error,
     } as any)
     vi.mocked(storage.readBuffer).mockClear()
     mockOcr.mockClear()
     await expect(
-      cachingExtractor.extractFromFile({ path: 'large.xlsx' } as any)
+      cachingExtractor.extractFromFile({ path: 'large.xlsx', type: 'application/vnd.ms-excel' } as any)
     ).resolves.toBeUndefined()
     expect(storage.readBuffer).not.toHaveBeenCalled()
     expect(mockOcr).not.toHaveBeenCalled()
+  })
+
+  test('tries the spreadsheet fallback after an ordinary parser failure', async () => {
+    const { ensureFileAnalysisForFile } = await import('@/lib/file-analysis')
+    vi.mocked(ensureFileAnalysisForFile).mockResolvedValueOnce({
+      kind: 'spreadsheet',
+      status: 'failed',
+      error: 'Unable to parse worksheet',
+    } as any)
+    extractor.mockResolvedValueOnce('fallback text')
+    const file = { path: 'recoverable.xls', type: 'application/vnd.ms-excel' }
+    await expect(cachingExtractor.extractFromFile(file as any)).resolves.toBe('fallback text')
   })
 
   test('uses OCR after a scanned PDF has no extractable text', async () => {

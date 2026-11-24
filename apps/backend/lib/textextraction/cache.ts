@@ -6,6 +6,7 @@ import { ensureFileAnalysisForFile, readExtractedTextFromAnalysis } from '@/lib/
 import { logger } from '@/lib/logging'
 import { ocrExtractor } from './ocr'
 import { fileReadOptions } from '@/lib/storage/file-options'
+import { fileAnalysisTimeoutPrefix } from '@/lib/file-analysis-timeout'
 import { SpreadsheetLimitError, spreadsheetLimitMessage } from '@/lib/spreadsheet-budget'
 
 const cacheSizeInMb = 100
@@ -36,7 +37,8 @@ export const cachingExtractor = {
     if (
       analysis?.kind === 'spreadsheet' &&
       analysis.status === 'failed' &&
-      analysis.error?.startsWith(spreadsheetLimitMessage)
+      (analysis.error?.startsWith(spreadsheetLimitMessage) ||
+        analysis.error?.startsWith(fileAnalysisTimeoutPrefix))
     ) {
       return undefined
     }

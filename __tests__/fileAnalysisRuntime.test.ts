@@ -171,6 +171,32 @@ describe('fileAnalysis runtime helpers', () => {
     await expect(mod.ensureFileAnalysisForFile(fileEntry as any, 1)).resolves.toBeUndefined()
   })
 
+  test('spreadsheet extraction waits past the polling deadline for the queued job', async () => {
+    const mod = await import('@/lib/file-analysis')
+    const file = { ...fileEntry, type: 'application/vnd.ms-excel' }
+    const failed = { ...readyAnalysis, kind: 'spreadsheet', status: 'failed', payload: null }
+    let finishJob!: () => void
+    const job = new Promise<void>((resolve) => {
+      finishJob = resolve
+    })
+    vi.spyOn(mod.fileAnalysisRuntime, 'submit').mockReturnValue(job)
+    inferFileAnalysisKind.mockReturnValue('spreadsheet')
+    getFileAnalysis.mockResolvedValue(undefined)
+    vi.useFakeTimers()
+    try {
+      const extraction = mod.ensureFileAnalysisForFile(file as any)
+      const poll = mod.ensureFileAnalysisForFile(file as any, 10_000)
+      await vi.advanceTimersByTimeAsync(10_001)
+      await expect(poll).resolves.toBeUndefined()
+
+      getFileAnalysis.mockResolvedValue(failed)
+      finishJob()
+      await expect(extraction).resolves.toEqual(failed)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   test('readExtractedTextFromAnalysis returns null for missing data and on read failure', async () => {
     const mod = await import('@/lib/file-analysis')
     await expect(mod.readExtractedTextFromAnalysis(fileEntry as any, undefined)).resolves.toBeNull()
