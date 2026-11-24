@@ -3,6 +3,7 @@ import { PDF, PdfDict, PdfName, PdfRef } from '@libpdf/core'
 import mammoth from 'mammoth'
 import PPTX2Json from 'pptx2json'
 import * as XLSX from 'xlsx'
+import { SpreadsheetBudget } from '../../core/src/spreadsheet-budget.ts'
 
 export type AnalyzerPayload =
   | {
@@ -209,8 +210,29 @@ const analyzeImage = async (buffer: Buffer, mimeType: string): Promise<AnalyzerP
 }
 
 const analyzeSpreadsheet = async (buffer: Buffer, mimeType: string): Promise<AnalyzerPayload> => {
-  const workbook = XLSX.read(buffer, { type: 'buffer' })
-  const texts = workbook.SheetNames.map((name) => XLSX.utils.sheet_to_csv(workbook.Sheets[name] ?? {}))
+  const workbook = XLSX.read(buffer, { type: 'buffer', nodim: true })
+  const budget = new SpreadsheetBudget()
+  const texts = workbook.SheetNames.map((name, index) => {
+    if (index > 0) budget.addBytes(1) // newline between sheets
+    const sheet = workbook.Sheets[name]
+    if (!sheet?.['!ref']) return ''
+    const range = XLSX.utils.decode_range(sheet['!ref'])
+    budget.addRange(range.e.r - range.s.r + 1, range.e.c - range.s.c + 1)
+
+    // Bound the field data before SheetJS allocates CSV, including repeated shared strings.
+    // CSV quoting can at most double the field data plus two quotes per cell.
+    let fieldBytes = 0
+    for (const key in sheet) {
+      if (key.startsWith('!')) continue
+      const cell = sheet[key] as XLSX.CellObject
+      const text = cell.v != null ? XLSX.utils.format_cell(cell) : cell.f ?? ''
+      fieldBytes += Buffer.byteLength(text)
+      budget.checkBytes(fieldBytes)
+    }
+    const csv = XLSX.utils.sheet_to_csv(sheet)
+    budget.addBytes(Buffer.byteLength(csv))
+    return csv
+  })
   const extractedText = texts.join('\n')
   const textCharCount = countTextChars(extractedText)
   return {
