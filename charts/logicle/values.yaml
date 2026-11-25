@@ -96,3 +96,9 @@ brand:
   favicon_path: ""
   logo_path: ""
   app_display_name: ""
+
+# Memory request lets the scheduler spread tenants across nodes. No limit is set on
+# purpose: a limit would OOMKill pods at their peak instead of just reserving room.
+resources:
+  requests:
+    memory: 1Gi
