@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { xlsxExtractor } from '@/lib/textextraction/xlsx'
+import { exceljsExtractor } from '@/lib/textextraction/excel'
+import JSZip from 'jszip'
 import * as XLSX from 'xlsx'
 
 function makeXlsxBuffer(sheets: Record<string, unknown[][]>): Buffer {
@@ -18,6 +20,21 @@ describe('xlsxExtractor', () => {
     const buf = Buffer.from(XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }))
     expect(await xlsxExtractor(buf)).toBe('')
   })
+
+  test.each([xlsxExtractor, exceljsExtractor])(
+    'bounds Markdown extraction across sheets',
+    async (extract) => {
+      const buffer = makeXlsxBuffer({ One: [['header'], ['value']], Two: [['header'], ['value']] })
+      const zip = await JSZip.loadAsync(buffer)
+      for (const name of ['xl/worksheets/sheet1.xml', 'xl/worksheets/sheet2.xml']) {
+        const xml = await zip.file(name)!.async('string')
+        zip.file(name, xml.replaceAll('A2', 'AX20100').replace('<row r="2"', '<row r="20100"'))
+      }
+      await expect(extract(await zip.generateAsync({ type: 'nodebuffer' }))).rejects.toThrow(
+        'cell positions'
+      )
+    }
+  )
 
   test('extracts header and data row as markdown table', async () => {
     const buf = makeXlsxBuffer({

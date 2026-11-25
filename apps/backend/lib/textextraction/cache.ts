@@ -6,6 +6,8 @@ import { ensureFileAnalysisForFile, readExtractedTextFromAnalysis } from '@/lib/
 import { logger } from '@/lib/logging'
 import { ocrExtractor } from './ocr'
 import { fileReadOptions } from '@/lib/storage/file-options'
+import { fileAnalysisTimeoutPrefix } from '@/lib/file-analysis-timeout'
+import { SpreadsheetLimitError, spreadsheetLimitMessage } from '@/lib/spreadsheet-budget'
 
 const cacheSizeInMb = 100
 
@@ -32,6 +34,14 @@ export const cachingExtractor = {
     }
 
     const analysis = await ensureFileAnalysisForFile(fileEntry)
+    if (
+      analysis?.kind === 'spreadsheet' &&
+      analysis.status === 'failed' &&
+      (analysis.error?.startsWith(spreadsheetLimitMessage) ||
+        analysis.error?.startsWith(fileAnalysisTimeoutPrefix))
+    ) {
+      return undefined
+    }
     const analyzedText = await readExtractedTextFromAnalysis(fileEntry, analysis)
     if (analyzedText?.trim()) {
       return cacheExtractedText(fileEntry.path, analyzedText)
@@ -56,6 +66,7 @@ export const cachingExtractor = {
           return text
         }
       } catch (error) {
+        if (error instanceof SpreadsheetLimitError) return undefined
         logger.warn('File text extraction failed; trying OCR fallback', {
           fileId: fileEntry.id,
           fileName: fileEntry.name,

@@ -1,3 +1,4 @@
+import { SpreadsheetLimitError } from '@/lib/spreadsheet-budget'
 import micromatch from 'micromatch'
 import { pdfExtractor } from './pdf'
 import { wordExtractor } from './word'
@@ -32,6 +33,7 @@ const excelExtractorSafe = async (
   try {
     return await extractors[first](data, options)
   } catch (e) {
+    if (e instanceof SpreadsheetLimitError) throw e
     logger.error(`Failed extracting excel with ${first}, falling back to ${second}`, e)
     return await extractors[second](data, options)
   }

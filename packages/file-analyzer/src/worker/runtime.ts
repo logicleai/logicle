@@ -2,6 +2,7 @@ import { Worker } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
+import { fileAnalysisTimeoutPrefix } from '../../../core/src/file-analysis-timeout.ts'
 import type { AnalyzerPayload } from '../analyzers'
 import type { FileAnalyzerRuntime } from '../runtime'
 
@@ -155,7 +156,7 @@ export class WorkerRuntime implements FileAnalyzerRuntime {
       ) as ArrayBuffer
       const timer = setTimeout(() => {
         if (state.failure || !state.pending.has(id)) return
-        state.failure = new Error(`File analysis timed out after ${this.timeoutMs} ms`)
+        state.failure = new Error(`${fileAnalysisTimeoutPrefix}${this.timeoutMs} ms`)
         this.log('error', 'File analyzer worker timed out', {
           id,
           mimeType,
