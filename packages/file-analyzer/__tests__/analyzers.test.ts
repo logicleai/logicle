@@ -4,6 +4,8 @@ import * as XLSX from 'xlsx'
 import JSZip from 'jszip'
 import { analyzeFileBuffer } from '../src/analyzers'
 
+const xlsxMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
 const createPdfBuffer = () => {
   const stream = `BT
 /F1 24 Tf
@@ -177,6 +179,37 @@ describe('file analysis extractors', () => {
     expect(payload.sheetCount).toBe(1)
     expect(payload.textCharCount).toBeGreaterThan(0)
     expect(payload.extractedText).toContain('alpha')
+  })
+
+  test('renders the inferred XLSX range with the usual quoting and internal blanks', async () => {
+    const sheet = XLSX.utils.aoa_to_sheet([['Label', 'Value'], [], ['a,b', 42]])
+    const book = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(book, sheet, 'Test')
+    const zip = await JSZip.loadAsync(XLSX.write(book, { type: 'buffer', bookType: 'xlsx' }))
+    const path = 'xl/worksheets/sheet1.xml'
+    const xml = await zip.file(path)!.async('string')
+    zip.file(path, xml.replace('ref="A1:B3"', 'ref="A1:Z90000"'))
+    const payload = await analyzeFileBuffer(await zip.generateAsync({ type: 'nodebuffer' }), xlsxMime)
+    expect(payload.extractedText).toBe('Label,Value\n,\n"a,b",42')
+  })
+
+  test('counts real cell positions across sheets', async () => {
+    const sheet = XLSX.utils.aoa_to_sheet([[1]])
+    XLSX.utils.sheet_add_aoa(sheet, [[2]], { origin: 'AX20100' })
+    const book = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(book, sheet, 'One')
+    XLSX.utils.book_append_sheet(book, sheet, 'Two')
+    const buffer = XLSX.write(book, { type: 'buffer', bookType: 'xlsx' })
+    await expect(analyzeFileBuffer(buffer, xlsxMime)).rejects.toThrow('cell positions')
+  })
+
+  test('counts repeated shared strings against the workbook text budget', async () => {
+    const sheet = XLSX.utils.aoa_to_sheet(Array.from({ length: 140 }, () => ['é'.repeat(16000)]))
+    const book = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(book, sheet, 'One')
+    XLSX.utils.book_append_sheet(book, sheet, 'Two')
+    const buffer = XLSX.write(book, { type: 'buffer', bookType: 'xlsx', bookSST: true })
+    await expect(analyzeFileBuffer(buffer, xlsxMime)).rejects.toThrow('bytes of text')
   })
 
   test('analyzes docx word files', async () => {

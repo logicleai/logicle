@@ -1,4 +1,6 @@
-import ExcelJS, { CellValue } from 'exceljs'
+import type ExcelJS from 'exceljs'
+import type { CellValue } from 'exceljs'
+import { SpreadsheetBudget } from '@/lib/spreadsheet-budget'
 
 export type Align = 'left' | 'center' | 'right'
 
@@ -30,8 +32,10 @@ function getRowValues(row: ExcelJS.Row): CellValue[] {
 
 export function sheetToMarkdown(
   worksheet: ExcelJS.Worksheet,
-  { headerRow = 1, trimEmptyRight = true }: Options = {}
+  options: Options = {},
+  budget = new SpreadsheetBudget()
 ): string {
+  budget.addRange(worksheet.rowCount, worksheet.columnCount)
   const rows: unknown[][] = []
   worksheet.eachRow({ includeEmpty: true }, (row) => {
     // ExcelJS row.values[0] is always undefined
@@ -39,6 +43,14 @@ export function sheetToMarkdown(
     rows.push(values.slice(1))
   })
 
+  return rowsToMarkdown(rows, options, budget)
+}
+
+export function rowsToMarkdown(
+  rows: unknown[][],
+  { headerRow = 1, trimEmptyRight = true }: Options,
+  budget: SpreadsheetBudget
+): string {
   if (rows.length === 0) return ''
 
   // Determine last non-empty column (or keep all if disabled)
@@ -52,26 +64,24 @@ export function sheetToMarkdown(
     return max
   }, 0)
 
-  if (!trimEmptyRight) lastCol = Math.max(...rows.map((r) => r.length))
+  if (!trimEmptyRight) lastCol = rows.reduce((width, row) => Math.max(width, row.length), 0)
   const table = rows.map((r) => r.slice(0, lastCol))
 
-  const header = (table[headerRow - 1] ?? []).map(escapeCell)
   const aligns = inferAlignments(table, headerRow)
-
   const lines: string[] = []
-  lines.push(`| ${header.join(' | ')} |`)
-  lines.push(
-    `| ${aligns
-      .map((a) => (a === 'right' ? '---:' : a === 'center' ? ':---:' : ':---'))
-      .join(' | ')} |`
-  )
-
+  const appendRow = (cells: unknown[], render: (value: unknown, column: number) => string) => {
+    budget.addBytes(4 + Math.max(0, cells.length - 1) * 3 + (lines.length ? 1 : 0))
+    const fields = cells.map((value, column) => {
+      const field = render(value, column)
+      budget.addBytes(Buffer.byteLength(field))
+      return field
+    })
+    lines.push(`| ${fields.join(' | ')} |`)
+  }
+  appendRow(table[headerRow - 1] ?? [], escapeCell)
+  appendRow(aligns, (align) => (align === 'right' ? '---:' : align === 'center' ? ':---:' : ':---'))
   for (let r = headerRow; r < table.length; r++) {
-    const line = table[r]
-      .map((v, c) => formatCell(v, aligns[c]))
-      .map(escapeCell)
-      .join(' | ')
-    lines.push(`| ${line} |`)
+    appendRow(table[r], (value, c) => escapeCell(formatCell(value, aligns[c])))
   }
 
   return lines.join('\n')
@@ -100,7 +110,7 @@ function formatCell(v: unknown, _align: Align): string {
 }
 
 function inferAlignments(table: unknown[][], headerRow: number): Align[] {
-  const cols = Math.max(...table.map((r) => r.length))
+  const cols = table.reduce((width, row) => Math.max(width, row.length), 0)
   const aligns: Align[] = new Array(cols).fill('left')
 
   for (let c = 0; c < cols; c++) {
