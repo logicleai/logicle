@@ -130,15 +130,22 @@ export const scheduleFileAnalysisForFile = (file: FileDbRow): void => {
 
 export const ensureFileAnalysisForFile = async (
   file: FileDbRow,
-  waitMs = 10_000
+  waitMs?: number
 ): Promise<dto.FileAnalysis | undefined> => {
   const current = await getFileAnalysis(file.id)
   if (current && current.analyzerVersion >= fileAnalyzerVersion) {
     return current
   }
 
-  const timeout = new Promise<void>((res) => setTimeout(res, waitMs))
-  await Promise.race([fileAnalysisRuntime.submit(file.id), timeout])
+  const job = fileAnalysisRuntime.submit(file.id)
+  // Text extraction would start a second spreadsheet parser if this wait timed out.
+  // The analysis status endpoint supplies its own explicit polling timeout.
+  if (waitMs === undefined && inferFileAnalysisKind(file.type) === 'spreadsheet') {
+    await job
+  } else {
+    const timeout = new Promise<void>((res) => setTimeout(res, waitMs ?? 10_000))
+    await Promise.race([job, timeout])
+  }
   const completed = await getFileAnalysis(file.id)
   if (completed && completed.analyzerVersion < fileAnalyzerVersion) {
     throw new Error(

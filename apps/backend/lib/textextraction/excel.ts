@@ -1,4 +1,5 @@
 import { TextExtractor } from '.'
+import { SpreadsheetBudget, SpreadsheetLimitError } from '@/lib/spreadsheet-budget'
 import ExcelJS from 'exceljs'
 import { ensureABView } from '@/backend/lib/utils'
 import { sheetToMarkdown } from './xlstomarkdown'
@@ -34,18 +35,22 @@ export const exceljsExtractor: TextExtractor = async (data: Buffer) => {
   const wb = new ExcelJS.Workbook()
   await wb.xlsx.load(ensureABView(data).buffer)
 
+  const budget = new SpreadsheetBudget()
   const sections: string[] = []
 
   for (const ws of wb.worksheets) {
     let body = ''
     try {
-      body = sheetToMarkdown(ws, { headerRow: 1 }) || ''
+      body = sheetToMarkdown(ws, {}, budget) || ''
     } catch (e) {
+      if (e instanceof SpreadsheetLimitError) throw e
       body = `> _Failed to parse sheet "${ws.name}": ${(e as Error).message}_`
+      budget.addBytes(Buffer.byteLength(body))
     }
 
     const cleaned = trimEmptyMarkdownRows(body).trim()
     if (cleaned) {
+      budget.addBytes(Buffer.byteLength(ws.name) + 5 + (sections.length ? 2 : 0))
       sections.push(`## ${ws.name}\n\n${cleaned}`)
     }
   }
