@@ -20,6 +20,10 @@ spec:
       - name: app
         image: "{{ .Values.image.repository }}:{{ $imageTag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- with .Values.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         ports:
         - containerPort: 8080
         envFrom:
